@@ -9,6 +9,6 @@ import org.springframework.context.annotation.Configuration;
  * @author GIGOpenSource
  */
 @Configuration
-@EnableMethodCache(basePackages = "com.md.nft.turbo")
+@EnableMethodCache(basePackages = "com.gig.collide")
 public class CacheConfiguration {
 }

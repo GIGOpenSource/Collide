@@ -2,12 +2,11 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 192.168.14.129:8848
-        username: nacos
-        password: nacos
-        namespace: dbbb942c-ca8b-4e1a-bf7e-5f4fd0245f2c
-        group: DEFAULT_GROUP
+        server-addr: ${collide.turbo.nacos.server.url}
+        namespace: public
+        username: ${collide.turbo.nacos.server.username}
+        password: ${collide.turbo.nacos.server.password}
       config:
-        server-addr: 192.168.14.129:8848
+        server-addr: ${collide.turbo.nacos.server.url}
         file-extension: properties
         name: ${spring.application.name}
