@@ -3,22 +3,22 @@ collide:
   turbo:
     nacos:
       server:
-        url: 192.168.1.107:8848 # collide.turbo.nacos.server.url - Nacos 的地址+端口号 #首次启动前务必修改成你自己的
+        url: 192.168.1.107:8848
         username: nacos
         password: nacos
     mysql:
-      url: jdbc:mysql://192.168.1.107:3306/collide # collide.turbo.mysql.url - MySQL 的地址+数据库配置 #首次启动前务必修改成你自己的
-      username: root # collide.turbo.mysql.username - MySQL 的用户名 #首次启动前务必修改成你自己的
-      password: '123456' # collide.turbo.mysql.password - MySQL 的密码 #首次启动前务必修改成你自己的
+      url: jdbc:mysql://192.168.1.107:3306/collide
+      username: root
+      password: '123456'
     redis:
-      url: redis://192.168.1.107  # collide.turbo.redis.url - Redis 的地址 #首次启动前务必修改成你自己的
-      port: 6379  # collide.turbo.redis.port - Redis 的端口号 #首次启动前务必修改成你自己的
-      password: '' # collide.turbo.redis.password - Redis 的密码 #首次启动前务必修改成你自己的
+      url: redis://192.168.1.107
+      port: 6379
+      password: '123456'
     elasticsearch:
-      enable: false # collide.turbo.elasticsearch.enable #如果你要使用es(没有启动一键mock)，这里需要改成true
-      url: 192.168.1.107:5601 # collide.turbo.elasticsearch.url - ElasticSearch 的地址+端口号 ##如果你要使用es(没有启动一键mock)，这里需要改成true
-      username: elastic # collide.turbo.elasticsearch.username - ElasticSearch 的用户名 ##如果你要使用es(没有启动一键mock)，这里需要改成true
-      password: 123456  # collide.turbo.elasticsearch.password - ElasticSearch 的密码 ##如果你要使用es(没有启动一键mock)，这里需要改成true
+      enable: false
+      url: 192.168.1.107:5601
+      username: elastic
+      password: 123456
     xxl-job:
       url: 192.168.1.107:8081
       appName: xxl-job-executor
