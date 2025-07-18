@@ -1,0 +1,46 @@
+spring:
+  application:
+    name: @application.name@
+  config:
+    import:
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedHeaders: '*'
+            allowedMethods: '*'
+            allowedOrigins: '*'
+      routes:
+        - id: collide-auth
+          uri: lb://collide-auth
+          predicates:
+            - Path=/auth/**,/token/**
+        - id: collide-business
+          uri: lb://collide-business
+          predicates:
+            - Path=/trade/**,/order/**,/user/**,/collection/**,/wxPay/**,/box/**
+#        - id: collide-collection
+#          uri: lb://collide-collection
+#          predicates:
+#            - Path=/collection/**
+#        - id: collide-order
+#          uri: lb://collide-order
+#          predicates:
+#            - Path=/order/**
+#        - id: collide-trade
+#          uri: lb://collide-trade
+#          predicates:
+#            - Path=/trade/**
+#        - id: collide-user
+#          uri: lb://collide-user
+#          predicates:
+#            - Path=/user/**
+#        - id: collide-pay
+#          uri: lb://collide-pay
+#          predicates:
+#            - Path=/wxPay/**
+server:
+  port: 8081

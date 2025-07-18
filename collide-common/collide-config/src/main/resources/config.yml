@@ -1,0 +1,13 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 192.168.14.129:8848
+        username: nacos
+        password: nacos
+        namespace: dbbb942c-ca8b-4e1a-bf7e-5f4fd0245f2c
+        group: DEFAULT_GROUP
+      config:
+        server-addr: 192.168.14.129:8848
+        file-extension: properties
+        name: ${spring.application.name}
