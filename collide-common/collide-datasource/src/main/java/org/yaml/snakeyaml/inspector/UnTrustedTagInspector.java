@@ -19,7 +19,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 /**
  * TagInspector which does not allow to create any custom instance. It should not be used when the
  * data comes from untrusted source to prevent possible remote code invocation.
- * @author hollis
+ * @author GIGOpenTeam
  */
 public final class UnTrustedTagInspector implements TagInspector {
 

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @author Hollis
+ * @author GIGOpenTeam
  */
 @Configuration
 @MapperScan(basePackages = "com.gig.collide.*.infrastructure.mapper")

@@ -8,7 +8,7 @@ import java.lang.annotation.Target;
 /**
  * 分布式锁注解
  *
- * @author Hollis
+ * @author GIGOpenTeam
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

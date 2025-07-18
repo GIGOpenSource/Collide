@@ -1,5 +1,6 @@
 package com.gig.collide.auth.param;
 
+import com.gig.collide.base.validator.IsMobile;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
@@ -12,6 +13,7 @@ public class RegisterParam {
     /**
      * 用户名
      */
+    @IsMobile
     private String telephone;
 
     /**

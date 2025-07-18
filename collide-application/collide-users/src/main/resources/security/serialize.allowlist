@@ -1,0 +1,3 @@
+com.gig.collide.users.request.condition.UserPhoneQueryCondition
+com.gig.collide.users.request.condition.UserPhoneAndPasswordQueryCondition
+com.gig.collide.users.request.condition.UserIdQueryCondition
