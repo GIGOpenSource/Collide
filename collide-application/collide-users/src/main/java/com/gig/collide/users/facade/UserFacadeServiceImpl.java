@@ -26,18 +26,37 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Override
     public UserQueryResponse<UserInfo> query(UserQueryRequest userQueryRequest) {
-        //使用switch表达式精简代码，如果这里编译不过，参考我的文档调整IDEA的JDK版本
-        //文档地址：https://thoughts.aliyun.com/workspaces/6655879cf459b7001ba42f1b/docs/6673f26c5e11940001c810fb#667971268a5c151234adcf92
-        User user = switch (userQueryRequest.getUserQueryCondition()) {
-            case UserIdQueryCondition userIdQueryCondition:
-                yield userService.findById(userIdQueryCondition.getUserId());
-            case UserPhoneQueryCondition userPhoneQueryCondition:
-                yield userService.findByTelephone(userPhoneQueryCondition.getTelephone());
-            case UserPhoneAndPasswordQueryCondition userPhoneAndPasswordQueryCondition:
-                yield userService.findByTelephoneAndPass(userPhoneAndPasswordQueryCondition.getTelephone(), userPhoneAndPasswordQueryCondition.getPassword());
-            default:
-                throw new UnsupportedOperationException(userQueryRequest.getUserQueryCondition() + "'' is not supported");
-        };
+        UserQueryCondition condition = userQueryRequest.getUserQueryCondition();
+        System.out.println("=== 调试信息 ===");
+        System.out.println("condition 实际类型: " + condition.getClass().getName());
+        System.out.println("condition 内容: " + condition);
+        System.out.println("是否为 UserPhoneQueryCondition: " + (condition instanceof UserPhoneQueryCondition));
+        System.out.println("===============");
+
+        User user = null;
+
+        // 🔄 使用传统的 instanceof 替代 switch pattern matching
+        if (condition instanceof UserIdQueryCondition) {
+            UserIdQueryCondition userIdQueryCondition = (UserIdQueryCondition) condition;
+            System.out.println("匹配 UserIdQueryCondition，userId: " + userIdQueryCondition.getUserId());
+            user = userService.findById(userIdQueryCondition.getUserId());
+        } else if (condition instanceof UserPhoneQueryCondition) {
+            UserPhoneQueryCondition userPhoneQueryCondition = (UserPhoneQueryCondition) condition;
+            System.out.println("匹配 UserPhoneQueryCondition，telephone: " + userPhoneQueryCondition.getTelephone());
+            user = userService.findByTelephone(userPhoneQueryCondition.getTelephone());
+        } else if (condition instanceof UserPhoneAndPasswordQueryCondition) {
+            UserPhoneAndPasswordQueryCondition userPhoneAndPasswordQueryCondition = (UserPhoneAndPasswordQueryCondition) condition;
+            System.out.println("匹配 UserPhoneAndPasswordQueryCondition");
+            user = userService.findByTelephoneAndPass(
+                userPhoneAndPasswordQueryCondition.getTelephone(),
+                userPhoneAndPasswordQueryCondition.getPassword()
+            );
+        } else {
+            System.out.println("不支持的条件类型: " + condition.getClass().getName());
+            throw new UnsupportedOperationException(condition + " is not supported");
+        }
+
+        System.out.println("查询到用户: " + (user != null ? user.getId() : "null"));
 
         UserQueryResponse<UserInfo> response = new UserQueryResponse();
         response.setSuccess(true);
@@ -47,19 +66,40 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    public UserQueryResponse<UserInfo> query(UserUserNameQueryRequest userUserNameQueryRequest) {
+    public UserQueryResponse<UserInfo> queryByUserName(UserUserNameQueryRequest userUserNameQueryRequest) {
         //使用switch表达式精简代码，如果这里编译不过，参考我的文档调整IDEA的JDK版本
         //文档地址：https://thoughts.aliyun.com/workspaces/6655879cf459b7001ba42f1b/docs/6673f26c5e11940001c810fb#667971268a5c151234adcf92
-        User user = switch (userUserNameQueryRequest.getUserUserNameQueryCondition()) {
-            case UserIdQueryCondition userIdQueryCondition:
-                yield userService.findById(userIdQueryCondition.getUserId());
-            case UserUserNameQueryCondition userUserNameQueryCondition:
-                yield userService.findByUserName(userUserNameQueryCondition.getUserName());
-            case UserUserNameAndPasswordQueryCondition userUserNameAndPasswordQueryCondition:
-                yield userService.findByTelephoneAndPass(userUserNameAndPasswordQueryCondition.getUserName(), userUserNameAndPasswordQueryCondition.getPassword());
-            default:
-                throw new UnsupportedOperationException(userUserNameQueryRequest.getUserUserNameQueryCondition() + "'' is not supported");
-        };
+        UserQueryCondition condition = userUserNameQueryRequest.getUserUserNameQueryCondition();
+
+        System.out.println("=== 调试信息 ===");
+        System.out.println("condition 实际类型: " + condition.getClass().getName());
+        System.out.println("condition 内容: " + condition);
+        System.out.println("是否为 UserPhoneQueryCondition: " + (condition instanceof UserPhoneQueryCondition));
+        System.out.println("===============");
+
+        User user = null;
+
+        if (condition instanceof UserIdQueryCondition) {
+            UserIdQueryCondition userIdQueryCondition = (UserIdQueryCondition) condition;
+            System.out.println("匹配 UserIdQueryCondition，userId: " + userIdQueryCondition.getUserId());
+            user = userService.findById(userIdQueryCondition.getUserId());
+        } else if (condition instanceof UserUserNameQueryCondition) {
+            UserUserNameQueryCondition userUserNameQueryCondition = (UserUserNameQueryCondition) condition;
+            System.out.println("匹配 UserUserNameQueryCondition，userName: " + userUserNameQueryCondition.getUserName());
+            user = userService.findByUserName(userUserNameQueryCondition.getUserName());
+        } else if (condition instanceof UserUserNameAndPasswordQueryCondition) {
+            UserUserNameAndPasswordQueryCondition userUserNameAndPasswordQueryCondition = (UserUserNameAndPasswordQueryCondition) condition;
+            System.out.println("匹配 UserUserNameAndPasswordQueryCondition");
+            user = userService.findByUserNameAndPass(
+                userUserNameAndPasswordQueryCondition.getUserName(),
+                userUserNameAndPasswordQueryCondition.getPassword()
+            );
+        } else {
+            System.out.println("不支持的条件类型: " + condition.getClass().getName());
+            throw new UnsupportedOperationException(condition + " is not supported");
+        }
+
+        System.out.println("查询到用户: " + (user != null ? user.getId() : "null"));
 
         UserQueryResponse<UserInfo> response = new UserQueryResponse();
         response.setSuccess(true);
@@ -86,17 +126,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     @Override
     @Facade
     public UserOperatorResponse register(UserRegisterRequest userRegisterRequest) {
-        try {
-            return userService.register(
-                    userRegisterRequest.getTelephone(),
-                    userRegisterRequest.getInviteCode());
-        }catch (UserException e){
-            UserOperatorResponse response = new UserOperatorResponse();
-            response.setSuccess(false);
-            response.setResponseCode(e.getErrorCode().getCode());
-            response.setResponseMessage(e.getErrorCode().getMessage());
-            return response;
-        }
+        return userService.register(
+                userRegisterRequest.getTelephone(),
+                userRegisterRequest.getInviteCode());
     }
 
     @Override

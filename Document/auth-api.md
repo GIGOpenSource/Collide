@@ -8,7 +8,8 @@
   - [发送验证码](#发送验证码)
   - [手机号注册](#手机号注册)
   - [用户名注册](#用户名注册)
-  - [用户登录](#用户登录)
+  - [手机号登录](#手机号登录)
+  - [用户名登录](#用户名登录)
   - [用户登出](#用户登出)
   - [获取Token](#获取token)
 - [错误码说明](#错误码说明)
@@ -179,7 +180,7 @@ Content-Type: application/json
 
 ---
 
-### 用户登录
+### 手机号登录
 
 **接口地址：** `POST /auth/login`
 
@@ -237,6 +238,68 @@ Content-Type: application/json
 - 使用验证码"8888"可以跳过验证码验证（开发环境）
 - rememberMe=true时延长token有效期
 - 默认token有效期：7天
+
+---
+
+### 用户名登录
+
+**接口地址：** `POST /auth/username/login`
+
+**请求体：**
+```json
+{
+    "userName": "testuser",      // 用户名(必填)
+    "password": "123456",        // 密码(必填)
+    "inviteCode": "ABC123",      // 邀请码(可选)
+    "rememberMe": true           // 记住我(可选)
+}
+```
+
+**参数说明：**
+| 参数名 | 类型 | 必填 | 描述 | 默认值 |
+|-------|------|------|------|-------|
+| userName | string | 是 | 用户名 | - |
+| password | string | 是 | 密码 | - |
+| inviteCode | string | 否 | 邀请码(首次登录自动注册时使用) | - |
+| rememberMe | boolean | 否 | 记住我 | false |
+
+**请求示例：**
+```http
+POST /auth/username/login
+Content-Type: application/json
+
+{
+    "userName": "testuser",
+    "password": "123456",
+    "rememberMe": true
+}
+```
+
+**响应示例：**
+```json
+{
+    "code": "SUCCESS",
+    "success": true,
+    "message": "SUCCESS",
+    "data": {
+        "userId": "123",                    // 用户ID
+        "token": "eyJ0eXAiOiJKV1Q...",     // 访问令牌
+        "tokenExpiration": 1640995200      // 令牌过期时间(时间戳)
+    }
+}
+```
+
+**可能的错误：**
+- `DUPLICATE_USERNAME_NUMBER`: 用户名已存在（在自动注册失败时）
+- `USER_NOT_EXIST`: 用户不存在（在自动注册失败时）
+
+**说明：**
+- 如果用户不存在，会使用提供的用户名和密码自动注册后登录
+- 无需验证码验证
+- 登录成功后，后续请求需要携带token
+- rememberMe=true时延长token有效期
+- 默认token有效期：7天
+- 密码使用MD5加密验证
 
 ---
 
@@ -325,6 +388,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1Q...
 | USER_QUERY_FAILED | 用户信息查询失败 | 200 | 内部查询异常 |
 | USER_NOT_LOGIN | 用户未登录 | 401 | 需要先登录 |
 | USER_NOT_EXIST | 用户不存在 | 200 | 用户不存在 |
+| DUPLICATE_USERNAME_NUMBER | 用户名已存在 | 200 | 用户名重复 |
 
 ### 通用错误码
 
@@ -375,8 +439,9 @@ Authorization: Bearer eyJ0eXAiOiJKV1Q...
 - **邀请关系：** 支持邀请码建立邀请关系
 
 ### 4. 登录流程
-- **自动注册：** 用户不存在时自动注册
-- **验证码验证：** 开发环境可使用"8888"跳过
+- **手机号登录：** 需要验证码验证，用户不存在时自动注册
+- **用户名登录：** 基于用户名+密码验证，用户不存在时自动注册
+- **验证码验证：** 仅手机号登录需要，开发环境可使用"8888"跳过
 - **Session存储：** 登录成功后将用户信息存入session
 
 ### 5. 安全措施
@@ -390,7 +455,7 @@ Authorization: Bearer eyJ0eXAiOiJKV1Q...
 - **参数验证：** 使用Bean Validation进行参数校验
 
 ### 7. 开发调试
-- **万能验证码：** "8888"
+- **万能验证码：** "8888"（仅手机号登录）
 - **日志输出：** 关键操作有详细日志
 - **调试端口：** 直连8082端口进行调试
 

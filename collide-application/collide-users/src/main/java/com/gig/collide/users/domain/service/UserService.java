@@ -438,9 +438,10 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
      * @param telephone
      * @return
      */
-    public User findByUserName(String telephone) {
+    public User findByTelephone(String telephone) {
         return userMapper.findByTelephone(telephone);
     }
+
 
     /**
      * 通过用户名查询用户信息
@@ -448,9 +449,10 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
      * @param username
      * @return
      */
-    public User findByTelephone(String username) {
+    public User findByUserName(String username) {
         return userMapper.findByuserName(username);
     }
+
 
     /**
      * 通过用户ID查询用户信息

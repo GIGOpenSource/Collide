@@ -11,6 +11,8 @@ import lombok.*;
 @NoArgsConstructor
 public class UserQueryRequest extends BaseRequest {
 
+    private static final long serialVersionUID = 1L;
+
     private UserQueryCondition userQueryCondition;
 
     public UserQueryRequest(Long userId) {

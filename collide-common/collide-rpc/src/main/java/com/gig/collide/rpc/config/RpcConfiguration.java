@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Rpc 配置
  */
-@EnableDubbo
+@EnableDubbo(scanBasePackages = {"com.gig.collide"})
 @Configuration
 public class RpcConfiguration {
 

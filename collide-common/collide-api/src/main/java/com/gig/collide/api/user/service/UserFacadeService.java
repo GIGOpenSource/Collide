@@ -21,7 +21,7 @@ public interface UserFacadeService {
      * @param userUserNameQueryRequest
      * @return
      */
-    UserQueryResponse<UserInfo> query(UserUserNameQueryRequest userUserNameQueryRequest);
+    UserQueryResponse<UserInfo> queryByUserName(UserUserNameQueryRequest userUserNameQueryRequest);
 
 
     /**

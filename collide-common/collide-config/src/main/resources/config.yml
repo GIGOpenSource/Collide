@@ -1,11 +1,11 @@
 spring:
   cloud:
     nacos:
+      username: ${collide.turbo.nacos.server.username}
+      password: ${collide.turbo.nacos.server.password}
       discovery:
         server-addr: ${collide.turbo.nacos.server.url}
         namespace: public
-        username: ${collide.turbo.nacos.server.username}
-        password: ${collide.turbo.nacos.server.password}
       config:
         server-addr: ${collide.turbo.nacos.server.url}
         file-extension: properties
