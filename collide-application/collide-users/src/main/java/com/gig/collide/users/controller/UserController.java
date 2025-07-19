@@ -1,14 +1,7 @@
 package com.gig.collide.users.controller;
 
 import cn.dev33.satoken.stp.StpUtil;
-import com.gig.collide.api.chain.request.ChainProcessRequest;
-import com.gig.collide.api.chain.response.ChainProcessResponse;
-import com.gig.collide.api.chain.response.data.ChainCreateData;
-import com.gig.collide.api.chain.service.ChainFacadeService;
-import com.gig.collide.api.user.request.UserActiveRequest;
-import com.gig.collide.api.user.request.UserAuthRequest;
 import com.gig.collide.api.user.request.UserModifyRequest;
-import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.data.BasicUserInfo;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.file.FileService;
@@ -16,7 +9,6 @@ import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserService;
 import com.gig.collide.users.infrastructure.exception.UserException;
-import com.gig.collide.users.param.UserAuthParam;
 import com.gig.collide.users.param.UserModifyParam;
 import com.gig.collide.web.vo.Result;
 import cn.hutool.crypto.digest.DigestUtil;
@@ -30,8 +22,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 
-import static com.gig.collide.api.common.constant.CommonConstant.APP_NAME_UPPER;
-import static com.gig.collide.api.common.constant.CommonConstant.SEPARATOR;
 import static com.gig.collide.users.infrastructure.exception.UserErrorCode.*;
 
 /**
@@ -42,7 +32,7 @@ import static com.gig.collide.users.infrastructure.exception.UserErrorCode.*;
 @Slf4j
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("user")
+@RequestMapping("users")
 public class UserController {
 
     @Autowired
@@ -51,8 +41,6 @@ public class UserController {
     @Autowired
     private FileService fileService;
 
-    @Autowired
-    private ChainFacadeService chainFacadeService;
 
     @GetMapping("/getUserInfo")
     public Result<UserInfo> getUserInfo() {
@@ -131,44 +119,6 @@ public class UserController {
             throw new UserException(USER_UPLOAD_PICTURE_FAIL);
         }
         return Result.success(prefix + path);
-    }
-
-    @PostMapping("/auth")
-    public Result<Boolean> auth(@Valid @RequestBody UserAuthParam userAuthParam) {
-        String userId = (String) StpUtil.getLoginId();
-
-        //实名认证
-        UserAuthRequest userAuthRequest = new UserAuthRequest();
-        userAuthRequest.setUserId(Long.valueOf(userId));
-        userAuthRequest.setRealName(userAuthParam.getRealName());
-        userAuthRequest.setIdCard(userAuthParam.getIdCard());
-        UserOperatorResponse authResult = userService.auth(userAuthRequest);
-        //实名认证成功，需要进行上链操作
-        if (authResult.getSuccess()) {
-            ChainProcessRequest chainCreateRequest = new ChainProcessRequest();
-            chainCreateRequest.setUserId(userId);
-            String identifier = APP_NAME_UPPER + SEPARATOR + authResult.getUser().getUserRole() + SEPARATOR + authResult.getUser().getUserId();
-            chainCreateRequest.setIdentifier(identifier);
-            ChainProcessResponse<ChainCreateData> chainProcessResponse = chainFacadeService.createAddr(
-                    chainCreateRequest);
-            if (chainProcessResponse.getSuccess()) {
-                //激活账户
-                ChainCreateData chainCreateData = chainProcessResponse.getData();
-                UserActiveRequest userActiveRequest = new UserActiveRequest();
-                userActiveRequest.setUserId(Long.valueOf(userId));
-                userActiveRequest.setBlockChainUrl(chainCreateData.getAccount());
-                userActiveRequest.setBlockChainPlatform(chainCreateData.getPlatform());
-                UserOperatorResponse activeResponse = userService.active(userActiveRequest);
-                if (activeResponse.getSuccess()) {
-                    refreshUserInSession(userId);
-                    return Result.success(true);
-                }
-                return Result.error(activeResponse.getResponseCode(), activeResponse.getResponseMessage());
-            } else {
-                throw new UserException(USER_CREATE_CHAIN_FAIL);
-            }
-        }
-        return Result.error(authResult.getResponseCode(), authResult.getResponseMessage());
     }
 
     private void refreshUserInSession(String userId) {

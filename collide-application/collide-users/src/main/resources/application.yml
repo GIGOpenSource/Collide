@@ -3,6 +3,12 @@ spring:
     name: @application.name@
   config:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
   port: 8083

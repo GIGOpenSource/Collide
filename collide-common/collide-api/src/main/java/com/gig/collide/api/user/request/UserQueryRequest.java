@@ -1,9 +1,6 @@
 package com.gig.collide.api.user.request;
 
-import com.gig.collide.api.user.request.condition.UserIdQueryCondition;
-import com.gig.collide.api.user.request.condition.UserPhoneAndPasswordQueryCondition;
-import com.gig.collide.api.user.request.condition.UserPhoneQueryCondition;
-import com.gig.collide.api.user.request.condition.UserQueryCondition;
+import com.gig.collide.api.user.request.condition.*;
 import com.gig.collide.base.request.BaseRequest;
 import lombok.*;
 
@@ -34,5 +31,4 @@ public class UserQueryRequest extends BaseRequest {
         userPhoneAndPasswordQueryCondition.setPassword(password);
         this.userQueryCondition = userPhoneAndPasswordQueryCondition;
     }
-
 }

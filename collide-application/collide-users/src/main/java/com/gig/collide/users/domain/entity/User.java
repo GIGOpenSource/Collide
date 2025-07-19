@@ -26,6 +26,16 @@ public class User extends BaseEntity {
     private String nickName;
 
     /**
+     * 用户名
+     */
+    private String userName;
+
+    /**
+     * 密码
+     */
+    private String password;
+
+    /**
      * 密码
      */
     private String passwordHash;
@@ -95,6 +105,17 @@ public class User extends BaseEntity {
 
     public User register(String telephone, String nickName, String password,String inviteCode,String inviterId) {
         this.setTelephone(telephone);
+        this.setNickName(nickName);
+        this.setPasswordHash(DigestUtil.md5Hex(password));
+        this.setState(UserStateEnum.INIT);
+        this.setUserRole(UserRole.CUSTOMER);
+        this.setInviteCode(inviteCode);
+        this.setInviterId(inviterId);
+        return this;
+    }
+
+    public User userNameRegister(String username, String nickName, String password, String inviteCode, String inviterId) {
+        this.setUserName(username);
         this.setNickName(nickName);
         this.setPasswordHash(DigestUtil.md5Hex(password));
         this.setState(UserStateEnum.INIT);

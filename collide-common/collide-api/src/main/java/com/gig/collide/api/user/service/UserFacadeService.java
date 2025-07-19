@@ -16,6 +16,13 @@ public interface UserFacadeService {
      */
     UserQueryResponse<UserInfo> query(UserQueryRequest userQueryRequest);
 
+    /**
+     * 用户用户名信息查询
+     * @param userUserNameQueryRequest
+     * @return
+     */
+    UserQueryResponse<UserInfo> query(UserUserNameQueryRequest userUserNameQueryRequest);
+
 
     /**
      * 分页查询用户信息
@@ -30,6 +37,13 @@ public interface UserFacadeService {
      * @return
      */
     UserOperatorResponse register(UserRegisterRequest userRegisterRequest);
+
+    /**
+     * 用户名注册
+     * @param userUserNameRegisterRequest
+     * @return
+     */
+    UserOperatorResponse userNameRegister(UserUserNameRegisterRequest userUserNameRegisterRequest);
 
     /**
      * 用户信息修改

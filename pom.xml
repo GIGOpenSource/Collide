@@ -132,6 +132,22 @@
                 <artifactId>collide-lock</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-tcc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-prometheus</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-seata</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
 
             <!-- application -->
             <dependency>

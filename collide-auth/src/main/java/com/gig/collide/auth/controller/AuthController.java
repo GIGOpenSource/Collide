@@ -7,6 +7,7 @@ import com.gig.collide.api.notice.response.NoticeResponse;
 import com.gig.collide.api.notice.service.NoticeFacadeService;
 import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.request.UserRegisterRequest;
+import com.gig.collide.api.user.request.UserUserNameRegisterRequest;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
@@ -14,6 +15,7 @@ import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.auth.exception.AuthException;
 import com.gig.collide.auth.param.LoginParam;
 import com.gig.collide.auth.param.RegisterParam;
+import com.gig.collide.auth.param.UserNameRegisterParam;
 import com.gig.collide.auth.vo.LoginVO;
 import com.gig.collide.base.validator.IsMobile;
 import com.gig.collide.web.vo.Result;
@@ -25,6 +27,8 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 import static com.gig.collide.api.notice.constant.NoticeConstant.CAPTCHA_KEY_PREFIX;
 import static com.gig.collide.auth.exception.AuthErrorCode.VERIFICATION_CODE_WRONG;
@@ -80,6 +84,22 @@ public class AuthController {
         userRegisterRequest.setInviteCode(registerParam.getInviteCode());
 
         UserOperatorResponse registerResult = userFacadeService.register(userRegisterRequest);
+        if(registerResult.getSuccess()){
+            return Result.success(true);
+        }
+        return Result.error(registerResult.getResponseCode(), registerResult.getResponseMessage());
+    }
+
+    @PostMapping("/username/register")
+    public Result<Boolean> userNameRegister(@Valid @RequestBody UserNameRegisterParam registerParam) {
+
+        //注册
+        UserUserNameRegisterRequest userUserNameRegisterRequest = new UserUserNameRegisterRequest();
+        userUserNameRegisterRequest.setUserName(registerParam.getUserName());
+        userUserNameRegisterRequest.setPassword(registerParam.getPassword());
+        userUserNameRegisterRequest.setInviteCode(registerParam.getInviteCode());
+
+        UserOperatorResponse registerResult = userFacadeService.userNameRegister(userUserNameRegisterRequest);
         if(registerResult.getSuccess()){
             return Result.success(true);
         }

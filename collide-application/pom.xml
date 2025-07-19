@@ -21,6 +21,7 @@
     </properties>
 
     <modules>
+        <module>collide-start</module>
         <module>collide-users</module>
     </modules>
 

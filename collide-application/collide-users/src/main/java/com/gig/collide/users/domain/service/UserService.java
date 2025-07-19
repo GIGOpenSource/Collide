@@ -58,7 +58,7 @@ import static com.gig.collide.users.infrastructure.exception.UserErrorCode.*;
 @Service
 public class UserService extends ServiceImpl<UserMapper, User> implements InitializingBean {
 
-    private static final String DEFAULT_NICK_NAME_PREFIX = "藏家_";
+    private static final String DEFAULT_NICK_NAME_PREFIX = "CD_";
 
     @Autowired
     private UserMapper userMapper;
@@ -144,6 +144,45 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
         return userOperatorResponse;
     }
 
+    @DistributeLock(keyExpression = "#username", scene = "USER_REGISTER")
+    @Transactional(rollbackFor = Exception.class)
+    public UserOperatorResponse userNameRegister(String username, String password, String inviteCode) {
+
+        String defaultNickName;
+        String randomString;
+
+        do {
+            randomString = RandomUtil.randomString(6).toUpperCase();
+            //前缀 + 6位随机数
+            defaultNickName = DEFAULT_NICK_NAME_PREFIX + randomString;
+        } while (nickNameExist(defaultNickName) || inviteCodeExist(randomString));
+
+        String inviterId = null;
+        if (StringUtils.isNotBlank(inviteCode)) {
+            User inviter = userMapper.findByInviteCode(inviteCode);
+            if (inviter != null) {
+                inviterId = inviter.getId().toString();
+            }
+        }
+
+        User user = userNameRegister(username, defaultNickName, password, randomString, inviterId);
+        Assert.notNull(user, UserErrorCode.USER_OPERATE_FAILED.getCode());
+
+        addNickName(defaultNickName);
+        addInviteCode(randomString);
+        updateInviteRank(inviterId);
+        updateUserCache(user.getId().toString(), user);
+
+        //加入流水
+        long streamResult = userOperateStreamService.insertStream(user, UserOperateTypeEnum.REGISTER);
+        Assert.notNull(streamResult, () -> new BizException(RepoErrorCode.UPDATE_FAILED));
+
+        UserOperatorResponse userOperatorResponse = new UserOperatorResponse();
+        userOperatorResponse.setSuccess(true);
+
+        return userOperatorResponse;
+    }
+
     /**
      * 管理员注册
      *
@@ -183,6 +222,24 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
 
         User user = new User();
         user.register(telephone, nickName, password, inviteCode, inviterId);
+        return save(user) ? user : null;
+    }
+
+    /**
+     * 用户名注册
+     *
+     * @param username
+     * @param nickName
+     * @param password
+     * @return
+     */
+    private User userNameRegister(String username, String nickName, String password, String inviteCode, String inviterId) {
+        if (userMapper.findByuserName(username) != null) {
+            throw new UserException(DUPLICATE_USERNAME_NUMBER);
+        }
+
+        User user = new User();
+        user.userNameRegister(username, nickName, password, inviteCode, inviterId);
         return save(user) ? user : null;
     }
 
@@ -365,13 +422,34 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
     }
 
     /**
+     * 通过用户名和密码查询用户信息
+     *
+     * @param username
+     * @param password
+     * @return
+     */
+    public User findByUserNameAndPass(String username, String password) {
+        return userMapper.findByuserNameAndPass(username, DigestUtil.md5Hex(password));
+    }
+
+    /**
      * 通过手机号查询用户信息
      *
      * @param telephone
      * @return
      */
-    public User findByTelephone(String telephone) {
+    public User findByUserName(String telephone) {
         return userMapper.findByTelephone(telephone);
+    }
+
+    /**
+     * 通过用户名查询用户信息
+     *
+     * @param username
+     * @return
+     */
+    public User findByTelephone(String username) {
+        return userMapper.findByuserName(username);
     }
 
     /**

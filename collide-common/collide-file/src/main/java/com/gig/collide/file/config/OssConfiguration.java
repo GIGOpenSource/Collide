@@ -1,6 +1,7 @@
 package com.gig.collide.file.config;
 
 import com.gig.collide.file.FileService;
+import com.gig.collide.file.MockFileServiceImpl;
 import com.gig.collide.file.OssServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,5 +29,12 @@ public class OssConfiguration {
         ossService.setAccessKey(properties.getAccessKey());
         ossService.setAccessSecret(properties.getAccessSecret());
         return ossService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
+    @Profile({"dev", "test"})
+    public FileService mockFileService() {
+        return new MockFileServiceImpl();
     }
 }

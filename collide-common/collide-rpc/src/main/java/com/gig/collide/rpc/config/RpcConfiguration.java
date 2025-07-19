@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RpcConfiguration {
 
-    @Bean
-    public FacadeAspect facadeAspect() {
-        return new FacadeAspect();
-    }
+//    @Bean
+//    public FacadeAspect facadeAspect() {
+//        return new FacadeAspect();
+//    }
 }
 

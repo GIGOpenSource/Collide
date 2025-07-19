@@ -11,6 +11,10 @@ public enum UserErrorCode implements ErrorCode {
      */
     DUPLICATE_TELEPHONE_NUMBER("DUPLICATE_TELEPHONE_NUMBER", "重复电话号码"),
     /**
+     * 重复电话号码
+     */
+    DUPLICATE_USERNAME_NUMBER("DUPLICATE_USERNAME_NUMBER", "重复用户名"),
+    /**
      * 用户状态不能进行实名认证
      */
     USER_STATUS_IS_NOT_INIT("USER_STATUS_IS_NOT_INIT", "用户状态不能进行实名认证"),

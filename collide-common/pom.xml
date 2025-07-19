@@ -33,6 +33,9 @@
         <module>collide-datasource</module>
         <module>collide-file</module>
         <module>collide-lock</module>
+        <module>collide-tcc</module>
+        <module>collide-prometheus</module>
+        <module>collide-seata</module>
     </modules>
 
     <dependencies>

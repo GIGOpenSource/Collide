@@ -7,12 +7,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 /**
  * @author GIGOpenTeam
  */
-@SpringBootApplication(scanBasePackages = "com.gig.collide.users")
+@SpringBootApplication
 @EnableDubbo
 public class CollideUserApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CollideUserApplication.class, args);
     }
-
 }
