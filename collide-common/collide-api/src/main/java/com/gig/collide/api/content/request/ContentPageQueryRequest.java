@@ -1,6 +1,6 @@
 package com.gig.collide.api.content.request;
 
-import com.gig.collide.base.request.BasePageRequest;
+import com.gig.collide.base.request.PageRequest;
 import com.gig.collide.api.content.constant.ContentType;
 import com.gig.collide.api.content.constant.ContentStatus;
 import lombok.Data;
@@ -14,7 +14,7 @@ import java.util.List;
  */
 @EqualsAndHashCode(callSuper = true)
 @Data
-public class ContentPageQueryRequest extends BasePageRequest {
+public class ContentPageQueryRequest extends PageRequest {
 
     /**
      * 内容类型

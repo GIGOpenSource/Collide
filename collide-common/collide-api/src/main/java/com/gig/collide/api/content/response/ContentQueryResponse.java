@@ -88,7 +88,6 @@ public class ContentQueryResponse extends BaseResponse {
     public static ContentQueryResponse fail(String message) {
         ContentQueryResponse response = new ContentQueryResponse();
         response.setSuccess(false);
-        response.setMessage(message);
         return response;
     }
 } 

@@ -39,7 +39,6 @@ public class ContentOperatorResponse extends BaseResponse {
     public static ContentOperatorResponse fail(String message) {
         ContentOperatorResponse response = new ContentOperatorResponse();
         response.setSuccess(false);
-        response.setMessage(message);
         return response;
     }
 } 

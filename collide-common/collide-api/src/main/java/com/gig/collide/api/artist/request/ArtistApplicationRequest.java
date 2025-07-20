@@ -90,13 +90,11 @@ public class ArtistApplicationRequest extends BaseRequest {
      * 联系邮箱
      */
     @Email(message = "邮箱格式不正确")
-    @NotBlank(message = "联系邮箱不能为空")
     private String contactEmail;
 
     /**
      * 联系电话
      */
-    @NotBlank(message = "联系电话不能为空")
     private String contactPhone;
 
     /**

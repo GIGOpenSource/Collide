@@ -3,8 +3,8 @@ package com.gig.collide.api.content.request;
 import com.gig.collide.api.content.constant.ContentReviewStatus;
 import lombok.Data;
 
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 /**
  * 内容审核请求
