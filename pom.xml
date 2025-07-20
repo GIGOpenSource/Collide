@@ -155,6 +155,11 @@
                 <artifactId>collide-users</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-follow</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.dubbo</groupId>

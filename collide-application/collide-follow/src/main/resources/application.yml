@@ -1,0 +1,17 @@
+spring:
+  application:
+    name: collide-follow
+
+server:
+  port: 8086
+
+# 引入通用配置
+spring.config.import:
+  - optional:classpath:base.yml
+  - optional:classpath:config.yml
+  - optional:classpath:datasource.yml
+  - optional:classpath:rpc.yml
+
+logging:
+  level:
+    com.gig.collide.follow: DEBUG 

@@ -18,10 +18,10 @@ spring:
           uri: lb://collide-auth
           predicates:
             - Path=/auth/**,/token/**
-        - id: collide-business
-          uri: lb://collide-business
+        - id: collide-start
+          uri: lb://collide-start
           predicates:
-            - Path=/trade/**,/order/**,/user/**,/collection/**,/wxPay/**,/box/**
+            - Path=/follow/**,/users/**
 #        - id: collide-collection
 #          uri: lb://collide-collection
 #          predicates:

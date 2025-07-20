@@ -23,6 +23,7 @@
     <modules>
         <module>collide-start</module>
         <module>collide-users</module>
+        <module>collide-follow</module>
     </modules>
 
 </project>

@@ -31,6 +31,11 @@
             <artifactId>collide-users</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-follow</artifactId>
+        </dependency>
+
 <!--        <dependency>-->
 <!--            <groupId>com.gig</groupId>-->
 <!--            <artifactId>collide-seata</artifactId>-->
