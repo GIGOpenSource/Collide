@@ -36,6 +36,9 @@
         <module>collide-tcc</module>
         <module>collide-prometheus</module>
         <module>collide-seata</module>
+        <module>collide-es</module>
+        <module>collide-job</module>
+        <module>collide-mq</module>
     </modules>
 
     <dependencies>

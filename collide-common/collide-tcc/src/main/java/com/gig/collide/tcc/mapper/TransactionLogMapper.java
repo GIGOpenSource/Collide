@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * @author Hollis
+ * @author GIG
  * 事务日志
  */
 @Mapper

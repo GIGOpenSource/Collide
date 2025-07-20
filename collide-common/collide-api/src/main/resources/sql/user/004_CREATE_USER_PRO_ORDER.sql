@@ -1,0 +1,30 @@
+-- 付费订单记录表
+CREATE TABLE `user_pro_order` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '订单ID（自增主键）',
+  `gmt_create` datetime NOT NULL COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL COMMENT '最后更新时间',
+  `user_id` bigint unsigned NOT NULL COMMENT '用户ID',
+  `order_no` varchar(64) NOT NULL COMMENT '订单号',
+  `order_type` varchar(32) NOT NULL COMMENT '订单类型（UPGRADE升级，RENEW续费，DOWNGRADE降级）',
+  `package_type` varchar(32) NOT NULL COMMENT '套餐类型（MONTHLY月费，QUARTERLY季费，YEARLY年费，LIFETIME终身）',
+  `duration` int NOT NULL COMMENT '付费时长（月）',
+  `amount` bigint NOT NULL COMMENT '订单金额（分）',
+  `payment_method` varchar(32) DEFAULT NULL COMMENT '支付方式',
+  `payment_status` varchar(32) NOT NULL DEFAULT 'PENDING' COMMENT '支付状态（PENDING待支付，SUCCESS成功，FAILED失败，CANCELLED取消）',
+  `payment_time` datetime DEFAULT NULL COMMENT '支付时间',
+  `payment_trade_no` varchar(128) DEFAULT NULL COMMENT '支付流水号',
+  `refund_status` varchar(32) DEFAULT 'NONE' COMMENT '退款状态（NONE无退款，PENDING退款中，SUCCESS退款成功，FAILED退款失败）',
+  `refund_amount` bigint DEFAULT 0 COMMENT '退款金额（分）',
+  `refund_time` datetime DEFAULT NULL COMMENT '退款时间',
+  `remark` text COMMENT '备注',
+  `extend_info` text COMMENT '扩展字段',
+  `deleted` int DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+  `lock_version` int DEFAULT 0 COMMENT '乐观锁版本号',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_order_no` (`order_no`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_payment_status` (`payment_status`),
+  KEY `idx_order_type` (`order_type`),
+  KEY `idx_payment_time` (`payment_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='付费订单记录表'
+; 

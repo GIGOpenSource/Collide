@@ -1,0 +1,8 @@
+spring:
+  xxl:
+    job:
+      enabled: true
+      adminAddresses: http://${collide.turbo.xxl-job.url}/xxl-job-admin/
+      appName: ${collide.turbo.xxl-job.appName}
+      accessToken: ${collide.turbo.xxl-job.accessToken}
+

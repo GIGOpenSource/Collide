@@ -9,7 +9,7 @@ import org.apache.ibatis.annotations.Mapper;
  * 用户操作流水表 Mapper 接口
  * </p>
  *
- * @author wswyb001
+ * @author GIG
  * @since 2024-01-13
  */
 @Mapper

@@ -1,0 +1,31 @@
+-- 博主操作日志表
+CREATE TABLE `artist_operation_log` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '日志ID（自增主键）',
+  `gmt_create` datetime NOT NULL COMMENT '创建时间',
+  `user_id` bigint unsigned DEFAULT NULL COMMENT '操作用户ID',
+  `artist_id` bigint unsigned DEFAULT NULL COMMENT '博主ID',
+  `application_id` bigint unsigned DEFAULT NULL COMMENT '申请ID',
+  `operation_type` varchar(32) NOT NULL COMMENT '操作类型（APPLY申请，SUPPLEMENT补充，WITHDRAW撤回，REAPPLY重新申请，REVIEW审核，ACTIVATE激活，SUSPEND暂停，DISABLE禁用，RESTORE恢复，CANCEL注销，UPDATE_INFO更新信息，UPDATE_VERIFICATION更新认证）',
+  `operation_desc` varchar(512) DEFAULT NULL COMMENT '操作描述',
+  `before_data` text COMMENT '操作前数据（JSON格式）',
+  `after_data` text COMMENT '操作后数据（JSON格式）',
+  `operation_ip` varchar(64) DEFAULT NULL COMMENT '操作IP',
+  `user_agent` varchar(512) DEFAULT NULL COMMENT '用户代理',
+  `operator_id` bigint unsigned DEFAULT NULL COMMENT '操作员ID',
+  `operator_name` varchar(64) DEFAULT NULL COMMENT '操作员姓名',
+  `operation_reason` text COMMENT '操作原因',
+  `remark` varchar(1024) DEFAULT NULL COMMENT '备注信息',
+  `operation_result` varchar(32) DEFAULT 'SUCCESS' COMMENT '操作结果（SUCCESS成功，FAILED失败）',
+  `error_message` varchar(1024) DEFAULT NULL COMMENT '错误信息',
+  `business_data` text COMMENT '业务数据（JSON格式）',
+  `deleted` int DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_artist_id` (`artist_id`),
+  KEY `idx_application_id` (`application_id`),
+  KEY `idx_operation_type` (`operation_type`),
+  KEY `idx_operator_id` (`operator_id`),
+  KEY `idx_gmt_create` (`gmt_create`),
+  KEY `idx_operation_result` (`operation_result`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='博主操作日志表'
+; 

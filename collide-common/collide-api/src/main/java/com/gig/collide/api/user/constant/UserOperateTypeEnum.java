@@ -30,6 +30,18 @@ public enum UserOperateTypeEnum {
     /**
      * 修改信息
      */
-    MODIFY
+    MODIFY,
+
+
+
+    /**
+     * 暂停付费
+     */
+    SUSPEND_PRO,
+
+    /**
+     * 恢复付费
+     */
+    RESUME_PRO
     ;
 }

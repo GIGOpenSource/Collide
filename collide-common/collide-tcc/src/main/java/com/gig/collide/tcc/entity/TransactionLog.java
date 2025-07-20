@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 /**
- * @author Hollis
+ * @author GIG
  */
 @Getter
 @Setter

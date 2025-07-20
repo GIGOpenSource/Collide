@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * dubbo配置
  *
- * @author Hollis
+ * @author GIG
  */
 @Configuration
 public class StartDubboConfiguration {

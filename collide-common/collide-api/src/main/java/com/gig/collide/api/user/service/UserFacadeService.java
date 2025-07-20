@@ -4,6 +4,7 @@ import com.gig.collide.api.user.request.*;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
+
 import com.gig.collide.base.response.PageResponse;
 
 
@@ -65,5 +66,7 @@ public interface UserFacadeService {
      * @return
      */
     UserOperatorResponse active(UserActiveRequest userActiveRequest);
+
+
 
 }

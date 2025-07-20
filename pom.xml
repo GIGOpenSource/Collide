@@ -147,6 +147,16 @@
                 <artifactId>collide-seata</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-es</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-job</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
 
             <!-- application -->

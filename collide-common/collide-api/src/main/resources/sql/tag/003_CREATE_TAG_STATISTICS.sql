@@ -1,0 +1,31 @@
+-- 标签统计表
+CREATE TABLE `tag_statistics` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT '统计ID（自增主键）',
+  `gmt_create` datetime NOT NULL COMMENT '创建时间',
+  `gmt_modified` datetime NOT NULL COMMENT '最后更新时间',
+  `tag_id` bigint unsigned NOT NULL COMMENT '标签ID',
+  `total_usage_count` bigint DEFAULT 0 COMMENT '总使用次数',
+  `user_count` bigint DEFAULT 0 COMMENT '用户使用数量',
+  `content_count` bigint DEFAULT 0 COMMENT '内容关联数量',
+  `today_usage_count` bigint DEFAULT 0 COMMENT '今日使用次数',
+  `week_usage_count` bigint DEFAULT 0 COMMENT '本周使用次数',
+  `month_usage_count` bigint DEFAULT 0 COMMENT '本月使用次数',
+  `hot_trend` text COMMENT '热度趋势（JSON格式，近7天每日使用次数）',
+  `related_tags` text COMMENT '相关标签列表（JSON格式）',
+  `avg_usage_frequency` decimal(10,4) DEFAULT 0.0000 COMMENT '平均使用频率',
+  `period_start` date NOT NULL COMMENT '统计周期开始时间',
+  `period_end` date NOT NULL COMMENT '统计周期结束时间',
+  `last_updated` datetime DEFAULT NULL COMMENT '最后更新时间',
+  `deleted` int DEFAULT 0 COMMENT '是否逻辑删除，0为未删除，非0为已删除',
+  `lock_version` int DEFAULT 0 COMMENT '乐观锁版本号',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_tag_period` (`tag_id`, `period_start`, `period_end`, `deleted`),
+  KEY `idx_tag_id` (`tag_id`),
+  KEY `idx_total_usage_count` (`total_usage_count`),
+  KEY `idx_user_count` (`user_count`),
+  KEY `idx_today_usage_count` (`today_usage_count`),
+  KEY `idx_period_start` (`period_start`),
+  KEY `idx_period_end` (`period_end`),
+  KEY `idx_last_updated` (`last_updated`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='标签统计表'
+; 

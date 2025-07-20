@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * @author Hollis
+ * @author GIG
  */
 @Configuration
 @MapperScan("com.gig.collide.tcc.mapper")
