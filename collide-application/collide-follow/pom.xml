@@ -60,6 +60,18 @@
             <artifactId>collide-web</artifactId>
         </dependency>
 
+        <!-- MQ依赖 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-mq</artifactId>
+        </dependency>
+
+        <!-- 缓存依赖 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-cache</artifactId>
+        </dependency>
+
         <!--  TEST  -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

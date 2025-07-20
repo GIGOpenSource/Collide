@@ -157,6 +157,11 @@
                 <artifactId>collide-job</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-mq</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
 
             <!-- application -->

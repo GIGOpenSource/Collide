@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # =================================
+  # 应用服务
+  # =================================
+
+  # 认证服务
+  collide-auth:
+    build:
+      context: .
+      dockerfile: ./collide-auth/Dockerfile
+    container_name: collide-auth
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # 中间件连接配置 - 根据您的实际中间件地址调整
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/collide?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: collide
+      SPRING_DATASOURCE_PASSWORD: collide123
+      SPRING_REDIS_HOST: host.docker.internal
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: redis123
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: host.docker.internal:8848
+      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: host.docker.internal:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://host.docker.internal:8848
+    networks:
+      - collide-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/actuator/health"]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  # 应用服务
+  collide-application:
+    build:
+      context: .
+      dockerfile: ./collide-application/Dockerfile
+    container_name: collide-application
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # 中间件连接配置 - 根据您的实际中间件地址调整
+      SPRING_DATASOURCE_URL: jdbc:mysql://host.docker.internal:3306/collide?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      SPRING_DATASOURCE_USERNAME: collide
+      SPRING_DATASOURCE_PASSWORD: collide123
+      SPRING_REDIS_HOST: host.docker.internal
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: redis123
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: host.docker.internal:8848
+      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: host.docker.internal:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://host.docker.internal:8848
+      ROCKETMQ_NAME_SERVER: host.docker.internal:9876
+      COLLIDE_TURBO_ROCKETMQ_URL: host.docker.internal:9876
+    networks:
+      - collide-network
+    depends_on:
+      collide-auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/actuator/health"]
+      timeout: 20s
+      retries: 10
+      start_period: 60s
+
+  # 网关服务
+  collide-gateway:
+    build:
+      context: .
+      dockerfile: ./collide-gateway/Dockerfile
+    container_name: collide-gateway
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      # 中间件连接配置 - 根据您的实际中间件地址调整
+      SPRING_REDIS_HOST: host.docker.internal
+      SPRING_REDIS_PORT: 6379
+      SPRING_REDIS_PASSWORD: redis123
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: host.docker.internal:8848
+      SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR: host.docker.internal:8848
+      SPRING_CLOUD_GATEWAY_ROUTES_0_URI: lb://collide-auth
+      SPRING_CLOUD_GATEWAY_ROUTES_1_URI: lb://collide-start
+    networks:
+      - collide-network
+    depends_on:
+      collide-auth:
+        condition: service_healthy
+      collide-application:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/actuator/health"]
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+# =================================
+# 网络配置
+# =================================
+
+networks:
+  collide-network:
+    driver: bridge 

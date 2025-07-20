@@ -43,6 +43,16 @@
 
         <dependency>
             <groupId>com.gig</groupId>
+            <artifactId>collide-mq</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
             <artifactId>collide-prometheus</artifactId>
         </dependency>
 

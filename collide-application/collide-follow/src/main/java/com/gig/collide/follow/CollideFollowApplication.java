@@ -8,8 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * 关注模块启动类
  * @author GIG
  */
-@SpringBootApplication(scanBasePackages = "com.gig.collide.follow")
-@EnableDubbo
+@SpringBootApplication(scanBasePackages = "com.gig.collide")
+@EnableDubbo(scanBasePackages = {"com.gig.collide"})
 public class CollideFollowApplication {
 
     public static void main(String[] args) {
