@@ -6,7 +6,7 @@ import lombok.experimental.Accessors;
 /**
  * 消息
  *
- * @author hollis
+ * @author GIG
  */
 @Data
 @Accessors(chain = true)

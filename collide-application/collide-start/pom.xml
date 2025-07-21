@@ -38,13 +38,18 @@
 
         <dependency>
             <groupId>com.gig</groupId>
+            <artifactId>collide-order</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
             <artifactId>collide-artist</artifactId>
         </dependency>
 
-<!--        <dependency>-->
-<!--            <groupId>com.gig</groupId>-->
-<!--            <artifactId>collide-seata</artifactId>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-seata</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>com.gig</groupId>

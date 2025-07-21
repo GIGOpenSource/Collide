@@ -12,7 +12,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.UUID;
 
 /**
- * @author hollis
+ * @author GIG
  */
 public class StreamProducer {
 

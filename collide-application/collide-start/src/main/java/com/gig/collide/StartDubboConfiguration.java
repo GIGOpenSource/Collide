@@ -1,5 +1,7 @@
 package com.gig.collide;
 
+import com.gig.collide.api.order.OrderFacadeService;
+import com.gig.collide.api.chain.service.ChainFacadeService;
 import com.gig.collide.api.artist.service.ArtistFacadeService;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.api.user.service.UserFacadeService;
@@ -25,6 +27,12 @@ public class StartDubboConfiguration {
     @DubboReference(version = "1.0.0")
     private ArtistFacadeService artistFacadeService;
 
+    @DubboReference(version = "1.0.0")
+    private ChainFacadeService chainFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private OrderFacadeService orderFacadeService;
+
     @Bean
     @ConditionalOnMissingBean(name = "userFacadeService")
     public UserFacadeService userFacadeService() {
@@ -41,6 +49,18 @@ public class StartDubboConfiguration {
     @ConditionalOnMissingBean(name = "artistFacadeService")
     public ArtistFacadeService artistFacadeService() {
         return artistFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "chainFacadeService")
+    public ChainFacadeService chainFacadeService() {
+        return chainFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "chainFacadeService")
+    public OrderFacadeService orderFacadeService() {
+        return orderFacadeService;
     }
 
 }

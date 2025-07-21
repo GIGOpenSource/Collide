@@ -3,7 +3,7 @@ package com.gig.collide.job.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * @author Hollis
+ * @author GIG
  */
 @ConfigurationProperties(prefix = XxlJobProperties.PREFIX)
 public class XxlJobProperties {

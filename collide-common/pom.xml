@@ -39,6 +39,7 @@
         <module>collide-es</module>
         <module>collide-job</module>
         <module>collide-mq</module>
+        <module>collide-order-client</module>
     </modules>
 
     <dependencies>
