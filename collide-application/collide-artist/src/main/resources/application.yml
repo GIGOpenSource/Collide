@@ -1,0 +1,27 @@
+server:
+  port: 9100
+
+spring:
+  application:
+    name: collide-artist
+  profiles:
+    include:
+      - base
+      - datasource
+      - cache
+      - rpc
+
+logging:
+  level:
+    com.gig.collide.artist: DEBUG
+    
+# 模块特定配置
+artist:
+  # 博主申请配置
+  application:
+    review-timeout-days: 7
+    max-retry-times: 3
+  # 博主等级配置
+  level:
+    auto-update: true
+    update-interval: 24h 

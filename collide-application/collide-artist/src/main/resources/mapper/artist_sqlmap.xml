@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.artist.infrastructure.mapper.ArtistMapper">
+    <resultMap id="BaseResultMap" type="com.gig.collide.artist.domain.entity.Artist">
+        <result property="id" column="ID"/>
+        <result property="gmtCreate" column="GMT_CREATE"/>
+        <result property="gmtModified" column="GMT_MODIFIED"/>
+        <result property="userId" column="USER_ID"/>
+        <result property="artistName" column="ARTIST_NAME"/>
+        <result property="bio" column="BIO"/>
+        <result property="avatarUrl" column="AVATAR_URL"/>
+        <result property="coverUrl" column="COVER_URL"/>
+        <result property="personalUrl" column="PERSONAL_URL"/>
+        <result property="status" column="STATUS"/>
+        <result property="level" column="LEVEL"/>
+        <result property="categories" column="CATEGORIES"/>
+        <result property="followersCount" column="FOLLOWERS_COUNT"/>
+        <result property="followingCount" column="FOLLOWING_COUNT"/>
+        <result property="worksCount" column="WORKS_COUNT"/>
+        <result property="totalLikes" column="TOTAL_LIKES"/>
+        <result property="totalViews" column="TOTAL_VIEWS"/>
+        <result property="verified" column="VERIFIED"/>
+        <result property="verificationType" column="VERIFICATION_TYPE"/>
+        <result property="verificationDesc" column="VERIFICATION_DESC"/>
+        <result property="hotScore" column="HOT_SCORE"/>
+        <result property="influenceIndex" column="INFLUENCE_INDEX"/>
+        <result property="lastActiveTime" column="LAST_ACTIVE_TIME"/>
+        <result property="contactEmail" column="CONTACT_EMAIL"/>
+        <result property="contactPhone" column="CONTACT_PHONE"/>
+        <result property="socialMediaAccounts" column="SOCIAL_MEDIA_ACCOUNTS"/>
+        <result property="extInfo" column="EXT_INFO"/>
+        <result property="deleted" column="DELETED"/>
+        <result property="lockVersion" column="LOCK_VERSION"/>
+    </resultMap>
+
+    <select id="findById" resultMap="BaseResultMap">
+        SELECT * FROM artist WHERE deleted = 0
+        <if test="id != null">AND id = #{id}</if>
+    </select>
+
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT * FROM artist WHERE deleted = 0 AND user_id = #{userId}
+    </select>
+
+    <select id="findByArtistName" resultMap="BaseResultMap">
+        SELECT * FROM artist WHERE deleted = 0 AND artist_name = #{artistName}
+    </select>
+
+    <select id="findHotArtists" resultMap="BaseResultMap">
+        SELECT * FROM artist 
+        WHERE deleted = 0 AND status = 'ACTIVE'
+        ORDER BY hot_score DESC, followers_count DESC
+        <if test="limit != null">LIMIT #{limit}</if>
+    </select>
+
+    <select id="searchArtists" resultMap="BaseResultMap">
+        SELECT * FROM artist 
+        WHERE deleted = 0 AND status = 'ACTIVE'
+        <if test="keyword != null and keyword != ''">
+            AND (artist_name LIKE CONCAT('%', #{keyword}, '%') 
+                 OR bio LIKE CONCAT('%', #{keyword}, '%')
+                 OR categories LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY followers_count DESC, hot_score DESC
+        <if test="limit != null">LIMIT #{limit}</if>
+    </select>
+</mapper> 

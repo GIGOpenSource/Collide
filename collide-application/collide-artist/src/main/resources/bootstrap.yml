@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: collide-artist
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: ${spring.profiles.active:dev}
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: ${spring.profiles.active:dev}
+        file-extension: properties
+        group: DEFAULT_GROUP 

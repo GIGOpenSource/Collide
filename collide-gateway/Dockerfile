@@ -1,5 +1,5 @@
 # 多阶段构建 - 构建阶段
-FROM openjdk:21-jdk-slim as builder
+FROM eclipse-temurin:21-jdk-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -14,16 +14,16 @@ RUN chmod +x mvnw
 RUN ./mvnw clean package -DskipTests -pl collide-gateway -am
 
 # 运行阶段
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre-alpine
 
 # 设置工作目录
 WORKDIR /app
 
 # 创建非root用户
-RUN groupadd -r collide && useradd -r -g collide collide
+RUN addgroup -S collide && adduser -S collide -G collide
 
 # 安装必要的工具
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 # 从构建阶段复制jar文件
 COPY --from=builder /app/collide-gateway/target/collide-gateway-*.jar app.jar

@@ -24,6 +24,7 @@
         <module>collide-start</module>
         <module>collide-users</module>
         <module>collide-follow</module>
+        <module>collide-artist</module>
     </modules>
 
 </project>

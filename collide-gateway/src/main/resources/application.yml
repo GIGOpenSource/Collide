@@ -21,7 +21,7 @@ spring:
         - id: collide-start
           uri: lb://collide-start
           predicates:
-            - Path=/follow/**,/users/**
+            - Path=/follow/**,/users/**,/artist/**
 #        - id: collide-collection
 #          uri: lb://collide-collection
 #          predicates:

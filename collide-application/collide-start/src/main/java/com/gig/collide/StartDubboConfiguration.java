@@ -1,5 +1,6 @@
 package com.gig.collide;
 
+import com.gig.collide.api.artist.service.ArtistFacadeService;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.api.user.service.UserFacadeService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -21,6 +22,9 @@ public class StartDubboConfiguration {
     @DubboReference(version = "1.0.0")
     private FollowFacadeService followFacadeService;
 
+    @DubboReference(version = "1.0.0")
+    private ArtistFacadeService artistFacadeService;
+
     @Bean
     @ConditionalOnMissingBean(name = "userFacadeService")
     public UserFacadeService userFacadeService() {
@@ -31,6 +35,12 @@ public class StartDubboConfiguration {
     @ConditionalOnMissingBean(name = "followFacadeService")
     public FollowFacadeService followFacadeService() {
         return followFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "artistFacadeService")
+    public ArtistFacadeService artistFacadeService() {
+        return artistFacadeService;
     }
 
 }
