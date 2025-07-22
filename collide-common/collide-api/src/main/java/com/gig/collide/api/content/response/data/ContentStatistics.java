@@ -1,19 +1,27 @@
 package com.gig.collide.api.content.response.data;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
- * 内容统计信息
+ * 内容统计信息响应对象
+ * 包含内容的各种统计数据
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-@Data
-public class ContentStatistics {
+@Getter
+@Setter
+@NoArgsConstructor
+public class ContentStatistics implements Serializable {
 
-    /**
-     * 统计ID
-     */
-    private Long statisticsId;
+    private static final long serialVersionUID = 1L;
 
     /**
      * 内容ID
@@ -21,79 +29,59 @@ public class ContentStatistics {
     private Long contentId;
 
     /**
-     * 统计日期
+     * 总查看数
      */
-    private String statisticsDate;
+    private Long totalViews;
 
     /**
-     * 查看次数
+     * 今日查看数
      */
-    private Long viewCount;
+    private Long todayViews;
 
     /**
-     * 今日查看次数
+     * 总点赞数
      */
-    private Long todayViewCount;
+    private Long totalLikes;
 
     /**
-     * 点赞次数
+     * 今日点赞数
      */
-    private Long likeCount;
+    private Long todayLikes;
 
     /**
-     * 今日点赞次数
+     * 总评论数
      */
-    private Long todayLikeCount;
+    private Long totalComments;
 
     /**
-     * 收藏次数
+     * 今日评论数
      */
-    private Long collectCount;
+    private Long todayComments;
 
     /**
-     * 今日收藏次数
+     * 总分享数
      */
-    private Long todayCollectCount;
+    private Long totalShares;
 
     /**
-     * 分享次数
+     * 今日分享数
      */
-    private Long shareCount;
+    private Long todayShares;
 
     /**
-     * 今日分享次数
+     * 总收藏数
      */
-    private Long todayShareCount;
+    private Long totalFavorites;
 
     /**
-     * 评论次数
+     * 今日收藏数
      */
-    private Long commentCount;
+    private Long todayFavorites;
 
     /**
-     * 今日评论次数
+     * 平均查看时长（秒）
      */
-    private Long todayCommentCount;
-
-    /**
-     * 下载次数
-     */
-    private Long downloadCount;
-
-    /**
-     * 今日下载次数
-     */
-    private Long todayDownloadCount;
-
-    /**
-     * 播放完成率（视频专用）
-     */
-    private Double playCompletionRate;
-
-    /**
-     * 平均观看时长（视频专用，单位：秒）
-     */
-    private Integer avgWatchDuration;
+    private Double avgViewDuration;
 
     /**
      * 跳出率
@@ -101,42 +89,58 @@ public class ContentStatistics {
     private Double bounceRate;
 
     /**
-     * 用户留存率
+     * 完成率（对于视频/音频内容）
      */
-    private Double retentionRate;
+    private Double completionRate;
 
     /**
-     * 收入（元）
+     * 每日统计数据（日期 -> 统计值）
      */
-    private Long revenue;
+    private Map<String, Long> dailyStats;
 
     /**
-     * 今日收入（元）
+     * 用户行为统计
      */
-    private Long todayRevenue;
+    private Map<String, Object> userBehaviorStats;
 
     /**
-     * 热度分数
-     */
-    private Double hotScore;
-
-    /**
-     * 质量分数
-     */
-    private Double qualityScore;
-
-    /**
-     * 推荐指数
-     */
-    private Double recommendIndex;
-
-    /**
-     * 创建时间
-     */
-    private LocalDateTime createTime;
-
-    /**
-     * 更新时间
+     * 统计更新时间
      */
     private LocalDateTime updateTime;
+
+    /**
+     * 计算总互动数
+     *
+     * @return 总互动数
+     */
+    public Long getTotalInteractions() {
+        return (totalLikes != null ? totalLikes : 0L)
+            + (totalComments != null ? totalComments : 0L)
+            + (totalShares != null ? totalShares : 0L)
+            + (totalFavorites != null ? totalFavorites : 0L);
+    }
+
+    /**
+     * 计算今日互动数
+     *
+     * @return 今日互动数
+     */
+    public Long getTodayInteractions() {
+        return (todayLikes != null ? todayLikes : 0L)
+            + (todayComments != null ? todayComments : 0L)
+            + (todayShares != null ? todayShares : 0L)
+            + (todayFavorites != null ? todayFavorites : 0L);
+    }
+
+    /**
+     * 计算互动率
+     *
+     * @return 互动率
+     */
+    public Double getEngagementRate() {
+        if (totalViews == null || totalViews == 0) {
+            return 0.0;
+        }
+        return getTotalInteractions().doubleValue() / totalViews;
+    }
 } 

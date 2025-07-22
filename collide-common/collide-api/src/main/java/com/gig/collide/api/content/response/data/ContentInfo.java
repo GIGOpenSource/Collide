@@ -1,22 +1,47 @@
 package com.gig.collide.api.content.response.data;
 
-import com.gig.collide.api.content.constant.ContentType;
 import com.gig.collide.api.content.constant.ContentStatus;
-import lombok.Data;
+import com.gig.collide.api.content.constant.ContentType;
+import com.gig.collide.api.content.constant.ReviewStatus;
+import com.gig.collide.api.user.response.data.BasicUserInfo;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 内容信息
+ * 内容信息响应对象
+ * 对应 t_content 表结构
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-@Data
-public class ContentInfo {
+@Getter
+@Setter
+@NoArgsConstructor
+public class ContentInfo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
      * 内容ID
      */
-    private Long contentId;
+    private Long id;
+
+    /**
+     * 标题
+     */
+    private String title;
+
+    /**
+     * 描述
+     */
+    private String description;
 
     /**
      * 内容类型
@@ -24,49 +49,34 @@ public class ContentInfo {
     private ContentType contentType;
 
     /**
-     * 内容标题
+     * 内容数据（JSON格式，具体结构根据内容类型而定）
      */
-    private String title;
+    private Map<String, Object> contentData;
 
     /**
-     * 内容描述
+     * 封面URL
      */
-    private String description;
+    private String coverUrl;
 
     /**
-     * 内容封面图
+     * 作者ID
      */
-    private String coverImage;
+    private Long authorId;
 
     /**
-     * 内容URL（视频地址、小说章节地址等）
+     * 作者信息
      */
-    private String contentUrl;
+    private BasicUserInfo author;
 
     /**
-     * 内容时长（视频专用，单位：秒）
+     * 分类ID
      */
-    private Integer duration;
+    private Long categoryId;
 
     /**
-     * 内容大小（字节）
+     * 分类名称
      */
-    private Long fileSize;
-
-    /**
-     * 内容状态
-     */
-    private ContentStatus status;
-
-    /**
-     * 创建者用户ID
-     */
-    private Long creatorUserId;
-
-    /**
-     * 创建者用户名
-     */
-    private String creatorUsername;
+    private String categoryName;
 
     /**
      * 标签列表
@@ -74,64 +84,39 @@ public class ContentInfo {
     private List<String> tags;
 
     /**
-     * 分类
+     * 内容状态
      */
-    private String category;
+    private ContentStatus status;
 
     /**
-     * 是否原创
+     * 审核状态
      */
-    private Boolean isOriginal;
+    private ReviewStatus reviewStatus;
 
     /**
-     * 年龄分级
-     */
-    private String ageRating;
-
-    /**
-     * 语言
-     */
-    private String language;
-
-    /**
-     * 查看次数
+     * 查看数
      */
     private Long viewCount;
 
     /**
-     * 点赞次数
+     * 点赞数
      */
     private Long likeCount;
 
     /**
-     * 收藏次数
-     */
-    private Long collectCount;
-
-    /**
-     * 分享次数
-     */
-    private Long shareCount;
-
-    /**
-     * 评论次数
+     * 评论数
      */
     private Long commentCount;
 
     /**
-     * 评分
+     * 分享数
      */
-    private Double rating;
+    private Long shareCount;
 
     /**
-     * 评分人数
+     * 收藏数
      */
-    private Long ratingCount;
-
-    /**
-     * 发布时间
-     */
-    private LocalDateTime publishTime;
+    private Long favoriteCount;
 
     /**
      * 创建时间
@@ -144,7 +129,60 @@ public class ContentInfo {
     private LocalDateTime updateTime;
 
     /**
-     * 扩展信息（JSON格式，用于存储各类型特有的属性）
+     * 发布时间
      */
-    private String extendInfo;
+    private LocalDateTime publishedTime;
+
+    /**
+     * 当前用户是否点赞
+     */
+    private Boolean liked;
+
+    /**
+     * 当前用户是否收藏
+     */
+    private Boolean favorited;
+
+    /**
+     * 是否为推荐内容
+     */
+    private Boolean recommended;
+
+    /**
+     * 内容质量评分
+     */
+    private Double qualityScore;
+
+    /**
+     * 判断内容是否可见
+     *
+     * @return true if visible
+     */
+    public boolean isVisible() {
+        return status != null && status.isVisible();
+    }
+
+    /**
+     * 判断内容是否可编辑
+     *
+     * @return true if editable
+     */
+    public boolean isEditable() {
+        return status != null && status.isEditable();
+    }
+
+    /**
+     * 计算互动率
+     *
+     * @return 互动率 (点赞数+评论数+分享数) / 查看数
+     */
+    public double getEngagementRate() {
+        if (viewCount == null || viewCount == 0) {
+            return 0.0;
+        }
+        long interactions = (likeCount != null ? likeCount : 0) 
+            + (commentCount != null ? commentCount : 0) 
+            + (shareCount != null ? shareCount : 0);
+        return (double) interactions / viewCount;
+    }
 } 
