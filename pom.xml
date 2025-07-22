@@ -204,6 +204,20 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 关注相关 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-follow</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- 内容相关 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-content</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- 业务聚合 -->
             <dependency>
                 <groupId>com.gig</groupId>

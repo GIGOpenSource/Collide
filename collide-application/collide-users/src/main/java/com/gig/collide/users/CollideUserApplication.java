@@ -18,5 +18,12 @@ public class CollideUserApplication {
     public static void main(String[] args) {
         SpringApplication.run(CollideUserApplication.class, args);
         System.out.println("========== Collide Users Service Started ==========");
+        System.out.println("""
+            ====================================
+            🎉 Collide Users 模块启动成功！
+            📝 用户服务已就绪
+            🔗 端口: 9501
+            ====================================
+            """);
     }
 }

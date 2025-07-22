@@ -26,6 +26,8 @@
 
     <modules>
         <module>collide-users</module>
+        <module>collide-follow</module>
+        <module>collide-content</module>
         <module>collide-app</module>
     </modules>
 

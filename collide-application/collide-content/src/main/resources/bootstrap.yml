@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: collide-content
+  config:
+    import:
+      - classpath:base.yml
+      - classpath:config.yml 

@@ -29,16 +29,18 @@
             <artifactId>collide-users</artifactId>
         </dependency>
 
-        <!-- TODO: 后续添加其他业务模块 -->
-        <!-- 
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-follow</artifactId>
         </dependency>
+
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-content</artifactId>
         </dependency>
+
+        <!-- TODO: 后续添加其他业务模块 -->
+        <!-- 
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-social</artifactId>

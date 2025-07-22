@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.follow.infrastructure.mapper.FollowStatisticsMapper">
+
+    <!-- 增加关注数 -->
+    <update id="incrementFollowingCount">
+        INSERT INTO t_follow_statistics (user_id, following_count, follower_count, created_time, updated_time)
+        VALUES (#{userId}, 1, 0, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE 
+            following_count = following_count + 1,
+            updated_time = NOW()
+    </update>
+
+    <!-- 减少关注数 -->
+    <update id="decrementFollowingCount">
+        UPDATE t_follow_statistics 
+        SET following_count = GREATEST(following_count - 1, 0),
+            updated_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加粉丝数 -->
+    <update id="incrementFollowerCount">
+        INSERT INTO t_follow_statistics (user_id, following_count, follower_count, created_time, updated_time)
+        VALUES (#{userId}, 0, 1, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE 
+            follower_count = follower_count + 1,
+            updated_time = NOW()
+    </update>
+
+    <!-- 减少粉丝数 -->
+    <update id="decrementFollowerCount">
+        UPDATE t_follow_statistics 
+        SET follower_count = GREATEST(follower_count - 1, 0),
+            updated_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 批量查询关注统计 -->
+    <select id="selectByUserIds" resultType="com.gig.collide.follow.domain.entity.FollowStatistics">
+        SELECT 
+            user_id, following_count, follower_count, created_time, updated_time
+        FROM t_follow_statistics 
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+        ORDER BY user_id
+    </select>
+
+    <!-- 重新计算用户关注统计 -->
+    <update id="recalculateStatistics">
+        INSERT INTO t_follow_statistics (user_id, following_count, follower_count, created_time, updated_time)
+        VALUES (
+            #{userId},
+            (SELECT COUNT(1) FROM t_follow WHERE follower_user_id = #{userId} AND status = 1),
+            (SELECT COUNT(1) FROM t_follow WHERE followed_user_id = #{userId} AND status = 1),
+            NOW(),
+            NOW()
+        )
+        ON DUPLICATE KEY UPDATE 
+            following_count = (SELECT COUNT(1) FROM t_follow WHERE follower_user_id = #{userId} AND status = 1),
+            follower_count = (SELECT COUNT(1) FROM t_follow WHERE followed_user_id = #{userId} AND status = 1),
+            updated_time = NOW()
+    </update>
+
+</mapper> 

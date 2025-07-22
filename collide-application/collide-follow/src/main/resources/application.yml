@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: collide-follow
+  profiles:
+    active: local
+
+  # 数据库配置导入
+  config:
+    import:
+      - classpath:base.yml
+      - classpath:config.yml
+      - classpath:datasource.yml
+      - classpath:rpc.yml
+      - classpath:cache.yml
+
+server:
+  port: 9502
+
+# MyBatis Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/*_sqlmap.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志配置
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
+  level:
+    com.gig.collide: debug
+    org.apache.dubbo: info 

@@ -1,0 +1,7 @@
+spring:
+  application:
+    name: collide-follow
+  config:
+    import:
+      - classpath:base.yml
+      - classpath:config.yml 

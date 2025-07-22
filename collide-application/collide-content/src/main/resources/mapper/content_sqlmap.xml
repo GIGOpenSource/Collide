@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.content.infrastructure.mapper.ContentMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.content.domain.entity.Content">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="title" property="title" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="VARCHAR"/>
+        <result column="content_type" property="contentType" jdbcType="VARCHAR"/>
+        <result column="content_data" property="contentData" jdbcType="LONGVARCHAR"/>
+        <result column="cover_url" property="coverUrl" jdbcType="VARCHAR"/>
+        <result column="author_id" property="authorId" jdbcType="BIGINT"/>
+        <result column="category_id" property="categoryId" jdbcType="BIGINT"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="review_status" property="reviewStatus" jdbcType="VARCHAR"/>
+        <result column="review_comment" property="reviewComment" jdbcType="VARCHAR"/>
+        <result column="reviewer_id" property="reviewerId" jdbcType="BIGINT"/>
+        <result column="reviewed_time" property="reviewedTime" jdbcType="TIMESTAMP"/>
+        <result column="view_count" property="viewCount" jdbcType="BIGINT"/>
+        <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
+        <result column="comment_count" property="commentCount" jdbcType="BIGINT"/>
+        <result column="share_count" property="shareCount" jdbcType="BIGINT"/>
+        <result column="favorite_count" property="favoriteCount" jdbcType="BIGINT"/>
+        <result column="weight_score" property="weightScore" jdbcType="DECIMAL"/>
+        <result column="is_recommended" property="isRecommended" jdbcType="BOOLEAN"/>
+        <result column="is_pinned" property="isPinned" jdbcType="BOOLEAN"/>
+        <result column="allow_comment" property="allowComment" jdbcType="BOOLEAN"/>
+        <result column="allow_share" property="allowShare" jdbcType="BOOLEAN"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="published_time" property="publishedTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, title, description, content_type, content_data, cover_url,
+        author_id, category_id, tags, status, review_status, review_comment,
+        reviewer_id, reviewed_time, view_count, like_count, comment_count,
+        share_count, favorite_count, weight_score, is_recommended, is_pinned,
+        allow_comment, allow_share, create_time, update_time, published_time, deleted
+    </sql>
+
+    <!-- 根据作者ID分页查询内容列表 -->
+    <select id="selectByAuthorId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND author_id = #{authorId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据分类ID分页查询内容列表 -->
+    <select id="selectByCategoryId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND category_id = #{categoryId}
+        AND status = #{status}
+        ORDER BY published_time DESC
+    </select>
+
+    <!-- 根据内容类型分页查询内容列表 -->
+    <select id="selectByContentType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND content_type = #{contentType}
+        AND status = #{status}
+        ORDER BY published_time DESC
+    </select>
+
+    <!-- 根据审核状态分页查询内容列表 -->
+    <select id="selectByReviewStatus" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND review_status = #{reviewStatus}
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 查询推荐内容列表 -->
+    <select id="selectRecommendedContents" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND status = 'PUBLISHED'
+        AND review_status = 'APPROVED'
+        AND is_recommended = #{isRecommended}
+        <if test="contentType != null">
+            AND content_type = #{contentType}
+        </if>
+        ORDER BY weight_score DESC, published_time DESC
+    </select>
+
+    <!-- 查询热门内容列表（按互动数排序） -->
+    <select id="selectHotContents" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND status = 'PUBLISHED'
+        AND review_status = 'APPROVED'
+        <if test="contentType != null">
+            AND content_type = #{contentType}
+        </if>
+        <if test="days != null and days > 0">
+            AND published_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        </if>
+        ORDER BY (like_count + comment_count + share_count + favorite_count) DESC, published_time DESC
+    </select>
+
+    <!-- 查询最新内容列表 -->
+    <select id="selectLatestContents" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND status = 'PUBLISHED'
+        AND review_status = 'APPROVED'
+        <if test="contentType != null">
+            AND content_type = #{contentType}
+        </if>
+        ORDER BY published_time DESC
+    </select>
+
+    <!-- 关键词搜索内容 -->
+    <select id="searchByKeyword" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND status = #{status}
+        AND review_status = 'APPROVED'
+        AND (title LIKE CONCAT('%', #{keyword}, '%')
+        OR description LIKE CONCAT('%', #{keyword}, '%')
+        OR tags LIKE CONCAT('%', #{keyword}, '%'))
+        ORDER BY weight_score DESC, published_time DESC
+    </select>
+
+    <!-- 标签搜索内容 -->
+    <select id="searchByTag" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND status = #{status}
+        AND review_status = 'APPROVED'
+        AND JSON_CONTAINS(tags, JSON_QUOTE(#{tag}))
+        ORDER BY published_time DESC
+    </select>
+
+    <!-- 增加查看数 -->
+    <update id="incrementViewCount">
+        UPDATE t_content
+        SET view_count = view_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="incrementLikeCount">
+        UPDATE t_content
+        SET like_count = like_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 减少点赞数 -->
+    <update id="decrementLikeCount">
+        UPDATE t_content
+        SET like_count = GREATEST(like_count - 1, 0),
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 增加评论数 -->
+    <update id="incrementCommentCount">
+        UPDATE t_content
+        SET comment_count = comment_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 减少评论数 -->
+    <update id="decrementCommentCount">
+        UPDATE t_content
+        SET comment_count = GREATEST(comment_count - 1, 0),
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 增加分享数 -->
+    <update id="incrementShareCount">
+        UPDATE t_content
+        SET share_count = share_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 增加收藏数 -->
+    <update id="incrementFavoriteCount">
+        UPDATE t_content
+        SET favorite_count = favorite_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 减少收藏数 -->
+    <update id="decrementFavoriteCount">
+        UPDATE t_content
+        SET favorite_count = GREATEST(favorite_count - 1, 0),
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 批量更新权重分数 -->
+    <update id="batchUpdateWeightScore">
+        UPDATE t_content
+        SET weight_score = (
+            view_count * 0.1 + 
+            like_count * 2.0 + 
+            comment_count * 3.0 + 
+            share_count * 5.0 + 
+            favorite_count * 4.0
+        )
+        WHERE id IN
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+        AND deleted = 0
+    </update>
+
+    <!-- 统计用户发布的内容数量 -->
+    <select id="countByAuthorId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE deleted = 0
+        AND author_id = #{authorId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 统计分类下的内容数量 -->
+    <select id="countByCategoryId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE deleted = 0
+        AND category_id = #{categoryId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 查询需要审核的内容数量 -->
+    <select id="countPendingReview" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE deleted = 0
+        AND review_status = 'PENDING'
+    </select>
+
+    <!-- 查询指定时间范围内的内容列表 -->
+    <select id="selectByTimeRange" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content
+        WHERE deleted = 0
+        AND create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询用户的内容统计信息 -->
+    <select id="selectUserContentStatistics" resultType="java.util.Map">
+        SELECT 
+            status,
+            COUNT(*) AS count,
+            IFNULL(SUM(view_count), 0) AS total_views,
+            IFNULL(SUM(like_count), 0) AS total_likes,
+            IFNULL(SUM(comment_count), 0) AS total_comments,
+            IFNULL(SUM(share_count), 0) AS total_shares,
+            IFNULL(SUM(favorite_count), 0) AS total_favorites
+        FROM t_content
+        WHERE deleted = 0
+        AND author_id = #{authorId}
+        GROUP BY status
+    </select>
+
+</mapper> 

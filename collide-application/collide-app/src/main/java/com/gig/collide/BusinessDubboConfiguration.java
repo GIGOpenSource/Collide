@@ -1,5 +1,7 @@
 package com.gig.collide;
 
+import com.gig.collide.api.content.service.ContentFacadeService;
+import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.api.user.service.UserFacadeService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -12,7 +14,8 @@ import org.springframework.context.annotation.Configuration;
  * 
  * 集中管理所有业务模块的 Dubbo 服务引用，包括：
  * - UserFacadeService: 用户服务
- * - TODO: 后续添加其他业务服务
+ * - FollowFacadeService: 关注服务
+ * - ContentFacadeService: 内容服务
  *
  * @author Collide Team
  * @version 1.0
@@ -24,17 +27,11 @@ public class BusinessDubboConfiguration {
     @DubboReference(version = "1.0.0")
     private UserFacadeService userFacadeService;
 
-    // TODO: 后续添加其他业务服务的 DubboReference
-    /*
     @DubboReference(version = "1.0.0")
     private FollowFacadeService followFacadeService;
-    
+
     @DubboReference(version = "1.0.0")
     private ContentFacadeService contentFacadeService;
-    
-    @DubboReference(version = "1.0.0")
-    private SocialFacadeService socialFacadeService;
-    */
 
     /**
      * 用户服务 Bean 配置
@@ -45,24 +42,21 @@ public class BusinessDubboConfiguration {
         return userFacadeService;
     }
 
-    // TODO: 后续添加其他业务服务的 Bean 配置
-    /*
+    /**
+     * 关注服务 Bean 配置
+     */
     @Bean
     @ConditionalOnMissingBean(name = "followFacadeService")
     public FollowFacadeService followFacadeService() {
         return followFacadeService;
     }
-    
+
+    /**
+     * 内容服务 Bean 配置
+     */
     @Bean
     @ConditionalOnMissingBean(name = "contentFacadeService")
     public ContentFacadeService contentFacadeService() {
         return contentFacadeService;
     }
-    
-    @Bean
-    @ConditionalOnMissingBean(name = "socialFacadeService")
-    public SocialFacadeService socialFacadeService() {
-        return socialFacadeService;
-    }
-    */
 } 
