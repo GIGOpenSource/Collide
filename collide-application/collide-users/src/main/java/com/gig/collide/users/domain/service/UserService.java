@@ -492,7 +492,10 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
             //加入流水
             long streamResult = userOperateStreamService.insertStream(user, UserOperateTypeEnum.MODIFY);
             Assert.notNull(streamResult, () -> new BizException(RepoErrorCode.UPDATE_FAILED));
-            addNickName(userModifyRequest.getNickName());
+            // 只有当昵称不为空时才添加到布隆过滤器
+            if (StringUtils.isNotBlank(userModifyRequest.getNickName())) {
+                addNickName(userModifyRequest.getNickName());
+            }
             userOperatorResponse.setSuccess(true);
 
             return userOperatorResponse;
@@ -549,6 +552,9 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
     }
 
     public boolean nickNameExist(String nickName) {
+        if (StringUtils.isBlank(nickName)) {
+            return false;
+        }
         //如果布隆过滤器中存在，再进行数据库二次判断
         if (this.nickNameBloomFilter != null && this.nickNameBloomFilter.contains(nickName)) {
             return userMapper.findByNickname(nickName) != null;
@@ -558,6 +564,9 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
     }
 
     public boolean inviteCodeExist(String inviteCode) {
+        if (StringUtils.isBlank(inviteCode)) {
+            return false;
+        }
         //如果布隆过滤器中存在，再进行数据库二次判断
         if (this.inviteCodeBloomFilter != null && this.inviteCodeBloomFilter.contains(inviteCode)) {
             return userMapper.findByInviteCode(inviteCode) != null;
@@ -567,11 +576,11 @@ public class UserService extends ServiceImpl<UserMapper, User> implements Initia
     }
 
     private boolean addNickName(String nickName) {
-        return this.nickNameBloomFilter != null && this.nickNameBloomFilter.add(nickName);
+        return StringUtils.isNotBlank(nickName) && this.nickNameBloomFilter != null && this.nickNameBloomFilter.add(nickName);
     }
 
     private boolean addInviteCode(String inviteCode) {
-        return this.inviteCodeBloomFilter != null && this.inviteCodeBloomFilter.add(inviteCode);
+        return StringUtils.isNotBlank(inviteCode) && this.inviteCodeBloomFilter != null && this.inviteCodeBloomFilter.add(inviteCode);
     }
 
     /**

@@ -11,6 +11,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class OssProperties {
     public static final String PREFIX = "spring.oss";
 
+    /**
+     * 是否启用OSS服务
+     */
+    private boolean enabled = true;
+
     private String bucket;
 
     private String endPoint;
@@ -18,6 +23,14 @@ public class OssProperties {
     private String accessKey;
 
     private String accessSecret;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+    }
 
     public String getBucket() {
         return bucket;

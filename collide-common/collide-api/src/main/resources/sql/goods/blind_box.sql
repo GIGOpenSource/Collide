@@ -1,0 +1,40 @@
+-- 盲盒主表
+-- Create Date: 2024-01-19
+-- Description: 用于存储盲盒的基本信息和库存信息
+
+CREATE TABLE `blind_box` (
+    `ID` bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `GMT_CREATE` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `GMT_MODIFIED` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '修改时间',
+    `NAME` varchar(255) NOT NULL COMMENT '盲盒名称',
+    `COVER` varchar(512) DEFAULT NULL COMMENT '封面图片URL',
+    `DETAIL` text COMMENT '详细描述',
+    `IDENTIFIER` varchar(128) DEFAULT NULL COMMENT '标识符',
+    `STATE` tinyint(4) NOT NULL DEFAULT '0' COMMENT '状态',
+    `QUANTITY` int(11) NOT NULL DEFAULT '0' COMMENT '总数量',
+    `PRICE` decimal(10,2) NOT NULL DEFAULT '0.00' COMMENT '价格',
+    `SALEABLE_INVENTORY` int(11) NOT NULL DEFAULT '0' COMMENT '可售库存',
+    `OCCUPIED_INVENTORY` int(11) NOT NULL DEFAULT '0' COMMENT '占用库存',
+    `FROZEN_INVENTORY` int(11) NOT NULL DEFAULT '0' COMMENT '冻结库存',
+    `CREATE_TIME` datetime DEFAULT NULL COMMENT '创建时间',
+    `SALE_TIME` datetime DEFAULT NULL COMMENT '开售时间',
+    `SYNC_CHAIN_TIME` datetime DEFAULT NULL COMMENT '同步上链时间',
+    `ALLOCATE_RULE` text COMMENT '分配规则',
+    `COLLECTION_CONFIGS` text COMMENT '收藏品配置',
+    `CREATOR_ID` bigint(20) DEFAULT NULL COMMENT '创建者ID',
+    `CAN_BOOK` tinyint(1) NOT NULL DEFAULT '0' COMMENT '是否可预订',
+    `BOOK_START_TIME` datetime DEFAULT NULL COMMENT '预订开始时间',
+    `BOOK_END_TIME` datetime DEFAULT NULL COMMENT '预订结束时间',
+    `DELETED` tinyint(4) NOT NULL DEFAULT '0' COMMENT '删除标记:0-未删除,1-已删除',
+    `LOCK_VERSION` int(11) NOT NULL DEFAULT '0' COMMENT '乐观锁版本号',
+    PRIMARY KEY (`ID`),
+    KEY `idx_name` (`NAME`),
+    KEY `idx_identifier` (`IDENTIFIER`),
+    KEY `idx_state` (`STATE`),
+    KEY `idx_price` (`PRICE`),
+    KEY `idx_creator_id` (`CREATOR_ID`),
+    KEY `idx_sale_time` (`SALE_TIME`),
+    KEY `idx_can_book` (`CAN_BOOK`),
+    KEY `idx_deleted` (`DELETED`),
+    KEY `idx_gmt_create` (`GMT_CREATE`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='盲盒主表'; 

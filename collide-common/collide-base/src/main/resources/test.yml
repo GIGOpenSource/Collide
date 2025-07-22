@@ -5,9 +5,9 @@ spring:
   autoconfigure:
     exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   elasticsearch:
-    enable: false
+    enable: true
   easy-es:
-    enable: false
+    enable: true
   data:
     redis:
       host: localhost

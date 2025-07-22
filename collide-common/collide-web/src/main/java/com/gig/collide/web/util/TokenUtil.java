@@ -1,12 +1,14 @@
 package com.gig.collide.web.util;
 
 import cn.hutool.crypto.SecureUtil;
+import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static com.gig.collide.cache.constant.CacheConstant.CACHE_KEY_SEPARATOR;
 
+@Slf4j
 public class TokenUtil {
 
     private static final String TOEKN_AES_KEY = "tokenbynfturbo_0";
@@ -29,9 +31,8 @@ public class TokenUtil {
         if (tokenValue == null) {
             return null;
         }
-        //token:buy:29:10085:5ac6542b-64b1-4d41-91b9-e6c55849bb7f
         String decryptTokenValue = SecureUtil.aes(TOEKN_AES_KEY.getBytes(StandardCharsets.UTF_8)).decryptStr(tokenValue);
-        System.out.println(decryptTokenValue);
+        log.warn(decryptTokenValue);
 
         return decryptTokenValue.substring(0, decryptTokenValue.lastIndexOf(CACHE_KEY_SEPARATOR));
     }

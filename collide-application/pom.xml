@@ -28,6 +28,7 @@
         <module>collide-artist</module>
         <module>collide-chain</module>
         <module>collide-order</module>
+        <module>collide-goods</module>
     </modules>
 
 </project>

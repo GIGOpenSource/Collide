@@ -1,6 +1,6 @@
 spring:
   application:
-    name: nfturbo-order
+    name: collide-order
   main:
     allow-bean-definition-overriding: true
   config:

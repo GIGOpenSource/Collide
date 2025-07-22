@@ -4,6 +4,12 @@ spring:
     uris: http://${collide.turbo.elasticsearch.url}
     username: ${collide.turbo.elasticsearch.username}
     password: ${collide.turbo.elasticsearch.password}
+    connection-timeout: 5s
+    read-timeout: 10s
+  data:
+    elasticsearch:
+      repositories:
+        enabled: true
 easy-es:
   enable: ${collide.turbo.elasticsearch.enable}
   address : ${collide.turbo.elasticsearch.url}

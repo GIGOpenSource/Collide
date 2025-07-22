@@ -1,0 +1,65 @@
+package com.gig.collide.box.infrastructure;
+
+import com.gig.collide.api.chain.service.ChainFacadeService;
+import com.gig.collide.api.collection.service.CollectionReadFacadeService;
+import com.gig.collide.api.inventory.service.InventoryFacadeService;
+import com.gig.collide.api.order.OrderFacadeService;
+import com.gig.collide.api.user.service.UserFacadeService;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * @author Hollis
+ */
+@Configuration
+public class BlindBoxDubboConfiguration {
+
+    @DubboReference(version = "1.0.0")
+    private OrderFacadeService orderFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private ChainFacadeService chainFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private CollectionReadFacadeService collectionReadFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private UserFacadeService userFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private InventoryFacadeService inventoryFacadeService;
+
+    @Bean
+    @ConditionalOnMissingBean(name = "orderFacadeService")
+    public OrderFacadeService orderFacadeService() {
+        return orderFacadeService;
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(name = "chainFacadeService")
+    public ChainFacadeService chainFacadeService() {
+        return chainFacadeService;
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(name = "collectionFacadeService")
+    public CollectionReadFacadeService collectionFacadeService() {
+        return collectionReadFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "userFacadeService")
+    public UserFacadeService userFacadeService() {
+        return userFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "inventoryFacadeService")
+    public InventoryFacadeService inventoryFacadeService() {
+        return inventoryFacadeService;
+    }
+}

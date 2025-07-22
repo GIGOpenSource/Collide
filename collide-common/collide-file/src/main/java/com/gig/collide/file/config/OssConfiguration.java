@@ -9,8 +9,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
-
 
 @Configuration
 @EnableConfigurationProperties(OssProperties.class)
@@ -21,7 +19,7 @@ public class OssConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @Profile({"default", "prod"})
+    @ConditionalOnProperty(prefix = "spring.oss", name = "enabled", havingValue = "true", matchIfMissing = false)
     public FileService ossService() {
         OssServiceImpl ossService = new OssServiceImpl();
         ossService.setBucket(properties.getBucket());
@@ -33,7 +31,7 @@ public class OssConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    @Profile({"dev", "test"})
+    @ConditionalOnProperty(prefix = "spring.oss", name = "enabled", havingValue = "false", matchIfMissing = true)
     public FileService mockFileService() {
         return new MockFileServiceImpl();
     }

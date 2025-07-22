@@ -21,23 +21,23 @@ spring:
         - id: collide-start
           uri: lb://collide-start
           predicates:
-            - Path=/follow/**,/users/**,/artist/**,/order/**
-#        - id: collide-collection
-#          uri: lb://collide-collection
-#          predicates:
-#            - Path=/collection/**
-#        - id: collide-order
-#          uri: lb://collide-order
-#          predicates:
-#            - Path=/order/**
-#        - id: collide-trade
-#          uri: lb://collide-trade
-#          predicates:
-#            - Path=/trade/**
-#        - id: collide-user
-#          uri: lb://collide-user
-#          predicates:
-#            - Path=/user/**
+            - Path=/follow/**,/users/**,/artist/**,/order/**,/collection/**,/box/**
+        - id: collide-collection
+          uri: lb://collide-collection
+          predicates:
+            - Path=/collection/**
+        - id: collide-order
+          uri: lb://collide-order
+          predicates:
+            - Path=/order/**
+        - id: collide-trade
+          uri: lb://collide-trade
+          predicates:
+            - Path=/trade/**
+        - id: collide-user
+          uri: lb://collide-user
+          predicates:
+            - Path=/user/**
 #        - id: collide-pay
 #          uri: lb://collide-pay
 #          predicates:

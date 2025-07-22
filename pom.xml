@@ -195,6 +195,21 @@
                 <artifactId>collide-order</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-box</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-collection</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-goods-interface</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.dubbo</groupId>

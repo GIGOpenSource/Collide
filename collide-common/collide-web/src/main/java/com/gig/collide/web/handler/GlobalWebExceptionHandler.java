@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.Map;
 
@@ -41,6 +42,24 @@ public class GlobalWebExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
         return errors;
+    }
+
+    /**
+     * 文件上传大小超限异常处理器
+     *
+     * @param ex
+     * @return
+     */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    @ResponseStatus(HttpStatus.OK)
+    @ResponseBody
+    public Result handleMaxUploadSizeExceededException(MaxUploadSizeExceededException ex) {
+        log.error("文件上传大小超限异常", ex);
+        Result result = new Result();
+        result.setCode("UPLOAD_SIZE_EXCEEDED");
+        result.setMessage("上传文件过大，单个文件最大支持100MB，请压缩后重试");
+        result.setSuccess(false);
+        return result;
     }
 
     /**

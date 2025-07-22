@@ -1,4 +1,12 @@
 # 这是项目的需要改动的所有配置的地址的汇总，需要改哪个中间件的地址，在本文件中修改即可！
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 100MB        # 单个文件最大大小
+      max-request-size: 200MB     # 请求最大大小(多文件上传时)
+      file-size-threshold: 2KB    # 写入磁盘的阈值
+
 collide:
   turbo:
     nacos:
@@ -15,8 +23,8 @@ collide:
       port: 6379
       password: '123456'
     elasticsearch:
-      enable: false
-      url: 192.168.1.107:5601
+      enable: true
+      url: 192.168.1.107:9200
       username: elastic
       password: 123456
     xxl-job:

@@ -1,5 +1,9 @@
 package com.gig.collide;
 
+import com.gig.collide.api.box.service.BlindBoxManageFacadeService;
+import com.gig.collide.api.box.service.BlindBoxReadFacadeService;
+import com.gig.collide.api.collection.service.CollectionReadFacadeService;
+import com.gig.collide.api.goods.service.GoodsFacadeService;
 import com.gig.collide.api.order.OrderFacadeService;
 import com.gig.collide.api.chain.service.ChainFacadeService;
 import com.gig.collide.api.artist.service.ArtistFacadeService;
@@ -33,6 +37,18 @@ public class StartDubboConfiguration {
     @DubboReference(version = "1.0.0")
     private OrderFacadeService orderFacadeService;
 
+    @DubboReference(version = "1.0.0")
+    private CollectionReadFacadeService collectionReadFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private GoodsFacadeService goodsFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private BlindBoxManageFacadeService blindBoxManageFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private BlindBoxReadFacadeService blindBoxReadFacadeService;
+
     @Bean
     @ConditionalOnMissingBean(name = "userFacadeService")
     public UserFacadeService userFacadeService() {
@@ -61,6 +77,30 @@ public class StartDubboConfiguration {
     @ConditionalOnMissingBean(name = "chainFacadeService")
     public OrderFacadeService orderFacadeService() {
         return orderFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "collectionReadFacadeService")
+    public CollectionReadFacadeService collectionReadFacadeService() {
+        return collectionReadFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "goodsFacadeService")
+    public GoodsFacadeService goodsFacadeService() {
+        return goodsFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "blindBoxManageFacadeService")
+    public BlindBoxManageFacadeService blindBoxManageFacadeService() {
+        return blindBoxManageFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "blindBoxReadFacadeService")
+    public BlindBoxReadFacadeService blindBoxReadFacadeService() {
+        return blindBoxReadFacadeService;
     }
 
 }

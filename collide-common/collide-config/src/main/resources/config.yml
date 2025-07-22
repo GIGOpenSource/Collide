@@ -5,8 +5,9 @@ spring:
       password: ${collide.turbo.nacos.server.password}
       discovery:
         server-addr: ${collide.turbo.nacos.server.url}
-        namespace: public
+        namespace: b8bca988-2d8a-4d2b-a9a0-c26127e345bc
       config:
         server-addr: ${collide.turbo.nacos.server.url}
+        namespace: b8bca988-2d8a-4d2b-a9a0-c26127e345bc
         file-extension: properties
         name: ${spring.application.name}

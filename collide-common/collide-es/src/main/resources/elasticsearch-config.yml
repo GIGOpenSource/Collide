@@ -1,0 +1,529 @@
+# ====================================================================================
+# Elasticsearch 全局配置文件
+# ====================================================================================
+# 基于项目SQL结构分析，为所有核心实体提供ES索引配置
+# 支持实体：用户、艺术家、内容、藏品、盲盒、订单等
+# ====================================================================================
+
+elasticsearch:
+  # ====================================================================================
+  # 全局配置
+  # ====================================================================================
+  global_settings:
+    # 默认分片配置
+    default_shards: 1
+    default_replicas: 0
+    
+    # 刷新间隔
+    refresh_interval: "1s"
+    
+    # 映射总字段数限制
+    max_fields: 2000
+    
+    # 索引命名规则
+    index_prefix: "collide_"
+    
+    # 日期格式
+    date_formats:
+      - "yyyy-MM-dd HH:mm:ss"
+      - "strict_date_optional_time"
+      - "epoch_millis"
+
+  # ====================================================================================
+  # 分析器配置
+  # ====================================================================================
+  analyzers:
+    # 中文文本分析器
+    chinese_text_analyzer:
+      tokenizer: "ik_max_word"
+      filter:
+        - "lowercase"
+        - "stop"
+    
+    # 中文搜索分析器  
+    chinese_search_analyzer:
+      tokenizer: "ik_smart"
+      filter:
+        - "lowercase"
+        - "stop"
+    
+    # 标准文本分析器
+    standard_text_analyzer:
+      tokenizer: "standard"
+      filter:
+        - "lowercase"
+        - "stop"
+    
+    # 关键词分析器
+    keyword_analyzer:
+      tokenizer: "keyword"
+      filter:
+        - "lowercase"
+
+  # ====================================================================================
+  # 索引模板配置
+  # ====================================================================================
+  index_templates:
+    # 默认模板
+    default_template:
+      index_patterns: ["collide_*"]
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+        refresh_interval: "1s"
+        analysis:
+          analyzer:
+            chinese_text:
+              tokenizer: "ik_max_word"
+              filter: ["lowercase", "stop"]
+            chinese_search:
+              tokenizer: "ik_smart" 
+              filter: ["lowercase", "stop"]
+            standard_text:
+              tokenizer: "standard"
+              filter: ["lowercase", "stop"]
+
+  # ====================================================================================
+  # 实体索引映射配置
+  # ====================================================================================
+  indexes:
+    
+    # 👤 用户索引
+    collide_users:
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段
+          id: { type: "long" }
+          gmt_create: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          gmt_modified: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          deleted: { type: "integer" }
+          lock_version: { type: "integer" }
+          
+          # 用户基础信息
+          user_name: 
+            type: "text"
+            analyzer: "standard_text"
+            fields:
+              keyword: { type: "keyword" }
+          nick_name:
+            type: "text" 
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          password: { type: "keyword", index: false }
+          password_hash: { type: "keyword", index: false }
+          state: { type: "keyword" }
+          invite_code: { type: "keyword" }
+          telephone: { type: "keyword" }
+          inviter_id: { type: "keyword" }
+          last_login_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 用户资料
+          profile_photo_url: { type: "keyword", index: false }
+          real_name: 
+            type: "text"
+            analyzer: "chinese_text"
+            fields:
+              keyword: { type: "keyword" }
+          id_card_no: { type: "keyword", index: false }
+          
+          # 区块链相关
+          block_chain_url: { type: "keyword" }
+          block_chain_platform: { type: "keyword" }
+          
+          # 状态标识
+          is_blog_up: { type: "boolean" }
+          certification: { type: "boolean" }
+          user_role: { type: "keyword" }
+
+    # 🎨 艺术家索引
+    collide_artist:
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段
+          id: { type: "long" }
+          gmt_create: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          gmt_modified: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          deleted: { type: "integer" }
+          lock_version: { type: "integer" }
+          
+          # 艺术家信息
+          user_id: { type: "long" }
+          artist_name:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          bio:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+          status: { type: "keyword" }
+          application_type: { type: "keyword" }
+          level: { type: "keyword" }
+          
+          # 媒体URL
+          avatar_url: { type: "keyword", index: false }
+          cover_url: { type: "keyword", index: false }
+          personal_url: { type: "keyword" }
+          
+          # 统计数据
+          followers_count: { type: "integer" }
+          following_count: { type: "integer" }
+          works_count: { type: "integer" }
+          total_likes: { type: "long" }
+          total_views: { type: "long" }
+          
+          # 认证信息
+          verified: { type: "boolean" }
+          verification_type: { type: "keyword" }
+          verification_desc: { type: "text", analyzer: "chinese_text" }
+          
+          # 联系方式
+          contact_email: { type: "keyword" }
+          contact_phone: { type: "keyword" }
+          
+          # JSON字段
+          categories: { type: "keyword" }
+          social_media_accounts: { type: "text", index: false }
+          expertise_tags: { type: "keyword" }
+          collaboration_intent: { type: "text", analyzer: "chinese_text" }
+          ext_info: { type: "text", index: false }
+          
+          # 评分字段
+          hot_score: { type: "float" }
+          influence_index: { type: "float" }
+          last_active_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+
+    # 📝 内容索引
+    collide_content:
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段
+          id: { type: "long" }
+          create_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          update_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 内容基础信息
+          content_type: { type: "keyword" }
+          title:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          description:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+          
+          # 媒体信息
+          cover_image: { type: "keyword", index: false }
+          content_url: { type: "keyword", index: false }
+          duration: { type: "integer" }
+          file_size: { type: "long" }
+          
+          # 状态和分类
+          status: { type: "keyword" }
+          category: { type: "keyword" }
+          language: { type: "keyword" }
+          age_rating: { type: "keyword" }
+          is_original: { type: "boolean" }
+          
+          # 创作者信息
+          creator_user_id: { type: "long" }
+          creator_username: 
+            type: "text"
+            analyzer: "chinese_text"
+            fields:
+              keyword: { type: "keyword" }
+          
+          # 标签（JSON数组）
+          tags: { type: "keyword" }
+          
+          # 统计数据
+          view_count: { type: "long" }
+          like_count: { type: "long" }
+          collect_count: { type: "long" }
+          share_count: { type: "long" }
+          comment_count: { type: "long" }
+          download_count: { type: "long" }
+          
+          # 评分数据
+          rating: { type: "float" }
+          rating_count: { type: "long" }
+          hot_score: { type: "float" }
+          quality_score: { type: "float" }
+          recommend_index: { type: "float" }
+          
+          # 时间
+          publish_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 扩展信息
+          extend_info: { type: "text", index: false }
+
+    # 💎 藏品索引（已存在，完善配置）
+    collide_collection:
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段
+          id: { type: "long" }
+          gmt_create: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          gmt_modified: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          deleted: { type: "integer" }
+          lock_version: { type: "integer" }
+          
+          # 藏品基础信息
+          name:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          cover: { type: "keyword", index: false }
+          class_id: { type: "keyword" }
+          detail:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+          
+          # 价格和数量
+          price: { type: "double" }
+          quantity: { type: "integer" }
+          saleable_inventory: { type: "long" }
+          occupied_inventory: { type: "long" }
+          frozen_inventory: { type: "long" }
+          
+          # 状态和标识
+          state: { type: "keyword" }
+          identifier: { type: "keyword" }
+          creator_id: { type: "keyword" }
+          version: { type: "integer" }
+          
+          # 时间字段
+          create_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          sale_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          sync_chain_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          book_start_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          book_end_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 预约相关
+          can_book: { type: "integer" }
+
+    # 📦 盲盒索引
+    collide_blind_box:
+      settings:
+        number_of_shards: 1
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段 
+          id: { type: "long" }
+          gmt_create: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          gmt_modified: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          deleted: { type: "integer" }
+          lock_version: { type: "integer" }
+          
+          # 盲盒基础信息
+          name:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          cover: { type: "keyword", index: false }
+          detail:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+          identifier: { type: "keyword" }
+          state: { type: "keyword" }
+          
+          # 价格和库存
+          price: { type: "double" }
+          quantity: { type: "integer" }
+          saleable_inventory: { type: "integer" }
+          occupied_inventory: { type: "integer" }
+          frozen_inventory: { type: "integer" }
+          
+          # 时间字段
+          create_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          sale_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          sync_chain_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 预约相关
+          can_book: { type: "boolean" }
+          book_start_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          book_end_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 创建者和配置
+          creator_id: { type: "long" }
+          allocate_rule: { type: "text", index: false }
+          collection_configs: { type: "text", index: false }
+
+    # 📋 订单索引
+    collide_trade_order:
+      settings:
+        number_of_shards: 4  # 对应4个分片表
+        number_of_replicas: 0
+      mappings:
+        properties:
+          # 基础字段
+          id: { type: "long" }
+          gmt_create: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          gmt_modified: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          deleted: { type: "integer" }
+          lock_version: { type: "integer" }
+          
+          # 订单信息
+          order_id: { type: "keyword" }
+          identifier: { type: "keyword" }
+          order_state: { type: "keyword" }
+          
+          # 买卖双方
+          buyer_id: { type: "keyword" }
+          reverse_buyer_id: { type: "keyword" }
+          buyer_type: { type: "keyword" }
+          seller_id: { type: "keyword" }
+          seller_type: { type: "keyword" }
+          
+          # 商品信息
+          goods_id: { type: "keyword" }
+          goods_type: { type: "keyword" }
+          goods_name:
+            type: "text"
+            analyzer: "chinese_text"
+            search_analyzer: "chinese_search"
+            fields:
+              keyword: { type: "keyword" }
+          goods_pic_url: { type: "keyword", index: false }
+          
+          # 价格和数量
+          item_price: { type: "double" }
+          item_count: { type: "integer" }
+          order_amount: { type: "double" }
+          paid_amount: { type: "double" }
+          
+          # 时间字段
+          pay_succeed_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          order_confirmed_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          order_finished_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          order_closed_time: { type: "date", format: "yyyy-MM-dd HH:mm:ss||strict_date_optional_time||epoch_millis" }
+          
+          # 支付信息
+          pay_channel: { type: "keyword" }
+          pay_stream_id: { type: "keyword" }
+          close_type: { type: "keyword" }
+          snapshot_version: { type: "integer" }
+
+  # ====================================================================================
+  # 索引别名配置
+  # ====================================================================================
+  aliases:
+    # 用户相关别名
+    users_search: ["collide_users"]
+    users_analytics: ["collide_users"]
+    
+    # 内容相关别名
+    content_search: ["collide_content"]
+    content_hot: ["collide_content"]
+    
+    # 商品相关别名
+    goods_search: ["collide_collection", "collide_blind_box"]
+    goods_analytics: ["collide_collection", "collide_blind_box"]
+    
+    # 订单相关别名
+    order_search: ["collide_trade_order"]
+    order_analytics: ["collide_trade_order"]
+
+  # ====================================================================================
+  # 索引生命周期配置
+  # ====================================================================================
+  lifecycle_policies:
+    # 标准生命周期
+    standard_policy:
+      hot_phase: "30d"
+      warm_phase: "90d" 
+      cold_phase: "365d"
+      delete_phase: "2555d"  # 7年
+    
+    # 订单生命周期
+    order_policy:
+      hot_phase: "7d"
+      warm_phase: "30d"
+      cold_phase: "180d"
+      delete_phase: "1825d"  # 5年
+
+  # ====================================================================================
+  # 查询模板配置
+  # ====================================================================================
+  search_templates:
+    # 通用分页搜索模板
+    common_page_search:
+      template: |
+        {
+          "from": "{{from}}{{^from}}0{{/from}}",
+          "size": "{{size}}{{^size}}10{{/size}}",
+          "query": {
+            "bool": {
+              "must": [
+                {{#keyword}}
+                {
+                  "multi_match": {
+                    "query": "{{keyword}}",
+                    "fields": [{{#search_fields}}"{{.}}"{{^last}},{{/last}}{{/search_fields}}]
+                  }
+                }
+                {{/keyword}}
+              ],
+              "filter": [
+                {{#filters}}
+                {
+                  "term": {
+                    "{{field}}": "{{value}}"
+                  }
+                }{{^last}},{{/last}}
+                {{/filters}}
+              ]
+            }
+          },
+          "sort": [
+            {{#sort_fields}}
+            {
+              "{{field}}": {
+                "order": "{{order}}{{^order}}desc{{/order}}"
+              }
+            }{{^last}},{{/last}}
+            {{/sort_fields}}
+          ]
+        }
+    
+    # 统计聚合模板
+    common_agg_search:
+      template: |
+        {
+          "size": 0,
+          "aggs": {
+            {{#aggregations}}
+            "{{name}}": {
+              "{{type}}": {
+                "field": "{{field}}"
+              }
+            }{{^last}},{{/last}}
+            {{/aggregations}}
+          }
+        } 

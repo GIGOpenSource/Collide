@@ -12,9 +12,13 @@ import java.io.InputStream;
 @Setter
 public class MockFileServiceImpl implements FileService {
 
-
     @Override
     public boolean upload(String path, InputStream fileStream) {
+        return true;
+    }
+
+    @Override
+    public boolean upload(String path, InputStream fileStream, String contentType) {
         return true;
     }
 

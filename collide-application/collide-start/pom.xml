@@ -23,11 +23,6 @@
 
         <dependency>
             <groupId>com.gig</groupId>
-            <artifactId>collide-tcc</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.gig</groupId>
             <artifactId>collide-users</artifactId>
         </dependency>
 
@@ -48,12 +43,37 @@
 
         <dependency>
             <groupId>com.gig</groupId>
+            <artifactId>collide-collection</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-box</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-goods-interface</artifactId>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>com.gig</groupId>-->
+<!--            <artifactId>collide-inventory</artifactId>-->
+<!--        </dependency>-->
+
+        <dependency>
+            <groupId>com.gig</groupId>
             <artifactId>collide-seata</artifactId>
         </dependency>
 
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-mq</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-tcc</artifactId>
         </dependency>
 
         <dependency>

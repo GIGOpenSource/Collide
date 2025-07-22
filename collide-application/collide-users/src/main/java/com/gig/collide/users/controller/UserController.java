@@ -5,6 +5,7 @@ import com.gig.collide.api.user.request.UserModifyRequest;
 import com.gig.collide.api.user.response.data.BasicUserInfo;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.file.FileService;
+import com.gig.collide.file.config.OssProperties;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserService;
@@ -41,6 +42,8 @@ public class UserController {
     @Autowired
     private FileService fileService;
 
+    @Autowired
+    private OssProperties ossProperties;
 
     @GetMapping("/getUserInfo")
     public Result<UserInfo> getUserInfo() {
@@ -98,15 +101,37 @@ public class UserController {
     @PostMapping("/modifyProfilePhoto")
     public Result<String> modifyProfilePhoto(@RequestParam("file_data") MultipartFile file) throws Exception {
         String userId = (String) StpUtil.getLoginId();
-        String prefix = "https://nfturbo-file.oss-cn-hangzhou.aliyuncs.com/";
+        // 动态构建MinIO访问URL前缀
+        String prefix = buildMinioUrlPrefix();
 
         if (null == file) {
             throw new UserException(USER_UPLOAD_PICTURE_FAIL);
         }
+        
         String filename = file.getOriginalFilename();
+        
+        // 检查文件名是否有效
+        if (filename == null || filename.trim().isEmpty()) {
+            // 根据内容类型生成默认文件名
+            String extension = ".jpg"; // 默认扩展名
+            String contentType = file.getContentType();
+            if (contentType != null) {
+                if (contentType.contains("png")) extension = ".png";
+                else if (contentType.contains("gif")) extension = ".gif";
+                else if (contentType.contains("jpeg")) extension = ".jpg";
+            }
+            filename = "avatar_" + System.currentTimeMillis() + extension;
+        }
+        
         InputStream fileStream = file.getInputStream();
         String path = "profile/" + userId + "/" + filename;
-        var res = fileService.upload(path, fileStream);
+        
+        // 获取文件的Content-Type
+        String contentType = file.getContentType();
+        
+        // 使用带Content-Type的上传方法
+        var res = fileService.upload(path, fileStream, contentType);
+        
         if (!res) {
             throw new UserException(USER_UPLOAD_PICTURE_FAIL);
         }
@@ -114,11 +139,45 @@ public class UserController {
         UserModifyRequest userModifyRequest = new UserModifyRequest();
         userModifyRequest.setUserId(Long.valueOf(userId));
         userModifyRequest.setProfilePhotoUrl(prefix + path);
+        
         Boolean registerResult = userService.modify(userModifyRequest).getSuccess();
         if (!registerResult) {
             throw new UserException(USER_UPLOAD_PICTURE_FAIL);
         }
         return Result.success(prefix + path);
+    }
+
+    /**
+     * 构建MinIO访问URL前缀
+     * 格式：http://192.168.1.107:9000/mds/
+     */
+    private String buildMinioUrlPrefix() {
+        try {
+            if (ossProperties == null) {
+                return "http://192.168.1.107:9000/mds/";
+            }
+
+            String endPoint = ossProperties.getEndPoint();
+            String bucket = ossProperties.getBucket();
+            
+            if (endPoint == null || endPoint.trim().isEmpty()) {
+                endPoint = "http://192.168.1.107:9000";
+            }
+            
+            if (bucket == null || bucket.trim().isEmpty()) {
+                bucket = "mds";
+            }
+            
+            // 确保endPoint以/结尾
+            if (!endPoint.endsWith("/")) {
+                endPoint += "/";
+            }
+            
+            return endPoint + bucket + "/";
+            
+        } catch (Exception e) {
+            return "http://192.168.1.107:9000/mds/";
+        }
     }
 
     private void refreshUserInSession(String userId) {
