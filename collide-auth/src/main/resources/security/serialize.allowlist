@@ -1,0 +1,5 @@
+com.gig.collide.api.user.request.condition.UserPhoneQueryCondition
+com.gig.collide.api.user.request.condition.UserPhoneAndPasswordQueryCondition
+com.gig.collide.api.user.request.condition.UserIdQueryCondition
+com.gig.collide.api.user.request.condition.UserUserNameQueryCondition
+com.gig.collide.api.user.request.condition.UserUserNameAndPasswordQueryCondition

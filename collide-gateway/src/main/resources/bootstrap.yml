@@ -1,5 +1,5 @@
 spring:
   application:
-    name: @application.name@
+    name: collide-gateway
   config:
     import: classpath:base.yml,classpath:config.yml

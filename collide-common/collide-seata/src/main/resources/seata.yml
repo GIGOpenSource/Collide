@@ -1,24 +1,23 @@
+# Seata 分布式事务配置
 seata:
+  enabled: true
   application-id: ${spring.application.name}
-  tx-service-group: default_tx_group
-#  use-jdk-proxy: true
-#  enable-auto-data-source-proxy: false
+  tx-service-group: ${spring.application.name}-group
+  registry:
+    type: nacos
+    nacos:
+      server-addr: ${collide.turbo.nacos.server.url}
+      username: ${collide.turbo.nacos.server.username}
+      password: ${collide.turbo.nacos.server.password}
+      namespace: ${collide.turbo.seata.nacos.namespace:}
+      group: ${collide.turbo.seata.nacos.group:SEATA_GROUP}
+      data-id: ${collide.turbo.seata.nacos.data-id:seataServer.properties}
   config:
     type: nacos
     nacos:
       server-addr: ${collide.turbo.nacos.server.url}
-      group: ${collide.turbo.seata.nacos.group}
-      data-id: ${collide.turbo.seata.nacos.data-id}
-      namespace: ${collide.turbo.seata.nacos.namespace}
       username: ${collide.turbo.nacos.server.username}
       password: ${collide.turbo.nacos.server.password}
-  registry:
-    type: nacos
-    nacos:
-      application: seata-server
-      server-addr: ${collide.turbo.nacos.server.url}
-      group: ${collide.turbo.seata.nacos.group}
-      cluster: default
-      namespace: ${collide.turbo.seata.nacos.namespace}
-      username: ${collide.turbo.nacos.server.username}
-      password: ${collide.turbo.nacos.server.password}
+      namespace: ${collide.turbo.seata.nacos.namespace:}
+      group: ${collide.turbo.seata.nacos.group:SEATA_GROUP}
+      data-id: ${collide.turbo.seata.nacos.data-id:seataServer.properties} 

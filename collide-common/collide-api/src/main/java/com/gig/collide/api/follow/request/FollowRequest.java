@@ -1,40 +1,41 @@
 package com.gig.collide.api.follow.request;
 
-import com.gig.collide.api.follow.constant.FollowTypeEnum;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
+import com.gig.collide.api.follow.constant.FollowType;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+import jakarta.validation.constraints.NotNull;
+import java.io.Serializable;
 
 /**
- * 关注用户请求
- * @author GIG
+ * 关注请求
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-@Setter
 @Getter
-@ToString
-@AllArgsConstructor
+@Setter
 @NoArgsConstructor
-public class FollowRequest extends BaseRequest {
+public class FollowRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
      * 关注者用户ID
      */
+    @NotNull(message = "关注者用户ID不能为空")
     private Long followerUserId;
 
     /**
      * 被关注者用户ID
      */
+    @NotNull(message = "被关注者用户ID不能为空")
     private Long followedUserId;
 
     /**
-     * 关注类型
+     * 关注类型，默认为普通关注
      */
-    private FollowTypeEnum followType = FollowTypeEnum.NORMAL;
-
-    public FollowRequest(Long followerUserId, Long followedUserId) {
-        this.followerUserId = followerUserId;
-        this.followedUserId = followedUserId;
-        this.followType = FollowTypeEnum.NORMAL;
-    }
+    private FollowType followType = FollowType.NORMAL;
 } 

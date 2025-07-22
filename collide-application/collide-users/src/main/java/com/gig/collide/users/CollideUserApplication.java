@@ -1,20 +1,22 @@
 package com.gig.collide.users;
 
-import com.gig.collide.file.config.OssConfiguration;
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Import;
 
 /**
- * @author GIGOpenTeam
+ * 用户服务启动类
+ *
+ * @author GIG
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.gig.collide.users")
 @EnableDubbo
-@Import(OssConfiguration.class)
+@MapperScan("com.gig.collide.users.infrastructure.mapper")
 public class CollideUserApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CollideUserApplication.class, args);
+        System.out.println("========== Collide Users Service Started ==========");
     }
 }

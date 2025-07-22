@@ -1,17 +1,7 @@
-spring:
-  elasticsearch:
-    enable: ${collide.turbo.elasticsearch.enable}
-    uris: http://${collide.turbo.elasticsearch.url}
-    username: ${collide.turbo.elasticsearch.username}
-    password: ${collide.turbo.elasticsearch.password}
-    connection-timeout: 5s
-    read-timeout: 10s
-  data:
-    elasticsearch:
-      repositories:
-        enabled: true
-easy-es:
-  enable: ${collide.turbo.elasticsearch.enable}
-  address : ${collide.turbo.elasticsearch.url}
-  username: ${collide.turbo.elasticsearch.username}
-  password: ${collide.turbo.elasticsearch.password}
+# Elasticsearch 配置
+elasticsearch:
+  uris: ${collide.turbo.elasticsearch.url:localhost:9200}
+  username: ${collide.turbo.elasticsearch.username:}
+  password: ${collide.turbo.elasticsearch.password:}
+  connection-timeout: 5s
+  socket-timeout: 30s 

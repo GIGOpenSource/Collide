@@ -3,16 +3,24 @@ package com.gig.collide.datasource.handler;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import org.apache.ibatis.reflection.MetaObject;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 
 public class DataObjectHandler implements MetaObjectHandler {
     @Override
     public void insertFill(MetaObject metaObject) {
+        // 支持旧字段名（向后兼容）
         this.setFieldValByNameIfNull("gmtCreate", new Date(), metaObject);
         this.setFieldValByNameIfNull("gmtModified", new Date(), metaObject);
-        this.setFieldValByName("deleted", 0, metaObject);
-        this.setFieldValByName("lockVersion", 0, metaObject);
+        
+        // 支持新字段名
+        this.setFieldValByNameIfNull("createTime", LocalDateTime.now(), metaObject);
+        this.setFieldValByNameIfNull("updateTime", LocalDateTime.now(), metaObject);
+        
+        // 其他字段（可选）
+        this.setFieldValByNameIfNull("deleted", 0, metaObject);
+        this.setFieldValByNameIfNull("lockVersion", 0, metaObject);
     }
 
     /**
@@ -29,7 +37,11 @@ public class DataObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
+        // 支持旧字段名（向后兼容）
         this.setFieldValByName("gmtModified", new Date(), metaObject);
+        
+        // 支持新字段名
+        this.setFieldValByName("updateTime", LocalDateTime.now(), metaObject);
     }
 }
 

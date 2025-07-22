@@ -1,16 +1,19 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.gig</groupId>
         <artifactId>collide-common</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
+    <groupId>com.gig</groupId>
     <artifactId>collide-mq</artifactId>
-    <packaging>jar</packaging>
-
-    <name>collide-mq</name>
+    <version>1.0.0-SNAPSHOT</version>
+    <description>Collide 消息队列集成模块 (RocketMQ)</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -19,18 +22,25 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-base</artifactId>
+        </dependency>
 
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
-            <!--            <version>2023.0.0.0-RC1</version>-->
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
 
         <dependency>
             <groupId>org.apache.rocketmq</groupId>
-            <artifactId>rocketmq-spring-boot-starter</artifactId>
-            <version>2.3.1</version>
+            <artifactId>rocketmq-client</artifactId>
         </dependency>
-
     </dependencies>
-</project>
+
+</project> 

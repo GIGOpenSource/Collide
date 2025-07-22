@@ -1,6 +1,5 @@
 package com.gig.collide.api.user.response.data;
 
-import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyMaskHalf;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +15,6 @@ public class InviteRankInfo {
     /**
      * 昵称
      */
-    @SensitiveStrategyMaskHalf
     private String nickName;
 
     /**

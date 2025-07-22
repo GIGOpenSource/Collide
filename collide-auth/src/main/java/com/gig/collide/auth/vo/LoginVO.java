@@ -10,7 +10,12 @@ import lombok.ToString;
 import java.io.Serializable;
 
 /**
- * @author GIGOpenTeam
+ * 登录响应VO
+ * 参考 nft-turbo-auth 设计，保持简洁
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
 @Getter
 @Setter
@@ -24,6 +29,7 @@ public class LoginVO implements Serializable {
      * 用户标识，如用户ID
      */
     private String userId;
+
     /**
      * 访问令牌
      */
@@ -34,10 +40,9 @@ public class LoginVO implements Serializable {
      */
     private Long tokenExpiration;
 
-
     public LoginVO(UserInfo userInfo) {
         this.userId = userInfo.getUserId().toString();
         this.token = StpUtil.getTokenValue();
         this.tokenExpiration = StpUtil.getTokenSessionTimeout();
     }
-}
+} 

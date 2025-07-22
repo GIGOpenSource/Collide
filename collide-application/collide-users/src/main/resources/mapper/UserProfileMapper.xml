@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserProfileMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.users.domain.entity.UserProfile">
+        <id column="id" property="id" />
+        <result column="user_id" property="userId" />
+        <result column="bio" property="bio" />
+        <result column="birthday" property="birthday" />
+        <result column="gender" property="gender" />
+        <result column="location" property="location" />
+        <result column="follower_count" property="followerCount" />
+        <result column="following_count" property="followingCount" />
+        <result column="content_count" property="contentCount" />
+        <result column="like_count" property="likeCount" />
+        <result column="vip_expire_time" property="vipExpireTime" />
+        <result column="blogger_status" property="bloggerStatus" />
+        <result column="blogger_apply_time" property="bloggerApplyTime" />
+        <result column="blogger_approve_time" property="bloggerApproveTime" />
+        <result column="create_time" property="createTime" />
+        <result column="update_time" property="updateTime" />
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, bio, birthday, gender, location, follower_count, following_count, 
+        content_count, like_count, vip_expire_time, blogger_status, blogger_apply_time, 
+        blogger_approve_time, create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询用户扩展信息 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM t_user_profile
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 根据用户ID删除用户扩展信息 -->
+    <delete id="deleteByUserId">
+        DELETE FROM t_user_profile WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 更新用户统计信息 -->
+    <update id="updateCountField">
+        UPDATE t_user_profile 
+        SET ${field} = ${field} + #{incrementValue}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+</mapper> 

@@ -1,174 +1,125 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.request.*;
-import com.gig.collide.api.user.request.condition.*;
+import com.gig.collide.api.user.request.condition.UserIdQueryCondition;
+import com.gig.collide.api.user.request.condition.UserUserNameQueryCondition;
+import com.gig.collide.api.user.request.condition.UserPhoneQueryCondition;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.rpc.facade.Facade;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.convertor.UserConvertor;
-import com.gig.collide.users.domain.service.UserService;
-import com.gig.collide.users.infrastructure.exception.UserException;
-import groovy.util.logging.Slf4j;
+import com.gig.collide.users.domain.service.UserDomainService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
- * @author GIGOpenTeam
+ * 用户服务 Dubbo RPC 接口实现
+ * 参考nft-turbo的UserFacadeServiceImpl设计
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-
+@Slf4j
+@Component
 @DubboService(version = "1.0.0")
+@RequiredArgsConstructor
 public class UserFacadeServiceImpl implements UserFacadeService {
 
-    @Autowired
-    private UserService userService;
+    private final UserDomainService userDomainService;
 
     @Override
     public UserQueryResponse<UserInfo> query(UserQueryRequest userQueryRequest) {
-        UserQueryCondition condition = userQueryRequest.getUserQueryCondition();
+        try {
+            log.info("查询用户信息，请求参数：{}", userQueryRequest);
+            
+            // 根据不同查询条件调用对应的查询方法
+            User user = null;
+            if (userQueryRequest.getUserIdQueryCondition() != null) {
+                user = userDomainService.getUserById(userQueryRequest.getUserIdQueryCondition().getUserId());
+            } else if (userQueryRequest.getUserUserNameQueryCondition() != null) {
+                user = userDomainService.getUserByUsername(userQueryRequest.getUserUserNameQueryCondition().getUserName());
+            } else if (userQueryRequest.getUserPhoneQueryCondition() != null) {
+                // TODO: 需要在 UserDomainService 中实现 getUserByPhone 方法
+                throw new UnsupportedOperationException("手机号查询功能暂未实现");
+            } else {
+                throw new IllegalArgumentException("查询条件不能为空");
+            }
 
-        User user = null;
+            UserQueryResponse<UserInfo> response = new UserQueryResponse<>();
+            if (user != null) {
+                response.setSuccess(true);
+                UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
+                response.setData(userInfo);
+            } else {
+                response.setSuccess(false);
+                response.setResponseCode("USER_NOT_FOUND");
+                response.setResponseMessage("用户不存在");
+            }
+            return response;
 
-        // 🔄 使用传统的 instanceof 替代 switch pattern matching
-        if (condition instanceof UserIdQueryCondition) {
-            UserIdQueryCondition userIdQueryCondition = (UserIdQueryCondition) condition;
-            user = userService.findById(userIdQueryCondition.getUserId());
-        } else if (condition instanceof UserPhoneQueryCondition) {
-            UserPhoneQueryCondition userPhoneQueryCondition = (UserPhoneQueryCondition) condition;
-            user = userService.findByTelephone(userPhoneQueryCondition.getTelephone());
-        } else if (condition instanceof UserPhoneAndPasswordQueryCondition) {
-            UserPhoneAndPasswordQueryCondition userPhoneAndPasswordQueryCondition = (UserPhoneAndPasswordQueryCondition) condition;
-            user = userService.findByTelephoneAndPass(
-                userPhoneAndPasswordQueryCondition.getTelephone(),
-                userPhoneAndPasswordQueryCondition.getPassword()
-            );
-        } else {
-            throw new UnsupportedOperationException(condition + " is not supported");
+        } catch (Exception e) {
+            log.error("查询用户信息失败", e);
+            UserQueryResponse<UserInfo> response = new UserQueryResponse<>();
+            response.setSuccess(false);
+            response.setResponseCode("USER_QUERY_ERROR");
+            response.setResponseMessage("查询用户信息失败: " + e.getMessage());
+            return response;
         }
-
-        UserQueryResponse<UserInfo> response = new UserQueryResponse();
-        response.setSuccess(true);
-        UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
-        response.setData(userInfo);
-        return response;
-    }
-
-    @Override
-    public UserQueryResponse<UserInfo> queryByUserName(UserUserNameQueryRequest userUserNameQueryRequest) {
-        //使用switch表达式精简代码，如果这里编译不过，参考我的文档调整IDEA的JDK版本
-        //文档地址：https://thoughts.aliyun.com/workspaces/6655879cf459b7001ba42f1b/docs/6673f26c5e11940001c810fb#667971268a5c151234adcf92
-        UserQueryCondition condition = userUserNameQueryRequest.getUserUserNameQueryCondition();
-        User user = null;
-
-        if (condition instanceof UserIdQueryCondition) {
-            UserIdQueryCondition userIdQueryCondition = (UserIdQueryCondition) condition;
-            user = userService.findById(userIdQueryCondition.getUserId());
-        } else if (condition instanceof UserUserNameQueryCondition) {
-            UserUserNameQueryCondition userUserNameQueryCondition = (UserUserNameQueryCondition) condition;
-            user = userService.findByUserName(userUserNameQueryCondition.getUserName());
-        } else if (condition instanceof UserUserNameAndPasswordQueryCondition) {
-            UserUserNameAndPasswordQueryCondition userUserNameAndPasswordQueryCondition = (UserUserNameAndPasswordQueryCondition) condition;
-            user = userService.findByUserNameAndPass(
-                userUserNameAndPasswordQueryCondition.getUserName(),
-                userUserNameAndPasswordQueryCondition.getPassword()
-            );
-        } else {
-            throw new UnsupportedOperationException(condition + " is not supported");
-        }
-
-        UserQueryResponse<UserInfo> response = new UserQueryResponse();
-        response.setSuccess(true);
-        UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
-        response.setData(userInfo);
-        return response;
     }
 
     @Override
     public PageResponse<UserInfo> pageQuery(UserPageQueryRequest userPageQueryRequest) {
-        var queryResult = userService.pageQueryByState(userPageQueryRequest.getKeyWord(), userPageQueryRequest.getState(), userPageQueryRequest.getCurrentPage(), userPageQueryRequest.getPageSize());
-        PageResponse<UserInfo> response = new PageResponse<>();
-        if (!queryResult.getSuccess()) {
-            response.setSuccess(false);
-            return response;
-        }
-        response.setSuccess(true);
-        response.setDatas(UserConvertor.INSTANCE.mapToVo(queryResult.getDatas()));
-        response.setCurrentPage(queryResult.getCurrentPage());
-        response.setPageSize(queryResult.getPageSize());
+        log.warn("分页查询用户信息功能暂未实现");
+        return PageResponse.of(java.util.Collections.emptyList(), 0, 10, 1);
+    }
+
+    @Override
+    public UserOperatorResponse register(UserRegisterRequest userRegisterRequest) {
+        log.warn("用户注册功能暂未实现");
+        UserOperatorResponse response = new UserOperatorResponse();
+        response.setSuccess(false);
+        response.setResponseCode("NOT_IMPLEMENTED");
+        response.setResponseMessage("该功能暂未实现");
         return response;
     }
 
     @Override
-    @Facade
-    public UserOperatorResponse register(UserRegisterRequest userRegisterRequest) {
-        return userService.register(
-                userRegisterRequest.getTelephone(),
-                userRegisterRequest.getInviteCode());
-    }
-
-    @Override
-    @Facade
-    public UserOperatorResponse userNameRegister(UserUserNameRegisterRequest userUserNameRegisterRequest) {
-        try {
-            return userService.userNameRegister(
-                    userUserNameRegisterRequest.getUserName(),
-                    userUserNameRegisterRequest.getPassword(),
-                    userUserNameRegisterRequest.getInviteCode());
-        } catch (UserException e) {
-            // 手动处理UserException，返回失败的响应
-            UserOperatorResponse response = new UserOperatorResponse();
-            response.setSuccess(false);
-            response.setResponseCode(e.getErrorCode().getCode());
-            response.setResponseMessage(e.getErrorCode().getMessage());
-            return response;
-        }
-    }
-
-    @Override
-    @Facade
     public UserOperatorResponse modify(UserModifyRequest userModifyRequest) {
-        try {
-            return userService.modify(userModifyRequest);
-        }catch (UserException e){
-            // 手动处理UserException，返回失败的响应
-            UserOperatorResponse response = new UserOperatorResponse();
-            response.setSuccess(false);
-            response.setResponseCode(e.getErrorCode().getCode());
-            response.setResponseMessage(e.getErrorCode().getMessage());
-            return response;
-        }
+        log.warn("更新用户信息功能暂未实现");
+        UserOperatorResponse response = new UserOperatorResponse();
+        response.setSuccess(false);
+        response.setResponseCode("NOT_IMPLEMENTED");
+        response.setResponseMessage("该功能暂未实现");
+        return response;
     }
 
     @Override
-    @Facade
     public UserOperatorResponse auth(UserAuthRequest userAuthRequest) {
-        try {
-            return userService.auth(userAuthRequest);
-        }catch (UserException e){
-            // 手动处理UserException，返回失败的响应
-            UserOperatorResponse response = new UserOperatorResponse();
-            response.setSuccess(false);
-            response.setResponseCode(e.getErrorCode().getCode());
-            response.setResponseMessage(e.getErrorCode().getMessage());
-            return response;
-        }
+        log.warn("用户实名认证功能暂未实现");
+        UserOperatorResponse response = new UserOperatorResponse();
+        response.setSuccess(false);
+        response.setResponseCode("NOT_IMPLEMENTED");
+        response.setResponseMessage("该功能暂未实现");
+        return response;
     }
 
     @Override
-    @Facade
     public UserOperatorResponse active(UserActiveRequest userActiveRequest) {
-        try {
-            return userService.active(userActiveRequest);
-        }catch (UserException e){
-            // 手动处理UserException，返回失败的响应
-            UserOperatorResponse response = new UserOperatorResponse();
-            response.setSuccess(false);
-            response.setResponseCode(e.getErrorCode().getCode());
-            response.setResponseMessage(e.getErrorCode().getMessage());
-            return response;
-        }
+        log.warn("用户激活功能暂未实现");
+        UserOperatorResponse response = new UserOperatorResponse();
+        response.setSuccess(false);
+        response.setResponseCode("NOT_IMPLEMENTED");
+        response.setResponseMessage("该功能暂未实现");
+        return response;
     }
-}
+
+
+
+
+} 

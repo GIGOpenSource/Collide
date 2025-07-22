@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.gig</groupId>
+        <artifactId>collide-application</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+
+    <groupId>com.gig</groupId>
+    <artifactId>collide-app</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <description>Collide 业务聚合启动模块 - 参考 nft-turbo-app 设计</description>
+
+    <properties>
+        <application.name>collide-business</application.name>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <dependencies>
+        <!-- 业务模块依赖 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-users</artifactId>
+        </dependency>
+
+        <!-- TODO: 后续添加其他业务模块 -->
+        <!-- 
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-follow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-content</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-social</artifactId>
+        </dependency>
+        -->
+
+        <!-- 公共模块依赖 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-prometheus</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-skywalking</artifactId>
+        </dependency>
+
+        <!--  SnakeYaml 版本兼容性处理  -->
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>1.33</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.gig.collide.CollideBusinessApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project> 

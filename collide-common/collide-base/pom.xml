@@ -49,18 +49,9 @@
             <artifactId>httpcore</artifactId>
         </dependency>
 
-        <!--    sensitive    -->
-        <dependency>
-            <groupId>com.github.houbb</groupId>
-            <artifactId>sensitive-logback</artifactId>
-            <version>1.7.0</version>
-        </dependency>
+        <!-- sensitive日志处理已移除，简化配置 -->
 
-        <dependency>
-            <groupId>com.github.houbb</groupId>
-            <artifactId>sensitive-core</artifactId>
-            <version>1.7.0</version>
-        </dependency>
+        <!-- sensitive-core已移除，简化依赖管理 -->
 
         <!--    spring-web    -->
         <dependency>

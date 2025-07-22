@@ -1,16 +1,22 @@
 package com.gig.collide.api.follow.response.data;
 
-import com.gig.collide.api.follow.constant.FollowTypeEnum;
+import com.gig.collide.api.follow.constant.FollowStatus;
+import com.gig.collide.api.follow.constant.FollowType;
+import com.gig.collide.api.user.response.data.BasicUserInfo;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
- * 关注信息
- * @author GIG
+ * 关注信息响应对象
+ * 对应 t_follow 表结构
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
 @Getter
 @Setter
@@ -22,7 +28,7 @@ public class FollowInfo implements Serializable {
     /**
      * 关注ID
      */
-    private Long followId;
+    private Long id;
 
     /**
      * 关注者用户ID
@@ -35,42 +41,37 @@ public class FollowInfo implements Serializable {
     private Long followedUserId;
 
     /**
-     * 被关注者用户名
-     */
-    private String followedUserName;
-
-    /**
-     * 被关注者头像
-     */
-    private String followedUserAvatar;
-
-    /**
-     * 被关注者简介
-     */
-    private String followedUserBio;
-
-    /**
      * 关注类型
      */
-    private FollowTypeEnum followType;
+    private FollowType followType;
 
     /**
-     * 是否互相关注
+     * 关注状态
      */
-    private Boolean isMutualFollow;
+    private FollowStatus status;
 
     /**
-     * 关注时间
+     * 创建时间
      */
-    private Date followTime;
+    private LocalDateTime createTime;
 
     /**
-     * 被关注者粉丝数
+     * 更新时间
      */
-    private Integer followerCount;
+    private LocalDateTime updateTime;
 
     /**
-     * 被关注者关注数
+     * 关注者用户信息（用于列表展示）
      */
-    private Integer followingCount;
+    private BasicUserInfo followerUser;
+
+    /**
+     * 被关注者用户信息（用于列表展示）
+     */
+    private BasicUserInfo followedUser;
+
+    /**
+     * 是否为相互关注
+     */
+    private Boolean mutualFollow;
 } 

@@ -1,8 +1,13 @@
-spring:
-  xxl:
-    job:
-      enabled: true
-      adminAddresses: http://${collide.turbo.xxl-job.url}/xxl-job-admin/
-      appName: ${collide.turbo.xxl-job.appName}
-      accessToken: ${collide.turbo.xxl-job.accessToken}
-
+# 定时任务配置
+xxl:
+  job:
+    admin:
+      addresses: ${collide.turbo.xxl-job.url:http://localhost:8080/xxl-job-admin}
+    executor:
+      appname: ${collide.turbo.xxl-job.appName:collide-executor}
+      address:
+      ip:
+      port: 9999
+      logpath: ./logs/xxl-job/
+      logretentiondays: 7
+      accessToken: ${collide.turbo.xxl-job.accessToken:} 

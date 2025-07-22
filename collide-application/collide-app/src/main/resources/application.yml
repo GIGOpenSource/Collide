@@ -1,0 +1,27 @@
+spring:
+  profiles:
+    active: dev
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml   #这里爆红可以直接忽略，没有任何影响
+
+# TODO: 消息队列配置，后续需要时启用
+#    cloud:
+#      stream:
+#        rocketmq:
+#          bindings:
+#            # 消息绑定配置
+#        bindings:
+#          # 消息流绑定配置
+
+server:
+  port: 8085
+
+# 日志配置
+logging:
+  level:
+    com.gig.collide: DEBUG
+    org.apache.dubbo: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n" 

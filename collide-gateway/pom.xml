@@ -27,22 +27,7 @@
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
-        <!--  限流组件  -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-limiter</artifactId>
-            <exclusions>
-                <!--  排除spring-web，gateway应用中不能包含spring mvc组件-->
-                <exclusion>
-                    <groupId> org.springframework</groupId>
-                    <artifactId>spring-web</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId> org.springframework</groupId>
-                    <artifactId>spring-webmvc</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+        <!-- 限流功能暂时移除，简化网关配置 -->
 
         <dependency>
             <groupId>com.gig</groupId>
@@ -54,10 +39,7 @@
             <artifactId>collide-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-skywalking</artifactId>
-        </dependency>
+        <!-- skywalking监控暂时移除，简化网关配置 -->
 
         <!-- Sa-Token 权限认证 -->
         <dependency>
@@ -95,12 +77,7 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
-        <!--    sensitive    -->
-        <dependency>
-            <groupId>com.github.houbb</groupId>
-            <artifactId>sensitive-logback</artifactId>
-            <version>1.7.0</version>
-        </dependency>
+        <!-- sensitive日志处理已移除，简化配置 -->
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -116,7 +93,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <!--                    <skip>true</skip>-->
-                    <mainClass>com.md.nft.turbo.gateway.NftTurboGatewayApplication</mainClass>
+                    <mainClass>com.gig.collide.gateway.CollideGatewayApplication</mainClass>
                 </configuration>
 
                 <executions>

@@ -1,21 +1,26 @@
 package com.gig.collide.api.user.constant;
 
+/**
+ * 用户状态枚举
+ * 与users模块保持一致
+ * 
+ * @author Collide Team  
+ * @version 1.0
+ * @since 2024-01-01
+ */
 public enum UserStateEnum {
     /**
-     * 创建成功
+     * 正常状态
      */
-    INIT,
+    active,
+    
     /**
-     * 实名认证
+     * 未激活
      */
-    AUTH,
+    inactive,
+    
     /**
-     * 上链成功
+     * 已封禁
      */
-    ACTIVE,
-
-    /**
-     * 冻结
-     */
-    FROZEN;
+    banned;
 }

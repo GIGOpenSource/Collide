@@ -11,10 +11,4 @@ spring:
     accessSecret: minioadmin
 
 server:
-  port: 8083
-
-#dubbo:
-#  protocol:
-#    port: 20889
-#  application:
-#    qos-port: 33333
+  port: 9501

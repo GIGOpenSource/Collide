@@ -1,85 +1,65 @@
 package com.gig.collide.api.content.constant;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 内容状态枚举
+ * 对应 t_content 表的 status 字段
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-@Getter
-@AllArgsConstructor
 public enum ContentStatus {
 
     /**
      * 草稿
      */
-    DRAFT(1, "草稿"),
+    DRAFT("草稿"),
 
     /**
      * 待审核
      */
-    PENDING_REVIEW(2, "待审核"),
+    PENDING("待审核"),
 
     /**
-     * 审核通过-已发布
+     * 已发布
      */
-    PUBLISHED(3, "已发布"),
+    PUBLISHED("已发布"),
 
     /**
-     * 审核拒绝
+     * 已拒绝
      */
-    REJECTED(4, "审核拒绝"),
+    REJECTED("已拒绝"),
 
     /**
      * 已下架
      */
-    UNPUBLISHED(5, "已下架"),
+    OFFLINE("已下架");
 
-    /**
-     * 已删除
-     */
-    DELETED(6, "已删除");
+    private final String description;
 
-    /**
-     * 状态码
-     */
-    private final Integer code;
+    ContentStatus(String description) {
+        this.description = description;
+    }
 
-    /**
-     * 描述
-     */
-    private final String desc;
-
-    /**
-     * 根据code获取枚举
-     */
-    public static ContentStatus getByCode(Integer code) {
-        for (ContentStatus status : values()) {
-            if (status.getCode().equals(code)) {
-                return status;
-            }
-        }
-        return null;
+    public String getDescription() {
+        return description;
     }
 
     /**
-     * 是否可以审核
+     * 判断是否为可见状态
+     *
+     * @return true if visible
      */
-    public boolean canReview() {
-        return this == PENDING_REVIEW;
-    }
-
-    /**
-     * 是否已发布
-     */
-    public boolean isPublished() {
+    public boolean isVisible() {
         return this == PUBLISHED;
     }
 
     /**
-     * 是否可以编辑
+     * 判断是否为可编辑状态
+     *
+     * @return true if editable
      */
-    public boolean canEdit() {
+    public boolean isEditable() {
         return this == DRAFT || this == REJECTED;
     }
 } 

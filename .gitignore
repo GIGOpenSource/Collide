@@ -26,3 +26,8 @@ nbdist/
 rebel.xml
 doc
 .cursor/
+rec/
+.run/
+scripts/
+Collide项目代码风格分析报告.md
+Collide项目开发规则规范.md

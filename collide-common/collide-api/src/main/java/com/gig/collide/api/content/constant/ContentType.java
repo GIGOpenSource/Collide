@@ -1,54 +1,52 @@
 package com.gig.collide.api.content.constant;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 内容类型枚举
+ * 对应 t_content 表的 content_type 字段
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
-@Getter
-@AllArgsConstructor
 public enum ContentType {
 
     /**
      * 小说
      */
-    NOVEL("novel", "小说"),
+    NOVEL("小说"),
 
     /**
      * 漫画
      */
-    COMIC("comic", "漫画"),
+    COMIC("漫画"),
 
     /**
      * 短视频
      */
-    SHORT_VIDEO("short_video", "短视频"),
+    SHORT_VIDEO("短视频"),
 
     /**
      * 长视频
      */
-    LONG_VIDEO("long_video", "长视频");
+    LONG_VIDEO("长视频"),
 
     /**
-     * 编码
+     * 图文
      */
-    private final String code;
+    ARTICLE("图文"),
 
     /**
-     * 描述
+     * 音频
      */
-    private final String desc;
+    AUDIO("音频");
 
-    /**
-     * 根据code获取枚举
-     */
-    public static ContentType getByCode(String code) {
-        for (ContentType type : values()) {
-            if (type.getCode().equals(code)) {
-                return type;
-            }
-        }
-        return null;
+    private final String description;
+
+    ContentType(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
     }
 } 

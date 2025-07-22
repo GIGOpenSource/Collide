@@ -2,15 +2,20 @@ package com.gig.collide.api.user.response.data;
 
 import com.gig.collide.api.user.constant.UserRole;
 import com.gig.collide.api.user.constant.UserStateEnum;
-import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyPhone;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 /**
- * @author GIG
+ * 用户信息响应对象
+ * 简化并现代化，移除过时的区块链相关字段
+ *
+ * @author Collide Team
+ * @version 1.0  
+ * @since 2024-01-01
  */
 @Getter
 @Setter
@@ -20,61 +25,89 @@ public class UserInfo extends BasicUserInfo {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 用户名
+     */
+    private String username;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
      * 手机号
      */
-    @SensitiveStrategyPhone
-    private String telephone;
+    private String phone;
 
     /**
-     * 状态
-     *
-     * @see UserStateEnum
+     * 个人简介
      */
-    private String state;
+    private String bio;
 
     /**
-     * 区块链地址
+     * 性别
      */
-    private String blockChainUrl;
+    private String gender;
 
     /**
-     * 区块链平台
+     * 生日
      */
-    private String blockChainPlatform;
+    private LocalDate birthday;
 
     /**
-     * 实名认证
+     * 所在地
      */
-    private Boolean certification;
+    private String location;
+
+    /**
+     * 用户状态
+     */
+    private UserStateEnum status;
 
     /**
      * 用户角色
      */
-    private UserRole userRole;
+    private UserRole role;
 
     /**
-     * 邀请码
+     * 最后登录时间
      */
-    private String inviteCode;
+    private LocalDateTime lastLoginTime;
 
     /**
      * 注册时间
      */
-    private Date createTime;
+    private LocalDateTime createTime;
 
-    public boolean userCanBuy() {
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
 
-        if (this.getUserRole() != null && !this.getUserRole().equals(UserRole.CUSTOMER)) {
-            return false;
-        }
-        //判断买家状态
-        if (this.getState() != null && !this.getState().equals(UserStateEnum.ACTIVE.name())) {
-            return false;
-        }
-        //判断买家状态
-        if (this.getState() != null && !this.getCertification()) {
-            return false;
-        }
-        return true;
+    /**
+     * 判断用户是否为博主
+     *
+     * @return true if user is blogger
+     */
+    public boolean isBlogger() {
+        return UserRole.blogger.equals(this.role);
+    }
+
+    /**
+     * 判断用户是否为管理员
+     *
+     * @return true if user is admin
+     */
+    public boolean isAdmin() {
+        return UserRole.admin.equals(this.role);
+    }
+
+    /**
+     * 判断用户状态是否正常
+     *
+     * @return true if user is active
+     */
+    public boolean isActive() {
+        return UserStateEnum.active.equals(this.status);
     }
 }

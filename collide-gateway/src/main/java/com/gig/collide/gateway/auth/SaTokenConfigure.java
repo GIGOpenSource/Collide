@@ -7,16 +7,14 @@ import cn.dev33.satoken.reactor.filter.SaReactorFilter;
 import cn.dev33.satoken.router.SaRouter;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.util.SaResult;
-import com.gig.collide.api.user.constant.UserPermission;
-import com.gig.collide.api.user.constant.UserRole;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * sa-token的全局配置
- *
- * @author GIGTeam
+ * Sa-Token 网关统一鉴权配置
+ * 
+ * @author GIG
  */
 @Configuration
 @Slf4j
@@ -25,47 +23,104 @@ public class SaTokenConfigure {
     @Bean
     public SaReactorFilter getSaReactorFilter() {
         return new SaReactorFilter()
-                // 拦截地址
+                // 拦截所有路径
                 .addInclude("/**")
-                // 开放地址
+                
+                // 放行路径：无需登录的接口
                 .addExclude("/favicon.ico")
+                .addExclude("/actuator/health")
+                .addExclude("/auth/login")
+                .addExclude("/auth/register")
+                
                 // 鉴权方法：每次访问进入
                 .setAuth(obj -> {
-                    // 登录校验 -- 拦截所有路由，并排除/auth/login 用于开放登录
-                    SaRouter.match("/**").notMatch("/auth/**", "/collection/collectionList", "/collection/collectionInfo", "/wxPay/**").check(r -> StpUtil.checkLogin());
-
-                    // 权限认证 -- 不同模块, 校验不同权限
-                    SaRouter.match("/admin/**", r -> StpUtil.checkRole(UserRole.ADMIN.name()));
-                    SaRouter.match("/trade/**", r -> StpUtil.checkPermission(UserPermission.AUTH.name()));
-
-                    SaRouter.match("/user/**", r -> StpUtil.checkPermissionOr(UserPermission.BASIC.name(), UserPermission.FROZEN.name()));
-                    SaRouter.match("/order/**", r -> StpUtil.checkPermissionOr(UserPermission.BASIC.name(),UserPermission.FROZEN.name()));
+                    // ========== 认证服务：无需登录校验 ==========
+                    // 认证接口已通过 addExclude 排除，无需额外处理
+                    
+                    // ========== 公开API：无需登录校验 ==========
+                    SaRouter.match("/api/content/list").stop();      // 内容列表
+                    SaRouter.match("/api/content/detail/**").stop();  // 内容详情  
+                    SaRouter.match("/api/content/search").stop();     // 内容搜索
+                    SaRouter.match("/api/social/posts/public").stop(); // 公开动态
+                    
+                    // ========== 用户服务：需要登录 ==========
+                    SaRouter.match("/api/users/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 社交服务：需要登录 ==========
+                    SaRouter.match("/api/social/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 内容服务：大部分需要登录 ==========
+                    SaRouter.match("/api/content/create").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/content/update/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/content/delete/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/content/like/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/content/collect/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/content/comment/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 关注服务：需要登录 ==========
+                    SaRouter.match("/api/follow/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 管理端：需要管理员权限 ==========
+                    SaRouter.match("/admin/**").check(r -> {
+                        StpUtil.checkLogin();
+                        StpUtil.checkRole("admin");
+                    });
+                    
+                    // ========== OAuth统计：仅管理员可访问 ==========
+                    SaRouter.match("/admin/oauth/**").check(r -> {
+                        StpUtil.checkLogin();
+                        StpUtil.checkRole("admin");
+                    });
+                    
+                    // ========== VIP内容：需要VIP权限 ==========
+                    SaRouter.match("/api/content/vip/**").check(r -> {
+                        StpUtil.checkLogin();
+                        StpUtil.checkPermissionOr("vip", "admin");
+                    });
+                    
+                    // ========== 博主功能：需要博主权限 ==========
+                    SaRouter.match("/api/content/blogger/**").check(r -> {
+                        StpUtil.checkLogin();
+                        StpUtil.checkPermissionOr("blogger", "admin");
+                    });
                 })
+                
                 // 异常处理方法：每次setAuth函数出现异常时进入
-                .setError(this::getSaResult);
+                .setError(this::handleAuthException);
     }
 
-    private SaResult getSaResult(Throwable throwable) {
-        switch (throwable) {
-            case NotLoginException notLoginException:
-                log.error("请先登录");
-                return SaResult.error("请先登录");
-            case NotRoleException notRoleException:
-                if (UserRole.ADMIN.name().equals(notRoleException.getRole())) {
-                    log.error("请勿越权使用！");
-                    return SaResult.error("请勿越权使用！");
+    /**
+     * 统一异常处理
+     */
+    private SaResult handleAuthException(Throwable e) {
+        log.warn("Sa-Token 鉴权异常：{}", e.getMessage());
+        
+        return switch (e) {
+            case NotLoginException ex -> {
+                log.info("用户未登录");
+                yield SaResult.error("请先登录").setCode(401);
+            }
+            case NotRoleException ex -> {
+                log.warn("用户权限不足，缺少角色：{}", ex.getRole());
+                if ("admin".equals(ex.getRole())) {
+                    yield SaResult.error("需要管理员权限").setCode(403);
                 }
-                log.error("您无权限进行此操作！");
-                return SaResult.error("您无权限进行此操作！");
-            case NotPermissionException notPermissionException:
-                if (UserPermission.AUTH.name().equals(notPermissionException.getPermission())) {
-                    log.error("请先完成博主认证！");
-                    return SaResult.error("请先完成博主认证");
+                yield SaResult.error("权限不足").setCode(403);
+            }
+            case NotPermissionException ex -> {
+                log.warn("用户权限不足，缺少权限：{}", ex.getPermission());
+                String permission = ex.getPermission();
+                if ("vip".equals(permission)) {
+                    yield SaResult.error("需要VIP权限").setCode(403);
+                } else if ("blogger".equals(permission)) {
+                    yield SaResult.error("需要博主认证").setCode(403);
                 }
-                log.error("您无权限进行此操作！");
-                return SaResult.error("您无权限进行此操作！");
-            default:
-                return SaResult.error(throwable.getMessage());
-        }
+                yield SaResult.error("权限不足").setCode(403);
+            }
+            default -> {
+                log.error("未知异常：", e);
+                yield SaResult.error("认证失败").setCode(500);
+            }
+        };
     }
 }

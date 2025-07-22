@@ -1,13 +1,46 @@
+# Prometheus 监控配置
+
+# 开启所有监控端点
 management:
   endpoints:
     web:
       exposure:
         include: "*"
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      show-components: always
+    prometheus:
+      enabled: true
+    metrics:
+      enabled: true
   metrics:
+    tags:
+      # 为所有指标添加应用标签
+      application: ${spring.application.name}
+      service: collide
     export:
       prometheus:
         enabled: true
+    # 启用 JVM 指标
+    enable:
+      jvm: true
+      system: true
+      web: true
+      process: true
+      http: true
+      jdbc: true
+      hikaricp: true
+      tomcat: true
+      cache: true
+
+# Dubbo 监控配置
 dubbo:
   metrics:
     enable: true
     protocol: prometheus
+  tracing:
+    enabled: true
+    sampling:
+      probability: 1.0 

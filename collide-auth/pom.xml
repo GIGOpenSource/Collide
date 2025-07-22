@@ -57,9 +57,10 @@
             <artifactId>collide-sa-token</artifactId>
         </dependency>
 
+        <!-- Password Encoder -->
         <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-skywalking</artifactId>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
         </dependency>
 
         <!--  TEST  -->

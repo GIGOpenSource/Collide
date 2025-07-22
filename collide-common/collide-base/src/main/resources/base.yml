@@ -1,6 +1,9 @@
 # 这是项目的需要改动的所有配置的地址的汇总，需要改哪个中间件的地址，在本文件中修改即可！
 
 spring:
+  config:
+    # 先加载 base.yml 中的基础配置，再加载 config.yml 中的 Nacos 配置
+    import: classpath:base.yml,classpath:config.yml
   servlet:
     multipart:
       max-file-size: 100MB        # 单个文件最大大小

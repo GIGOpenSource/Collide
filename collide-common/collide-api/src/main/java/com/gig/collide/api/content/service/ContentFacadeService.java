@@ -1,184 +1,106 @@
 package com.gig.collide.api.content.service;
 
 import com.gig.collide.api.content.request.*;
-import com.gig.collide.api.content.response.ContentOperatorResponse;
-import com.gig.collide.api.content.response.ContentQueryResponse;
+import com.gig.collide.api.content.response.*;
+import com.gig.collide.api.content.response.data.ContentInfo;
+import com.gig.collide.api.content.response.data.ContentStatistics;
+import com.gig.collide.base.response.PageResponse;
 
 /**
- * 内容门面服务
+ * 内容服务 Facade 接口
+ * 基于 t_content 表设计
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
  */
 public interface ContentFacadeService {
 
     /**
      * 创建内容
      *
-     * @param request 创建请求
-     * @return 操作响应
+     * @param createRequest 创建请求
+     * @return 内容响应
      */
-    ContentOperatorResponse createContent(ContentCreateRequest request);
+    ContentResponse createContent(ContentCreateRequest createRequest);
 
     /**
      * 更新内容
      *
-     * @param request 更新请求
-     * @return 操作响应
+     * @param updateRequest 更新请求
+     * @return 内容响应
      */
-    ContentOperatorResponse updateContent(ContentUpdateRequest request);
+    ContentResponse updateContent(ContentUpdateRequest updateRequest);
 
     /**
      * 删除内容
      *
-     * @param contentId 内容ID
-     * @param operatorUserId 操作者用户ID
-     * @return 操作响应
+     * @param deleteRequest 删除请求
+     * @return 内容响应
      */
-    ContentOperatorResponse deleteContent(Long contentId, Long operatorUserId);
-
-    /**
-     * 提交审核
-     *
-     * @param contentId 内容ID
-     * @param operatorUserId 操作者用户ID
-     * @return 操作响应
-     */
-    ContentOperatorResponse submitForReview(Long contentId, Long operatorUserId);
-
-    /**
-     * 审核内容
-     *
-     * @param request 审核请求
-     * @param operatorUserId 操作者用户ID
-     * @return 操作响应
-     */
-    ContentOperatorResponse reviewContent(ContentReviewRequest request, Long operatorUserId);
+    ContentResponse deleteContent(ContentDeleteRequest deleteRequest);
 
     /**
      * 发布内容
      *
-     * @param contentId 内容ID
-     * @param operatorUserId 操作者用户ID
-     * @return 操作响应
+     * @param publishRequest 发布请求
+     * @return 内容响应
      */
-    ContentOperatorResponse publishContent(Long contentId, Long operatorUserId);
+    ContentResponse publishContent(ContentPublishRequest publishRequest);
 
     /**
-     * 下架内容
+     * 查询内容详情
+     *
+     * @param queryRequest 查询请求
+     * @return 内容查询响应
+     */
+    ContentQueryResponse<ContentInfo> queryContent(ContentQueryRequest queryRequest);
+
+    /**
+     * 分页查询内容列表
+     *
+     * @param queryRequest 分页查询请求
+     * @return 内容列表响应
+     */
+    PageResponse<ContentInfo> pageQueryContents(ContentQueryRequest queryRequest);
+
+    /**
+     * 查询用户的内容列表
+     *
+     * @param queryRequest 查询请求
+     * @return 内容列表响应
+     */
+    PageResponse<ContentInfo> queryUserContents(ContentQueryRequest queryRequest);
+
+    /**
+     * 获取内容统计信息
      *
      * @param contentId 内容ID
-     * @param operatorUserId 操作者用户ID
-     * @param reason 下架原因
-     * @return 操作响应
+     * @return 内容统计响应
      */
-    ContentOperatorResponse unpublishContent(Long contentId, Long operatorUserId, String reason);
-
-    /**
-     * 根据ID查询内容
-     *
-     * @param contentId 内容ID
-     * @return 查询响应
-     */
-    ContentQueryResponse queryContentById(Long contentId);
-
-    /**
-     * 查询内容列表
-     *
-     * @param request 查询请求
-     * @return 查询响应
-     */
-    ContentQueryResponse queryContentList(ContentQueryRequest request);
-
-    /**
-     * 分页查询内容
-     *
-     * @param request 分页查询请求
-     * @return 查询响应
-     */
-    ContentQueryResponse queryContentPage(ContentPageQueryRequest request);
-
-    /**
-     * 查询用户内容
-     *
-     * @param userId 用户ID
-     * @param request 分页查询请求
-     * @return 查询响应
-     */
-    ContentQueryResponse queryUserContent(Long userId, ContentPageQueryRequest request);
-
-    /**
-     * 查询待审核内容
-     *
-     * @param request 分页查询请求
-     * @return 查询响应
-     */
-    ContentQueryResponse queryPendingReviewContent(ContentPageQueryRequest request);
-
-    /**
-     * 查询内容审核记录
-     *
-     * @param contentId 内容ID
-     * @return 查询响应
-     */
-    ContentQueryResponse queryContentReviewHistory(Long contentId);
-
-    /**
-     * 查询内容统计
-     *
-     * @param contentId 内容ID
-     * @return 查询响应
-     */
-    ContentQueryResponse queryContentStatistics(Long contentId);
+    ContentQueryResponse<ContentStatistics> getContentStatistics(Long contentId);
 
     /**
      * 点赞内容
      *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
+     * @param likeRequest 点赞请求
+     * @return 内容响应
      */
-    ContentOperatorResponse likeContent(Long contentId, Long userId);
-
-    /**
-     * 取消点赞
-     *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
-     */
-    ContentOperatorResponse unlikeContent(Long contentId, Long userId);
+    ContentResponse likeContent(ContentLikeRequest likeRequest);
 
     /**
      * 收藏内容
      *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
+     * @param favoriteRequest 收藏请求
+     * @return 内容响应
      */
-    ContentOperatorResponse collectContent(Long contentId, Long userId);
-
-    /**
-     * 取消收藏
-     *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
-     */
-    ContentOperatorResponse uncollectContent(Long contentId, Long userId);
-
-    /**
-     * 查看内容（记录浏览）
-     *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
-     */
-    ContentOperatorResponse viewContent(Long contentId, Long userId);
+    ContentResponse favoriteContent(ContentFavoriteRequest favoriteRequest);
 
     /**
      * 分享内容
      *
-     * @param contentId 内容ID
-     * @param userId 用户ID
-     * @return 操作响应
+     * @param shareRequest 分享请求
+     * @return 内容响应
      */
-    ContentOperatorResponse shareContent(Long contentId, Long userId);
+    ContentResponse shareContent(ContentShareRequest shareRequest);
 } 

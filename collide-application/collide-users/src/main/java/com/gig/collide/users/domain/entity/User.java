@@ -1,155 +1,97 @@
 package com.gig.collide.users.domain.entity;
 
+import com.baomidou.mybatisplus.annotation.*;
 import com.gig.collide.api.user.constant.UserRole;
 import com.gig.collide.api.user.constant.UserStateEnum;
-import com.gig.collide.datasource.domain.entity.BaseEntity;
-import com.gig.collide.users.infrastructure.mapper.AesEncryptTypeHandler;
-import cn.hutool.crypto.digest.DigestUtil;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
-import com.github.houbb.sensitive.annotation.strategy.SensitiveStrategyPhone;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
- * 用户
+ * 用户基础信息实体
+ * 使用collide-api中的统一枚举
+ *
+ * @author GIG
  */
-@Setter
-@Getter
-@TableName("users")
-public class User extends BaseEntity {
+@Data
+@TableName("t_user")
+public class User {
+
     /**
-     * 昵称
+     * 用户ID
      */
-    private String nickName;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
 
     /**
      * 用户名
      */
-    private String userName;
+    @TableField("username")
+    private String username;
 
     /**
-     * 密码
+     * 昵称
      */
-    private String password;
+    @TableField("nickname")
+    private String nickname;
 
     /**
-     * 密码
+     * 头像URL
      */
-    private String passwordHash;
+    @TableField("avatar")
+    private String avatar;
 
     /**
-     * 状态
+     * 邮箱
      */
-    private UserStateEnum state;
-
-    /**
-     * 邀请码
-     */
-    private String inviteCode;
-
-    /**
-     * 邀请人用户ID
-     */
-    private String inviterId;
+    @TableField("email")
+    private String email;
 
     /**
      * 手机号
      */
-    @SensitiveStrategyPhone
-    private String telephone;
+    @TableField("phone")
+    private String phone;
+
+    /**
+     * 密码哈希
+     */
+    @TableField("password_hash")
+    private String passwordHash;
+
+    /**
+     * 密码盐值
+     */
+    @TableField("salt")
+    private String salt;
+
+    /**
+     * 用户角色（使用统一枚举）
+     */
+    @TableField("role")
+    private UserRole role;
+
+    /**
+     * 用户状态（使用统一枚举）
+     */
+    @TableField("status")
+    private UserStateEnum status;
 
     /**
      * 最后登录时间
      */
-    private Date lastLoginTime;
+    @TableField("last_login_time")
+    private LocalDateTime lastLoginTime;
 
     /**
-     * 头像地址
+     * 创建时间
      */
-    private String profilePhotoUrl;
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
 
     /**
-     * 区块链地址
+     * 更新时间
      */
-    private String blockChainUrl;
-
-    /**
-     * 区块链平台
-     */
-    private String blockChainPlatform;
-
-    /**
-     * 实名认证
-     */
-    private Boolean certification;
-
-    /**
-     * 真实姓名
-     */
-    @TableField(typeHandler = AesEncryptTypeHandler.class)
-    private String realName;
-
-    /**
-     * 身份证hash
-     */
-    @TableField(typeHandler = AesEncryptTypeHandler.class)
-    private String idCardNo;
-
-    /**
-     * 用户角色
-     */
-    private UserRole userRole;
-
-    public User register(String telephone, String nickName, String password,String inviteCode,String inviterId) {
-        this.setTelephone(telephone);
-        this.setNickName(nickName);
-        this.setPasswordHash(DigestUtil.md5Hex(password));
-        this.setState(UserStateEnum.INIT);
-        this.setUserRole(UserRole.CUSTOMER);
-        this.setInviteCode(inviteCode);
-        this.setInviterId(inviterId);
-        return this;
-    }
-
-    public User userNameRegister(String username, String nickName, String password, String inviteCode, String inviterId) {
-        this.setUserName(username);
-        this.setNickName(nickName);
-        this.setPasswordHash(DigestUtil.md5Hex(password));
-        this.setState(UserStateEnum.INIT);
-        this.setUserRole(UserRole.CUSTOMER);
-        this.setInviteCode(inviteCode);
-        this.setInviterId(inviterId);
-        return this;
-    }
-
-    public User registerAdmin(String telephone, String nickName, String password) {
-        this.setTelephone(telephone);
-        this.setNickName(nickName);
-        this.setPasswordHash(DigestUtil.md5Hex(password));
-        this.setState(UserStateEnum.ACTIVE);
-        this.setUserRole(UserRole.ADMIN);
-        return this;
-    }
-
-    public User auth(String realName, String idCard) {
-        this.setRealName(realName);
-        this.setIdCardNo(idCard);
-        this.setCertification(true);
-        this.setState(UserStateEnum.AUTH);
-        return this;
-    }
-
-    public User active(String blockChainUrl, String blockChainPlatform) {
-        this.setBlockChainUrl(blockChainUrl);
-        this.setBlockChainPlatform(blockChainPlatform);
-        this.setState(UserStateEnum.ACTIVE);
-        return this;
-    }
-
-    public boolean canModifyInfo() {
-        return state == UserStateEnum.INIT || state == UserStateEnum.AUTH || state == UserStateEnum.ACTIVE;
-    }
+    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    private LocalDateTime updateTime;
 }
