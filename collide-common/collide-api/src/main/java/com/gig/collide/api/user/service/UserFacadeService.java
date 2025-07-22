@@ -8,7 +8,6 @@ import com.gig.collide.base.response.PageResponse;
 
 /**
  * 用户门面服务接口
- * 参考nft-turbo的UserFacadeService设计
  *
  * @author Collide Team
  * @version 1.0

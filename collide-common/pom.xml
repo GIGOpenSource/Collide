@@ -21,7 +21,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
-    <!-- 模块按功能分组，参考NFTurbo的组织方式 -->
+    <!-- 模块按功能分组 -->
     <modules>
         <!-- 基础架构模块 -->
         <module>collide-base</module>

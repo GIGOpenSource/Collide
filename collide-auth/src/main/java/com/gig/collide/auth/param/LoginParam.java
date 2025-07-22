@@ -7,7 +7,6 @@ import lombok.Setter;
 
 /**
  * 登录参数
- * 参考 nft-turbo-auth 设计思想，使用用户名密码登录
  *
  * @author Collide Team
  * @version 1.0

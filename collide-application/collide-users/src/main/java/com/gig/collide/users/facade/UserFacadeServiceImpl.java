@@ -19,7 +19,6 @@ import org.springframework.stereotype.Component;
 
 /**
  * 用户服务 Dubbo RPC 接口实现
- * 参考nft-turbo的UserFacadeServiceImpl设计
  *
  * @author Collide Team
  * @version 1.0

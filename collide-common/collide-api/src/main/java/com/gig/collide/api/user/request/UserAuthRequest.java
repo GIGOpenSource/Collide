@@ -11,7 +11,6 @@ import jakarta.validation.constraints.Pattern;
 
 /**
  * 用户实名认证请求
- * 参考nft-turbo的UserAuthRequest设计
  *
  * @author Collide Team
  * @version 1.0

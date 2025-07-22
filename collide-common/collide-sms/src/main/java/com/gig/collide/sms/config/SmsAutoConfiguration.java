@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Bean;
 
 /**
  * 短信服务自动配置
- * 参考 nft-turbo-sms 设计
  *
  * @author Collide Team
  * @version 1.0

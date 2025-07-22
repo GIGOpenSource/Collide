@@ -11,7 +11,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * 限流器自动配置
- * 参考 nft-turbo-limiter 设计
  *
  * @author Collide Team
  * @version 1.0

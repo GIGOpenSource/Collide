@@ -7,7 +7,6 @@ import lombok.ToString;
 
 /**
  * 用户分页查询请求
- * 参考nft-turbo的UserPageQueryRequest设计
  *
  * @author Collide Team
  * @version 1.0

@@ -4,7 +4,6 @@ import com.gig.collide.sms.response.SmsSendResponse;
 
 /**
  * 短信服务接口
- * 参考 nft-turbo-sms 设计
  *
  * @author Collide Team
  * @version 1.0

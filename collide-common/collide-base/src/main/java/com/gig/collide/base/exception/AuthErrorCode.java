@@ -2,7 +2,6 @@ package com.gig.collide.base.exception;
 
 /**
  * 认证服务错误码
- * 参考 nft-turbo-base 设计模式
  *
  * @author Collide Team
  * @version 1.0

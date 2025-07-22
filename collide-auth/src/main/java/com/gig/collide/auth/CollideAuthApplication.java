@@ -6,7 +6,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * 认证服务启动类
- * 参考 nft-turbo-auth 设计
  *
  * @author Collide Team
  * @version 1.0

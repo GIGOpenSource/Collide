@@ -5,7 +5,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Collide 业务聚合启动类
- * 参考 nft-turbo-app 的 NfTurboBusinessApplication 设计
  * 
  * 作为所有业务模块的统一启动入口，包括：
  * - collide-users: 用户服务

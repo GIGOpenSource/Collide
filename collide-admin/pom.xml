@@ -13,7 +13,7 @@
     <version>1.0.0-SNAPSHOT</version>
 
     <properties>
-        <application.name>nfturbo-admin</application.name>
+        <application.name>collide-admin</application.name>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -30,7 +30,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.gig.collide.admin.NfTurboAdminApplication</mainClass>
+                    <mainClass>com.gig.collide.admin.CollideAdminApplication</mainClass>
                 </configuration>
 
                 <executions>

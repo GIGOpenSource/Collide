@@ -2,7 +2,6 @@ package com.gig.collide.limiter;
 
 /**
  * 限流服务接口
- * 参考 nft-turbo-limiter 设计
  *
  * @author Collide Team
  * @version 1.0

@@ -24,7 +24,6 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 认证相关接口
- * 参考 nft-turbo-auth 设计，支持用户名密码登录
  *
  * @author Collide Team
  * @version 1.0

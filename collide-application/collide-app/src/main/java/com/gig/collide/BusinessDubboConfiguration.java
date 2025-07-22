@@ -10,7 +10,6 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Collide 业务模块 Dubbo 配置
- * 参考 nft-turbo-app 的 BusinessDubboConfiguration 设计
  * 
  * 集中管理所有业务模块的 Dubbo 服务引用，包括：
  * - UserFacadeService: 用户服务

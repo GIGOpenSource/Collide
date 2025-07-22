@@ -10,7 +10,6 @@ import lombok.ToString;
 
 /**
  * 用户查询请求
- * 参考nft-turbo的UserQueryRequest设计
  *
  * @author Collide Team
  * @version 1.0

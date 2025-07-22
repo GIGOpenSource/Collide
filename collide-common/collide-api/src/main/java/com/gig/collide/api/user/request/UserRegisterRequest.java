@@ -12,7 +12,6 @@ import jakarta.validation.constraints.Size;
 
 /**
  * 用户注册请求
- * 参考nft-turbo的UserRegisterRequest设计
  *
  * @author Collide Team
  * @version 1.0

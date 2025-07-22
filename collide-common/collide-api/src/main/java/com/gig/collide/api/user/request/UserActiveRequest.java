@@ -10,7 +10,6 @@ import jakarta.validation.constraints.NotNull;
 
 /**
  * 用户激活请求
- * 参考nft-turbo的UserActiveRequest设计
  *
  * @author Collide Team
  * @version 1.0

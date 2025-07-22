@@ -11,7 +11,7 @@ import static com.gig.collide.cache.constant.CacheConstant.CACHE_KEY_SEPARATOR;
 @Slf4j
 public class TokenUtil {
 
-    private static final String TOEKN_AES_KEY = "tokenbynfturbo_0";
+    private static final String TOEKN_AES_KEY = "SoybXAYQqoBGcQczyImhO+89rp15keZryCYW8aV+WMF3m/x1pX/bw+22jhTHVnt4";
 
     public static final String TOKEN_PREFIX = "token:";
 

@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * 滑动窗口限流器实现
  * 基于 Redis 实现的滑动窗口限流算法
- * 参考 nft-turbo-limiter 设计
  *
  * @author Collide Team
  * @version 1.0

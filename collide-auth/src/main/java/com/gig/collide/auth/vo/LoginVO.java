@@ -11,7 +11,6 @@ import java.io.Serializable;
 
 /**
  * 登录响应VO
- * 参考 nft-turbo-auth 设计，保持简洁
  *
  * @author Collide Team
  * @version 1.0

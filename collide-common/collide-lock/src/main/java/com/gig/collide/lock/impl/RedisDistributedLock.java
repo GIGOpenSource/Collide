@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Redis 分布式锁实现
- * 参考 nft-turbo-lock 设计
  *
  * @author Collide Team
  * @version 1.0

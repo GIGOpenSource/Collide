@@ -13,7 +13,7 @@
     <groupId>com.gig</groupId>
     <artifactId>collide-app</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Collide 业务聚合启动模块 - 参考 nft-turbo-app 设计</description>
+    <description>Collide 业务聚合启动模块</description>
 
     <properties>
         <application.name>collide-business</application.name>

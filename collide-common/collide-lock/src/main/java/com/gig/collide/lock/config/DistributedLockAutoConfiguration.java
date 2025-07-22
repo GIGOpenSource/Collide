@@ -11,7 +11,6 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * 分布式锁自动配置
- * 参考 nft-turbo-lock 设计
  *
  * @author Collide Team
  * @version 1.0

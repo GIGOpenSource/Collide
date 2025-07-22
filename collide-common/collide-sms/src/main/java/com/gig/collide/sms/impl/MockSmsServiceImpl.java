@@ -12,7 +12,6 @@ import java.util.concurrent.TimeUnit;
 /**
  * Mock短信服务实现
  * 用于开发和测试环境
- * 参考 nft-turbo-sms 设计
  *
  * @author Collide Team
  * @version 1.0

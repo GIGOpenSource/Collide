@@ -4,7 +4,6 @@ import lombok.Data;
 
 /**
  * 短信发送响应
- * 参考 nft-turbo-sms 设计
  *
  * @author Collide Team
  * @version 1.0

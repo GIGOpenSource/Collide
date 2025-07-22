@@ -15,7 +15,7 @@
     <groupId>com.gig</groupId>
     <artifactId>collide-application</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Collide Business Modules - 参考 nft-turbo-business 设计</description>
+    <description>Collide Business Modules</description>
 
     <properties>
         <application.name>collide-application</application.name>
