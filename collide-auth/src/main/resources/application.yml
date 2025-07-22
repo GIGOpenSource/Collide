@@ -21,4 +21,4 @@ sa-token:
   is-log: true
 
 server:
-  port: 8082
+  port: 9500

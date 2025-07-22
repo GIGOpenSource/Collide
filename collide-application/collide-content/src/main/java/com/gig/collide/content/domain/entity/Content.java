@@ -257,6 +257,15 @@ public class Content {
     }
 
     /**
+     * 判断内容是否可删除
+     */
+    public boolean isDeletable() {
+        // 只有草稿状态和被拒绝状态的内容可以删除
+        // 已发布的内容不允许删除，只能下线
+        return status == ContentStatus.DRAFT || status == ContentStatus.REJECTED;
+    }
+
+    /**
      * 计算总互动数
      */
     public Long getTotalInteractions() {

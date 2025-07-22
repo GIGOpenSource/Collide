@@ -1,5 +1,6 @@
 package com.gig.collide.follow.controller;
 
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.gig.collide.api.follow.constant.FollowType;
 import com.gig.collide.api.follow.request.FollowRequest;
@@ -11,10 +12,7 @@ import com.gig.collide.api.follow.response.data.FollowInfo;
 import com.gig.collide.api.follow.response.data.FollowStatistics;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.base.response.Response;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -38,126 +36,145 @@ import jakarta.validation.constraints.NotNull;
 @RequestMapping("/api/v1/follow")
 @RequiredArgsConstructor
 @Validated
-@Tag(name = "关注管理", description = "用户关注关系管理相关接口")
 public class FollowController {
 
     private final FollowFacadeService followFacadeService;
 
-    @PostMapping("/follow")
-    @Operation(summary = "关注用户", description = "关注指定用户")
-    public Response<FollowResponse> follow(@Valid @RequestBody FollowParam param) {
-        Long currentUserId = StpUtil.getLoginIdAsLong();
-        log.info("用户关注操作，当前用户: {}, 被关注用户: {}", currentUserId, param.getFollowedUserId());
+    @PostMapping
+    @SaCheckLogin
+    public Result<FollowResponse> follow(@Valid @RequestBody FollowParam param) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
+            log.info("用户关注操作，当前用户: {}, 被关注用户: {}", currentUserId, param.getFollowedUserId());
 
-        FollowRequest followRequest = new FollowRequest();
-        followRequest.setFollowerUserId(currentUserId);
-        followRequest.setFollowedUserId(param.getFollowedUserId());
-        followRequest.setFollowType(param.getFollowType() != null ? param.getFollowType() : FollowType.NORMAL);
+            FollowRequest followRequest = new FollowRequest();
+            followRequest.setFollowerUserId(currentUserId);
+            followRequest.setFollowedUserId(param.getFollowedUserId());
+            followRequest.setFollowType(param.getFollowType());
 
-        FollowResponse followResponse = followFacadeService.follow(followRequest);
-
-        return Response.success(followResponse);
+            FollowResponse followResponse = followFacadeService.follow(followRequest);
+            return Result.success(followResponse);
+        } catch (Exception e) {
+            log.error("关注操作失败", e);
+            return Result.error("FOLLOW_ERROR", "关注失败，请稍后重试");
+        }
     }
 
-    @PostMapping("/unfollow")
-    @Operation(summary = "取消关注", description = "取消关注指定用户")
-    public Response<FollowResponse> unfollow(@Valid @RequestBody UnfollowParam param) {
-        Long currentUserId = StpUtil.getLoginIdAsLong();
-        log.info("用户取消关注操作，当前用户: {}, 被关注用户: {}", currentUserId, param.getFollowedUserId());
+    @DeleteMapping("/{followedUserId}")
+    @SaCheckLogin
+    public Result<FollowResponse> unfollow(@PathVariable Long followedUserId) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
+            log.info("用户取消关注操作，当前用户: {}, 被关注用户: {}", currentUserId, followedUserId);
 
-        UnfollowRequest unfollowRequest = new UnfollowRequest();
-        unfollowRequest.setFollowerUserId(currentUserId);
-        unfollowRequest.setFollowedUserId(param.getFollowedUserId());
+            UnfollowRequest unfollowRequest = new UnfollowRequest();
+            unfollowRequest.setFollowerUserId(currentUserId);
+            unfollowRequest.setFollowedUserId(followedUserId);
 
-        FollowResponse followResponse = followFacadeService.unfollow(unfollowRequest);
-
-        return Response.success(followResponse);
+            FollowResponse followResponse = followFacadeService.unfollow(unfollowRequest);
+            return Result.success(followResponse);
+        } catch (Exception e) {
+            log.error("取消关注操作失败", e);
+            return Result.error("UNFOLLOW_ERROR", "取消关注失败，请稍后重试");
+        }
     }
 
     @GetMapping("/check/{followedUserId}")
-    @Operation(summary = "检查关注关系", description = "检查当前用户是否关注指定用户")
-    public Response<FollowInfo> checkFollow(
-            @Parameter(description = "被关注用户ID") @PathVariable Long followedUserId,
-            @Parameter(description = "是否检查相互关注") @RequestParam(defaultValue = "true") Boolean checkMutual) {
-        
-        Long currentUserId = StpUtil.getLoginIdAsLong();
+    @SaCheckLogin
+    public Result<FollowInfo> checkFollow(@PathVariable Long followedUserId,
+                                         @RequestParam(defaultValue = "true") Boolean checkMutual) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
 
-        FollowQueryRequest queryRequest = new FollowQueryRequest();
-        queryRequest.setFollowerUserId(currentUserId);
-        queryRequest.setFollowedUserId(followedUserId);
-        queryRequest.setCheckMutualFollow(checkMutual);
+            FollowQueryRequest queryRequest = new FollowQueryRequest();
+            queryRequest.setFollowerUserId(currentUserId);
+            queryRequest.setFollowedUserId(followedUserId);
+            queryRequest.setCheckMutualFollow(checkMutual);
 
-        FollowQueryResponse<FollowInfo> queryResponse = followFacadeService.queryFollow(queryRequest);
-
-        return Response.success(queryResponse.getData());
+            FollowQueryResponse<FollowInfo> queryResponse = followFacadeService.queryFollow(queryRequest);
+            return Result.success(queryResponse.getData());
+        } catch (Exception e) {
+            log.error("检查关注关系失败", e);
+            return Result.error("CHECK_FOLLOW_ERROR", "检查关注关系失败，请稍后重试");
+        }
     }
 
     @GetMapping("/following")
-    @Operation(summary = "获取关注列表", description = "分页获取当前用户的关注列表")
-    public Response<PageResponse<FollowInfo>> getFollowingList(
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") @Min(1) Integer pageNo,
-            @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") @Min(1) @Max(100) Integer pageSize) {
-        
-        Long currentUserId = StpUtil.getLoginIdAsLong();
+    @SaCheckLogin
+    public Result<PageResponse<FollowInfo>> getFollowingList(
+            @RequestParam(defaultValue = "1") @Min(1) Integer pageNo,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) Integer pageSize) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
 
-        FollowQueryRequest queryRequest = new FollowQueryRequest();
-        queryRequest.setFollowerUserId(currentUserId);
-        queryRequest.setPageNo(pageNo);
-        queryRequest.setPageSize(pageSize);
+            FollowQueryRequest queryRequest = new FollowQueryRequest();
+            queryRequest.setFollowerUserId(currentUserId);
+            queryRequest.setPageNo(pageNo);
+            queryRequest.setPageSize(pageSize);
 
-        PageResponse<FollowInfo> pageResponse = followFacadeService.pageQueryFollowing(queryRequest);
-
-        return Response.success(pageResponse);
+            PageResponse<FollowInfo> pageResponse = followFacadeService.pageQueryFollowing(queryRequest);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("获取关注列表失败", e);
+            return Result.error("GET_FOLLOWING_ERROR", "获取关注列表失败，请稍后重试");
+        }
     }
 
     @GetMapping("/followers")
-    @Operation(summary = "获取粉丝列表", description = "分页获取当前用户的粉丝列表")
-    public Response<PageResponse<FollowInfo>> getFollowersList(
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") @Min(1) Integer pageNo,
-            @Parameter(description = "每页大小") @RequestParam(defaultValue = "20") @Min(1) @Max(100) Integer pageSize) {
-        
-        Long currentUserId = StpUtil.getLoginIdAsLong();
+    @SaCheckLogin
+    public Result<PageResponse<FollowInfo>> getFollowersList(
+            @RequestParam(defaultValue = "1") @Min(1) Integer pageNo,
+            @RequestParam(defaultValue = "20") @Min(1) @Max(100) Integer pageSize) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
 
-        FollowQueryRequest queryRequest = new FollowQueryRequest();
-        queryRequest.setFollowedUserId(currentUserId);
-        queryRequest.setPageNo(pageNo);
-        queryRequest.setPageSize(pageSize);
+            FollowQueryRequest queryRequest = new FollowQueryRequest();
+            queryRequest.setFollowedUserId(currentUserId);
+            queryRequest.setPageNo(pageNo);
+            queryRequest.setPageSize(pageSize);
 
-        PageResponse<FollowInfo> pageResponse = followFacadeService.pageQueryFollowers(queryRequest);
-
-        return Response.success(pageResponse);
+            PageResponse<FollowInfo> pageResponse = followFacadeService.pageQueryFollowers(queryRequest);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("获取粉丝列表失败", e);
+            return Result.error("GET_FOLLOWERS_ERROR", "获取粉丝列表失败，请稍后重试");
+        }
     }
 
     @GetMapping("/statistics")
-    @Operation(summary = "获取关注统计", description = "获取当前用户的关注统计信息")
-    public Response<FollowStatistics> getFollowStatistics() {
-        Long currentUserId = StpUtil.getLoginIdAsLong();
-
-        FollowQueryResponse<FollowStatistics> queryResponse = 
-            followFacadeService.getFollowStatistics(currentUserId);
-
-        return Response.success(queryResponse.getData());
+    @SaCheckLogin
+    public Result<FollowStatistics> getFollowStatistics() {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
+            FollowQueryResponse<FollowStatistics> queryResponse = 
+                followFacadeService.getFollowStatistics(currentUserId);
+            return Result.success(queryResponse.getData());
+        } catch (Exception e) {
+            log.error("获取关注统计失败", e);
+            return Result.error("GET_STATISTICS_ERROR", "获取关注统计失败，请稍后重试");
+        }
     }
 
     @GetMapping("/statistics/{userId}")
-    @Operation(summary = "获取用户关注统计", description = "获取指定用户的关注统计信息")
-    public Response<FollowStatistics> getUserFollowStatistics(
-            @Parameter(description = "用户ID") @PathVariable Long userId) {
-
-        FollowQueryResponse<FollowStatistics> queryResponse = 
-            followFacadeService.getFollowStatistics(userId);
-
-        return Response.success(queryResponse.getData());
+    public Result<FollowStatistics> getUserFollowStatistics(@PathVariable Long userId) {
+        try {
+            FollowQueryResponse<FollowStatistics> queryResponse = 
+                followFacadeService.getFollowStatistics(userId);
+            return Result.success(queryResponse.getData());
+        } catch (Exception e) {
+            log.error("获取用户关注统计失败", e);
+            return Result.error("GET_USER_STATISTICS_ERROR", "获取用户关注统计失败，请稍后重试");
+        }
     }
 
     /**
-     * 关注参数
+     * 关注请求参数
      */
     public static class FollowParam {
         @NotNull(message = "被关注用户ID不能为空")
         private Long followedUserId;
         
-        private FollowType followType;
+        private FollowType followType = FollowType.NORMAL;
 
         public Long getFollowedUserId() {
             return followedUserId;
@@ -173,22 +190,6 @@ public class FollowController {
 
         public void setFollowType(FollowType followType) {
             this.followType = followType;
-        }
-    }
-
-    /**
-     * 取消关注参数
-     */
-    public static class UnfollowParam {
-        @NotNull(message = "被关注用户ID不能为空")
-        private Long followedUserId;
-
-        public Long getFollowedUserId() {
-            return followedUserId;
-        }
-
-        public void setFollowedUserId(Long followedUserId) {
-            this.followedUserId = followedUserId;
         }
     }
 } 

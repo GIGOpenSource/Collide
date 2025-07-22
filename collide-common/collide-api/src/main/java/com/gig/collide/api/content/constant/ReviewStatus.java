@@ -1,7 +1,7 @@
 package com.gig.collide.api.content.constant;
 
 /**
- * 审核状态枚举
+ * 内容审核状态枚举
  * 对应 t_content 表的 review_status 字段
  *
  * @author Collide Team
@@ -16,19 +16,14 @@ public enum ReviewStatus {
     PENDING("待审核"),
 
     /**
-     * 已通过
+     * 审核通过
      */
-    APPROVED("已通过"),
+    APPROVED("审核通过"),
 
     /**
-     * 已拒绝
+     * 审核拒绝
      */
-    REJECTED("已拒绝"),
-
-    /**
-     * 需要修改
-     */
-    NEED_REVISION("需要修改");
+    REJECTED("审核拒绝");
 
     private final String description;
 
@@ -41,20 +36,20 @@ public enum ReviewStatus {
     }
 
     /**
-     * 判断是否为终态状态
-     *
-     * @return true if final status
-     */
-    public boolean isFinalStatus() {
-        return this == APPROVED || this == REJECTED;
-    }
-
-    /**
-     * 判断是否通过审核
+     * 判断是否审核通过
      *
      * @return true if approved
      */
     public boolean isApproved() {
         return this == APPROVED;
+    }
+
+    /**
+     * 判断是否需要审核
+     *
+     * @return true if needs review
+     */
+    public boolean needsReview() {
+        return this == PENDING;
     }
 } 

@@ -18,6 +18,13 @@ public class CollideAuthApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(CollideAuthApplication.class, args);
+        System.out.println("""
+            ====================================
+            🎉 Collide Auth 模块启动成功！
+            📝 用户服务已就绪
+            🔗 端口: 9500
+            ====================================
+            """);
     }
 
 }

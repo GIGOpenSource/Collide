@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.api.follow.constant.FollowStatus;
 import com.gig.collide.api.follow.constant.FollowType;
 import com.gig.collide.base.exception.BizException;
-import com.gig.collide.base.exception.ErrorCode;
+import com.gig.collide.base.exception.CommonErrorCode;
 import com.gig.collide.follow.domain.entity.Follow;
 import com.gig.collide.follow.domain.entity.FollowStatistics;
 import com.gig.collide.follow.infrastructure.mapper.FollowMapper;
@@ -256,13 +256,13 @@ public class FollowDomainService {
      */
     private void validateFollowParams(Long followerUserId, Long followedUserId) {
         if (followerUserId == null) {
-            throw new BizException(ErrorCode.PARAM_ERROR, "关注者用户ID不能为空");
+            throw new BizException("关注者用户ID不能为空", CommonErrorCode.PARAM_INVALID);
         }
         if (followedUserId == null) {
-            throw new BizException(ErrorCode.PARAM_ERROR, "被关注者用户ID不能为空");
+            throw new BizException("被关注者用户ID不能为空", CommonErrorCode.PARAM_INVALID);
         }
         if (followerUserId.equals(followedUserId)) {
-            throw new BizException(ErrorCode.PARAM_ERROR, "不能关注自己");
+            throw new BizException("不能关注自己", CommonErrorCode.PARAM_INVALID);
         }
     }
 

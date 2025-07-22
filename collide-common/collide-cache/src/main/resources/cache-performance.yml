@@ -1,0 +1,272 @@
+# ====================================
+# Collide 项目缓存性能优化配置
+# Redis 缓存策略和性能优化设置
+# ====================================
+
+spring:
+  cache:
+    # 缓存类型：redis
+    type: redis
+    # 缓存名称配置
+    cache-names:
+      - userCache
+      - contentCache
+      - followCache
+      - statisticsCache
+      - hotDataCache
+    
+  redis:
+    # Redis 性能优化配置
+    # 连接池配置
+    jedis:
+      pool:
+        # 最大连接数
+        max-active: 20
+        # 最大空闲连接
+        max-idle: 10
+        # 最小空闲连接
+        min-idle: 2
+        # 获取连接时的最大等待毫秒数
+        max-wait: 5000ms
+    # 连接超时时间
+    timeout: 3000ms
+    # 数据库索引
+    database: 0
+    
+# ====================================
+# 自定义缓存配置
+# ====================================
+collide:
+  cache:
+    # 缓存前缀
+    prefix: "collide:"
+    
+    # 用户相关缓存配置
+    user:
+      # 用户基础信息缓存
+      info:
+        key-pattern: "user:info:{userId}"
+        ttl: 1800  # 30分钟
+        null-ttl: 300  # 空值缓存5分钟
+      
+      # 用户扩展信息缓存
+      profile:
+        key-pattern: "user:profile:{userId}"
+        ttl: 1800  # 30分钟
+        null-ttl: 300
+      
+      # 用户权限缓存
+      permissions:
+        key-pattern: "user:permissions:{userId}"
+        ttl: 3600  # 1小时
+        null-ttl: 300
+    
+    # 内容相关缓存配置
+    content:
+      # 内容详情缓存
+      info:
+        key-pattern: "content:info:{contentId}"
+        ttl: 3600  # 1小时
+        null-ttl: 300
+      
+      # 热门内容列表缓存
+      hot-list:
+        key-pattern: "content:list:hot:{contentType}:{page}"
+        ttl: 600   # 10分钟
+        max-pages: 10  # 最多缓存10页
+      
+      # 最新内容列表缓存
+      latest-list:
+        key-pattern: "content:list:latest:{contentType}:{page}"
+        ttl: 300   # 5分钟
+        max-pages: 5   # 最多缓存5页
+      
+      # 推荐内容缓存
+      recommended:
+        key-pattern: "content:recommended:{userId}"
+        ttl: 1800  # 30分钟
+      
+      # 用户内容列表缓存
+      user-list:
+        key-pattern: "content:user:{userId}:{page}"
+        ttl: 900   # 15分钟
+        max-pages: 20
+    
+    # 关注关系缓存配置
+    follow:
+      # 关注列表缓存
+      following:
+        key-pattern: "follow:following:{userId}"
+        ttl: 3600  # 1小时
+        null-ttl: 600
+      
+      # 粉丝列表缓存
+      followers:
+        key-pattern: "follow:followers:{userId}"
+        ttl: 3600  # 1小时
+        null-ttl: 600
+      
+      # 关注统计缓存
+      statistics:
+        key-pattern: "follow:stats:{userId}"
+        ttl: 3600  # 1小时
+        null-ttl: 300
+      
+      # 关注关系检查缓存
+      relation:
+        key-pattern: "follow:relation:{followerId}:{followingId}"
+        ttl: 1800  # 30分钟
+        null-ttl: 300
+    
+    # 统计数据缓存配置
+    statistics:
+      # 内容统计缓存
+      content:
+        key-pattern: "stats:content:{contentId}"
+        ttl: 3600  # 1小时
+        null-ttl: 300
+      
+      # 用户统计缓存
+      user:
+        key-pattern: "stats:user:{userId}"
+        ttl: 1800  # 30分钟
+        null-ttl: 300
+      
+      # 应用统计缓存
+      app:
+        key-pattern: "stats:app:{appId}:{date}"
+        ttl: 7200  # 2小时
+        null-ttl: 600
+    
+    # 热点数据缓存配置
+    hotdata:
+      # 热门搜索关键词
+      hot-keywords:
+        key-pattern: "hotdata:keywords"
+        ttl: 1800  # 30分钟
+      
+      # 系统配置缓存
+      system-config:
+        key-pattern: "hotdata:sysconfig:{configKey}"
+        ttl: 3600  # 1小时
+      
+      # 分类数据缓存
+      categories:
+        key-pattern: "hotdata:categories:{type}"
+        ttl: 7200  # 2小时
+    
+    # 会话相关缓存
+    session:
+      # 用户会话缓存
+      user-session:
+        key-pattern: "session:user:{sessionId}"
+        ttl: 7200  # 2小时
+      
+      # OAuth令牌缓存
+      oauth-token:
+        key-pattern: "session:oauth:{token}"
+        ttl: 3600  # 1小时
+    
+    # ====================================
+    # 缓存预热配置
+    # ====================================
+    warmup:
+      enabled: true
+      
+      # 预热任务配置
+      tasks:
+        # 热门内容预热
+        hot-content:
+          enabled: true
+          cron: "0 */10 * * * ?"  # 每10分钟执行一次
+          content-types:
+            - "SHORT_VIDEO"
+            - "LONG_VIDEO" 
+            - "NOVEL"
+            - "COMIC"
+        
+        # 系统配置预热
+        system-config:
+          enabled: true
+          cron: "0 0 */1 * * ?"   # 每小时执行一次
+        
+        # 分类数据预热
+        categories:
+          enabled: true
+          cron: "0 0 0 * * ?"     # 每天执行一次
+    
+    # ====================================
+    # 缓存清理配置
+    # ====================================
+    cleanup:
+      enabled: true
+      
+      # 自动清理任务
+      tasks:
+        # 过期数据清理
+        expired-data:
+          enabled: true
+          cron: "0 0 2 * * ?"     # 每天凌晨2点执行
+        
+        # 内存使用率监控清理
+        memory-cleanup:
+          enabled: true
+          threshold: 80           # 内存使用率超过80%时清理
+          clean-percent: 20       # 清理20%的缓存数据
+    
+    # ====================================
+    # 性能监控配置
+    # ====================================
+    monitoring:
+      enabled: true
+      
+      # 监控指标
+      metrics:
+        # 缓存命中率监控
+        hit-rate:
+          enabled: true
+          threshold: 0.8          # 命中率低于80%时告警
+        
+        # 响应时间监控  
+        response-time:
+          enabled: true
+          threshold: 100          # 响应时间超过100ms时告警
+        
+        # 内存使用监控
+        memory-usage:
+          enabled: true
+          threshold: 90           # 内存使用率超过90%时告警
+      
+      # 监控报告
+      reports:
+        enabled: true
+        interval: 300             # 每5分钟生成一次报告
+        
+# ====================================
+# 缓存使用建议和最佳实践
+# ====================================
+cache-best-practices: |
+  1. 缓存键设计原则：
+     - 使用有意义的前缀
+     - 包含版本信息避免冲突
+     - 避免过长的键名
+     
+  2. TTL设置原则：
+     - 热点数据短TTL（5-10分钟）
+     - 用户数据中等TTL（30分钟-1小时）
+     - 配置数据长TTL（1-2小时）
+     
+  3. 缓存更新策略：
+     - 读取时更新（Cache Aside）
+     - 数据变更时主动清理
+     - 定时预热热点数据
+     
+  4. 缓存雪崩防护：
+     - TTL随机化
+     - 多级缓存
+     - 熔断降级
+     
+  5. 缓存穿透防护：
+     - 空值缓存
+     - 布隆过滤器
+     - 参数校验 

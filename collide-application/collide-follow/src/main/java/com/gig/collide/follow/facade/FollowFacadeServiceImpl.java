@@ -144,11 +144,11 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
 
             List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(page.getRecords());
 
-            return PageResponse.of(followInfoList, page.getTotal(), page.getSize(), page.getCurrent());
+            return PageResponse.of(followInfoList, (int) page.getTotal(), (int) page.getSize(), (int) page.getCurrent());
 
         } catch (Exception e) {
             log.error("查询关注列表失败", e);
-            return PageResponse.of(List.of(), 0L, queryRequest.getPageSize(), queryRequest.getPageNo());
+            return PageResponse.of(List.of(), 0, queryRequest.getPageSize(), queryRequest.getPageNo());
         }
     }
 
@@ -166,11 +166,11 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
 
             List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(page.getRecords());
 
-            return PageResponse.of(followInfoList, page.getTotal(), page.getSize(), page.getCurrent());
+            return PageResponse.of(followInfoList, (int) page.getTotal(), (int) page.getSize(), (int) page.getCurrent());
 
         } catch (Exception e) {
             log.error("查询粉丝列表失败", e);
-            return PageResponse.of(List.of(), 0L, queryRequest.getPageSize(), queryRequest.getPageNo());
+            return PageResponse.of(List.of(), 0, queryRequest.getPageSize(), queryRequest.getPageNo());
         }
     }
 

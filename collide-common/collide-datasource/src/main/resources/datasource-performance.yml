@@ -1,0 +1,309 @@
+# ====================================
+# Collide 项目数据库性能优化配置  
+# HikariCP连接池优化和读写分离配置
+# ====================================
+
+spring:
+  datasource:
+    # HikariCP 连接池性能优化配置
+    hikari:
+      # 连接池名称
+      pool-name: CollideHikariCP
+      
+      # 核心性能配置
+      # 连接池最小空闲连接数
+      minimum-idle: 10
+      # 连接池最大连接数  
+      maximum-pool-size: 50
+      # 连接超时时间（毫秒）
+      connection-timeout: 20000
+      # 连接空闲超时时间（毫秒）
+      idle-timeout: 300000
+      # 连接最大生命周期（毫秒）
+      max-lifetime: 1200000
+      # 连接有效性检测超时时间（毫秒）
+      validation-timeout: 3000
+      
+      # 连接池行为配置
+      # 自动提交
+      auto-commit: true
+      # 连接只读（读库）
+      read-only: false
+      # 连接隔离级别
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+      
+      # 连接检测配置
+      # 连接检测查询
+      connection-test-query: SELECT 1
+      # 连接泄漏检测阈值（毫秒）
+      leak-detection-threshold: 60000
+      
+      # 性能优化配置
+      # 注册JMX管理Bean
+      register-mbeans: true
+      # 允许连接池挂起
+      allow-pool-suspension: false
+      
+      # 数据库驱动配置
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      
+      # 数据库连接属性优化
+      data-source-properties:
+        # 字符编码
+        characterEncoding: utf8mb4
+        # 使用Unicode
+        useUnicode: true
+        # SSL连接
+        useSSL: false
+        # 服务器时区
+        serverTimezone: Asia/Shanghai
+        # 缓存预处理语句
+        cachePrepStmts: true
+        # 预处理语句缓存大小
+        prepStmtCacheSize: 250
+        # 预处理语句SQL限制长度
+        prepStmtCacheSqlLimit: 2048
+        # 使用服务器端预处理语句
+        useServerPrepStmts: true
+        # 使用本地会话状态
+        useLocalSessionState: true
+        # 重写批量处理语句
+        rewriteBatchedStatements: true
+        # 缓存结果集元数据
+        cacheResultSetMetadata: true
+        # 缓存服务器配置
+        cacheServerConfiguration: true
+        # 延迟连接参数解析
+        elideSetAutoCommits: true
+        # 维持连接活跃
+        maintainTimeStats: false
+
+# ====================================
+# 读写分离配置（ShardingSphere）
+# ====================================
+# spring:
+#   shardingsphere:
+#     datasource:
+#       names: master,slave0,slave1
+#       
+#       # 主库配置
+#       master:
+#         type: com.zaxxer.hikari.HikariDataSource
+#         driver-class-name: com.mysql.cj.jdbc.Driver
+#         jdbc-url: jdbc:mysql://localhost:3306/collide?characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+#         username: collide_master
+#         password: password
+#         hikari:
+#           minimum-idle: 10
+#           maximum-pool-size: 30
+#           connection-timeout: 30000
+#           idle-timeout: 300000
+#           max-lifetime: 900000
+#       
+#       # 从库配置1
+#       slave0:
+#         type: com.zaxxer.hikari.HikariDataSource
+#         driver-class-name: com.mysql.cj.jdbc.Driver
+#         jdbc-url: jdbc:mysql://slave1.localhost:3306/collide?characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+#         username: collide_slave
+#         password: password
+#         hikari:
+#           minimum-idle: 5
+#           maximum-pool-size: 20
+#           connection-timeout: 30000
+#           idle-timeout: 300000
+#           max-lifetime: 900000
+#           read-only: true
+#       
+#       # 从库配置2
+#       slave1:
+#         type: com.zaxxer.hikari.HikariDataSource
+#         driver-class-name: com.mysql.cj.jdbc.Driver
+#         jdbc-url: jdbc:mysql://slave2.localhost:3306/collide?characterEncoding=utf8mb4&useSSL=false&serverTimezone=Asia/Shanghai
+#         username: collide_slave
+#         password: password
+#         hikari:
+#           minimum-idle: 5
+#           maximum-pool-size: 20
+#           connection-timeout: 30000
+#           idle-timeout: 300000
+#           max-lifetime: 900000
+#           read-only: true
+#     
+#     rules:
+#       # 读写分离规则
+#       readwrite-splitting:
+#         data-sources:
+#           collide-rw:
+#             type: Static
+#             props:
+#               write-data-source-name: master
+#               read-data-source-names: slave0,slave1
+#               # 负载均衡算法
+#               load-balancer-name: round_robin
+#         
+#         # 负载均衡算法配置
+#         load-balancers:
+#           round_robin:
+#             type: ROUND_ROBIN
+#     
+#     props:
+#       # 显示SQL
+#       sql-show: false
+#       # 查询优化器
+#       sql-simple: true
+
+# ====================================
+# MyBatis Plus 性能优化配置
+# ====================================
+mybatis-plus:
+  # 配置扫描路径
+  mapper-locations: classpath*:mapper/**/*.xml
+  type-aliases-package: com.gig.collide.*.entity
+  
+  # 全局配置
+  global-config:
+    # 数据库相关配置
+    db-config:
+      # 主键类型（自增）
+      id-type: AUTO
+      # 逻辑删除字段
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      # 字段验证策略
+      insert-strategy: NOT_NULL
+      update-strategy: NOT_NULL
+      select-strategy: NOT_EMPTY
+    
+    # 性能优化配置
+    banner: false
+    
+  # 配置属性
+  configuration:
+    # 开启驼峰命名转换
+    map-underscore-to-camel-case: true
+    # 缓存配置
+    cache-enabled: true
+    # 延迟加载
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
+    # 多结果集处理
+    multiple-result-sets-enabled: true
+    # 使用列标签
+    use-column-label: true
+    # 使用生成的键值
+    use-generated-keys: true
+    # 默认执行器类型
+    default-executor-type: REUSE
+    # 默认语句超时时间
+    default-statement-timeout: 25000
+    # 默认获取数据大小
+    default-fetch-size: 100
+    # 本地缓存
+    local-cache-scope: SESSION
+    # JDBC类型空值处理
+    jdbc-type-for-null: NULL
+    
+# ====================================
+# 自定义数据库性能配置
+# ====================================
+collide:
+  datasource:
+    # 慢SQL监控配置
+    slow-sql:
+      enabled: true
+      # 慢SQL阈值（毫秒）
+      threshold: 2000
+      # 是否记录参数
+      log-params: true
+      # 日志级别
+      log-level: WARN
+    
+    # 连接池监控配置
+    monitoring:
+      enabled: true
+      # 监控间隔（秒）
+      interval: 30
+      # JMX监控
+      jmx-enabled: true
+      # 连接泄漏检测
+      leak-detection: true
+    
+    # 数据库健康检查配置
+    health-check:
+      enabled: true
+      # 检查间隔（秒）
+      interval: 60
+      # 检查超时（毫秒）
+      timeout: 5000
+      # 重试次数
+      retry-count: 3
+    
+    # 分页优化配置
+    pagination:
+      # 默认分页大小
+      default-size: 20
+      # 最大分页大小
+      max-size: 100
+      # 是否进行count查询优化
+      optimize-count-sql: true
+      # 是否开启分页合理化
+      reasonable: true
+    
+    # 批量操作优化配置
+    batch:
+      # 默认批量大小
+      default-size: 1000
+      # 最大批量大小
+      max-size: 5000
+      # 批量超时时间（毫秒）
+      timeout: 30000
+
+# ====================================
+# 数据库性能监控配置
+# ====================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+    tags:
+      application: collide
+
+# ====================================
+# 数据库最佳实践建议
+# ====================================
+database-best-practices: |
+  1. 连接池优化原则：
+     - 连接池大小 = CPU核数 * 2 + 磁盘数
+     - 最小空闲连接 = 连接池大小 / 4
+     - 连接超时时间不宜过长
+     
+  2. SQL查询优化：
+     - 避免SELECT * 查询
+     - 使用合适的索引
+     - 避免深度分页
+     - 批量操作代替循环操作
+     
+  3. 事务管理：
+     - 保持事务简短
+     - 避免长事务
+     - 合理使用事务隔离级别
+     
+  4. 缓存策略：
+     - 一级缓存（MyBatis缓存）
+     - 二级缓存（Redis）
+     - 查询结果缓存
+     
+  5. 读写分离：
+     - 写操作走主库
+     - 读操作走从库
+     - 注意主从延迟 
