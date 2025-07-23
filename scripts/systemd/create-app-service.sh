@@ -19,25 +19,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/www/Collide/collide-application/collide-app/target
-ExecStart=/usr/bin/java \\
-    -jar \\
-    -server \\
-    -DDUBBO_IP_TO_REGISTRY=127.0.0.1 \\
-    -Dspring.cloud.nacos.discovery.ip=127.0.0.1 \\
-    -Dspring.profiles.active=prod \\
-    -Xms2g \\
-    -Xmx2g \\
-    -XX:MetaspaceSize=512m \\
-    -XX:MaxMetaspaceSize=512m \\
-    -XX:MaxDirectMemorySize=1g \\
-    -XX:+UseG1GC \\
-    -Xlog:gc:/root/logs/app/gc.log \\
-    -XX:+HeapDumpOnOutOfMemoryError \\
-    -XX:HeapDumpPath=/root/logs/app/java.hprof \\
-    -Djava.awt.headless=true \\
-    -Dfile.encoding=UTF-8 \\
-    -Duser.timezone=Asia/Shanghai \\
-    collide-app.jar
+ExecStart=/usr/bin/java -jar -server -DDUBBO_IP_TO_REGISTRY=127.0.0.1 -Dspring.cloud.nacos.discovery.ip=127.0.0.1 -Dspring.profiles.active=prod -Xms2g -Xmx2g -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:MaxDirectMemorySize=1g -XX:+UseG1GC -Xlog:gc:/root/logs/app/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/root/logs/app/java.hprof -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Shanghai collide-app.jar
 
 Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 Environment=LANG=zh_CN.UTF-8
@@ -48,8 +30,8 @@ RestartSec=10
 TimeoutStopSec=30
 KillMode=mixed
 
-StandardOutput=file:/root/logs/app/app.log
-StandardError=file:/root/logs/app/error.log
+StandardOutput=file:/root/logs/collide-app/app.log
+StandardError=file:/root/logs/collide-app/error.log
 
 LimitNOFILE=65536
 LimitNPROC=4096

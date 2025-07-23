@@ -19,25 +19,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/www/Collide/collide-gateway/target
-ExecStart=/usr/bin/java \\
-    -jar \\
-    -server \\
-    -DDUBBO_IP_TO_REGISTRY=127.0.0.1 \\
-    -Dspring.cloud.nacos.discovery.ip=127.0.0.1 \\
-    -Dspring.profiles.active=prod \\
-    -Xms1g \\
-    -Xmx2g \\
-    -XX:MetaspaceSize=256m \\
-    -XX:MaxMetaspaceSize=512m \\
-    -XX:MaxDirectMemorySize=512m \\
-    -XX:+UseG1GC \\
-    -Xlog:gc:/root/logs/gateway/gc.log \\
-    -XX:+HeapDumpOnOutOfMemoryError \\
-    -XX:HeapDumpPath=/root/logs/gateway/java.hprof \\
-    -Djava.awt.headless=true \\
-    -Dfile.encoding=UTF-8 \\
-    -Duser.timezone=Asia/Shanghai \\
-    collide-gateway.jar
+ExecStart=/usr/bin/java -jar -server -DDUBBO_IP_TO_REGISTRY=127.0.0.1 -Dspring.cloud.nacos.discovery.ip=127.0.0.1 -Dspring.profiles.active=prod -Xms1g -Xmx2g -XX:MetaspaceSize=256m -XX:MaxMetaspaceSize=512m -XX:MaxDirectMemorySize=512m -XX:+UseG1GC -Xlog:gc:/root/logs/gateway/gc.log -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/root/logs/gateway/java.hprof -Djava.awt.headless=true -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Shanghai collide-gateway-1.0.0-SNAPSHOT.jar
 
 Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 Environment=LANG=zh_CN.UTF-8
