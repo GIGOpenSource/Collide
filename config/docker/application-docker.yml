@@ -33,7 +33,6 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
         username: ${NACOS_SERVER_USERNAME:nacos}
         password: ${NACOS_SERVER_PASSWORD:nacos}
-        namespace: collide
         group: DEFAULT_GROUP
         cluster-name: docker
         metadata:
@@ -43,7 +42,6 @@ spring:
         server-addr: ${NACOS_SERVER_ADDR:nacos:8848}
         username: ${NACOS_SERVER_USERNAME:nacos}
         password: ${NACOS_SERVER_PASSWORD:nacos}
-        namespace: collide
         group: DEFAULT_GROUP
 
 # Dubbo配置
@@ -53,11 +51,11 @@ dubbo:
     username: ${NACOS_SERVER_USERNAME:nacos}
     password: ${NACOS_SERVER_PASSWORD:nacos}
     parameters:
-      namespace: collide
+      namespace: b8bca988-2d8a-4d2b-a9a0-c26127e345bc
   protocols:
     dubbo:
       name: dubbo
-      port: -1
+      port: 22223
       host: ${DUBBO_HOST:}
   provider:
     timeout: 10000

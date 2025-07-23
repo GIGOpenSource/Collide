@@ -6,7 +6,7 @@ dubbo:
     name: dubbo
     port: -1
   registry:
-    address: nacos://${collide.turbo.nacos.server.url}?username=nacos&password=nacos
+    address: nacos://${collide.turbo.nacos.server.url}?username=${collide.turbo.nacos.server.username}&password=${collide.turbo.nacos.server.password}
     parameters:
       namespace: ${collide.turbo.dubbo.nacos.namespace}
       group: ${collide.turbo.dubbo.nacos.group}

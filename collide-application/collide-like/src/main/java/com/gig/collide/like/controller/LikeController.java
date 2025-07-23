@@ -21,7 +21,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @RestController
-@RequestMapping("/api/like")
+@RequestMapping("/api/v1/like")
 @RequiredArgsConstructor
 @Tag(name = "点赞服务", description = "点赞相关接口")
 public class LikeController {

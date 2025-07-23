@@ -30,11 +30,11 @@ RUN chown -R collide:collide /app
 USER collide
 
 # 暴露端口（网关服务端口）
-EXPOSE 8080
+EXPOSE 9501
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8080/actuator/health || exit 1
+    CMD curl -f http://localhost:9501/actuator/health || exit 1
 
 # 设置JVM参数和启动命令
 ENTRYPOINT ["java", \

@@ -1,0 +1,29 @@
+# Docker Bridge网络模式的Bootstrap配置
+# 用于 Spring Boot 启动时的早期配置，特别是 Nacos 配置中心
+
+spring:
+  cloud:
+    nacos:
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+      discovery:
+        server-addr: ${NACOS_URL:192.168.1.107:8848}
+        enabled: true
+        namespace: ${DUBBO_NACOS_NAMESPACE:}
+        group: DEFAULT_GROUP
+      config:
+        server-addr: ${NACOS_URL:192.168.1.107:8848}
+        enabled: true
+        file-extension: properties
+        name: ${spring.application.name}
+        namespace: ${DUBBO_NACOS_NAMESPACE:}
+        group: DEFAULT_GROUP
+        # 配置自动刷新
+        refresh-enabled: true
+
+# 日志配置（Bootstrap阶段）
+logging:
+  level:
+    com.alibaba.nacos: ${APP_LOG_LEVEL:DEBUG}
+    org.springframework.cloud: ${APP_LOG_LEVEL:DEBUG}
+    root: ${LOG_LEVEL:INFO} 

@@ -1,0 +1,8 @@
+server.name: kibana
+server.port: 5601
+server.host: 0.0.0.0
+elasticsearch.hosts: [ "es:9200" ]
+elasticsearch.username: "elastic/kibana"
+elasticsearch.password: "AAEAAWVsYXN0aWMva2liYW5hL2tpYmFuYS10b2tlbjp3OVlvaHpwb1RnNm51RFM5TjhEb253"
+xpack.monitoring.ui.container.elasticsearch.enabled: true
+i18n.locale: "zh-CN"

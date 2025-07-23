@@ -1,40 +1,43 @@
-services:
-  # 网关服务
-  collide-gateway:
-    image: collide-gateway:latest
-    container_name: collide-gateway
-    network_mode: host
-    ports:
-      - "${GATEWAY_PORT:-9500}:9500"
-    env_file:
-      - .env
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      TZ: ${TZ:-Asia/Shanghai}
-    volumes:
-      - ./logs/gateway:/app/logs
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9500/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+version: '3.8'
 
-  # 认证服务
-  collide-auth:
-    image: collide-auth:latest
-    container_name: collide-auth
-    network_mode: host
+# 网络配置：为Windows Docker Desktop环境优化
+networks:
+  collide-network:
+    driver: bridge
+    name: collide-network
+
+services:
+  # Gateway 服务
+  collide-gateway:
+    build:
+      context: .
+      dockerfile: collide-gateway/Dockerfile
+    image: collide/gateway:latest
+    container_name: collide-gateway
+    # 改为端口映射模式，解决Windows Docker Desktop的网络问题
     ports:
-      - "${AUTH_PORT:-9501}:9501"
-    env_file:
-      - .env
+      - "9501:9501"  # Gateway端口映射
+    networks:
+      - collide-network
+    # 添加host映射，让容器能访问宿主机的中间件服务
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      TZ: ${TZ:-Asia/Shanghai}
+      - SPRING_PROFILES_ACTIVE=host
+      - SERVER_PORT=9501
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/application-gateway-host.yml
+      - SPRING_CLOUD_BOOTSTRAP_LOCATION=file:/app/config/bootstrap-host.yml
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+      # 明确指定中间件地址为宿主机IP
+      - NACOS_URL=192.168.1.107:8848
+      - REDIS_HOST=192.168.1.107
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
     volumes:
-      - ./logs/auth:/app/logs
+      # 挂载日志目录到宿主机
+      - ./logs/gateway:/app/logs
+      # 挂载配置文件（可选）
+      - ./config/docker:/app/config
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9501/actuator/health"]
@@ -42,35 +45,111 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      - "com.collide.service=gateway"
+      - "com.collide.version=1.0.0"
 
-  # 业务应用服务
-  collide-application:
-    image: collide-application:latest
-    container_name: collide-application
-    network_mode: host
+  # Auth 服务
+  collide-auth:
+    build:
+      context: .
+      dockerfile: collide-auth/Dockerfile
+    image: collide/auth:latest
+    container_name: collide-auth
+    # 改为端口映射模式
     ports:
-      - "${BUSINESS_PORT:-9502}:9502"
-    env_file:
-      - .env
+      - "9502:9502"  # Auth端口映射
+    networks:
+      - collide-network
+    # 添加host映射
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
-      TZ: ${TZ:-Asia/Shanghai}
+      - SPRING_PROFILES_ACTIVE=host
+      - SERVER_PORT=9502
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/application-auth-host.yml
+      - SPRING_CLOUD_BOOTSTRAP_LOCATION=file:/app/config/bootstrap-host.yml
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+      # 明确指定中间件地址
+      - NACOS_URL=192.168.1.107:8848
+      - REDIS_HOST=192.168.1.107
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
     volumes:
-      - ./logs/business:/app/logs
+      # 挂载日志目录到宿主机
+      - ./logs/auth:/app/logs
+      # 挂载配置文件（可选）
+      - ./config/docker:/app/config
     restart: unless-stopped
+    # Auth服务依赖Gateway先启动
+    depends_on:
+      - collide-gateway
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9502/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 60s
+    labels:
+      - "com.collide.service=auth" 
+      - "com.collide.version=1.0.0"
 
-# 网络配置
-networks:
-  collide-network:
-    driver: bridge
+  # Application 服务（业务应用聚合）
+  collide-application:
+    build:
+      context: .
+      dockerfile: collide-application/Dockerfile
+    image: collide/application:latest
+    container_name: collide-application
+    # 改为端口映射模式
+    ports:
+      - "9503:9503"  # Application端口映射
+    networks:
+      - collide-network
+    # 添加host映射
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SPRING_PROFILES_ACTIVE=host
+      - SERVER_PORT=9503
+      - SPRING_CONFIG_ADDITIONAL_LOCATION=file:/app/config/application-app-host.yml
+      - SPRING_CLOUD_BOOTSTRAP_LOCATION=file:/app/config/bootstrap-host.yml
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      # 明确指定所有中间件地址
+      - NACOS_URL=192.168.1.107:8848
+      - REDIS_HOST=192.168.1.107
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=123456
+      - MYSQL_HOST=192.168.1.107
+      - MYSQL_PORT=3306
+      - MYSQL_DATABASE=collide
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=123456
+    volumes:
+      # 挂载日志目录到宿主机
+      - ./logs/application:/app/logs
+      # 挂载配置文件（可选）
+      - ./config/docker:/app/config
+    restart: unless-stopped
+    # Application服务依赖Gateway和Auth
+    depends_on:
+      - collide-gateway
+      - collide-auth
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9503/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    labels:
+      - "com.collide.service=application"
+      - "com.collide.version=1.0.0"
 
-# 数据卷配置  
+# 数据卷配置
 volumes:
-  logs:
+  gateway-logs:
+    driver: local
+  auth-logs:
+    driver: local  
+  application-logs:
     driver: local 

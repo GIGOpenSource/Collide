@@ -15,15 +15,15 @@ collide:
         username: nacos
         password: nacos
     mysql:
-      url: jdbc:mysql://localhost:3306/collide
-      username: root
-      password: '123456'
+      url: jdbc:mysql://localhost::3306/collide
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:123456}
     redis:
       url: redis://localhost
       port: 6379
-      password: '123456'
+      password: 123456
     elasticsearch:
-      enable: true
+      enable: false
       url: localhost:9200
       username: elastic
       password: 123456

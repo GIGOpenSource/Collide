@@ -35,7 +35,7 @@ spring:
         - id: collide-auth
           uri: lb://collide-auth
           predicates:
-            - Path=/auth/**
+            - Path=/api/**
         # 业务服务路由
         - id: collide-application
           uri: lb://collide-business

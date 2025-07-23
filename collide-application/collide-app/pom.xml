@@ -110,7 +110,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring-boot.version}</version>
                 <configuration>
-                    <mainClass>com.gig.collide.app.CollideApplication</mainClass>
+                    <mainClass>com.gig.collide.CollideBusinessApplication</mainClass>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
