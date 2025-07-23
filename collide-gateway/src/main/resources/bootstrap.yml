@@ -2,4 +2,4 @@ spring:
   application:
     name: collide-gateway
   config:
-    import: classpath:base.yml,classpath:config.yml
+    import: classpath:base-dev.yml,classpath:config.yml

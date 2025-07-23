@@ -5,7 +5,7 @@ spring:
     active: local
   config:
     import:
-      - classpath:base.yml
+      - classpath:base-dev.yml
       - classpath:config.yml
       - classpath:datasource.yml
       - classpath:rpc.yml

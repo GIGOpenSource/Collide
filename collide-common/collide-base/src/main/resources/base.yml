@@ -2,8 +2,8 @@
 
 spring:
   config:
-    # 先加载 base.yml 中的基础配置，再加载 config.yml 中的 Nacos 配置
-    import: classpath:base.yml,classpath:config.yml
+    # 先加载 base-dev.yml 中的基础配置，再加载 config.yml 中的 Nacos 配置
+    import: classpath:base-dev.yml,classpath:config.yml
   servlet:
     multipart:
       max-file-size: 100MB        # 单个文件最大大小
