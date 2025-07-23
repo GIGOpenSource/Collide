@@ -16,8 +16,8 @@
     </springProfile>
     
     <springProfile name="!docker &amp; !prod">
-        <!-- 开发环境：使用用户主目录 -->
-        <property name="LOG_PATH" value="${user.home}/${app.name}/logs"/>
+        <!-- 开发环境：使用项目内的日志目录 -->
+        <property name="LOG_PATH" value="logs"/>
     </springProfile>
     
     <property name="LOG_FILE" value="${LOG_PATH}/application.log"/>
