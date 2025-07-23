@@ -1,0 +1,64 @@
+[Unit]
+Description=Collide Gateway Service
+Documentation=https://github.com/gig-tech/collide
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+User=collide
+Group=collide
+
+# 工作目录 - 需要根据实际部署路径修改
+WorkingDirectory=/opt/collide
+
+# 环境变量
+Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk
+Environment=SPRING_PROFILES_ACTIVE=prod
+Environment=SERVER_PORT=8081
+
+# Java启动参数
+Environment=JAVA_OPTS=-Xms256m -Xmx512m -Djava.security.egd=file:/dev/./urandom -Dspring.profiles.active=prod
+
+# JAR文件路径 - 需要根据实际路径修改
+Environment=JAR_FILE=/opt/collide/collide-gateway/target/collide-gateway-1.0.0-SNAPSHOT.jar
+
+# PID文件
+PIDFile=/var/run/collide-gateway.pid
+
+# 启动命令
+ExecStart=/bin/bash -c 'java $JAVA_OPTS -jar $JAR_FILE > /var/log/collide-gateway/collide-gateway.log 2>&1 & echo $! > /var/run/collide-gateway.pid'
+
+# 停止命令
+ExecStop=/bin/kill -TERM $MAINPID
+
+# 重载命令  
+ExecReload=/bin/kill -HUP $MAINPID
+
+# 启动超时
+TimeoutStartSec=120
+
+# 停止超时
+TimeoutStopSec=30
+
+# 重启策略
+Restart=always
+RestartSec=10
+
+# 标准输出和错误输出
+StandardOutput=null
+StandardError=null
+
+# 进程限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+# 安全设置
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/collide-gateway /var/run
+
+[Install]
+WantedBy=multi-user.target 
