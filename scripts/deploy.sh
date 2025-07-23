@@ -108,12 +108,16 @@ start_gateway() {
     
     cd $GATEWAY_DIR
     
-    # 查找JAR文件
-    JAR_FILE=$(find target -name "collide-gateway-*.jar" | head -n1)
+    # 查找JAR文件 - 修正：使用实际的文件名模式
+    JAR_FILE=$(find target -name "collide-gateway-*.jar" -not -name "*.original" | head -n1)
     if [ ! -f "$JAR_FILE" ]; then
         print_error "Gateway JAR文件不存在，请先构建项目"
+        print_error "查找模式：target/collide-gateway-*.jar"
+        ls -la target/ || true
         exit 1
     fi
+    
+    print_info "使用JAR文件：$JAR_FILE"
     
     # 启动服务
     nohup java -server \
@@ -139,12 +143,16 @@ start_auth() {
     
     cd $AUTH_DIR
     
-    # 查找JAR文件
-    JAR_FILE=$(find target -name "collide-auth-*.jar" | head -n1)
+    # 查找JAR文件 - 修正：使用实际的文件名模式
+    JAR_FILE=$(find target -name "collide-auth-*.jar" -not -name "*.original" | head -n1)
     if [ ! -f "$JAR_FILE" ]; then
         print_error "Auth JAR文件不存在，请先构建项目"
+        print_error "查找模式：target/collide-auth-*.jar"
+        ls -la target/ || true
         exit 1
     fi
+    
+    print_info "使用JAR文件：$JAR_FILE"
     
     # 启动服务
     nohup java -server \
@@ -170,12 +178,16 @@ start_application() {
     
     cd $APP_DIR
     
-    # 查找JAR文件
-    JAR_FILE=$(find target -name "collide-app-*.jar" | head -n1)
+    # 查找JAR文件 - 修正：Application使用固定文件名
+    JAR_FILE="target/collide-app.jar"
     if [ ! -f "$JAR_FILE" ]; then
         print_error "Application JAR文件不存在，请先构建项目"
+        print_error "期望文件：$JAR_FILE"
+        ls -la target/ || true
         exit 1
     fi
+    
+    print_info "使用JAR文件：$JAR_FILE"
     
     # 启动服务
     nohup java -server \
@@ -231,7 +243,9 @@ main() {
     
     # 启动服务
     start_gateway
-    start_auth  
+    sleep 3
+    start_auth
+    sleep 3  
     start_application
     
     print_info "等待所有服务启动完成..."
@@ -252,9 +266,9 @@ main() {
     echo "  Application: http://localhost:$APP_PORT"
     echo ""
     print_info "管理命令："
-    echo "  查看状态:    ./health-check.sh"
-    echo "  停止服务:    ./stop.sh"
-    echo "  查看日志:    ./logs.sh [gateway|auth|app]"
+    echo "  查看状态:    ./scripts/health-check.sh"
+    echo "  停止服务:    ./scripts/stop.sh"
+    echo "  查看日志:    ./scripts/logs.sh [gateway|auth|app]"
 }
 
 # 执行主流程
