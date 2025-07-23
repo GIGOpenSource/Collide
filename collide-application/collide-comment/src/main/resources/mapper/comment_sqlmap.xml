@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.comment.infrastructure.mapper.CommentMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.comment.domain.entity.Comment">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="comment_type" property="commentType" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler"/>
+        <result column="target_id" property="targetId" jdbcType="BIGINT"/>
+        <result column="parent_comment_id" property="parentCommentId" jdbcType="BIGINT"/>
+        <result column="root_comment_id" property="rootCommentId" jdbcType="BIGINT"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="reply_to_user_id" property="replyToUserId" jdbcType="BIGINT"/>
+        <result column="status" property="status" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler"/>
+        <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
+        <result column="reply_count" property="replyCount" jdbcType="INTEGER"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="is_deleted" property="isDeleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, comment_type, target_id, parent_comment_id, root_comment_id, content,
+        user_id, reply_to_user_id, status, like_count, reply_count,
+        create_time, update_time, is_deleted
+    </sql>
+
+    <!-- 分页查询评论列表 -->
+    <select id="selectCommentPage" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="sortBy == 'hot'">
+                ORDER BY like_count DESC, create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </when>
+            <when test="sortBy == 'reply'">
+                ORDER BY reply_count DESC, create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                ORDER BY create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询评论树（根评论） -->
+    <select id="selectCommentTree" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+          AND parent_comment_id IS NULL
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="sortBy == 'hot'">
+                ORDER BY like_count DESC, create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </when>
+            <when test="sortBy == 'reply'">
+                ORDER BY reply_count DESC, create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </when>
+            <otherwise>
+                ORDER BY create_time
+                <choose>
+                    <when test="sortOrder == 'asc'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据根评论ID查询所有子评论 -->
+    <select id="selectChildComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+          AND root_comment_id = #{rootCommentId}
+          AND parent_comment_id IS NOT NULL
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 统计目标的评论数量 -->
+    <select id="countCommentsByTarget" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_comment
+        WHERE is_deleted = 0
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 更新评论点赞数 -->
+    <update id="updateLikeCount">
+        UPDATE t_comment
+        SET like_count = like_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 更新评论回复数 -->
+    <update id="updateReplyCount">
+        UPDATE t_comment
+        SET reply_count = reply_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+          AND is_deleted = 0
+    </update>
+
+    <!-- 批量更新评论状态 -->
+    <update id="updateCommentStatus">
+        UPDATE t_comment
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="commentIds" item="commentId" open="(" separator="," close=")">
+            #{commentId}
+        </foreach>
+        AND is_deleted = 0
+    </update>
+
+    <!-- 查询热门评论（按点赞数排序） -->
+    <select id="selectHotComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="minLikeCount != null">
+            AND like_count >= #{minLikeCount}
+        </if>
+        ORDER BY like_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询用户的评论列表 -->
+    <select id="selectCommentsByUser" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+          AND user_id = #{userId}
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询评论的回复列表 -->
+    <select id="selectRepliesByParent" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+          AND parent_comment_id = #{parentCommentId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 查询最新评论 -->
+    <select id="selectLatestComments" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE is_deleted = 0
+        <if test="commentType != null">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        <if test="hours != null">
+            AND create_time >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper> 

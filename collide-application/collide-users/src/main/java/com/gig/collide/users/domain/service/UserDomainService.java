@@ -7,8 +7,9 @@ import com.gig.collide.users.domain.entity.UserProfile;
 import com.gig.collide.users.domain.repository.UserRepository;
 import com.gig.collide.users.domain.repository.UserProfileRepository;
 import com.gig.collide.api.user.request.UserModifyRequest;
+import com.gig.collide.api.user.request.UserRegisterRequest;
 import com.gig.collide.base.exception.BizException;
-import com.gig.collide.base.exception.UserErrorCode;
+import com.gig.collide.users.infrastructure.exception.UserErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * 用户领域服务
@@ -57,6 +59,108 @@ public class UserDomainService {
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 根据手机号查询用户信息
+     *
+     * @param phone 手机号
+     * @return 用户实体
+     * @throws BizException 用户不存在时抛出
+     */
+    public User getUserByPhone(String phone) {
+        return userRepository.findByPhone(phone)
+                .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 根据邮箱查询用户信息
+     *
+     * @param email 邮箱
+     * @return 用户实体
+     * @throws BizException 用户不存在时抛出
+     */
+    public User getUserByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
+    }
+
+    /**
+     * 用户注册
+     *
+     * @param registerRequest 注册请求
+     * @return 新注册的用户实体
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public User registerUser(UserRegisterRequest registerRequest) {
+        // 1. 校验用户名唯一性
+        if (StringUtils.hasText(registerRequest.getUsername()) && 
+            userRepository.existsByUsername(registerRequest.getUsername())) {
+            throw new BizException(UserErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+
+        // 2. 校验邮箱唯一性
+        if (StringUtils.hasText(registerRequest.getEmail()) && 
+            userRepository.existsByEmail(registerRequest.getEmail())) {
+            throw new BizException(UserErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        // 3. 校验手机号唯一性
+        if (StringUtils.hasText(registerRequest.getPhone()) && 
+            userRepository.existsByPhone(registerRequest.getPhone())) {
+            throw new BizException(UserErrorCode.PHONE_ALREADY_EXISTS);
+        }
+
+        // 4. 创建用户实体
+        User user = new User();
+        user.setUsername(registerRequest.getUsername());
+        user.setNickname(StringUtils.hasText(registerRequest.getNickname()) ? 
+                        registerRequest.getNickname() : generateDefaultNickname());
+        user.setEmail(registerRequest.getEmail());
+        user.setPhone(registerRequest.getPhone());
+        
+        // 5. 加密密码
+        if (StringUtils.hasText(registerRequest.getPassword())) {
+            String salt = UUID.randomUUID().toString();
+            String passwordHash = passwordEncoder.encode(registerRequest.getPassword());
+            user.setPasswordHash(passwordHash);
+            user.setSalt(salt);
+        }
+
+        // 6. 设置用户默认状态
+        user.setRole(UserRole.user); // 默认为普通用户
+        user.setStatus(UserStateEnum.active); // 直接激活，不需要邮箱验证
+        
+        // 7. 保存用户
+        user = userRepository.save(user);
+        
+        // 8. 创建用户扩展信息
+        createDefaultUserProfile(user.getId());
+        
+        log.info("新用户注册成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
+        return user;
+    }
+
+    /**
+     * 生成默认昵称
+     *
+     * @return 默认昵称
+     */
+    private String generateDefaultNickname() {
+        return "用户" + System.currentTimeMillis();
+    }
+
+    /**
+     * 创建默认的用户扩展信息
+     *
+     * @param userId 用户ID
+     */
+    private void createDefaultUserProfile(Long userId) {
+        UserProfile userProfile = new UserProfile();
+        userProfile.setUserId(userId);
+        userProfile.setBloggerStatus(UserProfile.BloggerStatus.none);
+        userProfile.setGender(UserProfile.Gender.unknown);
+        userProfileRepository.save(userProfile);
     }
 
     /**

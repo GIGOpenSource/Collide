@@ -43,11 +43,20 @@ public class PageResponse<T> extends MultiResponse<T> {
         return pageResponse;
     }
 
-    public static <T> PageResponse<T> error(String errorMessage) {
+    /**
+     * 创建错误响应
+     *
+     * @param errorCode 错误码
+     * @param errorMessage 错误信息
+     * @param <T> 数据类型
+     * @return 错误响应对象
+     */
+    public static <T> PageResponse<T> error(String errorCode, String errorMessage) {
         PageResponse<T> pageResponse = new PageResponse<>();
         pageResponse.setSuccess(false);
+        pageResponse.setResponseCode(errorCode);
         pageResponse.setResponseMessage(errorMessage);
-        pageResponse.setDatas(List.of());
+        pageResponse.setDatas(java.util.Collections.emptyList());
         pageResponse.setTotal(0);
         pageResponse.setPageSize(0);
         pageResponse.setCurrentPage(0);

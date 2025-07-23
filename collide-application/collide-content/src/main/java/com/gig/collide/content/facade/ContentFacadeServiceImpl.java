@@ -257,7 +257,7 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
 
         } catch (Exception e) {
             log.error("内容分页查询失败", e);
-            return PageResponse.error("内容查询失败: " + e.getMessage());
+            return PageResponse.error("CONTENT_PAGE_QUERY_ERROR", "内容查询失败: " + e.getMessage());
         }
     }
 
@@ -286,7 +286,7 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
 
         } catch (Exception e) {
             log.error("用户内容查询失败", e);
-            return PageResponse.error("用户内容查询失败: " + e.getMessage());
+            return PageResponse.error("USER_CONTENT_QUERY_ERROR", "用户内容查询失败: " + e.getMessage());
         }
     }
 

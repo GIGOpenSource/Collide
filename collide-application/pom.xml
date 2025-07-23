@@ -28,6 +28,7 @@
         <module>collide-users</module>
         <module>collide-follow</module>
         <module>collide-content</module>
+        <module>collide-comment</module>
         <module>collide-app</module>
     </modules>
 

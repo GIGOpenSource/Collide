@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+
+server:
+  port: 8086
+
+# MyBatis配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
+
+# 日志配置
+logging:
+  level:
+    com.gig.collide.comment: DEBUG
+    org.springframework: INFO
+    com.baomidou.mybatisplus: DEBUG
+
+# 业务配置
+comment:
+  # 评论相关配置
+  config:
+    max-content-length: 2000  # 评论内容最大长度
+    max-tree-depth: 10        # 评论树最大深度
+    page-size-limit: 100      # 分页查询最大页面大小
+    cache-ttl: 300           # 缓存过期时间（秒） 

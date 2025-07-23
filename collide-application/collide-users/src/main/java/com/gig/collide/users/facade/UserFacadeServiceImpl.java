@@ -44,8 +44,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             } else if (userQueryRequest.getUserUserNameQueryCondition() != null) {
                 user = userDomainService.getUserByUsername(userQueryRequest.getUserUserNameQueryCondition().getUserName());
             } else if (userQueryRequest.getUserPhoneQueryCondition() != null) {
-                // TODO: 需要在 UserDomainService 中实现 getUserByPhone 方法
-                throw new UnsupportedOperationException("手机号查询功能暂未实现");
+                user = userDomainService.getUserByPhone(userQueryRequest.getUserPhoneQueryCondition().getTelephone());
             } else {
                 throw new IllegalArgumentException("查询条件不能为空");
             }
@@ -80,32 +79,88 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Override
     public UserOperatorResponse register(UserRegisterRequest userRegisterRequest) {
-        log.warn("用户注册功能暂未实现");
-        UserOperatorResponse response = new UserOperatorResponse();
-        response.setSuccess(false);
-        response.setResponseCode("NOT_IMPLEMENTED");
-        response.setResponseMessage("该功能暂未实现");
-        return response;
+        try {
+            log.info("用户注册请求，用户名：{}", userRegisterRequest.getUsername());
+            
+            // 调用领域服务进行用户注册
+            User user = userDomainService.registerUser(userRegisterRequest);
+            
+            // 构建成功响应
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(true);
+            response.setResponseMessage("用户注册成功");
+            
+            // 转换用户信息
+            UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
+            response.setUser(userInfo);
+            
+            log.info("用户注册成功，用户ID：{}，用户名：{}", user.getId(), user.getUsername());
+            return response;
+            
+        } catch (Exception e) {
+            log.error("用户注册失败，用户名：{}", userRegisterRequest.getUsername(), e);
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(false);
+            response.setResponseCode("USER_REGISTER_ERROR");
+            response.setResponseMessage("用户注册失败：" + e.getMessage());
+            return response;
+        }
     }
 
     @Override
     public UserOperatorResponse modify(UserModifyRequest userModifyRequest) {
-        log.warn("更新用户信息功能暂未实现");
-        UserOperatorResponse response = new UserOperatorResponse();
-        response.setSuccess(false);
-        response.setResponseCode("NOT_IMPLEMENTED");
-        response.setResponseMessage("该功能暂未实现");
-        return response;
+        try {
+            log.info("用户信息修改请求，用户ID：{}", userModifyRequest.getUserId());
+            
+            // 调用领域服务修改用户信息
+            User user = userDomainService.updateUserInfo(userModifyRequest.getUserId(), userModifyRequest);
+            
+            // 构建成功响应
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(true);
+            response.setResponseMessage("用户信息修改成功");
+            
+            // 转换用户信息
+            UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
+            response.setUser(userInfo);
+            
+            log.info("用户信息修改成功，用户ID：{}", user.getId());
+            return response;
+            
+        } catch (Exception e) {
+            log.error("用户信息修改失败，用户ID：{}", userModifyRequest.getUserId(), e);
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(false);
+            response.setResponseCode("USER_MODIFY_ERROR");
+            response.setResponseMessage("用户信息修改失败：" + e.getMessage());
+            return response;
+        }
     }
 
     @Override
     public UserOperatorResponse auth(UserAuthRequest userAuthRequest) {
-        log.warn("用户实名认证功能暂未实现");
-        UserOperatorResponse response = new UserOperatorResponse();
-        response.setSuccess(false);
-        response.setResponseCode("NOT_IMPLEMENTED");
-        response.setResponseMessage("该功能暂未实现");
-        return response;
+        try {
+            log.info("用户认证申请请求，用户ID：{}", userAuthRequest.getUserId());
+            
+            // 调用领域服务申请博主认证
+            String resultMessage = userDomainService.applyForBlogger(userAuthRequest.getUserId());
+            
+            // 构建成功响应
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(true);
+            response.setResponseMessage(resultMessage);
+            
+            log.info("用户认证申请处理完成，用户ID：{}", userAuthRequest.getUserId());
+            return response;
+            
+        } catch (Exception e) {
+            log.error("用户认证申请失败，用户ID：{}", userAuthRequest.getUserId(), e);
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(false);
+            response.setResponseCode("USER_AUTH_ERROR");
+            response.setResponseMessage("用户认证申请失败：" + e.getMessage());
+            return response;
+        }
     }
 
     @Override
