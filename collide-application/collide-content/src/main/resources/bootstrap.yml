@@ -3,5 +3,5 @@ spring:
     name: collide-content
   config:
     import:
-      - classpath:base-dev.yml
+      - classpath:base.yml
       - classpath:config.yml 

@@ -2,7 +2,7 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base-dev.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
   oss:
     enabled: true
     bucket: mds

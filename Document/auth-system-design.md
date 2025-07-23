@@ -823,7 +823,7 @@ spring:
     name: collide-auth
   config:
     import: 
-      - classpath:base-dev.yml
+      - classpath:base.yml
       - classpath:config.yml
       - classpath:rpc.yml
       - classpath:cache.yml
