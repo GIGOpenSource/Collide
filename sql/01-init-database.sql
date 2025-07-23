@@ -206,6 +206,103 @@ CREATE TABLE IF NOT EXISTS `t_like` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='统一点赞表';
 
 -- ==========================================
+-- 社交动态相关表（完全去连表化设计）
+-- ==========================================
+
+-- 社交动态表
+CREATE TABLE IF NOT EXISTS `t_social_post` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '动态ID',
+    `post_type` varchar(20) NOT NULL COMMENT '动态类型：TEXT-文字，IMAGE-图片，VIDEO-视频，LINK-链接，ARTICLE-文章，AUDIO-音频，POLL-投票，LOCATION-位置',
+    `content` text NOT NULL COMMENT '动态内容',
+    `media_urls` json DEFAULT NULL COMMENT '媒体文件URL列表',
+    `location` varchar(200) DEFAULT NULL COMMENT '位置信息',
+    `longitude` double DEFAULT NULL COMMENT '经度',
+    `latitude` double DEFAULT NULL COMMENT '纬度',
+    `topics` json DEFAULT NULL COMMENT '话题标签列表',
+    `mentioned_user_ids` json DEFAULT NULL COMMENT '提及的用户ID列表',
+    `status` varchar(20) DEFAULT 'PUBLISHED' COMMENT '状态：DRAFT-草稿，PUBLISHED-已发布，HIDDEN-已隐藏，DELETED-已删除',
+    `visibility` tinyint DEFAULT '0' COMMENT '可见性：0-公开，1-仅关注者，2-仅自己',
+    `allow_comments` boolean DEFAULT true COMMENT '是否允许评论',
+    `allow_shares` boolean DEFAULT true COMMENT '是否允许转发',
+    
+    -- 作者信息（冗余，避免连接用户表）
+    `author_id` bigint NOT NULL COMMENT '作者用户ID',
+    `author_username` varchar(50) NOT NULL COMMENT '作者用户名（冗余）',
+    `author_nickname` varchar(100) DEFAULT NULL COMMENT '作者昵称（冗余）',
+    `author_avatar` varchar(500) DEFAULT NULL COMMENT '作者头像URL（冗余）',
+    `author_verified` boolean DEFAULT false COMMENT '作者认证状态（冗余）',
+    
+    -- 统计信息（冗余，避免连接统计表）
+    `like_count` bigint DEFAULT '0' COMMENT '点赞数',
+    `comment_count` bigint DEFAULT '0' COMMENT '评论数',
+    `share_count` bigint DEFAULT '0' COMMENT '转发数',
+    `view_count` bigint DEFAULT '0' COMMENT '浏览数',
+    `favorite_count` bigint DEFAULT '0' COMMENT '收藏数',
+    `hot_score` double DEFAULT '0' COMMENT '热度分数',
+    
+    `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `published_time` datetime DEFAULT NULL COMMENT '发布时间',
+    `deleted` boolean DEFAULT false COMMENT '逻辑删除标志',
+    `version` int DEFAULT '1' COMMENT '版本号',
+    
+    PRIMARY KEY (`id`),
+    KEY `idx_author_id` (`author_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_visibility` (`visibility`),
+    KEY `idx_created_time` (`created_time`),
+    KEY `idx_hot_score` (`hot_score`),
+    KEY `idx_location` (`longitude`, `latitude`),
+    KEY `idx_author_status_time` (`author_id`, `status`, `created_time`),
+    KEY `idx_status_visibility_hot` (`status`, `visibility`, `hot_score`),
+    FULLTEXT KEY `ft_content` (`content`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社交动态表（去连表化设计）';
+
+-- 社交动态互动记录表
+CREATE TABLE IF NOT EXISTS `t_social_post_interaction` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '互动ID',
+    `post_id` bigint NOT NULL COMMENT '动态ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `interaction_type` varchar(20) NOT NULL COMMENT '互动类型：LIKE-点赞，SHARE-转发，FAVORITE-收藏，REPORT-举报',
+    `status` tinyint DEFAULT '1' COMMENT '状态：0-取消，1-有效',
+    `extra_data` json DEFAULT NULL COMMENT '额外数据',
+    
+    -- 冗余信息（避免连表）
+    `post_author_id` bigint NOT NULL COMMENT '动态作者ID（冗余）',
+    `post_author_nickname` varchar(100) DEFAULT NULL COMMENT '动态作者昵称（冗余）',
+    `user_nickname` varchar(100) DEFAULT NULL COMMENT '用户昵称（冗余）',
+    
+    `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_post_user_type` (`post_id`, `user_id`, `interaction_type`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_post_id` (`post_id`),
+    KEY `idx_post_author_id` (`post_author_id`),
+    KEY `idx_interaction_type` (`interaction_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社交动态互动记录表（去连表化设计）';
+
+-- 用户社交统计表
+CREATE TABLE IF NOT EXISTS `t_user_social_stats` (
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `post_count` bigint DEFAULT '0' COMMENT '发布动态数',
+    `post_like_total` bigint DEFAULT '0' COMMENT '动态获赞总数',
+    `post_view_total` bigint DEFAULT '0' COMMENT '动态浏览总数',
+    `like_given_count` bigint DEFAULT '0' COMMENT '点赞他人次数',
+    `following_count` int DEFAULT '0' COMMENT '关注数',
+    `follower_count` int DEFAULT '0' COMMENT '粉丝数',
+    `last_post_time` datetime DEFAULT NULL COMMENT '最后发布时间',
+    `last_active_time` datetime DEFAULT NULL COMMENT '最后活跃时间',
+    `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    
+    PRIMARY KEY (`user_id`),
+    KEY `idx_post_count` (`post_count`),
+    KEY `idx_follower_count` (`follower_count`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户社交统计表（去连表化设计）';
+
+-- ==========================================
 -- 插入初始数据
 -- ==========================================
 

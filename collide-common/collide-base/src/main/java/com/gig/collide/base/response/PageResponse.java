@@ -44,6 +44,23 @@ public class PageResponse<T> extends MultiResponse<T> {
     }
 
     /**
+     * 创建空的分页响应
+     *
+     * @param <T> 数据类型
+     * @return 空的分页响应对象
+     */
+    public static <T> PageResponse<T> empty() {
+        PageResponse<T> pageResponse = new PageResponse<>();
+        pageResponse.setSuccess(true);
+        pageResponse.setDatas(java.util.Collections.emptyList());
+        pageResponse.setTotal(0);
+        pageResponse.setPageSize(0);
+        pageResponse.setCurrentPage(0);
+        pageResponse.setTotalPage(0);
+        return pageResponse;
+    }
+
+    /**
      * 创建错误响应
      *
      * @param errorCode 错误码

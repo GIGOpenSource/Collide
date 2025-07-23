@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.social.infrastructure.mapper.SocialPostMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.social.domain.entity.SocialPost">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="post_type" property="postType" jdbcType="VARCHAR"/>
+        <result column="content" property="content" jdbcType="VARCHAR"/>
+        <result column="media_urls" property="mediaUrls" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+        <result column="longitude" property="longitude" jdbcType="DOUBLE"/>
+        <result column="latitude" property="latitude" jdbcType="DOUBLE"/>
+        <result column="topics" property="topics" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="mentioned_user_ids" property="mentionedUserIds" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="visibility" property="visibility" jdbcType="INTEGER"/>
+        <result column="allow_comments" property="allowComments" jdbcType="BOOLEAN"/>
+        <result column="allow_shares" property="allowShares" jdbcType="BOOLEAN"/>
+        <result column="author_id" property="authorId" jdbcType="BIGINT"/>
+        <result column="author_username" property="authorUsername" jdbcType="VARCHAR"/>
+        <result column="author_nickname" property="authorNickname" jdbcType="VARCHAR"/>
+        <result column="author_avatar" property="authorAvatar" jdbcType="VARCHAR"/>
+        <result column="author_verified" property="authorVerified" jdbcType="BOOLEAN"/>
+        <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
+        <result column="comment_count" property="commentCount" jdbcType="BIGINT"/>
+        <result column="share_count" property="shareCount" jdbcType="BIGINT"/>
+        <result column="view_count" property="viewCount" jdbcType="BIGINT"/>
+        <result column="favorite_count" property="favoriteCount" jdbcType="BIGINT"/>
+        <result column="hot_score" property="hotScore" jdbcType="DOUBLE"/>
+        <result column="created_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="published_time" property="publishTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="BOOLEAN"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 通用列 -->
+    <sql id="Base_Column_List">
+        id, post_type, content, media_urls, location, longitude, latitude, topics, 
+        mentioned_user_ids, status, visibility, allow_comments, allow_shares,
+        author_id, author_username, author_nickname, author_avatar, author_verified,
+        like_count, comment_count, share_count, view_count, favorite_count, hot_score,
+        created_time, updated_time, published_time, deleted, version
+    </sql>
+
+    <!-- 分页查询用户时间线动态 - 无连表 -->
+    <select id="selectUserTimelinePage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND author_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 分页查询关注用户的动态流 - 应用层传入关注用户ID列表，无连表 -->
+    <select id="selectFollowingFeedPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = #{status}
+        <if test="followingUserIds != null and followingUserIds.size() > 0">
+            AND author_id IN
+            <foreach collection="followingUserIds" item="userId" open="(" separator="," close=")">
+                #{userId}
+            </foreach>
+        </if>
+        <!-- 可见性控制由应用层处理，这里只查询公开和关注者可见的动态 -->
+        AND (visibility = 0 OR visibility = 1)
+        ORDER BY created_time DESC
+    </select>
+
+    <!-- 分页查询热门动态 - 无连表 -->
+    <select id="selectHotPostsPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = #{status}
+        AND visibility = 0  <!-- 只查询公开动态 -->
+        <if test="startTime != null">
+            AND created_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_time &lt;= #{endTime}
+        </if>
+        <if test="minHotScore != null">
+            AND hot_score >= #{minHotScore}
+        </if>
+        ORDER BY hot_score DESC, created_time DESC
+    </select>
+
+    <!-- 分页查询附近动态 - 无连表，使用球面距离公式 -->
+    <select id="selectNearbyPostsPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (6371 * 2 * ASIN(SQRT(
+                   POWER(SIN((#{latitude} - latitude) * PI() / 180 / 2), 2) +
+                   COS(#{latitude} * PI() / 180) * COS(latitude * PI() / 180) *
+                   POWER(SIN((#{longitude} - longitude) * PI() / 180 / 2), 2)
+               ))) AS distance
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = #{status}
+        AND visibility = 0  <!-- 只查询公开动态 -->
+        AND longitude IS NOT NULL 
+        AND latitude IS NOT NULL
+        HAVING distance &lt;= #{radius}
+        ORDER BY distance ASC, created_time DESC
+    </select>
+
+    <!-- 全文搜索动态 - 无连表 -->
+    <select id="searchPostsPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = #{status}
+        AND visibility = 0  <!-- 只查询公开动态 -->
+        <if test="keyword != null and keyword != ''">
+            AND (content LIKE CONCAT('%', #{keyword}, '%')
+                 OR JSON_SEARCH(topics, 'one', CONCAT('%', #{keyword}, '%')) IS NOT NULL)
+        </if>
+        <if test="postType != null">
+            AND post_type = #{postType}
+        </if>
+        ORDER BY hot_score DESC, created_time DESC
+    </select>
+
+    <!-- 按话题查询动态 - 无连表 -->
+    <select id="selectPostsByTopicPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = #{status}
+        AND visibility = 0  <!-- 只查询公开动态 -->
+        AND JSON_SEARCH(topics, 'one', #{topic}) IS NOT NULL
+        ORDER BY hot_score DESC, created_time DESC
+    </select>
+
+    <!-- 统计用户动态数量 - 无连表 -->
+    <select id="countUserPosts" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_social_post
+        WHERE deleted = 0
+        AND author_id = #{userId}
+        <if test="status != null">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 批量更新动态热度分数 - 无连表 -->
+    <update id="batchUpdateHotScore">
+        UPDATE t_social_post 
+        SET hot_score = (
+            like_count * 1.0 + 
+            comment_count * 2.0 + 
+            share_count * 3.0 + 
+            favorite_count * 1.5 -
+            TIMESTAMPDIFF(HOUR, created_time, NOW()) * 0.1
+        ),
+        updated_time = NOW()
+        WHERE id IN
+        <foreach collection="postIds" item="postId" open="(" separator="," close=")">
+            #{postId}
+        </foreach>
+    </update>
+
+    <!-- 增加动态浏览数 - 无连表 -->
+    <update id="incrementViewCount">
+        UPDATE t_social_post 
+        SET view_count = view_count + 1,
+            updated_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 增加动态点赞数 - 无连表 -->
+    <update id="incrementLikeCount">
+        UPDATE t_social_post 
+        SET like_count = like_count + #{increment},
+            updated_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 增加动态评论数 - 无连表 -->
+    <update id="incrementCommentCount">
+        UPDATE t_social_post 
+        SET comment_count = comment_count + #{increment},
+            updated_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 增加动态转发数 - 无连表 -->
+    <update id="incrementShareCount">
+        UPDATE t_social_post 
+        SET share_count = share_count + #{increment},
+            updated_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 增加动态收藏数 - 无连表 -->
+    <update id="incrementFavoriteCount">
+        UPDATE t_social_post 
+        SET favorite_count = favorite_count + #{increment},
+            updated_time = NOW()
+        WHERE id = #{postId}
+    </update>
+
+    <!-- 查询需要更新热度分数的动态 - 无连表 -->
+    <select id="selectPostsForHotScoreUpdate" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = 'PUBLISHED'
+        <if test="lastUpdateTime != null">
+            AND updated_time > #{lastUpdateTime}
+        </if>
+        ORDER BY updated_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 批量更新作者信息 - 无连表 -->
+    <update id="batchUpdateAuthorInfo">
+        UPDATE t_social_post 
+        SET author_username = #{authorUsername},
+            author_nickname = #{authorNickname},
+            author_avatar = #{authorAvatar},
+            author_verified = #{authorVerified},
+            updated_time = NOW()
+        WHERE author_id = #{authorId}
+    </update>
+
+    <!-- 根据作者ID列表查询动态（用于时间线生成） - 无连表 -->
+    <select id="selectPostsByAuthorIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        AND status = 'PUBLISHED'
+        AND (visibility = 0 OR visibility = 1)  <!-- 公开或关注者可见 -->
+        <if test="authorIds != null and authorIds.size() > 0">
+            AND author_id IN
+            <foreach collection="authorIds" item="authorId" open="(" separator="," close=")">
+                #{authorId}
+            </foreach>
+        </if>
+        <if test="startTime != null">
+            AND created_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_time &lt;= #{endTime}
+        </if>
+        ORDER BY created_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 批量查询动态（用于批量获取） - 无连表 -->
+    <select id="selectPostsByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_post
+        WHERE deleted = 0
+        <if test="postIds != null and postIds.size() > 0">
+            AND id IN
+            <foreach collection="postIds" item="postId" open="(" separator="," close=")">
+                #{postId}
+            </foreach>
+        </if>
+        ORDER BY FIELD(id, 
+        <foreach collection="postIds" item="postId" separator=",">
+            #{postId}
+        </foreach>
+        )
+    </select>
+
+</mapper> 

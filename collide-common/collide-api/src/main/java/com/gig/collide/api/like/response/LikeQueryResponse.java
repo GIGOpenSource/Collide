@@ -21,12 +21,14 @@ public class LikeQueryResponse extends PageResponse<LikeInfo> {
                                            int pageSize, 
                                            int currentPage) {
         LikeQueryResponse response = new LikeQueryResponse();
-        response.setData(data);
-        response.setTotal(total);
+        response.setSuccess(true);
+        response.setDatas(data);
+        response.setTotal((int) total);  // long转int
         response.setPageSize(pageSize);
         response.setCurrentPage(currentPage);
-        response.setCode("SUCCESS");
-        response.setMessage("查询成功");
+        response.setTotalPage((pageSize + (int) total - 1) / pageSize);  // 计算总页数
+        response.setResponseCode("SUCCESS");
+        response.setResponseMessage("查询成功");
         return response;
     }
     
@@ -35,8 +37,14 @@ public class LikeQueryResponse extends PageResponse<LikeInfo> {
      */
     public static LikeQueryResponse error(String errorCode, String errorMessage) {
         LikeQueryResponse response = new LikeQueryResponse();
-        response.setCode(errorCode);
-        response.setMessage(errorMessage);
+        response.setSuccess(false);
+        response.setResponseCode(errorCode);
+        response.setResponseMessage(errorMessage);
+        response.setDatas(java.util.Collections.emptyList());  // 设置空数据
+        response.setTotal(0);
+        response.setPageSize(0);
+        response.setCurrentPage(0);
+        response.setTotalPage(0);
         return response;
     }
 } 

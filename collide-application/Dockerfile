@@ -1,19 +1,4 @@
-# 多阶段构建 - 构建阶段
-FROM eclipse-temurin:21-jdk-alpine AS builder
-
-# 设置工作目录
-WORKDIR /app
-
-# 安装Maven
-RUN apk add --no-cache maven
-
-# 复制项目文件
-COPY . .
-
-# 构建整个项目（包括所有依赖模块）
-RUN mvn clean package -DskipTests
-
-# 运行阶段
+# 使用官方OpenJDK 21运行时镜像
 FROM eclipse-temurin:21-jre-alpine
 
 # 设置工作目录
@@ -22,11 +7,21 @@ WORKDIR /app
 # 创建非root用户
 RUN addgroup -S collide && adduser -S collide -G collide
 
-# 安装必要的工具
-RUN apk add --no-cache curl
+# 安装必要的工具和字体（支持中文）
+RUN apk add --no-cache \
+    curl \
+    tzdata \
+    ttf-dejavu
 
-# 从构建阶段复制jar文件
-COPY --from=builder /app/collide-application/collide-start/target/collide-start-*.jar app.jar
+# 设置时区为中国时区
+RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
+    echo "Asia/Shanghai" > /etc/timezone
+
+# 从构建目录复制JAR文件（聚合应用JAR）
+COPY collide-application/collide-app/target/collide-app-*.jar app.jar
+
+# 创建日志目录
+RUN mkdir -p /app/logs
 
 # 更改文件所有权
 RUN chown -R collide:collide /app
@@ -34,18 +29,26 @@ RUN chown -R collide:collide /app
 # 切换到非root用户
 USER collide
 
-# 暴露端口
-EXPOSE 8085
+# 暴露端口（业务应用端口）
+EXPOSE 8082
 
 # 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8085/actuator/health || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8082/actuator/health || exit 1
 
 # 设置JVM参数和启动命令
 ENTRYPOINT ["java", \
+    "-server", \
     "-Xmx1024m", \
     "-Xms512m", \
+    "-XX:+UseG1GC", \
+    "-XX:MaxGCPauseMillis=200", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
     "-Djava.security.egd=file:/dev/./urandom", \
+    "-Djava.awt.headless=true", \
     "-Dspring.profiles.active=docker", \
+    "-Duser.timezone=Asia/Shanghai", \
+    "-Dfile.encoding=UTF-8", \
     "-jar", \
     "app.jar"] 

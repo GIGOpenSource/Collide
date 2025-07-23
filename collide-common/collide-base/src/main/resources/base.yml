@@ -11,36 +11,36 @@ collide:
   turbo:
     nacos:
       server:
-        url: 192.168.1.107:8848
+        url: localhost:8848
         username: nacos
         password: nacos
     mysql:
-      url: jdbc:mysql://192.168.1.107:3306/collide
+      url: jdbc:mysql://localhost:3306/collide
       username: root
       password: '123456'
     redis:
-      url: redis://192.168.1.107
+      url: redis://localhost
       port: 6379
       password: '123456'
     elasticsearch:
       enable: true
-      url: 192.168.1.107:9200
+      url: localhost:9200
       username: elastic
       password: 123456
     xxl-job:
-      url: 192.168.1.107:8081
+      url: localhost:8081
       appName: xxl-job-executor
       accessToken: default_token
     sentinel:
-      url: 192.168.1.107
+      url: localhost
       port: 8888
       nacos:
         data-id: collide-gateway-sentinel
     rocketmq:
-      url: 192.168.1.107:9876
+      url: localhost:9876
     dubbo:
       nacos:
-        namespace: b8bca988-2d8a-4d2b-a9a0-c26127e345bc
+        namespace: 99d4c548-be12-4eaa-9564-4c7921bd80c1
         group: dubbo
     seata:
       nacos:

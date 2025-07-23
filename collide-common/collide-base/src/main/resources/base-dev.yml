@@ -10,33 +10,33 @@ collide:
   turbo:
     nacos:
       server:
-        url: 192.168.1.107:8848   # 使用已部署的 Nacos
+        url: localhost:8848   # 使用已部署的 Nacos
         username: nacos
         password: nacos
     mysql:
-      url: jdbc:mysql://192.168.1.107:3306/collide  # 使用已部署的 MySQL
+      url: jdbc:mysql://localhost:3306/collide  # 使用已部署的 MySQL
       username: root
       password: '123456'
     redis:
-      url: redis://192.168.1.107  # 使用已部署的 Redis
+      url: redis://localhost  # 使用已部署的 Redis
       port: 6379
       password: '123456'
     elasticsearch:
       enable: true
-      url: 192.168.1.107:9200     # 使用已部署的 ES
+      url: localhost:9200     # 使用已部署的 ES
       username: elastic
       password: 123456
     xxl-job:
-      url: 192.168.1.107:8081     # 使用已部署的 XXL-Job
+      url: localhost:8081     # 使用已部署的 XXL-Job
       appName: xxl-job-executor
       accessToken: default_token
     sentinel:
-      url: 192.168.1.107          # 使用已部署的 Sentinel
+      url: localhost         # 使用已部署的 Sentinel
       port: 8888
       nacos:
         data-id: collide-gateway-sentinel
     rocketmq:
-      url: 192.168.1.107:9876     # 使用已部署的 RocketMQ
+      url: localhost:9876     # 使用已部署的 RocketMQ
     dubbo:
       nacos:
         namespace: 99d4c548-be12-4eaa-9564-4c7921bd80c1  # 使用生产环境的 namespace
