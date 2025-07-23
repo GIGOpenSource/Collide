@@ -1,288 +1,262 @@
 package com.gig.collide.comment.domain.service;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.api.comment.constant.CommentStatus;
 import com.gig.collide.api.comment.constant.CommentType;
 import com.gig.collide.api.comment.request.CommentCreateRequest;
-import com.gig.collide.base.exception.BizException;
 import com.gig.collide.comment.domain.entity.Comment;
 import com.gig.collide.comment.infrastructure.exception.CommentErrorCode;
 import com.gig.collide.comment.infrastructure.mapper.CommentMapper;
+import com.gig.collide.base.exception.BizException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 评论领域服务
- * 实现评论相关的核心业务逻辑
+ * 完全去连表化设计，统计基于冗余字段
  *
  * @author Collide Team
  * @version 1.0
  * @since 2024-01-01
  */
-@Slf4j
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommentDomainService {
 
     private final CommentMapper commentMapper;
 
     /**
-     * 创建评论
-     *
-     * @param createRequest 创建请求
-     * @return 评论实体
+     * 创建评论（去连表化设计）
      */
     @Transactional(rollbackFor = Exception.class)
     public Comment createComment(CommentCreateRequest createRequest) {
-        // 1. 参数校验
+        // 参数验证
         validateCreateRequest(createRequest);
 
-        // 2. 构建评论实体
-        Comment comment = buildComment(createRequest);
+        // 构建评论实体
+        Comment comment = buildCommentFromRequest(createRequest);
 
-        // 3. 设置根评论ID（如果是回复评论）
-        if (createRequest.getParentCommentId() != null) {
-            setupRootCommentId(comment, createRequest);
+        // 设置父评论关系
+        if (createRequest.getParentCommentId() != null && createRequest.getParentCommentId() > 0) {
+            Comment parentComment = commentMapper.selectById(createRequest.getParentCommentId());
+            if (parentComment == null) {
+                throw new BizException(CommentErrorCode.PARENT_COMMENT_NOT_FOUND);
+            }
+            comment.setParentCommentId(createRequest.getParentCommentId());
+            comment.setRootCommentId(parentComment.getRootCommentId() != null && parentComment.getRootCommentId() > 0 
+                ? parentComment.getRootCommentId() : parentComment.getId());
+            comment.setReplyToUserId(createRequest.getReplyToUserId());
+        } else {
+            comment.setParentCommentId(0L);
+            comment.setRootCommentId(0L);
         }
 
-        // 4. 保存评论
-        int insertResult = commentMapper.insert(comment);
-        if (insertResult <= 0) {
+        // 保存评论
+        int result = commentMapper.insert(comment);
+        if (result <= 0) {
             throw new BizException(CommentErrorCode.COMMENT_CREATE_FAILED);
         }
 
-        // 5. 更新父评论回复数
-        if (comment.getParentCommentId() != null) {
+        // 异步更新父评论的回复数（冗余字段更新）
+        if (comment.getParentCommentId() != null && comment.getParentCommentId() > 0) {
             updateParentReplyCount(comment.getParentCommentId(), 1);
         }
 
-        log.info("评论创建成功，评论ID: {}, 用户ID: {}", comment.getId(), comment.getUserId());
         return comment;
     }
 
     /**
-     * 删除评论（软删除）
-     *
-     * @param commentId 评论ID
-     * @param userId 用户ID
-     * @return 是否删除成功
+     * 删除评论（软删除，更新冗余统计）
      */
     @Transactional(rollbackFor = Exception.class)
-    public boolean deleteComment(Long commentId, Long userId) {
-        // 1. 查询评论
-        Comment comment = getCommentById(commentId);
+    public boolean deleteComment(Long commentId, Long currentUserId) {
+        Comment comment = commentMapper.selectById(commentId);
         if (comment == null) {
             throw new BizException(CommentErrorCode.COMMENT_NOT_FOUND);
         }
 
-        // 2. 权限检查
-        if (!comment.isDeletable(userId, false)) { // TODO: 需要传入管理员状态
-            throw new BizException(CommentErrorCode.COMMENT_DELETE_PERMISSION_DENIED);
+        // 权限检查
+        if (!comment.getUserId().equals(currentUserId)) {
+            throw new BizException(CommentErrorCode.NO_PERMISSION_TO_DELETE);
         }
 
-        // 3. 软删除评论
-        comment.setStatus(CommentStatus.DELETED);
-        int updateResult = commentMapper.updateById(comment);
-        if (updateResult <= 0) {
-            throw new BizException(CommentErrorCode.COMMENT_DELETE_FAILED);
+        // 使用MyBatis Plus的逻辑删除
+        comment.setIsDeleted(1);
+        comment.setUpdateTime(LocalDateTime.now());
+        int result = commentMapper.updateById(comment);
+
+        if (result > 0) {
+            // 异步更新父评论的回复数
+            if (comment.getParentCommentId() != null && comment.getParentCommentId() > 0) {
+                updateParentReplyCount(comment.getParentCommentId(), -1);
+            }
         }
 
-        // 4. 更新父评论回复数
-        if (comment.getParentCommentId() != null) {
-            updateParentReplyCount(comment.getParentCommentId(), -1);
-        }
-
-        // 5. 删除子评论（递归软删除）
-        deleteChildComments(commentId);
-
-        log.info("评论删除成功，评论ID: {}, 用户ID: {}", commentId, userId);
-        return true;
+        return result > 0;
     }
 
     /**
-     * 根据ID查询评论
-     *
-     * @param commentId 评论ID
-     * @return 评论实体
+     * 分页查询评论（单表查询，无连表）
      */
-    public Comment getCommentById(Long commentId) {
-        if (commentId == null) {
-            return null;
-        }
-        return commentMapper.selectById(commentId);
-    }
-
-    /**
-     * 分页查询评论
-     *
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @param parentCommentId 父评论ID
-     * @param pageNum 页码
-     * @param pageSize 页大小
-     * @param sortBy 排序字段
-     * @param sortOrder 排序方向
-     * @return 评论分页结果
-     */
-    public IPage<Comment> pageQueryComments(CommentType commentType, Long targetId, 
-                                          Long parentCommentId, Integer pageNum, 
-                                          Integer pageSize, String sortBy, String sortOrder) {
+    public IPage<Comment> queryCommentPage(CommentType commentType, Long targetId, 
+                                         Long parentCommentId, CommentStatus status,
+                                         int pageNum, int pageSize, String orderBy) {
         Page<Comment> page = new Page<>(pageNum, pageSize);
-        return commentMapper.selectCommentPage(page, commentType, targetId, 
-                                             parentCommentId, CommentStatus.NORMAL, 
-                                             sortBy, sortOrder);
+        return commentMapper.selectCommentPage(page, commentType, targetId, parentCommentId, status, orderBy);
     }
 
     /**
-     * 查询评论树
-     *
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @param pageNum 页码
-     * @param pageSize 页大小
-     * @param sortBy 排序字段
-     * @param sortOrder 排序方向
-     * @return 评论树分页结果
+     * 查询评论树（单表递归查询）
      */
-    public IPage<Comment> queryCommentTree(CommentType commentType, Long targetId,
-                                         Integer pageNum, Integer pageSize, 
-                                         String sortBy, String sortOrder) {
-        Page<Comment> page = new Page<>(pageNum, pageSize);
-        return commentMapper.selectCommentTree(page, commentType, targetId, 
-                                             CommentStatus.NORMAL, sortBy, sortOrder);
+    public List<Comment> queryCommentTree(Long targetId, CommentType commentType, CommentStatus status) {
+        return commentMapper.selectCommentTree(targetId, commentType, status);
     }
-
+    
     /**
-     * 根据根评论ID查询子评论
-     *
-     * @param rootCommentId 根评论ID
-     * @return 子评论列表
+     * 查询评论树（重载方法，适配Facade调用）
      */
-    public List<Comment> getChildComments(Long rootCommentId) {
-        return commentMapper.selectChildComments(rootCommentId, CommentStatus.NORMAL);
+    public List<Comment> queryCommentTree(CommentType commentType, Long targetId) {
+        return commentMapper.selectCommentTree(targetId, commentType, CommentStatus.NORMAL);
     }
 
     /**
-     * 统计评论数量
-     *
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @return 评论数量
+     * 统计评论数量（单表统计）
+     */
+    public Long countComments(Long targetId, CommentType commentType, 
+                            Long parentCommentId, CommentStatus status) {
+        return commentMapper.countComments(targetId, commentType, parentCommentId, status);
+    }
+    
+    /**
+     * 统计评论数量（重载方法，适配Facade调用）
      */
     public Long countComments(CommentType commentType, Long targetId) {
-        return commentMapper.countCommentsByTarget(commentType, targetId, CommentStatus.NORMAL);
+        return commentMapper.countComments(targetId, commentType, null, CommentStatus.NORMAL);
+    }
+    
+    /**
+     * 查询评论列表（适配Facade调用）
+     */
+    public List<Comment> queryComments(CommentType commentType, Long targetId, 
+                                     CommentStatus status, Long parentCommentId, 
+                                     int pageNum, int pageSize) {
+        Page<Comment> page = new Page<>(pageNum, pageSize);
+        IPage<Comment> result = commentMapper.selectCommentPage(page, commentType, targetId, parentCommentId, status, "create_time DESC");
+        return result.getRecords();
+    }
+    
+    /**
+     * 分页查询评论（适配Facade调用）
+     */
+    public IPage<Comment> pageQueryComments(CommentType commentType, CommentStatus status, 
+                                          int pageNum, int pageSize) {
+        Page<Comment> page = new Page<>(pageNum, pageSize);
+        return commentMapper.selectCommentPage(page, commentType, null, null, status, "create_time DESC");
+    }
+    
+    /**
+     * 更新评论状态（适配Facade调用）
+     */
+    public void updateCommentStatus(Long commentId, Long userId, CommentStatus status) {
+        Comment comment = commentMapper.selectById(commentId);
+        if (comment != null) {
+            comment.setStatus(status);
+            comment.setUpdateTime(LocalDateTime.now());
+            commentMapper.updateById(comment);
+        }
     }
 
     /**
-     * 更新评论点赞数
-     *
-     * @param commentId 评论ID
-     * @param increment 增量
-     * @return 是否更新成功
+     * 查询用户评论历史（单表查询）
+     */
+    public IPage<Comment> queryUserComments(Long userId, CommentType commentType, 
+                                          CommentStatus status, int pageNum, int pageSize) {
+        Page<Comment> page = new Page<>(pageNum, pageSize);
+        return commentMapper.selectUserComments(page, userId, commentType, status);
+    }
+
+    /**
+     * 查询热门评论（基于冗余统计字段）
+     */
+    public List<Comment> queryHotComments(Long targetId, CommentType commentType, Integer limit) {
+        return commentMapper.selectHotComments(targetId, commentType, limit);
+    }
+
+    /**
+     * 获取评论统计信息（基于冗余字段，无连表）
+     */
+    public Map<String, Object> getCommentStatistics(Long targetId, CommentType commentType) {
+        return commentMapper.getCommentStatistics(targetId, commentType);
+    }
+
+    /**
+     * 更新评论点赞数（冗余字段更新）
      */
     @Transactional(rollbackFor = Exception.class)
     public boolean updateCommentLikeCount(Long commentId, Integer increment) {
-        int updateResult = commentMapper.updateLikeCount(commentId, increment);
-        return updateResult > 0;
+        int result = commentMapper.updateLikeCount(commentId, increment);
+        return result > 0;
     }
 
-    // ==================== 私有方法 ====================
-
     /**
-     * 校验创建请求
+     * 验证创建请求
      */
-    private void validateCreateRequest(CommentCreateRequest createRequest) {
-        if (createRequest == null) {
-            throw new BizException(CommentErrorCode.INVALID_PARAMETER);
+    private void validateCreateRequest(CommentCreateRequest request) {
+        if (request.getTargetId() == null || request.getTargetId() <= 0) {
+            throw new BizException(CommentErrorCode.INVALID_TARGET_ID);
         }
-        if (createRequest.getCommentType() == null) {
-            throw new BizException(CommentErrorCode.COMMENT_TYPE_REQUIRED);
+        if (request.getUserId() == null || request.getUserId() <= 0) {
+            throw new BizException(CommentErrorCode.INVALID_USER_ID);
         }
-        if (createRequest.getTargetId() == null) {
-            throw new BizException(CommentErrorCode.TARGET_ID_REQUIRED);
+        if (request.getContent() == null || request.getContent().trim().isEmpty()) {
+            throw new BizException(CommentErrorCode.COMMENT_CONTENT_EMPTY);
         }
-        if (!StringUtils.hasText(createRequest.getContent())) {
-            throw new BizException(CommentErrorCode.COMMENT_CONTENT_REQUIRED);
-        }
-        if (createRequest.getUserId() == null) {
-            throw new BizException(CommentErrorCode.USER_ID_REQUIRED);
+        if (request.getContent().length() > 2000) {
+            throw new BizException(CommentErrorCode.COMMENT_CONTENT_TOO_LONG);
         }
     }
 
     /**
-     * 构建评论实体
+     * 从请求构建评论实体
      */
-    private Comment buildComment(CommentCreateRequest createRequest) {
+    private Comment buildCommentFromRequest(CommentCreateRequest request) {
         Comment comment = new Comment();
-        comment.setCommentType(createRequest.getCommentType());
-        comment.setTargetId(createRequest.getTargetId());
-        comment.setParentCommentId(createRequest.getParentCommentId());
-        comment.setContent(createRequest.getContent());
-        comment.setUserId(createRequest.getUserId());
-        comment.setReplyToUserId(createRequest.getReplyToUserId());
+        comment.setCommentType(request.getCommentType());
+        comment.setTargetId(request.getTargetId());
+        comment.setContent(request.getContent().trim());
+        comment.setUserId(request.getUserId());
         comment.setStatus(CommentStatus.NORMAL);
         comment.setLikeCount(0);
         comment.setReplyCount(0);
+        comment.setIsPinned(false);
+        comment.setIsHot(false);
+        // 这些字段从请求中获取不到，使用默认值或从上下文获取
+        // comment.setIpAddress(getClientIpAddress());
+        // comment.setDeviceInfo(getClientDeviceInfo());
+        comment.setCreateTime(LocalDateTime.now());
+        comment.setUpdateTime(LocalDateTime.now());
+        comment.setIsDeleted(0);
         return comment;
     }
 
     /**
-     * 设置根评论ID
-     */
-    private void setupRootCommentId(Comment comment, CommentCreateRequest createRequest) {
-        if (createRequest.getRootCommentId() != null) {
-            // 如果指定了根评论ID，直接使用
-            comment.setRootCommentId(createRequest.getRootCommentId());
-        } else {
-            // 否则查询父评论的根评论ID
-            Comment parentComment = getCommentById(createRequest.getParentCommentId());
-            if (parentComment == null) {
-                throw new BizException(CommentErrorCode.PARENT_COMMENT_NOT_FOUND);
-            }
-            // 如果父评论有根评论ID，使用父评论的根评论ID；否则使用父评论ID作为根评论ID
-            Long rootCommentId = parentComment.getRootCommentId() != null ? 
-                                parentComment.getRootCommentId() : parentComment.getId();
-            comment.setRootCommentId(rootCommentId);
-        }
-    }
-
-    /**
-     * 更新父评论回复数
+     * 更新父评论的回复数（异步处理冗余字段）
      */
     private void updateParentReplyCount(Long parentCommentId, Integer increment) {
         try {
             commentMapper.updateReplyCount(parentCommentId, increment);
         } catch (Exception e) {
-            log.warn("更新父评论回复数失败，父评论ID: {}, 增量: {}", parentCommentId, increment, e);
-        }
-    }
-
-    /**
-     * 删除子评论（递归软删除）
-     */
-    private void deleteChildComments(Long commentId) {
-        try {
-            // 查询所有子评论
-            LambdaQueryWrapper<Comment> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Comment::getParentCommentId, commentId)
-                       .eq(Comment::getStatus, CommentStatus.NORMAL);
-            List<Comment> childComments = commentMapper.selectList(queryWrapper);
-
-            // 递归删除子评论
-            for (Comment childComment : childComments) {
-                childComment.setStatus(CommentStatus.DELETED);
-                commentMapper.updateById(childComment);
-                deleteChildComments(childComment.getId()); // 递归删除
-            }
-        } catch (Exception e) {
-            log.warn("删除子评论失败，父评论ID: {}", commentId, e);
+            log.error("更新父评论回复数失败，parentCommentId: {}, increment: {}", 
+                    parentCommentId, increment, e);
+            // 这里可以发送消息队列进行异步重试
         }
     }
 } 

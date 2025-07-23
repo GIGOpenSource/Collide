@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.like.infrastructure.mapper.LikeMapper">
+    
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.like.domain.entity.Like">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="target_id" property="targetId" jdbcType="BIGINT"/>
+        <result column="target_type" property="targetType" jdbcType="VARCHAR"/>
+        <result column="action_type" property="actionType" jdbcType="INTEGER"/>
+        <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
+        <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+    </resultMap>
+    
+    <!-- 根据用户ID和目标对象查询点赞记录 -->
+    <select id="selectByUserAndTarget" resultMap="BaseResultMap">
+        SELECT * FROM t_like 
+        WHERE user_id = #{userId} 
+          AND target_id = #{targetId} 
+          AND target_type = #{targetType}
+          AND deleted = 0
+        LIMIT 1
+    </select>
+    
+    <!-- 分页查询点赞记录 -->
+    <select id="selectLikePage" resultMap="BaseResultMap">
+        SELECT * FROM t_like 
+        WHERE deleted = 0
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="targetType != null and targetType != ''">
+            AND target_type = #{targetType}
+        </if>
+        <if test="actionType != null">
+            AND action_type = #{actionType}
+        </if>
+        <if test="startTime != null">
+            AND created_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_time &lt;= #{endTime}
+        </if>
+        ORDER BY created_time DESC
+    </select>
+    
+    <!-- 统计目标对象的点赞数 -->
+    <select id="countLikesByTarget" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_like 
+        WHERE target_id = #{targetId} 
+          AND target_type = #{targetType}
+          AND action_type = #{actionType}
+          AND deleted = 0
+    </select>
+    
+    <!-- 获取用户的点赞历史 -->
+    <select id="selectUserLikeHistory" resultMap="BaseResultMap">
+        SELECT * FROM t_like 
+        WHERE user_id = #{userId}
+          AND deleted = 0
+        <if test="targetType != null and targetType != ''">
+            AND target_type = #{targetType}
+        </if>
+        <if test="actionType != null">
+            AND action_type = #{actionType}
+        </if>
+        <if test="startTime != null">
+            AND created_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND created_time &lt;= #{endTime}
+        </if>
+        ORDER BY created_time DESC
+    </select>
+    
+    <!-- 批量查询用户对多个对象的点赞状态 -->
+    <select id="selectBatchUserLikeStatus" resultMap="BaseResultMap">
+        SELECT * FROM t_like 
+        WHERE user_id = #{userId}
+          AND target_type = #{targetType}
+          AND target_id IN 
+        <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+            #{targetId}
+        </foreach>
+          AND deleted = 0
+    </select>
+    
+    <!-- 获取对象的点赞用户列表 -->
+    <select id="selectLikeUsers" resultMap="BaseResultMap">
+        SELECT * FROM t_like 
+        WHERE target_id = #{targetId}
+          AND target_type = #{targetType}
+          AND action_type = #{actionType}
+          AND deleted = 0
+        ORDER BY created_time DESC
+    </select>
+    
+</mapper> 

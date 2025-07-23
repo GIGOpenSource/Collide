@@ -186,7 +186,7 @@ public class CommentController {
             CommentQueryRequest queryRequest = new CommentQueryRequest();
             queryRequest.setTargetId(targetId);
             queryRequest.setParentCommentId(parentCommentId);
-            queryRequest.setPageNum(pageNum);
+            queryRequest.setCurrentPage(pageNum);
             queryRequest.setPageSize(pageSize);
             queryRequest.setSortBy(sortBy);
             queryRequest.setSortOrder(sortOrder);
@@ -249,7 +249,7 @@ public class CommentController {
             CommentQueryRequest queryRequest = new CommentQueryRequest();
             queryRequest.setTargetId(targetId);
             queryRequest.setIncludeChildren(includeChildren);
-            queryRequest.setPageNum(pageNum);
+            queryRequest.setCurrentPage(pageNum);
             queryRequest.setPageSize(pageSize);
             queryRequest.setSortBy(sortBy);
             queryRequest.setSortOrder(sortOrder);

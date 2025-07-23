@@ -218,6 +218,27 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 评论相关 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-comment</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- 点赞相关 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-like</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- 收藏相关 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-favorite</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- 业务聚合 -->
             <dependency>
                 <groupId>com.gig</groupId>

@@ -1,5 +1,7 @@
 package com.gig.collide;
 
+import com.gig.collide.api.favorite.service.FavoriteFacadeService;
+import com.gig.collide.api.comment.service.CommentFacadeService;
 import com.gig.collide.api.content.service.ContentFacadeService;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.api.user.service.UserFacadeService;
@@ -32,6 +34,12 @@ public class BusinessDubboConfiguration {
     @DubboReference(version = "1.0.0")
     private ContentFacadeService contentFacadeService;
 
+    @DubboReference(version = "1.0.0")
+    private CommentFacadeService commentFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private FavoriteFacadeService favoriteFacadeService;
+
     /**
      * 用户服务 Bean 配置
      */
@@ -57,5 +65,17 @@ public class BusinessDubboConfiguration {
     @ConditionalOnMissingBean(name = "contentFacadeService")
     public ContentFacadeService contentFacadeService() {
         return contentFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "commentFacadeService")
+    public CommentFacadeService commentFacadeService() {
+        return commentFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "favoriteFacadeService")
+    public FavoriteFacadeService favoriteFacadeService() {
+        return favoriteFacadeService;
     }
 } 

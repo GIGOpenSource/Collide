@@ -35,6 +35,12 @@ public enum CommentErrorCode implements ErrorCode {
     USER_ID_REQUIRED("PARAM_005", "用户ID不能为空"),
     COMMENT_ID_REQUIRED("PARAM_006", "评论ID不能为空"),
     PAGE_PARAM_INVALID("PARAM_007", "分页参数无效"),
+    INVALID_TARGET_ID("PARAM_008", "目标ID无效"),
+    INVALID_USER_ID("PARAM_009", "用户ID无效"),
+    COMMENT_CONTENT_EMPTY("PARAM_010", "评论内容为空"),
+
+    // 权限相关错误码 (PERMISSION_xxx)
+    NO_PERMISSION_TO_DELETE("PERMISSION_001", "无权限删除该评论"),
 
     // 系统相关错误码 (SYSTEM_xxx)
     SYSTEM_ERROR("SYSTEM_001", "系统异常"),

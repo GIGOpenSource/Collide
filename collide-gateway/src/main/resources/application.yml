@@ -26,7 +26,7 @@ spring:
         - id: collide-application
           uri: lb://collide-business
           predicates:
-            - Path=/users/**,/admin/**,/actuator/**
+            - Path=/api/v1/users/**,/api/v1/follow/**,/api/v1/comments/**,/api/v1/content/**
 
       # 全局过滤器配置
       discovery:

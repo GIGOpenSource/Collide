@@ -21,7 +21,7 @@ public interface CommentConvertor {
     CommentConvertor INSTANCE = Mappers.getMapper(CommentConvertor.class);
 
     /**
-     * 实体转 VO
+     * 实体转评论信息
      *
      * @param comment 评论实体
      * @return 评论信息VO
@@ -35,13 +35,13 @@ public interface CommentConvertor {
     @Mapping(target = "isLiked", ignore = true)
     @Mapping(target = "isDeletable", ignore = true)
     @Mapping(target = "children", ignore = true)
-    CommentInfo mapToVo(Comment comment);
+    CommentInfo convertToCommentInfo(Comment comment);
 
     /**
-     * 实体列表转 VO 列表
+     * 实体列表转评论信息列表
      *
      * @param comments 评论实体列表
      * @return 评论信息VO列表
      */
-    List<CommentInfo> mapToVoList(List<Comment> comments);
+    List<CommentInfo> convertToCommentInfoList(List<Comment> comments);
 } 

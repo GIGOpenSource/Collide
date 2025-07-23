@@ -10,9 +10,11 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * 评论数据访问映射器
+ * 评论数据访问接口
+ * 完全去连表化设计，所有查询都基于单表
  *
  * @author Collide Team
  * @version 1.0
@@ -22,92 +24,66 @@ import java.util.List;
 public interface CommentMapper extends BaseMapper<Comment> {
 
     /**
-     * 分页查询评论列表
-     *
-     * @param page 分页参数
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @param parentCommentId 父评论ID
-     * @param status 状态
-     * @param sortBy 排序字段
-     * @param sortOrder 排序方向
-     * @return 评论分页列表
+     * 分页查询评论列表（单表查询）
      */
     IPage<Comment> selectCommentPage(Page<Comment> page,
                                    @Param("commentType") CommentType commentType,
                                    @Param("targetId") Long targetId,
                                    @Param("parentCommentId") Long parentCommentId,
                                    @Param("status") CommentStatus status,
-                                   @Param("sortBy") String sortBy,
-                                   @Param("sortOrder") String sortOrder);
+                                   @Param("orderBy") String orderBy);
 
     /**
-     * 查询评论树（根评论及其子评论）
-     *
-     * @param page 分页参数
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @param status 状态
-     * @param sortBy 排序字段
-     * @param sortOrder 排序方向
-     * @return 评论树分页列表
+     * 查询评论树（单表递归查询）
      */
-    IPage<Comment> selectCommentTree(Page<Comment> page,
-                                   @Param("commentType") CommentType commentType,
-                                   @Param("targetId") Long targetId,
-                                   @Param("status") CommentStatus status,
-                                   @Param("sortBy") String sortBy,
-                                   @Param("sortOrder") String sortOrder);
+    List<Comment> selectCommentTree(@Param("targetId") Long targetId,
+                                  @Param("commentType") CommentType commentType,
+                                  @Param("status") CommentStatus status);
 
     /**
-     * 根据根评论ID查询所有子评论
-     *
-     * @param rootCommentId 根评论ID
-     * @param status 状态
-     * @return 子评论列表
+     * 统计评论数量（单表统计）
      */
-    List<Comment> selectChildComments(@Param("rootCommentId") Long rootCommentId,
+    Long countComments(@Param("targetId") Long targetId,
+                      @Param("commentType") CommentType commentType,
+                      @Param("parentCommentId") Long parentCommentId,
+                      @Param("status") CommentStatus status);
+
+    /**
+     * 查询用户评论历史（单表查询）
+     */
+    IPage<Comment> selectUserComments(Page<Comment> page,
+                                    @Param("userId") Long userId,
+                                    @Param("commentType") CommentType commentType,
                                     @Param("status") CommentStatus status);
 
     /**
-     * 统计目标的评论数量
-     *
-     * @param commentType 评论类型
-     * @param targetId 目标ID
-     * @param status 状态
-     * @return 评论数量
+     * 查询热门评论（基于冗余统计字段）
      */
-    Long countCommentsByTarget(@Param("commentType") CommentType commentType,
-                             @Param("targetId") Long targetId,
-                             @Param("status") CommentStatus status);
+    List<Comment> selectHotComments(@Param("targetId") Long targetId,
+                                  @Param("commentType") CommentType commentType,
+                                  @Param("limit") Integer limit);
 
     /**
-     * 更新评论点赞数
-     *
-     * @param commentId 评论ID
-     * @param increment 增量（可为负数）
-     * @return 更新行数
-     */
-    int updateLikeCount(@Param("commentId") Long commentId,
-                       @Param("increment") Integer increment);
-
-    /**
-     * 更新评论回复数
-     *
-     * @param commentId 评论ID
-     * @param increment 增量（可为负数）
-     * @return 更新行数
+     * 更新回复数（冗余字段更新）
      */
     int updateReplyCount(@Param("commentId") Long commentId,
                         @Param("increment") Integer increment);
 
     /**
-     * 批量更新评论状态
-     *
-     * @param commentIds 评论ID列表
-     * @param status 新状态
-     * @return 更新行数
+     * 更新点赞数（冗余字段更新）
      */
-    int updateCommentStatus(@Param("commentIds") List<Long> commentIds,
-                           @Param("status") CommentStatus status);
+    int updateLikeCount(@Param("commentId") Long commentId,
+                       @Param("increment") Integer increment);
+
+    /**
+     * 查询子评论列表（单表查询）
+     */
+    List<Comment> selectChildComments(@Param("parentCommentId") Long parentCommentId,
+                                    @Param("limit") Integer limit);
+
+    /**
+     * 获取评论统计信息（基于冗余字段统计）
+     */
+    Map<String, Object> getCommentStatistics(@Param("targetId") Long targetId,
+                                           @Param("commentType") CommentType commentType);
 } 

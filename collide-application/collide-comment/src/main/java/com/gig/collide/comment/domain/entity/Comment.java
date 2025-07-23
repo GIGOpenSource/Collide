@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 /**
  * 评论实体
  * 对应 t_comment 表
+ * 完全去连表化设计，统计字段冗余存储
  *
  * @author Collide Team
  * @version 1.0
@@ -32,7 +33,7 @@ public class Comment {
     private CommentType commentType;
 
     /**
-     * 目标ID（内容ID或父评论ID等）
+     * 目标ID（内容ID等）
      */
     @TableField("target_id")
     private Long targetId;
@@ -56,13 +57,13 @@ public class Comment {
     private String content;
 
     /**
-     * 评论者用户ID
+     * 评论用户ID
      */
     @TableField("user_id")
     private Long userId;
 
     /**
-     * 被回复用户ID
+     * 回复目标用户ID
      */
     @TableField("reply_to_user_id")
     private Long replyToUserId;
@@ -74,16 +75,40 @@ public class Comment {
     private CommentStatus status;
 
     /**
-     * 点赞数
+     * 点赞数（冗余字段，避免连表查询）
      */
     @TableField("like_count")
     private Integer likeCount;
 
     /**
-     * 回复数
+     * 回复数（冗余字段，避免连表查询）
      */
     @TableField("reply_count")
     private Integer replyCount;
+
+    /**
+     * 是否置顶
+     */
+    @TableField("is_pinned")
+    private Boolean isPinned;
+
+    /**
+     * 是否热门评论
+     */
+    @TableField("is_hot")
+    private Boolean isHot;
+
+    /**
+     * IP地址
+     */
+    @TableField("ip_address")
+    private String ipAddress;
+
+    /**
+     * 设备信息
+     */
+    @TableField("device_info")
+    private String deviceInfo;
 
     /**
      * 创建时间
@@ -98,25 +123,9 @@ public class Comment {
     private LocalDateTime updateTime;
 
     /**
-     * 是否已删除（0: 否, 1: 是）
+     * 逻辑删除标记
      */
     @TableLogic
     @TableField("is_deleted")
     private Integer isDeleted;
-
-    /**
-     * 检查是否可以删除
-     * 
-     * @param currentUserId 当前用户ID
-     * @param isAdmin 是否为管理员
-     * @return 是否可删除
-     */
-    public boolean isDeletable(Long currentUserId, boolean isAdmin) {
-        // 管理员可以删除任何评论
-        if (isAdmin) {
-            return true;
-        }
-        // 用户只能删除自己的评论
-        return this.userId != null && this.userId.equals(currentUserId);
-    }
 } 

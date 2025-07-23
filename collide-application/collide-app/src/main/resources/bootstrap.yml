@@ -1,5 +1,5 @@
 spring:
   application:
-    name: collide-application
+    name: collide-business
   config:
     import: classpath:base.yml,classpath:config.yml

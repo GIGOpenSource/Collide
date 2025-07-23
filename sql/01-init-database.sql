@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS `t_follow_statistics` (
 -- 内容相关表
 -- ==========================================
 
--- 内容表
+-- 内容表（包含自己的统计字段，避免连表）
 CREATE TABLE IF NOT EXISTS `t_content` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '内容ID',
   `title` varchar(200) NOT NULL COMMENT '标题',
@@ -98,8 +98,10 @@ CREATE TABLE IF NOT EXISTS `t_content` (
   `review_status` varchar(20) DEFAULT 'PENDING' COMMENT '审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝',
   `view_count` bigint DEFAULT '0' COMMENT '查看数',
   `like_count` bigint DEFAULT '0' COMMENT '点赞数',
+  `dislike_count` bigint DEFAULT '0' COMMENT '点踩数',
   `comment_count` bigint DEFAULT '0' COMMENT '评论数',
   `share_count` bigint DEFAULT '0' COMMENT '分享数',
+  `favorite_count` bigint DEFAULT '0' COMMENT '收藏数',
   `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `published_time` datetime DEFAULT NULL COMMENT '发布时间',
@@ -111,7 +113,9 @@ CREATE TABLE IF NOT EXISTS `t_content` (
   KEY `idx_review_status` (`review_status`),
   KEY `idx_category_id` (`category_id`),
   KEY `idx_created_time` (`created_time`),
-  KEY `idx_published_time` (`published_time`)
+  KEY `idx_published_time` (`published_time`),
+  KEY `idx_like_count` (`like_count`),
+  KEY `idx_view_count` (`view_count`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容表';
 
 -- 内容审核表
@@ -133,6 +137,75 @@ CREATE TABLE IF NOT EXISTS `t_content_review` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容审核表';
 
 -- ==========================================
+-- 评论相关表（完全去连表化设计，包含统计冗余字段）
+-- ==========================================
+
+-- 评论表
+CREATE TABLE IF NOT EXISTS `t_comment` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '评论ID',
+    `comment_type` VARCHAR(50) NOT NULL COMMENT '评论类型：CONTENT、REPLY、SOCIAL',
+    `target_id` BIGINT NOT NULL COMMENT '目标ID（内容ID等）',
+    `parent_comment_id` BIGINT DEFAULT 0 COMMENT '父评论ID，0表示顶级评论',
+    `root_comment_id` BIGINT DEFAULT 0 COMMENT '根评论ID，用于快速查询评论树',
+    `content` TEXT NOT NULL COMMENT '评论内容',
+    `user_id` BIGINT NOT NULL COMMENT '评论用户ID',
+    `reply_to_user_id` BIGINT COMMENT '回复的目标用户ID',
+    `status` VARCHAR(50) NOT NULL DEFAULT 'NORMAL' COMMENT '评论状态：NORMAL、DELETED、BLOCKED',
+    `like_count` INT NOT NULL DEFAULT 0 COMMENT '点赞数（冗余字段，避免连表查询）',
+    `reply_count` INT NOT NULL DEFAULT 0 COMMENT '回复数（冗余字段，避免连表查询）',
+    `is_pinned` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否置顶',
+    `is_hot` BOOLEAN NOT NULL DEFAULT FALSE COMMENT '是否热门评论',
+    `ip_address` VARCHAR(45) COMMENT '评论IP地址',
+    `device_info` VARCHAR(200) COMMENT '设备信息',
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
+    PRIMARY KEY (`id`),
+    KEY `idx_comment_type` (`comment_type`),
+    KEY `idx_target_id` (`target_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_parent_comment_id` (`parent_comment_id`),
+    KEY `idx_root_comment_id` (`root_comment_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_create_time` (`create_time`),
+    KEY `idx_like_count` (`like_count`),
+    KEY `idx_is_pinned` (`is_pinned`),
+    KEY `idx_is_hot` (`is_hot`),
+    KEY `idx_is_deleted` (`is_deleted`),
+    KEY `idx_target_status` (`target_id`, `status`),
+    KEY `idx_target_parent` (`target_id`, `parent_comment_id`),
+    KEY `idx_user_status` (`user_id`, `status`),
+    KEY `idx_target_created` (`target_id`, `create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
+
+-- ==========================================
+-- 统一点赞表（处理所有类型的点赞，无连表依赖）
+-- ==========================================
+
+-- 点赞表
+CREATE TABLE IF NOT EXISTS `t_like` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '点赞ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `target_id` BIGINT NOT NULL COMMENT '目标对象ID（内容ID、评论ID等）',
+    `target_type` VARCHAR(50) NOT NULL COMMENT '目标类型：CONTENT、COMMENT、SOCIAL_POST、USER',
+    `action_type` TINYINT NOT NULL DEFAULT 1 COMMENT '操作类型：1-点赞，0-取消，-1-点踩',
+    `ip_address` VARCHAR(45) COMMENT '点赞IP地址',
+    `device_info` VARCHAR(200) COMMENT '设备信息',
+    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_target_type` (`user_id`, `target_id`, `target_type`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_target_id` (`target_id`),
+    KEY `idx_target_type` (`target_type`),
+    KEY `idx_action_type` (`action_type`),
+    KEY `idx_created_time` (`created_time`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_target_action` (`target_id`, `target_type`, `action_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='统一点赞表';
+
+-- ==========================================
 -- 插入初始数据
 -- ==========================================
 
@@ -147,5 +220,32 @@ INSERT IGNORE INTO `t_follow_statistics` (`user_id`, `following_count`, `followe
 (1, 0, 0),
 (2, 0, 0),
 (3, 0, 0);
+
+-- 插入测试内容数据（包含统计字段）
+INSERT IGNORE INTO `t_content` (`id`, `title`, `description`, `content_type`, `content_data`, `author_id`, `status`, `review_status`, `view_count`, `like_count`, `dislike_count`, `comment_count`, `published_time`) VALUES
+(1, '测试小说章节', '这是一个测试小说章节的描述', 'NOVEL', '{"chapters": [{"title": "第一章", "content": "这是小说的第一章内容..."}]}', 3, 'PUBLISHED', 'APPROVED', 150, 3, 0, 3, NOW()),
+(2, '测试短视频', '一个有趣的短视频内容', 'SHORT_VIDEO', '{"videoUrl": "https://example.com/video1.mp4", "duration": 30}', 2, 'PUBLISHED', 'APPROVED', 320, 1, 1, 2, NOW());
+
+-- 插入测试评论数据（包含统计字段）
+INSERT IGNORE INTO `t_comment` (`id`, `comment_type`, `target_id`, `parent_comment_id`, `root_comment_id`, `content`, `user_id`, `reply_to_user_id`, `status`, `like_count`, `reply_count`) VALUES
+(1, 'CONTENT', 1, 0, 0, '这是一个很棒的小说！情节引人入胜，期待后续章节。', 1, NULL, 'NORMAL', 2, 2),
+(2, 'CONTENT', 1, 1, 1, '我也觉得非常不错，作者的文笔很棒！', 2, 1, 'NORMAL', 0, 0),
+(3, 'CONTENT', 1, 1, 1, '作者很用心，支持！', 3, 1, 'NORMAL', 1, 0),
+(4, 'CONTENT', 2, 0, 0, '这个短视频太搞笑了，忍不住多看了几遍！', 1, NULL, 'NORMAL', 1, 1),
+(5, 'CONTENT', 2, 4, 4, '哈哈哈，确实很有趣！', 3, 4, 'NORMAL', 0, 0);
+
+-- 插入统一点赞数据
+INSERT IGNORE INTO `t_like` (`id`, `user_id`, `target_id`, `target_type`, `action_type`) VALUES
+-- 内容点赞
+(1, 1, 1, 'CONTENT', 1),
+(2, 2, 1, 'CONTENT', 1),
+(3, 3, 1, 'CONTENT', 1),
+(4, 1, 2, 'CONTENT', 1),
+(5, 2, 2, 'CONTENT', -1),
+-- 评论点赞
+(6, 1, 1, 'COMMENT', 1),
+(7, 2, 1, 'COMMENT', 1),
+(8, 3, 3, 'COMMENT', 1),
+(9, 2, 4, 'COMMENT', 1);
 
 SET FOREIGN_KEY_CHECKS = 1; 

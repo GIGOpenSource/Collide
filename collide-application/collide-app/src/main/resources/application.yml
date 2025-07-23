@@ -2,26 +2,55 @@ spring:
   profiles:
     active: dev
   application:
-    name: @application.name@
+    name: collide-business
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml   #这里爆红可以直接忽略，没有任何影响
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
 
-# TODO: 消息队列配置，后续需要时启用
-#    cloud:
-#      stream:
-#        rocketmq:
-#          bindings:
-#            # 消息绑定配置
-#        bindings:
-#          # 消息流绑定配置
-
+# 服务器配置
 server:
-  port: 8085
+  port: 8080
+  servlet:
+    context-path: /api
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
 
 # 日志配置
 logging:
   level:
+    root: INFO
     com.gig.collide: DEBUG
     org.apache.dubbo: WARN
+    org.springframework.cloud: DEBUG
+    com.alibaba.nacos: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n" 
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger] - %msg%n"
+  file:
+    name: logs/collide-business.log
+
+# Swagger文档配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+  info:
+    title: Collide Business API
+    description: Collide社交平台业务聚合服务API文档
+    version: 1.0.0
+    contact:
+      name: Collide Team
+      email: support@collide.com
+  group-configs:
+    - group: users
+      packages-to-scan: com.gig.collide.users
+    - group: follow
+      packages-to-scan: com.gig.collide.follow
+    - group: content
+      packages-to-scan: com.gig.collide.content
+    - group: social
+      packages-to-scan: com.gig.collide.comment,com.gig.collide.like,com.gig.collide.favorite 

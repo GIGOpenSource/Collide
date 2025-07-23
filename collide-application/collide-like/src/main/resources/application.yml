@@ -1,0 +1,94 @@
+server:
+  port: 9503
+
+spring:
+  application:
+    name: collide-like
+  profiles:
+    active: dev
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:mapper/*_sqlmap.xml
+  type-aliases-package: com.gig.collide.like.domain.entity
+
+# 日志配置
+logging:
+  level:
+    com.gig.collide.like: DEBUG
+    org.springframework.web: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# 点赞服务业务配置
+collide:
+  like:
+    # 统计重置配置
+    statistics:
+      reset-today-cron: "0 0 0 * * ?"        # 每天0点重置今日统计
+      reset-week-cron: "0 0 0 ? * MON"       # 每周一0点重置本周统计
+      reset-month-cron: "0 0 0 1 * ?"        # 每月1号0点重置本月统计
+    
+    # 缓存配置
+    cache:
+      statistics-ttl: 300                     # 统计信息缓存时间（秒）
+      user-like-status-ttl: 600              # 用户点赞状态缓存时间（秒）
+    
+    # 限流配置
+    rate-limit:
+      user-like-per-minute: 60               # 用户每分钟最大点赞次数
+      user-like-per-hour: 1000               # 用户每小时最大点赞次数
+
+---
+# 开发环境配置
+spring:
+  profiles: dev
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/collide_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+  
+  redis:
+    host: localhost
+    port: 6379
+    database: 1
+    timeout: 5000ms
+    lettuce:
+      pool:
+        max-active: 100
+        max-idle: 10
+        min-idle: 5
+
+# Dubbo配置（开发环境禁用）
+dubbo:
+  application:
+    name: collide-like
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: N/A
+  consumer:
+    check: false
+  provider:
+    timeout: 5000
+
+---
+# 生产环境配置
+spring:
+  profiles: prod
+
+# Nacos配置
+nacos:
+  server-addr: nacos-server:8848
+  namespace: collide-prod
+  group: DEFAULT_GROUP
+
+# Dubbo生产配置
+dubbo:
+  registry:
+    address: nacos://nacos-server:8848?namespace=collide-prod&group=DEFAULT_GROUP 

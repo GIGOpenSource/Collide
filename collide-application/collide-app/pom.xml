@@ -39,13 +39,38 @@
             <artifactId>collide-content</artifactId>
         </dependency>
 
-        <!-- TODO: 后续添加其他业务模块 -->
-        <!-- 
         <dependency>
             <groupId>com.gig</groupId>
-            <artifactId>collide-social</artifactId>
+            <artifactId>collide-comment</artifactId>
         </dependency>
-        -->
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-like</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-favorite</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Web Starter -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Cloud Bootstrap -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+
+        <!-- Nacos Discovery -->
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
 
         <!-- 公共模块依赖 -->
         <dependency>
