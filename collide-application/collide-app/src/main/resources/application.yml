@@ -2,55 +2,14 @@ spring:
   profiles:
     active: dev
   application:
-    name: collide-business
+    name: @application.name@
   config:
     import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
 
 # 服务器配置
 server:
   port: 9503
-  servlet:
-    context-path: /api
-    encoding:
-      charset: UTF-8
-      enabled: true
-      force: true
 
-# 日志配置
-logging:
-  level:
-    root: INFO
-    com.gig.collide: DEBUG
-    org.apache.dubbo: WARN
-    org.springframework.cloud: DEBUG
-    com.alibaba.nacos: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger] - %msg%n"
-  file:
-    name: logs/collide-business.log
-
-# Swagger文档配置
-springdoc:
-  api-docs:
-    enabled: true
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-  info:
-    title: Collide Business API
-    description: Collide社交平台业务聚合服务API文档
-    version: 1.0.0
-    contact:
-      name: Collide Team
-      email: support@collide.com
-  group-configs:
-    - group: users
-      packages-to-scan: com.gig.collide.users
-    - group: follow
-      packages-to-scan: com.gig.collide.follow
-    - group: content
-      packages-to-scan: com.gig.collide.content
-    - group: social
-      packages-to-scan: com.gig.collide.comment,com.gig.collide.like,com.gig.collide.favorite 
+dubbo:
+  application:
+    qos-port: 33334

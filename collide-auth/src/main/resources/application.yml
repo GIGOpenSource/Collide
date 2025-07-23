@@ -22,14 +22,3 @@ sa-token:
 
 server:
   port: 9502
-
-# 日志配置
-logging:
-  level:
-    root: INFO
-    com.gig.collide: DEBUG
-  file:
-    name: logs/collide-auth.log
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger] - %msg%n"
