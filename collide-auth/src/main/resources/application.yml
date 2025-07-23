@@ -21,4 +21,4 @@ sa-token:
   is-log: true
 
 server:
-  port: 9501
+  port: 9502

@@ -35,7 +35,7 @@ spring:
           lower-case-service-id: true
 
 server:
-  port: 9500
+  port: 9501
 
 # Sa-Token 配置
 sa-token:
