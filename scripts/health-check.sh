@@ -12,9 +12,9 @@ NC='\033[0m' # No Color
 
 # 服务配置
 declare -A SERVICES=(
-    ["collide-auth"]="9500:/api/v1/auth/test"
-    ["collide-application"]="8085:/actuator/health"
-    ["collide-gateway"]="8081:/actuator/health"
+    ["collide-auth"]="9502:/api/v1/auth/test"
+    ["collide-application"]="9503:/actuator/health"
+    ["collide-gateway"]="9501:/actuator/health"
 )
 
 # 日志函数
