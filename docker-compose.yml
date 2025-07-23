@@ -5,6 +5,7 @@ services:
   collide-gateway:
     image: collide-gateway:latest
     container_name: collide-gateway
+    network_mode: host
     ports:
       - "${GATEWAY_PORT:-9500}:9500"
     env_file:
@@ -28,6 +29,7 @@ services:
   collide-auth:
     image: collide-auth:latest
     container_name: collide-auth
+    network_mode: host
     ports:
       - "${AUTH_PORT:-9501}:9501"
     env_file:
@@ -44,13 +46,12 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    networks:
-      - collide-network
 
   # 业务应用服务
   collide-application:
     image: collide-application:latest
     container_name: collide-application
+    network_mode: host
     ports:
       - "${BUSINESS_PORT:-9502}:9502"
     env_file:
@@ -67,8 +68,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    networks:
-      - collide-network
 
 # 网络配置
 networks:
