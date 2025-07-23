@@ -28,7 +28,6 @@ doc
 .cursor/
 rec/
 .run/
-scripts/
 rec/Collide项目代码风格分析报告.md
 rec/Collide项目开发规则规范.md
 logs/*

@@ -1,0 +1,72 @@
+[Unit]
+Description=Collide Gateway Service
+Documentation=https://github.com/your-org/collide
+After=network.target nacos.service mysql.service redis.service
+Wants=nacos.service
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# 工作目录
+WorkingDirectory=/www/Collide/collide-gateway/target
+
+# 执行命令
+ExecStart=/usr/bin/java \
+    -jar \
+    -server \
+    -DDUBBO_IP_TO_REGISTRY=139.11.11.11 \
+    -Dspring.cloud.nacos.discovery.ip=18.166.150.123 \
+    -Dspring.profiles.active=prod \
+    -Xms1g \
+    -Xmx2g \
+    -XX:MetaspaceSize=256m \
+    -XX:MaxMetaspaceSize=512m \
+    -XX:MaxDirectMemorySize=512m \
+    -XX:+UseG1GC \
+    -XX:G1HeapRegionSize=16m \
+    -XX:+G1UseAdaptiveIHOP \
+    -XX:+UseBiasedLocking \
+    -XX:+DisableExplicitGC \
+    -Xlog:gc:/root/logs/gateway/gc.log \
+    -XX:+HeapDumpOnOutOfMemoryError \
+    -XX:HeapDumpPath=/root/logs/gateway/java.hprof \
+    -Djava.awt.headless=true \
+    -Dfile.encoding=UTF-8 \
+    -Duser.timezone=Asia/Shanghai \
+    collide-gateway.jar
+
+# 环境变量
+Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+Environment=LANG=zh_CN.UTF-8
+Environment=TZ=Asia/Shanghai
+
+# 重启策略
+Restart=always
+RestartSec=10
+StartLimitInterval=60
+StartLimitBurst=3
+
+# 优雅停机
+TimeoutStopSec=30
+KillMode=mixed
+KillSignal=SIGTERM
+
+# 标准输出和错误输出
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=collide-gateway
+
+# 安全设置
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/root/logs/gateway /tmp
+
+# 资源限制
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target 
