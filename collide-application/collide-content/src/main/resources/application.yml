@@ -13,7 +13,7 @@ spring:
 
 # 服务端口配置
 server:
-  port: 9503
+  port: 9606
 
 # MyBatis Plus 配置
 mybatis-plus:

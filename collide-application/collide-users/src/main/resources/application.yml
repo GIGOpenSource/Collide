@@ -11,4 +11,4 @@ spring:
     accessSecret: minioadmin
 
 server:
-  port: 9501
+  port: 9601

@@ -14,7 +14,7 @@ spring:
       - classpath:cache.yml
 
 server:
-  port: 9502
+  port: 9604
 
 # MyBatis Plus 配置
 mybatis-plus:
