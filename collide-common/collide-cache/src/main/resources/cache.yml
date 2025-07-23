@@ -15,10 +15,10 @@ spring:
           timeout: 3000
           retryAttempts: 3
           retryInterval: 1500
-          password: 123456
+          password: ${collide.turbo.redis.password}
           subscriptionsPerConnection: 5
           clientName: null
-          address: "redis://192.168.1.107:6379"
+          address: "redis://${collide.turbo.redis.url:localhost}:${collide.turbo.redis.port:6379}"
           subscriptionConnectionMinimumIdleSize: 1
           subscriptionConnectionPoolSize: 50
           connectionMinimumIdleSize: 24
