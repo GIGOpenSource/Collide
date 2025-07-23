@@ -19,7 +19,7 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/www/Collide/collide-auth/target
-ExecStart=/usr/bin/java -jar -Xms2g -Xmx2g -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:MaxDirectMemorySize=1g -Xlog:gc:/root/logs/app/gc.log -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/root/logs/app/java.hprof -DDUBBO_IP_TO_REGISTRY=127.0.0.1 -Dspring.cloud.nacos.discovery.ip=127.0.0.1 collide-auth-1.0.0-SNAPSHOT.jar &
+ExecStart=/usr/bin/java -jar -Xms2g -Xmx2g -XX:MetaspaceSize=512m -XX:MaxMetaspaceSize=512m -XX:MaxDirectMemorySize=1g -Xlog:gc:/root/logs/app/gc.log -XX:+PrintGCDetails -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/root/logs/app/java.hprof -DDUBBO_IP_TO_REGISTRY=127.0.0.1 -Dspring.cloud.nacos.discovery.ip=18.166.150.123 collide-auth-1.0.0-SNAPSHOT.jar &
 Environment=JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 Environment=LANG=zh_CN.UTF-8
 Environment=TZ=Asia/Shanghai
