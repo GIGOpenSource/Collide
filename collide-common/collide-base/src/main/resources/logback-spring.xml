@@ -15,7 +15,7 @@
         <property name="LOG_PATH" value="${user.home}/${app.name}/logs"/>
     </springProfile>
     
-    <springProfile name="!docker & !prod">
+    <springProfile name="!docker &amp; !prod">
         <!-- 开发环境：使用用户主目录 -->
         <property name="LOG_PATH" value="${user.home}/${app.name}/logs"/>
     </springProfile>
@@ -68,7 +68,7 @@
     </springProfile>
     
     <!-- 开发环境：主要使用控制台输出 -->
-    <springProfile name="!docker & !prod">
+    <springProfile name="!docker &amp; !prod">
         <root level="WARN">
             <appender-ref ref="CONSOLE"/>
         </root>
