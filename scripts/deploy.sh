@@ -66,7 +66,13 @@ create_directories() {
     mkdir -p /opt/collide
     chown collide:collide /opt/collide
     
-    # 创建日志目录
+    # 创建应用内部日志目录（用于Logback配置）
+    mkdir -p /opt/collide/collide-auth/logs
+    mkdir -p /opt/collide/collide-application/logs
+    mkdir -p /opt/collide/collide-gateway/logs
+    chown -R collide:collide /opt/collide/collide-*/logs
+    
+    # 创建系统日志目录（用于systemd重定向）
     mkdir -p /var/log/collide-application
     mkdir -p /var/log/collide-auth
     mkdir -p /var/log/collide-gateway
@@ -210,9 +216,9 @@ install_all() {
     log_info "所有服务安装完成！"
     echo ""
     echo "服务列表："
-    echo "  - collide-auth (端口: 9500)"
-    echo "  - collide-application (端口: 8085)"
-    echo "  - collide-gateway (端口: 8081)"
+    echo "  - collide-auth (端口: 9502)"
+    echo "  - collide-application (端口: 9503)"
+    echo "  - collide-gateway (端口: 9501)"
     echo ""
     echo "建议启动顺序："
     echo "  1. sudo systemctl start collide-auth"

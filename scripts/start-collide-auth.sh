@@ -10,7 +10,7 @@ JAR_PATH="$PROJECT_ROOT/collide-auth/target"
 JAR_FILE="$(find "$JAR_PATH" -name "collide-auth-*.jar" -type f | head -n 1)"
 MAIN_CLASS="com.gig.collide.auth.CollideAuthApplication"
 JAVA_OPTS="-Xms256m -Xmx512m -Dspring.profiles.active=prod"
-APP_PORT=9500
+APP_PORT=9502
 PID_FILE="/var/run/${APP_NAME}.pid"
 LOG_FILE="/var/log/${APP_NAME}/${APP_NAME}.log"
 LOG_DIR="$(dirname "$LOG_FILE")"

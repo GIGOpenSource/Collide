@@ -3,9 +3,23 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <springProperty scope="context" name="app.name" source="spring.application.name"/>
-
-    <property name="APP_NAME" value="${app.name}"/>
-    <property name="LOG_PATH" value="${user.home}/${APP_NAME}/logs"/>
+    
+    <!-- 根据环境选择不同的日志路径 -->
+    <springProfile name="docker">
+        <!-- Docker环境：使用容器内的日志目录 -->
+        <property name="LOG_PATH" value="/app/logs"/>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <!-- 生产环境部署：使用固定路径（适配systemd部署） -->
+        <property name="LOG_PATH" value="${user.home}/${app.name}/logs"/>
+    </springProfile>
+    
+    <springProfile name="!docker & !prod">
+        <!-- 开发环境：使用用户主目录 -->
+        <property name="LOG_PATH" value="${user.home}/${app.name}/logs"/>
+    </springProfile>
+    
     <property name="LOG_FILE" value="${LOG_PATH}/application.log"/>
     <property name="FILE_LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%thread] %logger{36} - %msg%n"/>
 
@@ -37,8 +51,26 @@
         <appender-ref ref="APPLICATION"/>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="ASYNC"/>
-        <appender-ref ref="CONSOLE"/>
-    </root>
+    <!-- Docker环境优先使用控制台输出 -->
+    <springProfile name="docker">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+            <appender-ref ref="ASYNC"/>
+        </root>
+    </springProfile>
+    
+    <!-- 生产环境：文件输出为主 -->
+    <springProfile name="prod">
+        <root level="INFO">
+            <appender-ref ref="ASYNC"/>
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+    
+    <!-- 开发环境：主要使用控制台输出 -->
+    <springProfile name="!docker & !prod">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
 </configuration>

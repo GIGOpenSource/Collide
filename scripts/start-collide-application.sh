@@ -10,7 +10,7 @@ JAR_PATH="$PROJECT_ROOT/collide-application/collide-app/target"
 JAR_FILE="$(find "$JAR_PATH" -name "collide-app-*.jar" -type f | head -n 1)"
 MAIN_CLASS="com.gig.collide.CollideBusinessApplication"
 JAVA_OPTS="-Xms512m -Xmx1024m -Dspring.profiles.active=prod"
-APP_PORT=8085
+APP_PORT=9503
 PID_FILE="/var/run/${APP_NAME}.pid"
 LOG_FILE="/var/log/${APP_NAME}/${APP_NAME}.log"
 LOG_DIR="$(dirname "$LOG_FILE")"
