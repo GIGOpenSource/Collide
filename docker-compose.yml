@@ -20,8 +20,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
-    networks:
-      - collide-network
 
   # 认证服务
   collide-auth:
