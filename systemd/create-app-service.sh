@@ -5,7 +5,7 @@ APP_NAME="collide-app"
 APP_ROOT="/www/Collide/collide-application"
 TARGET_DIR="${APP_ROOT}/collide-app/target"
 JAR_FILE="${TARGET_DIR}/collide-app.jar"
-LOG_DIR="${APP_ROOT}/logs"
+LOG_DIR="/www/Collide/collide-application/logs"
 SERVICE_FILE="/etc/systemd/system/${APP_NAME}.service"
 
 # 检查root权限
@@ -27,11 +27,18 @@ if ! id -u collide >/dev/null 2>&1; then
     useradd -r -g collide -s /usr/sbin/nologin -d "$APP_ROOT" collide
 fi
 
-# 初始化目录结构
-echo "初始化目录..."
-mkdir -p "$LOG_DIR" "${APP_ROOT}/backups"
-chown -R collide:collide "$APP_ROOT"
-chmod 750 "$APP_ROOT"
+mkdir -p "$LOG_DIR"
+
+# 设置日志目录权限
+chown collide:collide "$LOG_DIR"
+chmod 750 "$LOG_DIR"
+
+# 初始化日志文件（如果不存在）
+for logfile in app.log app-error.log; do
+    touch "$LOG_DIR/$logfile"
+    chown collide:collide "$LOG_DIR/$logfile"
+    chmod 640 "$LOG_DIR/$logfile"
+done
 
 # 备份管理（保留最近5个版本）
 echo "备份当前版本..."
@@ -86,17 +93,15 @@ EOF
 
 # 配置日志轮转
 cat > /etc/logrotate.d/collide-app <<EOF
-${LOG_DIR}/app*.log {
-    daily
+$LOG_DIR/app*.log {
     missingok
-    rotate 30
     compress
     delaycompress
     notifempty
     create 640 collide collide
     sharedscripts
     postrotate
-        /bin/systemctl reload $APP_NAME >/dev/null 2>&1 || true
+        /bin/systemctl reload collide-app >/dev/null 2>&1 || true
     endscript
 }
 EOF
