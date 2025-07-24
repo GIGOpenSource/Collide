@@ -6,13 +6,13 @@ dubbo:
     name: dubbo
     port: -1
   registry:
-    address: nacos://${collide.turbo.nacos.server.url}?username=${collide.turbo.nacos.server.username}&password=${collide.turbo.nacos.server.password}
+    address: nacos://${collide.turbo.nacos.server.url}
+    username: ${collide.turbo.nacos.server.username}
+    password: ${collide.turbo.nacos.server.password}
     parameters:
       namespace: ${collide.turbo.dubbo.nacos.namespace}
       group: ${collide.turbo.dubbo.nacos.group}
   application:
     name: ${spring.application.name}
     qos-enable: true
-    qos-port: 22223
     qos-accept-foreign-ip: false
-    serialize-check-status: DISABLE

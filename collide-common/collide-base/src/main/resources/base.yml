@@ -14,14 +14,11 @@ collide:
         url: 18.166.150.123:8848
         username: nacos
         password: nacos
-      grpc: 10848
 
     mysql:
-      url: 18.166.150.123
-      port: 3306
-      database: collide
+      url: jdbc:mysql://18.166.150.123:3306/collide
       username: root
-      password: 123456
+      password: '123456'
     redis:
       url: 18.166.150.123
       port: 6379

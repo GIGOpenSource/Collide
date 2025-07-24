@@ -12,13 +12,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * @version 1.0
  * @since 2024-01-01
  */
-@SpringBootApplication(scanBasePackages = {
-        "com.gig.collide.social",
-        "com.gig.collide.base",
-        "com.gig.collide.web",
-        "com.gig.collide.cache",
-        "com.gig.collide.datasource"
-})
+@SpringBootApplication(scanBasePackages = "com.gig.collide.social")
 @EnableDubbo
 @EnableDiscoveryClient
 public class SocialApplication {

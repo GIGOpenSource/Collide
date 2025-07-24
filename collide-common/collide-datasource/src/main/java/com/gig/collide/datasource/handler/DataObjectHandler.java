@@ -30,7 +30,8 @@ public class DataObjectHandler implements MetaObjectHandler {
      * @param metaObject
      */
     private void setFieldValByNameIfNull(String fieldName, Object fieldVal, MetaObject metaObject) {
-        if (metaObject.getValue(fieldName) == null) {
+        // 检查字段是否存在，避免字段不存在时抛出异常
+        if (metaObject.hasSetter(fieldName) && metaObject.getValue(fieldName) == null) {
             this.setFieldValByName(fieldName, fieldVal, metaObject);
         }
     }
@@ -38,10 +39,14 @@ public class DataObjectHandler implements MetaObjectHandler {
     @Override
     public void updateFill(MetaObject metaObject) {
         // 支持旧字段名（向后兼容）
-        this.setFieldValByName("gmtModified", new Date(), metaObject);
+        if (metaObject.hasSetter("gmtModified")) {
+            this.setFieldValByName("gmtModified", new Date(), metaObject);
+        }
         
         // 支持新字段名
-        this.setFieldValByName("updateTime", LocalDateTime.now(), metaObject);
+        if (metaObject.hasSetter("updateTime")) {
+            this.setFieldValByName("updateTime", LocalDateTime.now(), metaObject);
+        }
     }
 }
 

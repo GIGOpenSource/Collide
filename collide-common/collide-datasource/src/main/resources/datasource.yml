@@ -1,98 +1,32 @@
-# 多环境数据源配置
+
+
 spring:
   autoconfigure:
     exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   datasource:
-    url: jdbc:mysql://${collide.turbo.mysql.url}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
+    url: ${collide.turbo.mysql.url}
     username: ${collide.turbo.mysql.username}
     password: ${collide.turbo.mysql.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
-    # Druid连接池配置 - 开发环境默认配置
-    initial-size: 5 
-    min-idle: 5 
-    max-active: 20
-    max-wait: 60000 
-    time-between-eviction-runs-millis: 60000 
-    min-evictable-idle-time-millis: 300000 
-    validation-query: SELECT 1 
-    test-while-idle: true 
-    test-on-borrow: false 
-    test-on-return: false 
-    pool-prepared-statements: true 
-    max-pool-prepared-statement-per-connection-size: 20 
-
----
-# 开发环境数据源配置
-spring:
-  config:
-    activate:
-      on-profile: dev
-  datasource:
-    # 开发环境使用较小的连接池
-    initial-size: 5
-    min-idle: 5
-    max-active: 20
-
----
-# 测试环境数据源配置
-spring:
-  config:
-    activate:
-      on-profile: test
-  datasource:
-    # 测试环境使用中等连接池
-    initial-size: 10
-    min-idle: 10
-    max-active: 50
-    # 启用Druid监控
-    druid:
-      stat-view-servlet:
-        enabled: true
-        url-pattern: /druid/*
-        login-username: admin
-        login-password: admin123
-      filter:
-        stat:
-          enabled: true
-          log-slow-sql: true
-          slow-sql-millis: 2000
-
----
-# 生产环境数据源配置
-spring:
-  config:
-    activate:
-      on-profile: prod
-  datasource:
-    # 生产环境使用较大连接池
     initial-size: 50
     min-idle: 50
     max-active: 200
-    # 生产环境严格的连接检测
-    test-on-borrow: true
-    test-on-return: true
-    # 启用Druid监控和防火墙
-    druid:
-      stat-view-servlet:
-        enabled: true
-        url-pattern: /druid/*
-        login-username: ${DRUID_ADMIN_USERNAME:admin}
-        login-password: ${DRUID_ADMIN_PASSWORD}
-        allow: 127.0.0.1,10.0.0.0/8
-      filter:
-        stat:
-          enabled: true
-          log-slow-sql: true
-          slow-sql-millis: 1000
-        wall:
-          enabled: true
-          config:
-            multi-statement-allow: false
+    max-wait: 60000
+    time-between-eviction-runs-millis: 60000
+    min-evictable-idle-time-millis: 300000
+    validation-query: SELECT 1
+    test-while-idle: true
+    test-on-borrow: false
+    test-on-return: false
+    pool-prepared-statements: true
+    max-pool-prepared-statement-per-connection-size: 20
 
-# MyBatis配置
+
 mybatis:
   configuration:
-    map-underscore-to-camel-case: true # 将数据库字段的下划线命名转换为驼峰命名
-  mapper-locations: classpath:mapper/*.xml # MyBatis映射文件所在的位置，这里是使用XML的配置方式时需要配置的部分
+    map-underscore-to-camel-case: true
+  mapper-locations: classpath:mapper/*.xml
+
+
 

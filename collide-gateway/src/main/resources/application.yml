@@ -29,7 +29,7 @@ spring:
 
         # 业务服务路由
         - id: collide-application
-          uri: lb://collide-business
+          uri: lb://collide-application
           predicates:
             - Path=/api/v1/users/**,/api/v1/follow/**,/api/v1/comments/**,/api/v1/content/**
 

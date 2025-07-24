@@ -8,13 +8,13 @@ import org.springframework.context.annotation.Configuration;
 /**
  * Rpc 配置
  */
-@EnableDubbo(scanBasePackages = {"com.gig.collide"})
+@EnableDubbo
 @Configuration
 public class RpcConfiguration {
 
-//    @Bean
-//    public FacadeAspect facadeAspect() {
-//        return new FacadeAspect();
-//    }
+    @Bean
+    public FacadeAspect facadeAspect() {
+        return new FacadeAspect();
+    }
 }
 

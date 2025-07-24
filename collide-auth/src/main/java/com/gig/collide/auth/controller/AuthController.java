@@ -35,7 +35,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/auth")
 public class AuthController {
 
-    @DubboReference(version = "1.0.0", check = false)
+    @DubboReference(version = "1.0.0")
     private UserFacadeService userFacadeService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();

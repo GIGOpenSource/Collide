@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * Collide 业务模块 Dubbo 配置
- * 
+ *
  * 集中管理所有业务模块的 Dubbo 服务引用，包括：
  * - UserFacadeService: 用户服务
  * - FollowFacadeService: 关注服务
@@ -88,4 +88,4 @@ public class BusinessDubboConfiguration {
     public SocialFacadeService socialFacadeService() {
         return socialFacadeService;
     }
-} 
+}

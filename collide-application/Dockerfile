@@ -32,10 +32,6 @@ USER collide
 # 暴露端口（业务应用端口）
 EXPOSE 9503
 
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:9503/actuator/health || exit 1
-
 # 设置JVM参数和启动命令
 ENTRYPOINT ["java", \
     "-server", \
@@ -47,7 +43,6 @@ ENTRYPOINT ["java", \
     "-XX:MaxRAMPercentage=75.0", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "-Djava.awt.headless=true", \
-    "-Dspring.profiles.active=docker", \
     "-Duser.timezone=Asia/Shanghai", \
     "-Dfile.encoding=UTF-8", \
     "-jar", \

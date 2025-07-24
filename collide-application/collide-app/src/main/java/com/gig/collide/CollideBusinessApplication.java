@@ -1,5 +1,6 @@
 package com.gig.collide;
 
+import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -34,23 +35,19 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * @since 2024-01-01
  */
 @SpringBootApplication(scanBasePackages = {
-    "com.gig.collide.users",       // 用户服务
-    "com.gig.collide.follow",      // 关注服务  
-    "com.gig.collide.content",     // 内容服务
-    "com.gig.collide.comment",     // 评论服务
-    "com.gig.collide.like",        // 点赞服务
-    "com.gig.collide.favorite",    // 收藏服务
-    "com.gig.collide.base",        // 基础组件
-    "com.gig.collide.cache",       // 缓存组件
-    "com.gig.collide.datasource",  // 数据源组件
-    "com.gig.collide.rpc",         // RPC组件
-    "com.gig.collide.web"          // Web组件
+    "com.gig.collide.users",       // ✅ 先只启用用户服务
+    "com.gig.collide.base",        // ✅ 基础组件
+    "com.gig.collide.cache",       // ✅ 缓存组件
+    "com.gig.collide.datasource",  // ✅ 数据源组件
+    "com.gig.collide.rpc",         // ✅ RPC组件
+    "com.gig.collide.web"          // ✅ Web组件
 })
 @EnableDiscoveryClient
+@EnableDubbo(scanBasePackages = "com.gig.collide.users.facade")
 public class CollideBusinessApplication {
     
     public static void main(String[] args) {
-        System.setProperty("spring.application.name", "collide-business");
+        System.setProperty("spring.application.name", "collide-application");
         
         SpringApplication application = new SpringApplication(CollideBusinessApplication.class);
         
@@ -71,7 +68,7 @@ public class CollideBusinessApplication {
             "\n" +
             "🚀 Collide Business Application Started Successfully!\n" +
             "📱 Services: Users | Follow | Content | Comment | Like | Favorite\n" +
-            "🌐 Server Port: 8080\n" +
+            "🌐 Server Port: 9503\n" +
             "📋 Environment: Development\n" +
             "🔗 Health Check: http://localhost:8080/actuator/health\n"
         );
