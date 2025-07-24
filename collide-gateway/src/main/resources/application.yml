@@ -3,6 +3,8 @@ spring:
     name: @application.name@
   config:
     import: classpath:base.yml,classpath:config.yml
+  profiles:
+    include: ${spring.profiles.active:local}
   cloud:
     gateway:
       default-filters:
