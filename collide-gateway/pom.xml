@@ -39,6 +39,21 @@
             <artifactId>collide-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-limiter</artifactId>
+            <exclusions>
+                <!--  排除spring-web，gateway应用中不能包含spring mvc组件-->
+                <exclusion>
+                    <groupId> org.springframework</groupId>
+                    <artifactId>spring-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId> org.springframework</groupId>
+                    <artifactId>spring-webmvc</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
         <!-- skywalking监控暂时移除，简化网关配置 -->
 
         <!-- Sa-Token 权限认证 -->

@@ -1,15 +1,15 @@
+# Collide Business 多环境配置
 spring:
-  profiles:
-    active: dev
-    include: ${spring.profiles.active:dev}
   application:
     name: collide-business
   config:
     import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
 
-# 服务器配置
+# 默认配置（开发环境）
 server:
-  port: 9503
+  port: ${SERVER_PORT:9503}
   servlet:
     context-path: /api
     encoding:
@@ -54,4 +54,130 @@ springdoc:
     - group: content
       packages-to-scan: com.gig.collide.content
     - group: social
-      packages-to-scan: com.gig.collide.comment,com.gig.collide.like,com.gig.collide.favorite 
+      packages-to-scan: com.gig.collide.comment,com.gig.collide.like,com.gig.collide.favorite
+
+# 业务配置
+collide:
+  business:
+    file-upload:
+      path: ${FILE_UPLOAD_PATH:/tmp/uploads/}
+      max-size: ${FILE_MAX_SIZE:10485760}  # 10MB
+      allowed-types: jpg,png,gif,mp4,mp3
+    pagination:
+      default-size: 20
+      max-size: 100
+    cache:
+      enabled: true
+      default-expire: 3600
+
+---
+# 开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+
+server:
+  port: 9503
+
+logging:
+  level:
+    com.gig.collide: DEBUG
+    org.apache.dubbo: DEBUG
+    org.springframework.cloud: DEBUG
+
+springdoc:
+  swagger-ui:
+    enabled: true  # 开发环境启用Swagger
+
+collide:
+  business:
+    file-upload:
+      path: /tmp/dev-uploads/
+      max-size: 52428800  # 50MB - 开发环境更大的文件上传限制
+    cache:
+      enabled: true
+      default-expire: 1800  # 30分钟
+
+---
+# 测试环境配置
+spring:
+  config:
+    activate:
+      on-profile: test
+
+server:
+  port: 8082
+
+logging:
+  level:
+    root: INFO
+    com.gig.collide: INFO
+    org.apache.dubbo: INFO
+    org.springframework.cloud: INFO
+
+springdoc:
+  swagger-ui:
+    enabled: true  # 测试环境启用Swagger
+
+collide:
+  business:
+    file-upload:
+      path: /data/test-uploads/
+      max-size: 20971520  # 20MB
+    pagination:
+      default-size: 20
+      max-size: 50
+    cache:
+      enabled: true
+      default-expire: 7200  # 2小时
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+server:
+  port: 8082
+
+logging:
+  level:
+    root: WARN
+    com.gig.collide: INFO
+    org.apache.dubbo: WARN
+    org.springframework.cloud: INFO
+  file:
+    name: /var/log/collide/business.log
+
+springdoc:
+  swagger-ui:
+    enabled: false  # 生产环境禁用Swagger
+
+collide:
+  business:
+    file-upload:
+      path: /data/uploads/
+      max-size: 10485760  # 10MB - 生产环境严格限制
+      allowed-types: jpg,png,gif  # 生产环境限制文件类型
+    pagination:
+      default-size: 20
+      max-size: 100
+    cache:
+      enabled: true
+      default-expire: 3600  # 1小时
+
+# 生产环境监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true 

@@ -1,5 +1,8 @@
+# Collide Gateway Bootstrap 配置
 spring:
   application:
     name: collide-gateway
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
     import: classpath:base.yml,classpath:config.yml

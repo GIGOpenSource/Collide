@@ -1,26 +1,94 @@
+# 多环境数据源配置
 spring:
   autoconfigure:
     exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   datasource:
-    url: ${collide.turbo.mysql.url}
+    url: jdbc:mysql://${collide.turbo.mysql.url}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
     username: ${collide.turbo.mysql.username}
     password: ${collide.turbo.mysql.password}
     driver-class-name: com.mysql.cj.jdbc.Driver
     type: com.alibaba.druid.pool.DruidDataSource
-    # Druid连接池配置
-#    datasource.druid:
-    initial-size: 50 # 连接池初始化时创建的连接数。默认值为0。
-    min-idle: 50 # 连接池中保持的最小空闲连接数量。当连接池中的连接数量小于这个值时，连接池会尝试创建新的连接。默认值为0。
-    max-active: 200 # 连接池中允许的最大连接数。如果所有连接都被使用并且没有空闲连接，新的连接请求将被阻塞，直到有连接可用。默认值为8。
-    max-wait: 60000 # 获取连接时的最大等待时间，单位为毫秒。如果在指定的时间内无法获取到连接，将抛出异常。默认值为-1，表示无限等待。
-    time-between-eviction-runs-millis: 60000 # 连接池每次检测空闲连接的间隔时间，单位为毫秒。默认值为60000毫秒（1分钟）。
-    min-evictable-idle-time-millis: 300000 # 连接在连接池中的最小空闲时间，超过这个时间的连接将被回收，单位为毫秒。默认值为300000毫秒（5分钟）。
-    validation-query: SELECT 1 # 用于验证连接是否有效的SQL查询语句。Druid会定期执行此查询来检测连接的可用性。默认为"SELECT 1"。
-    test-while-idle: true # 是否在连接空闲时检测连接的有效性。如果设置为true，则连接池会定期检测空闲连接，如果连接失效，将被标记为不可用并移除。默认为true。
-    test-on-borrow: false # 是否在从连接池借用连接时检测连接的有效性。如果设置为true，每次从连接池借用连接时都会执行连接有效性检测。默认为false。
-    test-on-return: false # 是否在归还连接到连接池时检测连接的有效性。如果设置为true，连接在归还到连接池时会进行有效性检测。默认为false。
-    pool-prepared-statements: true # 是否开启预处理语句池。预处理语句池可以提高性能，特别是在执行相同SQL语句多次时。默认为true。
-    max-pool-prepared-statement-per-connection-size: 20 #每个连接上允许的最大预处理语句数。默认值为20。
+    # Druid连接池配置 - 开发环境默认配置
+    initial-size: 5 
+    min-idle: 5 
+    max-active: 20
+    max-wait: 60000 
+    time-between-eviction-runs-millis: 60000 
+    min-evictable-idle-time-millis: 300000 
+    validation-query: SELECT 1 
+    test-while-idle: true 
+    test-on-borrow: false 
+    test-on-return: false 
+    pool-prepared-statements: true 
+    max-pool-prepared-statement-per-connection-size: 20 
+
+---
+# 开发环境数据源配置
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    # 开发环境使用较小的连接池
+    initial-size: 5
+    min-idle: 5
+    max-active: 20
+
+---
+# 测试环境数据源配置
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    # 测试环境使用中等连接池
+    initial-size: 10
+    min-idle: 10
+    max-active: 50
+    # 启用Druid监控
+    druid:
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: admin
+        login-password: admin123
+      filter:
+        stat:
+          enabled: true
+          log-slow-sql: true
+          slow-sql-millis: 2000
+
+---
+# 生产环境数据源配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    # 生产环境使用较大连接池
+    initial-size: 50
+    min-idle: 50
+    max-active: 200
+    # 生产环境严格的连接检测
+    test-on-borrow: true
+    test-on-return: true
+    # 启用Druid监控和防火墙
+    druid:
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-username: ${DRUID_ADMIN_USERNAME:admin}
+        login-password: ${DRUID_ADMIN_PASSWORD}
+        allow: 127.0.0.1,10.0.0.0/8
+      filter:
+        stat:
+          enabled: true
+          log-slow-sql: true
+          slow-sql-millis: 1000
+        wall:
+          enabled: true
+          config:
+            multi-statement-allow: false
 
 # MyBatis配置
 mybatis:

@@ -1,5 +1,8 @@
+# Collide Auth Bootstrap 配置
 spring:
   application:
     name: collide-auth
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
-    import: classpath:base.yml,classpath:config.yml #这里爆红可以直接忽略，没有任何影响
+    import: classpath:base.yml,classpath:config.yml

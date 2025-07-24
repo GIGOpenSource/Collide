@@ -1,0 +1,14 @@
+spring:
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${collide.turbo.sentinel.url}
+        port: ${collide.turbo.sentinel.port}
+      datasource:
+        ds:
+          nacos:
+            server-addr: ${collide.turbo.nacos.server.url}
+            data-id:  ${collide.turbo.sentinel.nacos.data-id}
+            group-id: DEFAULT_GROUP
+            data-type: json
+            rule-type: flow

@@ -93,6 +93,10 @@
                 <artifactId>collide-config</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-limiter</artifactId>
+            </dependency>
 
             <!-- 数据访问模块 -->
             <dependency>

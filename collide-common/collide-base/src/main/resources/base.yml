@@ -1,49 +1,54 @@
-# 这是项目的需要改动的所有配置的地址的汇总，需要改哪个中间件的地址，在本文件中修改即可！
-
+# Collide项目多环境基础配置
+# 默认配置（开发环境）
 spring:
   servlet:
     multipart:
-      max-file-size: 100MB        # 单个文件最大大小
-      max-request-size: 200MB     # 请求最大大小(多文件上传时)
-      file-size-threshold: 2KB    # 写入磁盘的阈值
+      max-file-size: 100MB
+      max-request-size: 200MB
+      file-size-threshold: 2KB
 
 collide:
   turbo:
     nacos:
       server:
-        url: localhost:8848
+        url: 18.166.150.123:8848
         username: nacos
         password: nacos
+      grpc: 10848
+
     mysql:
-      url: jdbc:mysql://localhost::3306/collide
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:123456}
+      url: 18.166.150.123
+      port: 3306
+      database: collide
+      username: root
+      password: 123456
     redis:
-      url: redis://localhost
+      url: 18.166.150.123
       port: 6379
       password: 123456
+      database: 0
     elasticsearch:
       enable: false
-      url: localhost:9200
+      url: 18.166.150.123:9200
       username: elastic
       password: 123456
     xxl-job:
-      url: localhost:8081
-      appName: xxl-job-executor
-      accessToken: default_token
+      url: 18.166.150.123:8081
+      appName: ${spring.application.name}-executor
+      accessToken: ${XXL_JOB_ACCESS_TOKEN:default_token}
     sentinel:
-      url: localhost
+      url: 18.166.150.123
       port: 8888
       nacos:
-        data-id: collide-gateway-sentinel
+        data-id: ${spring.application.name}-sentinel
     rocketmq:
-      url: localhost:9876
+      url: 18.166.150.123:9876
     dubbo:
       nacos:
-        namespace: 99d4c548-be12-4eaa-9564-4c7921bd80c1
+        namespace: 3537371b-bdbf-4989-a17e-6b173101c18a
         group: dubbo
     seata:
       nacos:
-        data-id: seataServer.properties
+        data-id: seataServer.Properties
         group: seata
-        namespace: 806e806f-e916-411c-b4ba-9682ae44b47e
+        namespace: 7ebdfb9b-cd9d-4a5e-8969-1ada0bb9ba04
