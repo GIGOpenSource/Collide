@@ -42,7 +42,7 @@ collide:
       url: 18.166.150.123:9876
     dubbo:
       nacos:
-        namespace: 3537371b-bdbf-4989-a17e-6b173101c18a
+        namespace: 1f2a2139-e45e-42dd-8904-a21cd9027d2b
         group: dubbo
     seata:
       nacos:
