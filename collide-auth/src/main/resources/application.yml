@@ -3,7 +3,7 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:rpc.yml,classpath:cache.yml
+    import: classpath:base.yml,classpath:rpc.yml,classpath:cache.yml,classpath:swagger.yml
 
 sa-token:
   token-name: satoken

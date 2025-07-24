@@ -35,7 +35,13 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  * @since 2024-01-01
  */
 @SpringBootApplication(scanBasePackages = {
-    "com.gig.collide.users",       // ✅ 先只启用用户服务
+    "com.gig.collide.users",       // ✅ 用户服务
+    "com.gig.collide.follow",      // ✅ 关注服务
+    "com.gig.collide.content",     // ✅ 内容服务
+    "com.gig.collide.comment",     // ✅ 评论服务
+    "com.gig.collide.like",        // ✅ 点赞服务
+    "com.gig.collide.favorite",    // ✅ 收藏服务
+    "com.gig.collide.social",      // ✅ 社交服务
     "com.gig.collide.base",        // ✅ 基础组件
     "com.gig.collide.cache",       // ✅ 缓存组件
     "com.gig.collide.datasource",  // ✅ 数据源组件
@@ -43,7 +49,15 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.web"          // ✅ Web组件
 })
 @EnableDiscoveryClient
-@EnableDubbo(scanBasePackages = "com.gig.collide.users.facade")
+@EnableDubbo(scanBasePackages = {
+    "com.gig.collide.users.facade", 
+    "com.gig.collide.follow.facade", 
+    "com.gig.collide.content.facade",
+    "com.gig.collide.comment.facade",
+    "com.gig.collide.like.facade",
+    "com.gig.collide.favorite.facade",
+    "com.gig.collide.social.facade"
+})
 public class CollideBusinessApplication {
     
     public static void main(String[] args) {

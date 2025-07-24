@@ -12,15 +12,15 @@ public enum UserStateEnum {
     /**
      * 正常状态
      */
-    active,
+    ACTIVE,
     
     /**
      * 未激活
      */
-    inactive,
+    INACTIVE,
     
     /**
      * 已封禁
      */
-    banned;
+    BANNED;
 }

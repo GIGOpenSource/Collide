@@ -23,6 +23,12 @@
     </properties>
 
     <dependencies>
+        <!-- API 接口定义模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-api</artifactId>
+        </dependency>
+
         <!-- 业务模块依赖 -->
         <dependency>
             <groupId>com.gig</groupId>

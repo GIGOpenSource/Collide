@@ -10,6 +10,45 @@ spring:
 server:
   port: 9605
 
+# Dubbo 配置
+dubbo:
+  application:
+    name: ${spring.application.name}
+  protocol:
+    name: dubbo
+    port: 20888
+  registry:
+    address: nacos://${collide.turbo.nacos.server.url}
+  provider:
+    timeout: 10000
+    retries: 0
+
+# MyBatis Plus 配置
+mybatis-plus:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.gig.collide.favorite.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
+
+# 收藏服务特定配置
+collide:
+  favorite:
+    # 默认收藏夹配置
+    default-folder:
+      auto-create: true
+      name: "默认收藏夹"
+      description: "系统自动创建的默认收藏夹"
+    # 收藏数量限制
+    limit:
+      max-folders-per-user: 20
+      max-items-per-folder: 1000
+
 # 日志配置
 logging:
   level:

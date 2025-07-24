@@ -1,5 +1,7 @@
 package com.gig.collide.favorite;
 
+import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -19,7 +21,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.rpc",         // RPC组件
     "com.gig.collide.web"          // Web组件
 })
+@EnableDubbo
 @EnableDiscoveryClient
+@MapperScan("com.gig.collide.favorite.infrastructure.mapper")
 public class FavoriteApplication {
 
     public static void main(String[] args) {

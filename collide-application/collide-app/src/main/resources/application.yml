@@ -3,7 +3,7 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml,classpath:swagger.yml
 
 server:
   port: 9503

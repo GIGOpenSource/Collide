@@ -38,27 +38,44 @@ public class SaTokenConfigure {
                     // 认证接口已通过 addExclude 排除，无需额外处理
                     
                     // ========== 公开API：无需登录校验 ==========
-                    SaRouter.match("/api/content/list").stop();      // 内容列表
-                    SaRouter.match("/api/content/detail/**").stop();  // 内容详情  
-                    SaRouter.match("/api/content/search").stop();     // 内容搜索
-                    SaRouter.match("/api/social/posts/public").stop(); // 公开动态
+                    SaRouter.match("/api/v1/content/list").stop();      // 内容列表
+                    SaRouter.match("/api/v1/content/detail/**").stop();  // 内容详情  
+                    SaRouter.match("/api/v1/content/search").stop();     // 内容搜索
+                    SaRouter.match("/api/v1/social/posts/hot").stop();   // 热门动态
+                    SaRouter.match("/api/v1/social/posts/search").stop(); // 搜索动态
+                    SaRouter.match("/api/v1/social/posts/{postId}").stop(); // 动态详情
                     
                     // ========== 用户服务：需要登录 ==========
-                    SaRouter.match("/api/users/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/users/**").check(r -> StpUtil.checkLogin());
                     
                     // ========== 社交服务：需要登录 ==========
-                    SaRouter.match("/api/social/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/social/posts").check(r -> StpUtil.checkLogin());          // 发布动态
+                    SaRouter.match("/api/v1/social/posts/{postId}/like").check(r -> StpUtil.checkLogin()); // 点赞动态
+                    SaRouter.match("/api/v1/social/posts/{postId}/share").check(r -> StpUtil.checkLogin()); // 转发动态
+                    SaRouter.match("/api/v1/social/posts/timeline/**").check(r -> StpUtil.checkLogin()); // 用户时间线
+                    SaRouter.match("/api/v1/social/posts/feed/**").check(r -> StpUtil.checkLogin());   // 关注动态流
+                    
+                    // ========== 收藏服务：需要登录 ==========
+                    SaRouter.match("/api/v1/favorite/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 点赞服务：需要登录 ==========
+                    SaRouter.match("/api/v1/like/**").check(r -> StpUtil.checkLogin());
+                    
+                    // ========== 文件上传服务：需要登录 ==========
+                    SaRouter.match("/api/v1/files/upload").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/files/batch-upload").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/files/config").stop(); // 配置接口可公开访问
                     
                     // ========== 内容服务：大部分需要登录 ==========
-                    SaRouter.match("/api/content/create").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/content/update/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/content/delete/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/content/like/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/content/collect/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/content/comment/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/create").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/update/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/delete/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/like/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/favorite/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/content/comment/**").check(r -> StpUtil.checkLogin());
                     
                     // ========== 关注服务：需要登录 ==========
-                    SaRouter.match("/api/follow/**").check(r -> StpUtil.checkLogin());
+                    SaRouter.match("/api/v1/follow/**").check(r -> StpUtil.checkLogin());
                     
                     // ========== 管理端：需要管理员权限 ==========
                     SaRouter.match("/admin/**").check(r -> {

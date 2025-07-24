@@ -84,4 +84,18 @@ public interface UserRepository {
      * @param userId 用户ID
      */
     void deleteById(Long userId);
+
+    /**
+     * 分页查询用户列表
+     *
+     * @param pageNum         页码（从1开始）
+     * @param pageSize        每页大小
+     * @param usernameKeyword 用户名关键词
+     * @param status          用户状态
+     * @param role            用户角色
+     * @return 分页结果
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<User> pageQuery(
+            Integer pageNum, Integer pageSize, String usernameKeyword, 
+            String status, String role);
 } 

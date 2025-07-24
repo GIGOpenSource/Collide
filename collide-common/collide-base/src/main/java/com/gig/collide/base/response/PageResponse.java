@@ -30,17 +30,37 @@ public class PageResponse<T> extends MultiResponse<T> {
     /**
      * 总数
      */
-    private int total;
+    private long total;
 
-    public static <T> PageResponse<T> of(List<T> datas, int total, int pageSize,int currentPage) {
+    /**
+     * 获取记录列表（兼容方法）
+     * @return 记录列表
+     */
+    public List<T> getRecords() {
+        return getDatas();
+    }
+
+    /**
+     * 设置记录列表（兼容方法）
+     * @param records 记录列表
+     */
+    public void setRecords(List<T> records) {
+        setDatas(records);
+    }
+
+    public static <T> PageResponse<T> of(List<T> datas, long total, int pageSize, int currentPage) {
         PageResponse<T> pageResponse = new PageResponse<>();
         pageResponse.setSuccess(true);
         pageResponse.setDatas(datas);
         pageResponse.setTotal(total);
         pageResponse.setPageSize(pageSize);
         pageResponse.setCurrentPage(currentPage);
-        pageResponse.setTotalPage((pageSize + total - 1) / pageSize);
+        pageResponse.setTotalPage((int) ((pageSize + total - 1) / pageSize));
         return pageResponse;
+    }
+
+    public static <T> PageResponse<T> of(List<T> datas, int total, int pageSize, int currentPage) {
+        return of(datas, (long) total, pageSize, currentPage);
     }
 
     /**

@@ -73,8 +73,40 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Override
     public PageResponse<UserInfo> pageQuery(UserPageQueryRequest userPageQueryRequest) {
-        log.warn("分页查询用户信息功能暂未实现");
-        return PageResponse.of(java.util.Collections.emptyList(), 0, 10, 1);
+        try {
+            log.info("用户分页查询请求：{}", userPageQueryRequest);
+            
+            // 调用领域服务进行分页查询
+            com.baomidou.mybatisplus.core.metadata.IPage<User> pageResult = userDomainService.pageQueryUsers(
+                userPageQueryRequest.getPageNum(),
+                userPageQueryRequest.getPageSize(),
+                userPageQueryRequest.getUsernameKeyword(),
+                userPageQueryRequest.getStatus(),
+                userPageQueryRequest.getRole()
+            );
+            
+            // 转换实体为DTO
+            java.util.List<UserInfo> userInfoList = pageResult.getRecords().stream()
+                .map(UserConvertor.INSTANCE::mapToVo)
+                .collect(java.util.stream.Collectors.toList());
+            
+            // 构建分页响应
+            PageResponse<UserInfo> response = PageResponse.of(
+                userInfoList,
+                pageResult.getTotal(),
+                (int) pageResult.getCurrent(),
+                (int) pageResult.getSize()
+            );
+            
+            log.info("用户分页查询完成，总记录数：{}，当前页记录数：{}", 
+                pageResult.getTotal(), userInfoList.size());
+            
+            return response;
+            
+        } catch (Exception e) {
+            log.error("用户分页查询失败", e);
+            return PageResponse.of(java.util.Collections.emptyList(), 0L, 1, 10);
+        }
     }
 
     @Override
@@ -165,12 +197,40 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Override
     public UserOperatorResponse active(UserActiveRequest userActiveRequest) {
-        log.warn("用户激活功能暂未实现");
-        UserOperatorResponse response = new UserOperatorResponse();
-        response.setSuccess(false);
-        response.setResponseCode("NOT_IMPLEMENTED");
-        response.setResponseMessage("该功能暂未实现");
-        return response;
+        try {
+            log.info("用户激活请求，用户ID：{}，激活码：{}", 
+                userActiveRequest.getUserId(), userActiveRequest.getActivationCode());
+            
+            // 调用领域服务激活用户
+            String resultMessage = userDomainService.activateUser(
+                userActiveRequest.getUserId(), 
+                userActiveRequest.getActivationCode()
+            );
+            
+            // 构建成功响应
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(true);
+            response.setResponseMessage(resultMessage);
+            
+            log.info("用户激活成功，用户ID：{}", userActiveRequest.getUserId());
+            return response;
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("用户激活参数错误，用户ID：{}，错误：{}", 
+                userActiveRequest.getUserId(), e.getMessage());
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(false);
+            response.setResponseCode("ACTIVATION_ERROR");
+            response.setResponseMessage(e.getMessage());
+            return response;
+        } catch (Exception e) {
+            log.error("用户激活失败，用户ID：{}", userActiveRequest.getUserId(), e);
+            UserOperatorResponse response = new UserOperatorResponse();
+            response.setSuccess(false);
+            response.setResponseCode("ACTIVATION_ERROR");
+            response.setResponseMessage("用户激活失败：" + e.getMessage());
+            return response;
+        }
     }
 
 

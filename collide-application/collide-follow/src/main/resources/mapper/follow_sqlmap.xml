@@ -36,18 +36,21 @@
         ORDER BY created_time DESC
     </select>
 
-    <!-- 查询相互关注列表 -->
+    <!-- 查询相互关注列表（去连表化：分步查询） -->
     <select id="selectMutualFollows" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT 
-            f1.id, f1.follower_user_id, f1.followed_user_id, f1.follow_type,
-            f1.status, f1.created_time, f1.updated_time
-        FROM t_follow f1
-        INNER JOIN t_follow f2 ON f1.follower_user_id = f2.followed_user_id 
-                                AND f1.followed_user_id = f2.follower_user_id
-        WHERE f1.follower_user_id = #{userId}
-          AND f1.status = #{status}
-          AND f2.status = #{status}
-        ORDER BY f1.created_time DESC
+            id, follower_user_id, followed_user_id, follow_type,
+            status, created_time, updated_time
+        FROM t_follow 
+        WHERE follower_user_id = #{userId}
+          AND status = #{status}
+          AND followed_user_id IN (
+              SELECT follower_user_id 
+              FROM t_follow 
+              WHERE followed_user_id = #{userId}
+                AND status = #{status}
+          )
+        ORDER BY created_time DESC
     </select>
 
     <!-- 批量查询关注关系 -->

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.business.infrastructure.mapper.SearchSuggestionMapper">
+
+    <!-- 根据关键词前缀和类型查询建议 -->
+    <select id="selectByKeywordPrefixAndType" resultType="com.gig.collide.business.domain.search.entity.SearchSuggestion">
+        SELECT 
+            id, keyword, suggestion_type, search_count, weight, 
+            status, create_time, update_time
+        FROM t_search_suggestion
+        WHERE keyword LIKE CONCAT(#{keywordPrefix}, '%')
+          AND suggestion_type = #{suggestionType}
+          AND status = 1
+        ORDER BY weight DESC, search_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据关键词前缀查询所有类型建议 -->
+    <select id="selectByKeywordPrefix" resultType="com.gig.collide.business.domain.search.entity.SearchSuggestion">
+        SELECT 
+            id, keyword, suggestion_type, search_count, weight, 
+            status, create_time, update_time
+        FROM t_search_suggestion
+        WHERE keyword LIKE CONCAT(#{keywordPrefix}, '%')
+          AND status = 1
+        ORDER BY weight DESC, search_count DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 增加搜索次数 -->
+    <update id="incrementSearchCount">
+        UPDATE t_search_suggestion 
+        SET search_count = search_count + 1,
+            update_time = NOW()
+        WHERE keyword = #{keyword} 
+          AND suggestion_type = #{suggestionType}
+          AND status = 1
+    </update>
+
+    <!-- 根据类型获取热门建议 -->
+    <select id="selectHotByType" resultType="com.gig.collide.business.domain.search.entity.SearchSuggestion">
+        SELECT 
+            id, keyword, suggestion_type, search_count, weight, 
+            status, create_time, update_time
+        FROM t_search_suggestion
+        WHERE suggestion_type = #{suggestionType}
+          AND status = 1
+        ORDER BY search_count DESC, weight DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据关键词和类型查询建议 -->
+    <select id="selectByKeywordAndType" resultType="com.gig.collide.business.domain.search.entity.SearchSuggestion">
+        SELECT 
+            id, keyword, suggestion_type, search_count, weight, 
+            status, create_time, update_time
+        FROM t_search_suggestion
+        WHERE keyword = #{keyword} 
+          AND suggestion_type = #{suggestionType}
+          AND status = 1
+        LIMIT 1
+    </select>
+
+</mapper> 

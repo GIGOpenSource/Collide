@@ -108,6 +108,6 @@ public class UserInfo extends BasicUserInfo {
      * @return true if user is active
      */
     public boolean isActive() {
-        return UserStateEnum.active.equals(this.status);
+        return UserStateEnum.ACTIVE.equals(this.status);
     }
 }
