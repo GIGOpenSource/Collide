@@ -1,11 +1,12 @@
 dubbo:
   consumer:
-    timeout: 30000  # 增加到30秒
+    timeout: 30000
     check: false
   protocol:
     name: dubbo
     port: -1
   registry:
+    timeout: 30000
     address: nacos://${collide.turbo.nacos.server.url}
     username: ${collide.turbo.nacos.server.username}
     password: ${collide.turbo.nacos.server.password}

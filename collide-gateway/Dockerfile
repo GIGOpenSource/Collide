@@ -45,5 +45,8 @@ ENTRYPOINT ["java", \
     "-Djava.awt.headless=true", \
     "-Duser.timezone=Asia/Shanghai", \
     "-Dfile.encoding=UTF-8", \
+    "-Dnacos.remote.client.grpc.timeout=30000", \
+    "-Dnacos.remote.client.grpc.server.check.timeout=30000", \
+    "-Dnacos.remote.client.grpc.health.timeout=30000", \
     "-jar", \
     "app.jar"] 
