@@ -1,86 +1,106 @@
 #!/bin/bash
 
-# 定义变量
+# 精确路径配置
 APP_NAME="collide-auth"
+APP_HOME="/www/Collide/collide-auth"
+TARGET_DIR="$APP_HOME/target"
+LOG_DIR="/www/Collide/logs"
 SERVICE_FILE="/etc/systemd/system/$APP_NAME.service"
-INSTALL_DIR="/app"
-LOG_DIR="$INSTALL_DIR/logs"
-JAR_FILE="$INSTALL_DIR/app.jar"
-BACKUP_DIR="$INSTALL_DIR/backup"
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
-# 检查是否为root用户
-if [ "$(id -u)" != "0" ]; then
-   echo "此脚本必须以root用户运行" 1>&2
-   exit 1
+# 自动获取最新构建的JAR文件
+JAR_FILE=$(ls -1v $TARGET_DIR/collide-auth-*.jar | tail -n 1)
+
+# 检查JAR文件是否存在
+if [ ! -f "$JAR_FILE" ]; then
+    echo "错误：在 $TARGET_DIR 下未找到collide-auth的JAR文件" >&2
+    exit 1
 fi
 
-# 创建必要的目录和用户
-echo "设置系统用户和目录..."
+# 创建系统用户
 if ! id -u collide >/dev/null 2>&1; then
-    addgroup collide
-    adduser -S -G collide collide
+    echo "创建系统用户..."
+    groupadd -r collide
+    useradd -r -g collide -d "$APP_HOME" -s /usr/sbin/nologin collide
 fi
 
-mkdir -p "$INSTALL_DIR" "$LOG_DIR" "$BACKUP_DIR"
-
-# 备份旧版本
-if [ -f "$JAR_FILE" ]; then
-    echo "备份旧版本..."
-    cp "$JAR_FILE" "$BACKUP_DIR/app.jar.$TIMESTAMP"
-fi
-
-# 复制新版本JAR文件
-echo "部署新版本..."
-cp ./collide-auth/target/collide-auth-*.jar "$JAR_FILE"
-
-# 设置权限
-chown -R collide:collide "$INSTALL_DIR"
-chmod 750 "$INSTALL_DIR"
-chmod 500 "$JAR_FILE"
+# 设置目录权限
+echo "配置目录权限..."
+mkdir -p "$LOG_DIR"
+chown -R collide:collide /www/Collide
+chmod 750 "$APP_HOME"
 chmod 750 "$LOG_DIR"
 
-# 创建或更新systemd服务文件
-echo "配置systemd服务..."
-cat > "$SERVICE_FILE" <<EOL
+# 备份旧版本（保留最近5个）
+BACKUP_DIR="$APP_HOME/backups"
+mkdir -p "$BACKUP_DIR"
+find "$BACKUP_DIR" -name '*.bak' -mtime +30 -delete
+
+if compgen -G "$TARGET_DIR/collide-auth-*.jar" > /dev/null; then
+    echo "备份现有版本..."
+    cp "$JAR_FILE" "$BACKUP_DIR/collide-auth-$(date +%Y%m%d%H%M%S).bak"
+fi
+
+# 创建服务文件
+echo "创建系统服务..."
+cat > "$SERVICE_FILE" <<EOF
 [Unit]
 Description=Collide Auth Service
 After=syslog.target network.target
+StartLimitIntervalSec=60
 
 [Service]
 User=collide
 Group=collide
-WorkingDirectory=$INSTALL_DIR
+WorkingDirectory=$APP_HOME
 
 Environment="JAVA_HOME=/usr/lib/jvm/java-21-openjdk"
 Environment="TZ=Asia/Shanghai"
-Environment="JAVA_OPTS=-server -Xmx1024m -Xms512m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8 -Dnacos.remote.client.grpc.timeout=30000 -Dnacos.remote.client.grpc.server.check.timeout=30000 -Dnacos.remote.client.grpc.health.timeout=30000"
+Environment="JAVA_OPTS=-server -Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8 -Dnacos.remote.client.grpc.timeout=30000 -Dnacos.remote.client.grpc.server.check.timeout=30000 -Dnacos.remote.client.grpc.health.timeout=30000"
 
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar $JAR_FILE
 
-StandardOutput=file:$LOG_DIR/collide-auth.log
-StandardError=file:$LOG_DIR/collide-auth-error.log
+StandardOutput=append:$LOG_DIR/collide-auth.log
+StandardError=append:$LOG_DIR/collide-auth-error.log
+
+LimitNOFILE=100000
+LimitNPROC=8192
+LimitCORE=infinity
 
 Restart=always
-RestartSec=10
-
-LimitNOFILE=65536
-LimitNPROC=4096
+RestartSec=5
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
-EOL
+EOF
 
-# 重新加载systemd
+# 设置日志权限
+touch "$LOG_DIR/collide-auth.log" "$LOG_DIR/collide-auth-error.log"
+chown collide:collide "$LOG_DIR"/*.log
+chmod 640 "$LOG_DIR"/*.log
+
+# 配置logrotate
+cat > /etc/logrotate.d/collide-auth <<EOF
+$LOG_DIR/collide-auth*.log {
+    daily
+    missingok
+    rotate 30
+    compress
+    delaycompress
+    notifempty
+    create 640 collide collide
+    sharedscripts
+    postrotate
+        /bin/systemctl reload $APP_NAME >/dev/null 2>&1 || true
+    endscript
+}
+EOF
+
+# 重载并启动服务
 systemctl daemon-reload
+systemctl enable $APP_NAME
+systemctl restart $APP_NAME
 
-# 启用并启动服务
-echo "启动$APP_NAME服务..."
-systemctl enable "$APP_NAME"
-systemctl restart "$APP_NAME"
-
-# 检查服务状态
-echo "检查服务状态..."
-systemctl status "$APP_NAME" --no-pager
-
-echo "部署完成! 日志文件位于 $LOG_DIR/"
+echo "部署完成!"
+echo "服务状态: systemctl status $APP_NAME"
+echo "日志文件: $LOG_DIR/collide-auth*.log"
