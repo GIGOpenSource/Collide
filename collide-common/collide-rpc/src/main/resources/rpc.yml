@@ -1,6 +1,6 @@
 dubbo:
   consumer:
-    timeout: 3000
+    timeout: 30000  # 增加到30秒
     check: false
   protocol:
     name: dubbo

@@ -14,6 +14,11 @@ collide:
         url: 18.166.150.123:8848
         username: nacos
         password: nacos
+        # 增加超时配置
+        connect-timeout: 30000        # 连接超时30秒
+        server-check-timeout: 30000   # 服务器检查超时30秒
+        config-retry-time: 5000       # 配置重试间隔5秒
+        config-long-poll-timeout: 60000 # 长轮询超时60秒
 
     mysql:
       url: jdbc:mysql://18.166.150.123:3306/collide
