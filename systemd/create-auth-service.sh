@@ -55,7 +55,7 @@ WorkingDirectory=$APP_HOME
 
 Environment="JAVA_HOME=/usr/lib/jvm/java-21-openjdk"
 Environment="TZ=Asia/Shanghai"
-Environment="JAVA_OPTS=-server -Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8 -Dnacos.remote.client.grpc.timeout=30000 -Dnacos.remote.client.grpc.server.check.timeout=30000 -Dnacos.remote.client.grpc.health.timeout=30000"
+Environment="JAVA_OPTS=-server -Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -Djava.awt.headless=true -Duser.timezone=Asia/Shanghai -Dfile.encoding=UTF-8 -Dnacos.remote.client.grpc.timeout=30000 -Dnacos.remote.client.grpc.server.check.timeout=30000 -Dnacos.remote.client.grpc.health.timeout=30000 -DDUBBO_IP_TO_REGISTRY=18.166.150.123 -Dspring.cloud.nacos.discovery.ip=18.166.150.123"
 
 ExecStart=/usr/bin/java \$JAVA_OPTS -jar $JAR_FILE
 
