@@ -29,8 +29,10 @@ public class SearchSuggestionRequest {
     @Schema(description = "建议类型：KEYWORD-关键词建议, USER-用户建议, TAG-标签建议", 
             example = "KEYWORD", 
             allowableValues = {"KEYWORD", "USER", "TAG"})
+    @Builder.Default
     private String suggestionType = "KEYWORD";
 
     @Schema(description = "建议数量", example = "10")
+    @Builder.Default
     private Integer limit = 10;
 } 

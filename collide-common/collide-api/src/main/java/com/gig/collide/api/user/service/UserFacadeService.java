@@ -56,4 +56,11 @@ public interface UserFacadeService {
      * @return 操作结果响应
      */
     UserOperatorResponse active(UserActiveRequest userActiveRequest);
+
+    /**
+     * 用户状态更新
+     * @param userStatusRequest 状态更新请求
+     * @return 操作结果响应
+     */
+    UserOperatorResponse updateStatus(UserStatusRequest userStatusRequest);
 }

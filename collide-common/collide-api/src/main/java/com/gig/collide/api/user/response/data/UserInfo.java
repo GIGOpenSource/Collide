@@ -60,6 +60,11 @@ public class UserInfo extends BasicUserInfo {
     private String location;
 
     /**
+     * 个人网站
+     */
+    private String website;
+
+    /**
      * 用户状态
      */
     private UserStateEnum status;

@@ -586,4 +586,25 @@ public class UserDomainService {
         
         return info;
     }
+
+    /**
+     * 检查用户名是否存在
+     */
+    public boolean checkUsernameExists(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    /**
+     * 检查邮箱是否存在
+     */
+    public boolean checkEmailExists(String email) {
+        return userRepository.existsByEmail(email);
+    }
+
+    /**
+     * 检查手机号是否存在
+     */
+    public boolean checkPhoneExists(String phone) {
+        return userRepository.existsByPhone(phone);
+    }
 } 

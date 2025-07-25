@@ -15,6 +15,9 @@ import com.gig.collide.auth.param.LoginParam;
 import com.gig.collide.auth.param.RegisterParam;
 import com.gig.collide.auth.vo.LoginVO;
 import com.gig.collide.web.vo.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +36,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/auth")
+@Tag(name = "认证服务", description = "用户注册、登录、认证相关接口")
 public class AuthController {
 
     @DubboReference(version = "1.0.0")
@@ -49,6 +53,7 @@ public class AuthController {
      * 用户注册
      */
     @PostMapping("/register")
+    @Operation(summary = "用户注册", description = "新用户注册账号")
     public Result<Boolean> register(@Valid @RequestBody RegisterParam registerParam) {
         log.info("用户注册请求，用户名：{}", registerParam.getUsername());
 

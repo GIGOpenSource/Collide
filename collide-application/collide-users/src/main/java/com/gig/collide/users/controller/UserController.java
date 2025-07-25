@@ -7,6 +7,7 @@ import com.gig.collide.api.user.constant.UserStateEnum;
 import com.gig.collide.api.user.request.UserActiveRequest;
 import com.gig.collide.api.user.request.UserModifyRequest;
 import com.gig.collide.api.user.request.UserPageQueryRequest;
+import com.gig.collide.api.user.request.UserStatusRequest;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.api.user.service.UserFacadeService;
@@ -28,6 +29,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 用户控制器
+ * 提供用户管理相关的 REST API
  *
  * @author GIG
  */
@@ -35,7 +37,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
-@Tag(name = "用户管理", description = "用户相关接口")
+@Tag(name = "用户管理", description = "用户注册、认证、个人信息管理相关接口")
 public class UserController {
 
     @Autowired
@@ -46,11 +48,10 @@ public class UserController {
 
     /**
      * 获取当前用户信息
-     *
-     * @return 用户信息
      */
     @GetMapping("/me")
     @SaCheckLogin
+    @Operation(summary = "获取当前用户信息", description = "获取当前登录用户的详细信息")
     public Result<UserInfo> getCurrentUser() {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
@@ -69,42 +70,45 @@ public class UserController {
 
     /**
      * 根据用户ID获取用户信息
-     *
-     * @param userId 用户ID
-     * @return 用户信息
      */
     @GetMapping("/{userId}")
-    public Result<UserInfo> getUserById(@PathVariable Long userId) {
+    @Operation(summary = "获取用户信息", description = "根据用户ID获取用户详细信息")
+    public Result<UserInfo> getUserById(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
         try {
             User user = userDomainService.getUserById(userId);
             UserProfile profile = userDomainService.getUserProfile(userId);
             UserInfo userInfo = convertToUserInfo(user, profile);
             return Result.success(userInfo);
         } catch (UserBusinessException e) {
-            log.error("获取用户信息失败，用户ID：{}，错误：{}", userId, e.getMessage());
+            log.error("获取用户信息失败：{}", e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {
-            log.error("获取用户信息异常，用户ID：{}", userId, e);
+            log.error("获取用户信息异常", e);
             return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
         }
     }
 
     /**
      * 更新用户信息
-     *
-     * @param updateRequest 更新请求
-     * @return 更新后的用户信息
      */
     @PutMapping("/me")
     @SaCheckLogin
-    public Result<UserInfo> updateUserInfo(@Valid @RequestBody UserModifyRequest updateRequest) {
+    @Operation(summary = "更新用户信息", description = "更新当前登录用户的基本信息")
+    public Result<UserInfo> updateUserInfo(@Valid @RequestBody UserModifyRequest request) {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
-            // TODO: 实现用户信息更新逻辑
-            User user = userDomainService.getUserById(userId);
-            UserProfile profile = userDomainService.getUserProfile(userId);
-            UserInfo userInfo = convertToUserInfo(user, profile);
-            return Result.success(userInfo);
+            request.setUserId(userId);
+            
+            UserOperatorResponse response = userFacadeService.modify(request);
+            if (response.getSuccess()) {
+                User user = userDomainService.getUserById(userId);
+                UserProfile profile = userDomainService.getUserProfile(userId);
+                UserInfo userInfo = convertToUserInfo(user, profile);
+                return Result.success(userInfo);
+            } else {
+                return Result.error(response.getResponseCode(), response.getResponseMessage());
+            }
         } catch (UserBusinessException e) {
             log.error("更新用户信息失败：{}", e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
@@ -115,180 +119,151 @@ public class UserController {
     }
 
     /**
-     * 申请博主认证
-     *
-     * @return 申请结果
+     * 分页查询用户列表
      */
-    @PostMapping("/blogger/apply")
-    @SaCheckLogin
-    public Result<String> applyForBlogger() {
+    @PostMapping("/page")
+    @Operation(summary = "分页查询用户列表", description = "根据条件分页查询用户列表")
+    public Result<PageResponse<UserInfo>> pageQueryUsers(@Valid @RequestBody UserPageQueryRequest request) {
         try {
-            Long userId = StpUtil.getLoginIdAsLong();
-            String result = userDomainService.applyForBlogger(userId);
-            return Result.success(result);
-        } catch (UserBusinessException e) {
-            log.error("申请博主认证失败：{}", e.getMessage());
-            return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
+            PageResponse<UserInfo> response = userFacadeService.pageQuery(request);
+            return Result.success(response);
         } catch (Exception e) {
-            log.error("申请博主认证异常", e);
+            log.error("分页查询用户列表异常", e);
             return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
         }
     }
 
     /**
-     * 分页查询用户列表
-     *
-     * @param pageNum         页码（从1开始）
-     * @param pageSize        每页大小
-     * @param usernameKeyword 用户名关键词
-     * @param status          用户状态
-     * @param role            用户角色
-     * @return 用户分页列表
+     * 激活用户
      */
-    @GetMapping("/page")
-    @Operation(summary = "分页查询用户列表", description = "支持按用户名、状态、角色等条件分页查询用户")
-    public Result<PageResponse<UserInfo>> pageQueryUsers(
-        @Parameter(description = "页码，从1开始", example = "1")
-        @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum,
-        
-        @Parameter(description = "每页大小，最大100", example = "10")
-        @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize,
-        
-        @Parameter(description = "用户名关键词", example = "张三")
-        @RequestParam(value = "usernameKeyword", required = false) String usernameKeyword,
-        
-        @Parameter(description = "用户状态", example = "ACTIVE")
-        @RequestParam(value = "status", required = false) String status,
-        
-        @Parameter(description = "用户角色", example = "USER")
-        @RequestParam(value = "role", required = false) String role) {
-        
+    @PostMapping("/{userId}/activate")
+    @Operation(summary = "激活用户", description = "激活指定用户账号")
+    public Result<Void> activateUser(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
         try {
-            log.info("分页查询用户列表，页码：{}，页大小：{}，关键词：{}，状态：{}，角色：{}", 
-                pageNum, pageSize, usernameKeyword, status, role);
+            UserStatusRequest request = new UserStatusRequest();
+            request.setUserId(userId);
+            request.setActive(true);
             
-            // 构建查询请求
-            UserPageQueryRequest request = new UserPageQueryRequest();
-            request.setPageNum(pageNum);
-            request.setPageSize(pageSize);
-            request.setUsernameKeyword(usernameKeyword);
-            request.setStatus(status);
-            request.setRole(role);
-            
-            // 调用Facade服务进行分页查询
-            PageResponse<UserInfo> pageResponse = userFacadeService.pageQuery(request);
-            
-            log.info("分页查询用户列表完成，总记录数：{}，当前页记录数：{}", 
-                pageResponse.getTotal(), pageResponse.getRecords().size());
-            
-            return Result.success(pageResponse);
-            
-        } catch (Exception e) {
-            log.error("分页查询用户列表异常", e);
-            return Result.error("SYSTEM_ERROR", "查询用户列表失败：" + e.getMessage());
-                 }
-     }
-
-    /**
-     * 发送激活码
-     *
-     * @param userId         用户ID
-     * @param activationType 激活类型（EMAIL或SMS）
-     * @return 发送结果
-     */
-    @PostMapping("/{userId}/send-activation-code")
-    @Operation(summary = "发送激活码", description = "向用户邮箱或手机发送激活码")
-    public Result<String> sendActivationCode(
-        @Parameter(description = "用户ID", required = true)
-        @PathVariable Long userId,
-        
-        @Parameter(description = "激活类型", example = "EMAIL")
-        @RequestParam(value = "activationType", defaultValue = "EMAIL") String activationType) {
-        
-        try {
-            log.info("发送激活码请求，用户ID：{}，激活类型：{}", userId, activationType);
-            
-            // 调用领域服务发送激活码
-            String result = userDomainService.sendActivationCode(userId, activationType);
-            
-            log.info("激活码发送成功，用户ID：{}", userId);
-            return Result.success(result);
-            
-        } catch (IllegalArgumentException e) {
-            log.warn("发送激活码参数错误：{}", e.getMessage());
-            return Result.error("PARAM_ERROR", e.getMessage());
-        } catch (Exception e) {
-            log.error("发送激活码异常，用户ID：{}", userId, e);
-            return Result.error("SYSTEM_ERROR", "发送激活码失败：" + e.getMessage());
-        }
-    }
-
-    /**
-     * 激活用户账号
-     *
-     * @param request 激活请求
-     * @return 激活结果
-     */
-    @PostMapping("/activate")
-    @Operation(summary = "激活用户账号", description = "使用激活码激活用户账号")
-    public Result<String> activateUser(@Valid @RequestBody UserActiveRequest request) {
-        try {
-            log.info("用户激活请求，用户ID：{}", request.getUserId());
-            
-            // 调用Facade服务激活用户
-            UserOperatorResponse response = userFacadeService.active(request);
-            
+            UserOperatorResponse response = userFacadeService.updateStatus(request);
             if (response.getSuccess()) {
-                log.info("用户激活成功，用户ID：{}", request.getUserId());
-                return Result.success(response.getResponseMessage());
+                return Result.success(null);
             } else {
-                log.warn("用户激活失败，用户ID：{}，错误：{}", 
-                    request.getUserId(), response.getResponseMessage());
                 return Result.error(response.getResponseCode(), response.getResponseMessage());
             }
-            
         } catch (Exception e) {
-            log.error("用户激活异常，用户ID：{}", request.getUserId(), e);
-            return Result.error("SYSTEM_ERROR", "用户激活失败：" + e.getMessage());
+            log.error("激活用户异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
         }
     }
 
     /**
-     * 检查用户激活状态
-     *
-     * @param userId 用户ID
-     * @return 激活状态
+     * 禁用用户
      */
-    @GetMapping("/{userId}/activation-status")
-    @Operation(summary = "检查用户激活状态", description = "查询用户当前的激活状态")
-    public Result<java.util.Map<String, Object>> getActivationStatus(@PathVariable Long userId) {
+    @PostMapping("/{userId}/deactivate")
+    @Operation(summary = "禁用用户", description = "禁用指定用户账号")
+    public Result<Void> deactivateUser(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
         try {
-            log.info("查询用户激活状态，用户ID：{}", userId);
+            UserStatusRequest request = new UserStatusRequest();
+            request.setUserId(userId);
+            request.setActive(false);
             
-            // 查询用户信息
-            User user = userDomainService.getUserById(userId);
-            
-            java.util.Map<String, Object> status = new java.util.HashMap<>();
-            status.put("userId", userId);
-            status.put("status", user.getStatus());
-            status.put("isActive", user.getStatus() == UserStateEnum.ACTIVE);
-            status.put("username", user.getUsername());
-            status.put("email", user.getEmail());
-            status.put("phone", user.getPhone());
-            status.put("createTime", user.getCreateTime());
-            
-            return Result.success(status);
-            
+            UserOperatorResponse response = userFacadeService.updateStatus(request);
+            if (response.getSuccess()) {
+                return Result.success(null);
+            } else {
+                return Result.error(response.getResponseCode(), response.getResponseMessage());
+            }
         } catch (Exception e) {
-            log.error("查询用户激活状态异常，用户ID：{}", userId, e);
-            return Result.error("SYSTEM_ERROR", "查询激活状态失败：" + e.getMessage());
+            log.error("禁用用户异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
         }
     }
 
     /**
-     * 转换为UserInfo对象 - 使用MapStruct转换器
+     * 检查用户名是否存在
+     */
+    @GetMapping("/check-username")
+    @Operation(summary = "检查用户名是否存在", description = "检查指定用户名是否已被使用")
+    public Result<Boolean> checkUsernameExists(
+            @Parameter(description = "用户名", required = true) @RequestParam String username) {
+        try {
+            boolean exists = userDomainService.checkUsernameExists(username);
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查用户名是否存在异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
+        }
+    }
+
+    /**
+     * 检查邮箱是否存在
+     */
+    @GetMapping("/check-email")
+    @Operation(summary = "检查邮箱是否存在", description = "检查指定邮箱是否已被注册")
+    public Result<Boolean> checkEmailExists(
+            @Parameter(description = "邮箱地址", required = true) @RequestParam String email) {
+        try {
+            boolean exists = userDomainService.checkEmailExists(email);
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查邮箱是否存在异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
+        }
+    }
+
+    /**
+     * 检查手机号是否存在
+     */
+    @GetMapping("/check-phone")
+    @Operation(summary = "检查手机号是否存在", description = "检查指定手机号是否已被注册")
+    public Result<Boolean> checkPhoneExists(
+            @Parameter(description = "手机号", required = true) @RequestParam String phone) {
+        try {
+            boolean exists = userDomainService.checkPhoneExists(phone);
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查手机号是否存在异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取用户统计信息
+     */
+    @GetMapping("/{userId}/statistics")
+    @Operation(summary = "获取用户统计信息", description = "获取指定用户的统计信息")
+    public Result<Object> getUserStatistics(
+            @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
+        try {
+            // TODO: 实现用户统计信息获取
+            return Result.success("用户统计信息");
+        } catch (Exception e) {
+            log.error("获取用户统计信息异常", e);
+            return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
+        }
+    }
+
+    /**
+     * 转换用户信息
      */
     private UserInfo convertToUserInfo(User user, UserProfile profile) {
-        return UserConvertor.INSTANCE.mapToUserInfo(user, profile);
+        if (user == null) {
+            return null;
+        }
+        
+        UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
+        if (profile != null) {
+            // User实体中已有nickname和avatar，不需要从profile中获取
+            userInfo.setBio(profile.getBio());
+            userInfo.setGender(profile.getGender().name()); // 转换为字符串
+            userInfo.setBirthday(profile.getBirthday());
+            userInfo.setLocation(profile.getLocation());
+            // UserProfile中没有website字段，暂时设为null
+            userInfo.setWebsite(null);
+        }
+        
+        return userInfo;
     }
 }

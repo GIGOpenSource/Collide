@@ -33,13 +33,6 @@ public class FileUploadController {
 
     /**
      * 上传单个文件
-     *
-     * @param file 上传的文件
-     * @param fileType 文件类型 (avatar/content/attachment)
-     * @param fileName 文件名（可选，默认使用原文件名）
-     * @param businessId 业务ID（可选）
-     * @param description 文件描述（可选）
-     * @return 文件上传结果
      */
     @PostMapping("/upload")
     @SaCheckLogin

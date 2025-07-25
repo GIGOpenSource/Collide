@@ -11,6 +11,9 @@ import com.gig.collide.api.comment.response.data.CommentInfo;
 import com.gig.collide.api.comment.service.CommentFacadeService;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -33,18 +36,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "评论管理", description = "评论发布、回复、管理相关接口")
 public class CommentController {
 
     private final CommentFacadeService commentFacadeService;
 
     /**
      * 创建评论
-     *
-     * @param createRequest 创建请求
-     * @return 创建结果
      */
     @PostMapping
     @SaCheckLogin
+    @Operation(summary = "创建评论", description = "创建新的评论或回复")
     public Result<CommentResponse> createComment(@Valid @RequestBody CommentCreateRequest createRequest) {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
@@ -69,13 +71,12 @@ public class CommentController {
 
     /**
      * 删除评论
-     *
-     * @param commentId 评论ID
-     * @return 删除结果
      */
     @DeleteMapping("/{commentId}")
     @SaCheckLogin
-    public Result<CommentResponse> deleteComment(@PathVariable Long commentId) {
+    @Operation(summary = "删除评论", description = "删除指定的评论")
+    public Result<CommentResponse> deleteComment(
+            @Parameter(description = "评论ID", required = true) @PathVariable Long commentId) {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             log.info("用户删除评论，用户ID: {}, 评论ID: {}", currentUserId, commentId);

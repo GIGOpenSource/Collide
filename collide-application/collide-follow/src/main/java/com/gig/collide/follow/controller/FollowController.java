@@ -13,6 +13,9 @@ import com.gig.collide.api.follow.response.data.FollowStatistics;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -36,6 +39,7 @@ import jakarta.validation.constraints.NotNull;
 @RequestMapping("/api/v1/follow")
 @RequiredArgsConstructor
 @Validated
+@Tag(name = "关注管理", description = "用户关注、粉丝管理相关接口")
 public class FollowController {
 
     private final FollowFacadeService followFacadeService;
