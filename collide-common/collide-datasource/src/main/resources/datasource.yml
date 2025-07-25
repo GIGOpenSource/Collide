@@ -1,173 +1,29 @@
-
-
-# 数据源配置
 spring:
   autoconfigure:
     exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   datasource:
-    # 主数据源配置
-    primary:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${collide.turbo.mysql.host}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-      username: ${collide.turbo.mysql.username}
-      password: ${collide.turbo.mysql.password}
-      
-      # HikariCP 连接池配置 - 优化性能
-      hikari:
-        # 连接池名称
-        pool-name: HikariCP-Primary
-        # 最小空闲连接数
-        minimum-idle: 10
-        # 最大连接池大小 - 增加连接数
-        maximum-pool-size: 50
-        # 连接超时时间（毫秒）
-        connection-timeout: 30000
-        # 空闲连接超时时间（毫秒）
-        idle-timeout: 600000
-        # 连接最大生存时间（毫秒）
-        max-lifetime: 1800000
-        # 连接测试查询
-        connection-test-query: SELECT 1
-        # 连接验证超时时间（毫秒）
-        validation-timeout: 5000
-        # 是否自动提交
-        auto-commit: true
-        # 连接初始化SQL
-        connection-init-sql: SET NAMES utf8mb4
-        # 连接池监控
-        register-mbeans: true
-        # 连接池统计
-        allow-pool-suspension: false
-        # 连接池泄漏检测
-        leak-detection-threshold: 60000
-        
-    # 从数据源配置（读写分离）
-    secondary:
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${collide.turbo.mysql.slave.host}:${collide.turbo.mysql.slave.port}/${collide.turbo.mysql.slave.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
-      username: ${collide.turbo.mysql.slave.username}
-      password: ${collide.turbo.mysql.slave.password}
-      
-      # HikariCP 连接池配置
-      hikari:
-        pool-name: HikariCP-Secondary
-        minimum-idle: 5
-        maximum-pool-size: 20
-        connection-timeout: 30000
-        idle-timeout: 600000
-        max-lifetime: 1800000
-        connection-test-query: SELECT 1
-        validation-timeout: 5000
-        auto-commit: true
-        connection-init-sql: SET NAMES utf8mb4
-        register-mbeans: true
-        allow-pool-suspension: false
-        leak-detection-threshold: 60000
+    url: ${collide.turbo.mysql.url}
+    username: ${collide.turbo.mysql.username}
+    password: ${collide.turbo.mysql.password}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    type: com.alibaba.druid.pool.DruidDataSource
+    # Druid连接池配置
+#    datasource.druid:
+    initial-size: 50 # 连接池初始化时创建的连接数。默认值为0。
+    min-idle: 50 # 连接池中保持的最小空闲连接数量。当连接池中的连接数量小于这个值时，连接池会尝试创建新的连接。默认值为0。
+    max-active: 200 # 连接池中允许的最大连接数。如果所有连接都被使用并且没有空闲连接，新的连接请求将被阻塞，直到有连接可用。默认值为8。
+    max-wait: 60000 # 获取连接时的最大等待时间，单位为毫秒。如果在指定的时间内无法获取到连接，将抛出异常。默认值为-1，表示无限等待。
+    time-between-eviction-runs-millis: 60000 # 连接池每次检测空闲连接的间隔时间，单位为毫秒。默认值为60000毫秒（1分钟）。
+    min-evictable-idle-time-millis: 300000 # 连接在连接池中的最小空闲时间，超过这个时间的连接将被回收，单位为毫秒。默认值为300000毫秒（5分钟）。
+    validation-query: SELECT 1 # 用于验证连接是否有效的SQL查询语句。Druid会定期执行此查询来检测连接的可用性。默认为"SELECT 1"。
+    test-while-idle: true # 是否在连接空闲时检测连接的有效性。如果设置为true，则连接池会定期检测空闲连接，如果连接失效，将被标记为不可用并移除。默认为true。
+    test-on-borrow: false # 是否在从连接池借用连接时检测连接的有效性。如果设置为true，每次从连接池借用连接时都会执行连接有效性检测。默认为false。
+    test-on-return: false # 是否在归还连接到连接池时检测连接的有效性。如果设置为true，连接在归还到连接池时会进行有效性检测。默认为false。
+    pool-prepared-statements: true # 是否开启预处理语句池。预处理语句池可以提高性能，特别是在执行相同SQL语句多次时。默认为true。
+    max-pool-prepared-statement-per-connection-size: 20 #每个连接上允许的最大预处理语句数。默认值为20。
 
-# MyBatis Plus 配置
-mybatis-plus:
-  # 全局配置
-  global-config:
-    # 数据库相关配置
-    db-config:
-      # 主键类型
-      id-type: auto
-      # 逻辑删除配置
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      # 乐观锁配置
-      version-field: version
-      # 字段策略
-      insert-strategy: not_null
-      update-strategy: not_null
-      select-strategy: not_empty
-    # 性能优化配置
-    banner: false
-    enable-sql-runner: false
-    
-  # 配置项
+# MyBatis配置
+mybatis:
   configuration:
-    # 开启驼峰命名转换
-    map-underscore-to-camel-case: true
-    # 开启缓存
-    cache-enabled: true
-    # 延迟加载
-    lazy-loading-enabled: true
-    # 积极延迟加载
-    aggressive-lazy-loading: false
-    # 多结果集处理
-    multiple-result-sets-enabled: true
-    # 列标签
-    use-column-label: true
-    # 使用生成的主键
-    use-generated-keys: true
-    # 自动映射行为
-    auto-mapping-behavior: partial
-    # 自动映射未知列
-    auto-mapping-unknown-column-behavior: warning
-    # 默认执行器类型
-    default-executor-type: simple
-    # 默认语句超时时间
-    default-statement-timeout: 10  # 减少超时时间
-    # 默认获取结果集超时时间
-    default-fetch-size: 50         # 减少批量大小
-    # 安全行边界
-    safe-row-bounds-enabled: false
-    # 安全结果处理
-    safe-result-handler-enabled: true
-    # 本地缓存作用域
-    local-cache-scope: session
-    # 设置但空字符串列的值
-    call-setters-on-nulls: false
-    # 指定VARCHAR的返回类型
-    return-instance-for-empty-row: false
-    # 日志前缀
-    log-prefix: MyBatis
-    # 日志实现
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    
-  # 类型别名包扫描
-  type-aliases-package: com.gig.collide.*.domain.entity
-  # Mapper XML 文件位置
-  mapper-locations: classpath*:mapper/*.xml
-
-# 数据库连接池监控配置
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,hikaricp
-  endpoint:
-    health:
-      show-details: always
-    metrics:
-      enabled: true
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-
-# 自定义数据源配置
-collide:
-  datasource:
-    # 连接池监控
-    monitoring:
-      enabled: true
-      # 慢查询阈值（毫秒）
-      slow-query-threshold: 1000
-      # 连接池监控间隔（秒）
-      monitor-interval: 30
-    # 性能优化
-    performance:
-      # 启用查询缓存
-      query-cache-enabled: true
-      # 启用二级缓存
-      second-level-cache-enabled: true
-      # 批量操作大小
-      batch-size: 1000
-      # 分页查询优化
-      page-query-optimization: true
-
-
-
+    map-underscore-to-camel-case: true # 将数据库字段的下划线命名转换为驼峰命名
+  mapper-locations: classpath:mapper/*.xml # MyBatis映射文件所在的位置，这里是使用XML的配置方式时需要配置的部分
