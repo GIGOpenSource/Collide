@@ -114,8 +114,6 @@ mybatis-plus:
     safe-row-bounds-enabled: false
     # 安全结果处理
     safe-result-handler-enabled: true
-    # 是否开启自动驼峰命名规则映射
-    map-underscore-to-camel-case: true
     # 本地缓存作用域
     local-cache-scope: session
     # 设置但空字符串列的值
