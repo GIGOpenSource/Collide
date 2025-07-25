@@ -135,7 +135,7 @@ public class AuthController {
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {
             log.error("用户登录异常，用户名：{}", loginParam.getUsername(), e);
-            return Result.error("LOGIN_ERROR", "登录失败，请稍后重试");
+            return Result.error("LOGIN_ERROR", e.getMessage());
         }
     }
 
