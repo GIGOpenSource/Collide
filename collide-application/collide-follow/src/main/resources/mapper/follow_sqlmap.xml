@@ -2,65 +2,79 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.follow.infrastructure.mapper.FollowMapper">
 
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.follow.domain.entity.Follow">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="follower_user_id" property="followerUserId" jdbcType="BIGINT"/>
+        <result column="followed_user_id" property="followedUserId" jdbcType="BIGINT"/>
+        <result column="follow_type" property="followType" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="TINYINT"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, follower_user_id, followed_user_id, follow_type, 
+        status, created_time, updated_time, deleted
+    </sql>
+
     <!-- 查询关注关系 -->
-    <select id="selectFollowRelation" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT 
-            id, follower_user_id, followed_user_id, follow_type, 
-            status, created_time, updated_time
+    <select id="selectFollowRelation" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
         FROM t_follow 
         WHERE follower_user_id = #{followerUserId} 
           AND followed_user_id = #{followedUserId}
           AND status = #{status}
+          AND deleted = 0
         LIMIT 1
     </select>
 
     <!-- 分页查询用户关注列表 -->
-    <select id="selectFollowingPage" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT 
-            id, follower_user_id, followed_user_id, follow_type, 
-            status, created_time, updated_time
+    <select id="selectFollowingPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
         FROM t_follow 
         WHERE follower_user_id = #{followerUserId}
           AND status = #{status}
+          AND deleted = 0
         ORDER BY created_time DESC
     </select>
 
     <!-- 分页查询用户粉丝列表 -->
-    <select id="selectFollowersPage" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT 
-            id, follower_user_id, followed_user_id, follow_type, 
-            status, created_time, updated_time
+    <select id="selectFollowersPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
         FROM t_follow 
         WHERE followed_user_id = #{followedUserId}
           AND status = #{status}
+          AND deleted = 0
         ORDER BY created_time DESC
     </select>
 
     <!-- 查询相互关注列表（去连表化：分步查询） -->
-    <select id="selectMutualFollows" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT 
-            id, follower_user_id, followed_user_id, follow_type,
-            status, created_time, updated_time
+    <select id="selectMutualFollows" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
         FROM t_follow 
         WHERE follower_user_id = #{userId}
           AND status = #{status}
+          AND deleted = 0
           AND followed_user_id IN (
               SELECT follower_user_id 
               FROM t_follow 
               WHERE followed_user_id = #{userId}
                 AND status = #{status}
+                AND deleted = 0
           )
         ORDER BY created_time DESC
     </select>
 
     <!-- 批量查询关注关系 -->
-    <select id="selectFollowRelations" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT 
-            id, follower_user_id, followed_user_id, follow_type, 
-            status, created_time, updated_time
+    <select id="selectFollowRelations" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
         FROM t_follow 
         WHERE follower_user_id = #{followerUserId}
           AND status = #{status}
+          AND deleted = 0
           AND followed_user_id IN
         <foreach collection="followedUserIds" item="followedUserId" open="(" close=")" separator=",">
             #{followedUserId}
@@ -74,6 +88,7 @@
         FROM t_follow 
         WHERE follower_user_id = #{followerUserId} 
           AND status = #{status}
+          AND deleted = 0
     </select>
 
     <!-- 统计用户粉丝数 -->
@@ -82,6 +97,7 @@
         FROM t_follow 
         WHERE followed_user_id = #{followedUserId} 
           AND status = #{status}
+          AND deleted = 0
     </select>
 
 </mapper> 

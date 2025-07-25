@@ -20,6 +20,7 @@
         <result column="reviewed_time" property="reviewedTime" jdbcType="TIMESTAMP"/>
         <result column="view_count" property="viewCount" jdbcType="BIGINT"/>
         <result column="like_count" property="likeCount" jdbcType="BIGINT"/>
+        <result column="dislike_count" property="dislikeCount" jdbcType="BIGINT"/>
         <result column="comment_count" property="commentCount" jdbcType="BIGINT"/>
         <result column="share_count" property="shareCount" jdbcType="BIGINT"/>
         <result column="favorite_count" property="favoriteCount" jdbcType="BIGINT"/>
@@ -38,7 +39,7 @@
     <sql id="Base_Column_List">
         id, title, description, content_type, content_data, cover_url,
         author_id, category_id, tags, status, review_status, review_comment,
-        reviewer_id, reviewed_time, view_count, like_count, comment_count,
+        reviewer_id, reviewed_time, view_count, like_count, dislike_count, comment_count,
         share_count, favorite_count, weight_score, is_recommended, is_pinned,
         allow_comment, allow_share, create_time, update_time, published_time, deleted
     </sql>
@@ -111,7 +112,7 @@
         <if test="days != null and days > 0">
             AND published_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
         </if>
-        ORDER BY (like_count + comment_count + share_count + favorite_count) DESC, published_time DESC
+        ORDER BY (like_count + comment_count + share_count + favorite_count - dislike_count) DESC, published_time DESC
     </select>
 
     <!-- 查询最新内容列表 -->
@@ -178,6 +179,24 @@
         AND deleted = 0
     </update>
 
+    <!-- 增加点踩数 -->
+    <update id="incrementDislikeCount">
+        UPDATE t_content
+        SET dislike_count = dislike_count + 1,
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
+    <!-- 减少点踩数 -->
+    <update id="decrementDislikeCount">
+        UPDATE t_content
+        SET dislike_count = GREATEST(dislike_count - 1, 0),
+            update_time = CURRENT_TIMESTAMP
+        WHERE id = #{contentId}
+        AND deleted = 0
+    </update>
+
     <!-- 增加评论数 -->
     <update id="incrementCommentCount">
         UPDATE t_content
@@ -229,6 +248,7 @@
         SET weight_score = (
             view_count * 0.1 + 
             like_count * 2.0 + 
+            dislike_count * (-1.0) +
             comment_count * 3.0 + 
             share_count * 5.0 + 
             favorite_count * 4.0
@@ -289,6 +309,7 @@
             COUNT(*) AS count,
             IFNULL(SUM(view_count), 0) AS total_views,
             IFNULL(SUM(like_count), 0) AS total_likes,
+            IFNULL(SUM(dislike_count), 0) AS total_dislikes,
             IFNULL(SUM(comment_count), 0) AS total_comments,
             IFNULL(SUM(share_count), 0) AS total_shares,
             IFNULL(SUM(favorite_count), 0) AS total_favorites

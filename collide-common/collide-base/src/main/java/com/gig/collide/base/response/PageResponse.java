@@ -1,8 +1,5 @@
 package com.gig.collide.base.response;
 
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.List;
 
 /**
@@ -10,8 +7,6 @@ import java.util.List;
  *
  * @author GIGOpenSource
  */
-@Setter
-@Getter
 public class PageResponse<T> extends MultiResponse<T> {
     private static final long serialVersionUID = 1L;
 
@@ -31,6 +26,39 @@ public class PageResponse<T> extends MultiResponse<T> {
      * 总数
      */
     private long total;
+
+    // Getter and Setter methods
+    public int getCurrentPage() {
+        return currentPage;
+    }
+
+    public void setCurrentPage(int currentPage) {
+        this.currentPage = currentPage;
+    }
+
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
+    }
+
+    public int getTotalPage() {
+        return totalPage;
+    }
+
+    public void setTotalPage(int totalPage) {
+        this.totalPage = totalPage;
+    }
+
+    public long getTotal() {
+        return total;
+    }
+
+    public void setTotal(long total) {
+        this.total = total;
+    }
 
     /**
      * 获取记录列表（兼容方法）

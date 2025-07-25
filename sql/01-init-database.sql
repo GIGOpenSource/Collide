@@ -15,23 +15,26 @@ SET time_zone = '+08:00';
 CREATE TABLE IF NOT EXISTS `t_user` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
   `username` varchar(50) NOT NULL COMMENT '用户名',
+  `nickname` varchar(100) DEFAULT NULL COMMENT '昵称',
+  `avatar` varchar(500) DEFAULT NULL COMMENT '头像URL',
   `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
   `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
-  `nickname` varchar(50) DEFAULT NULL COMMENT '昵称',
-  `avatar` varchar(500) DEFAULT NULL COMMENT '头像URL',
-  `gender` tinyint DEFAULT '0' COMMENT '性别：0-未知，1-男，2-女',
-  `birthday` date DEFAULT NULL COMMENT '生日',
-  `bio` varchar(500) DEFAULT NULL COMMENT '个人简介',
-  `status` tinyint DEFAULT '1' COMMENT '状态：0-禁用，1-正常',
-  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `password_hash` varchar(255) NOT NULL COMMENT '密码哈希',
+  `salt` varchar(32) NOT NULL COMMENT '密码盐值',
+  `role` enum('user','vip','blogger','admin') NOT NULL DEFAULT 'user' COMMENT '用户角色',
+  `status` enum('active','inactive','banned') NOT NULL DEFAULT 'active' COMMENT '用户状态',
+  `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_username` (`username`),
   UNIQUE KEY `uk_email` (`email`),
   UNIQUE KEY `uk_phone` (`phone`),
+  KEY `idx_role` (`role`),
   KEY `idx_status` (`status`),
-  KEY `idx_created_time` (`created_time`)
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
 
 -- 用户操作流表
@@ -62,11 +65,13 @@ CREATE TABLE IF NOT EXISTS `t_follow` (
   `status` tinyint DEFAULT '1' COMMENT '状态：0-已取消，1-正常',
   `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_follower_followed` (`follower_user_id`, `followed_user_id`),
   KEY `idx_followed_user_id` (`followed_user_id`),
   KEY `idx_status` (`status`),
-  KEY `idx_created_time` (`created_time`)
+  KEY `idx_created_time` (`created_time`),
+  KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='关注关系表';
 
 -- 关注统计表
@@ -76,7 +81,9 @@ CREATE TABLE IF NOT EXISTS `t_follow_statistics` (
   `follower_count` int DEFAULT '0' COMMENT '粉丝数',
   `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-  PRIMARY KEY (`user_id`)
+  `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
+  PRIMARY KEY (`user_id`),
+  KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='关注统计表';
 
 -- ==========================================
@@ -96,14 +103,22 @@ CREATE TABLE IF NOT EXISTS `t_content` (
   `tags` json DEFAULT NULL COMMENT '标签',
   `status` varchar(20) DEFAULT 'DRAFT' COMMENT '状态：DRAFT-草稿，PENDING-待审核，PUBLISHED-已发布，REJECTED-已拒绝',
   `review_status` varchar(20) DEFAULT 'PENDING' COMMENT '审核状态：PENDING-待审核，APPROVED-已通过，REJECTED-已拒绝',
+  `review_comment` varchar(1000) DEFAULT NULL COMMENT '审核意见',
+  `reviewer_id` bigint DEFAULT NULL COMMENT '审核员ID',
+  `reviewed_time` datetime DEFAULT NULL COMMENT '审核时间',
   `view_count` bigint DEFAULT '0' COMMENT '查看数',
   `like_count` bigint DEFAULT '0' COMMENT '点赞数',
   `dislike_count` bigint DEFAULT '0' COMMENT '点踩数',
   `comment_count` bigint DEFAULT '0' COMMENT '评论数',
   `share_count` bigint DEFAULT '0' COMMENT '分享数',
   `favorite_count` bigint DEFAULT '0' COMMENT '收藏数',
-  `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `weight_score` decimal(10,2) DEFAULT '0.00' COMMENT '权重分数',
+  `is_recommended` boolean DEFAULT false COMMENT '是否推荐',
+  `is_pinned` boolean DEFAULT false COMMENT '是否置顶',
+  `allow_comment` boolean DEFAULT true COMMENT '是否允许评论',
+  `allow_share` boolean DEFAULT true COMMENT '是否允许分享',
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   `published_time` datetime DEFAULT NULL COMMENT '发布时间',
   `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`),
@@ -112,10 +127,11 @@ CREATE TABLE IF NOT EXISTS `t_content` (
   KEY `idx_status` (`status`),
   KEY `idx_review_status` (`review_status`),
   KEY `idx_category_id` (`category_id`),
-  KEY `idx_created_time` (`created_time`),
+  KEY `idx_created_time` (`create_time`),
   KEY `idx_published_time` (`published_time`),
   KEY `idx_like_count` (`like_count`),
-  KEY `idx_view_count` (`view_count`)
+  KEY `idx_view_count` (`view_count`),
+  KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='内容表';
 
 -- 内容审核表
@@ -159,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `t_comment` (
     `device_info` VARCHAR(200) COMMENT '设备信息',
     `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `is_deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
     PRIMARY KEY (`id`),
     KEY `idx_comment_type` (`comment_type`),
     KEY `idx_target_id` (`target_id`),
@@ -171,7 +187,7 @@ CREATE TABLE IF NOT EXISTS `t_comment` (
     KEY `idx_like_count` (`like_count`),
     KEY `idx_is_pinned` (`is_pinned`),
     KEY `idx_is_hot` (`is_hot`),
-    KEY `idx_is_deleted` (`is_deleted`),
+    KEY `idx_deleted` (`deleted`),
     KEY `idx_target_status` (`target_id`, `status`),
     KEY `idx_target_parent` (`target_id`, `parent_comment_id`),
     KEY `idx_user_status` (`user_id`, `status`),
@@ -204,6 +220,38 @@ CREATE TABLE IF NOT EXISTS `t_like` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_target_action` (`target_id`, `target_type`, `action_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='统一点赞表';
+
+-- ==========================================
+-- 收藏相关表
+-- ==========================================
+
+-- 收藏表
+CREATE TABLE IF NOT EXISTS `t_favorite` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `target_id` BIGINT NOT NULL COMMENT '目标对象ID（内容ID、评论ID等）',
+    `target_type` VARCHAR(50) NOT NULL COMMENT '目标类型：CONTENT、COMMENT、SOCIAL_POST',
+    `favorite_type` TINYINT NOT NULL DEFAULT 1 COMMENT '收藏类型：1-普通收藏，2-重要收藏',
+    `folder_id` BIGINT DEFAULT 0 COMMENT '收藏夹ID，0表示默认收藏夹',
+    `folder_name` VARCHAR(100) DEFAULT '默认收藏夹' COMMENT '收藏夹名称',
+    `tags` VARCHAR(500) DEFAULT NULL COMMENT '标签，逗号分隔',
+    `notes` TEXT DEFAULT NULL COMMENT '备注',
+    `ip_address` VARCHAR(45) COMMENT '收藏IP地址',
+    `device_info` VARCHAR(200) COMMENT '设备信息',
+    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_target_type` (`user_id`, `target_id`, `target_type`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_target_id` (`target_id`),
+    KEY `idx_target_type` (`target_type`),
+    KEY `idx_favorite_type` (`favorite_type`),
+    KEY `idx_folder_id` (`folder_id`),
+    KEY `idx_created_time` (`created_time`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_target_favorite` (`target_id`, `target_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
 
 -- ==========================================
 -- 社交动态相关表（完全去连表化设计）
@@ -243,7 +291,7 @@ CREATE TABLE IF NOT EXISTS `t_social_post` (
     `created_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `published_time` datetime DEFAULT NULL COMMENT '发布时间',
-    `deleted` boolean DEFAULT false COMMENT '逻辑删除标志',
+    `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除标记',
     `version` int DEFAULT '1' COMMENT '版本号',
     
     PRIMARY KEY (`id`),
@@ -255,6 +303,7 @@ CREATE TABLE IF NOT EXISTS `t_social_post` (
     KEY `idx_location` (`longitude`, `latitude`),
     KEY `idx_author_status_time` (`author_id`, `status`, `created_time`),
     KEY `idx_status_visibility_hot` (`status`, `visibility`, `hot_score`),
+    KEY `idx_deleted` (`deleted`),
     FULLTEXT KEY `ft_content` (`content`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='社交动态表（去连表化设计）';
 
@@ -307,10 +356,10 @@ CREATE TABLE IF NOT EXISTS `t_user_social_stats` (
 -- ==========================================
 
 -- 插入测试用户
-INSERT IGNORE INTO `t_user` (`id`, `username`, `email`, `nickname`, `avatar`, `status`) VALUES
-(1, 'admin', 'admin@collide.com', '管理员', 'https://example.com/avatar/admin.jpg', 1),
-(2, 'test_user', 'test@collide.com', '测试用户', 'https://example.com/avatar/test.jpg', 1),
-(3, 'content_creator', 'creator@collide.com', '内容创作者', 'https://example.com/avatar/creator.jpg', 1);
+INSERT IGNORE INTO `t_user` (`id`, `username`, `email`, `nickname`, `avatar`, `password_hash`, `salt`, `role`, `status`) VALUES
+(1, 'admin', 'admin@collide.com', '管理员', 'https://example.com/avatar/admin.jpg', 'admin_hash', 'admin_salt', 'admin', 'active'),
+(2, 'test_user', 'test@collide.com', '测试用户', 'https://example.com/avatar/test.jpg', 'test_hash', 'test_salt', 'user', 'active'),
+(3, 'content_creator', 'creator@collide.com', '内容创作者', 'https://example.com/avatar/creator.jpg', 'creator_hash', 'creator_salt', 'blogger', 'active');
 
 -- 插入关注统计初始数据
 INSERT IGNORE INTO `t_follow_statistics` (`user_id`, `following_count`, `follower_count`) VALUES
@@ -345,4 +394,4 @@ INSERT IGNORE INTO `t_like` (`id`, `user_id`, `target_id`, `target_type`, `actio
 (8, 3, 3, 'COMMENT', 1),
 (9, 2, 4, 'COMMENT', 1);
 
-SET FOREIGN_KEY_CHECKS = 1; 
+SET FOREIGN_KEY_CHECKS = 1;

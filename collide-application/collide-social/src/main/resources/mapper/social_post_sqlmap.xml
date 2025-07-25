@@ -33,10 +33,10 @@
         <result column="view_count" property="viewCount" jdbcType="BIGINT"/>
         <result column="favorite_count" property="favoriteCount" jdbcType="BIGINT"/>
         <result column="hot_score" property="hotScore" jdbcType="DOUBLE"/>
-        <result column="created_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="updated_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <result column="published_time" property="publishTime" jdbcType="TIMESTAMP"/>
-        <result column="deleted" property="deleted" jdbcType="BOOLEAN"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="published_time" property="publishedTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
         <result column="version" property="version" jdbcType="INTEGER"/>
     </resultMap>
 

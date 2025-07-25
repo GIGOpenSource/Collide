@@ -89,7 +89,7 @@ public class CommentDomainService {
         }
 
         // 使用MyBatis Plus的逻辑删除
-        comment.setIsDeleted(1);
+        comment.setDeleted(1);
         comment.setUpdateTime(LocalDateTime.now());
         int result = commentMapper.updateById(comment);
 
@@ -243,7 +243,7 @@ public class CommentDomainService {
         // comment.setDeviceInfo(getClientDeviceInfo());
         comment.setCreateTime(LocalDateTime.now());
         comment.setUpdateTime(LocalDateTime.now());
-        comment.setIsDeleted(0);
+        comment.setDeleted(0);
         return comment;
     }
 

@@ -16,9 +16,15 @@
         <result column="deleted" property="deleted" jdbcType="TINYINT"/>
     </resultMap>
     
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, target_id, target_type, action_type, ip_address, device_info, 
+        created_time, updated_time, deleted
+    </sql>
+    
     <!-- 根据用户ID和目标对象查询点赞记录 -->
     <select id="selectByUserAndTarget" resultMap="BaseResultMap">
-        SELECT * FROM t_like 
+        SELECT <include refid="Base_Column_List"/> FROM t_like 
         WHERE user_id = #{userId} 
           AND target_id = #{targetId} 
           AND target_type = #{targetType}
@@ -28,7 +34,7 @@
     
     <!-- 分页查询点赞记录 -->
     <select id="selectLikePage" resultMap="BaseResultMap">
-        SELECT * FROM t_like 
+        SELECT <include refid="Base_Column_List"/> FROM t_like 
         WHERE deleted = 0
         <if test="userId != null">
             AND user_id = #{userId}
@@ -62,7 +68,7 @@
     
     <!-- 获取用户的点赞历史 -->
     <select id="selectUserLikeHistory" resultMap="BaseResultMap">
-        SELECT * FROM t_like 
+        SELECT <include refid="Base_Column_List"/> FROM t_like 
         WHERE user_id = #{userId}
           AND deleted = 0
         <if test="targetType != null and targetType != ''">
@@ -82,7 +88,7 @@
     
     <!-- 批量查询用户对多个对象的点赞状态 -->
     <select id="selectBatchUserLikeStatus" resultMap="BaseResultMap">
-        SELECT * FROM t_like 
+        SELECT <include refid="Base_Column_List"/> FROM t_like 
         WHERE user_id = #{userId}
           AND target_type = #{targetType}
           AND target_id IN 
@@ -94,7 +100,7 @@
     
     <!-- 获取对象的点赞用户列表 -->
     <select id="selectLikeUsers" resultMap="BaseResultMap">
-        SELECT * FROM t_like 
+        SELECT <include refid="Base_Column_List"/> FROM t_like 
         WHERE target_id = #{targetId}
           AND target_type = #{targetType}
           AND action_type = #{actionType}

@@ -94,4 +94,11 @@ public class User {
      */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
+
+    /**
+     * 逻辑删除标记
+     */
+    @TableLogic
+    @TableField("deleted")
+    private Integer deleted;
 }

@@ -17,12 +17,13 @@
         <result column="last_login_time" property="lastLoginTime" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
         id, username, nickname, avatar, email, phone, password_hash, salt, role, status, 
-        last_login_time, create_time, update_time
+        last_login_time, create_time, update_time, deleted
     </sql>
 
     <!-- 根据用户名查询用户 -->
@@ -31,6 +32,7 @@
         <include refid="Base_Column_List" />
         FROM t_user
         WHERE username = #{username}
+        AND deleted = 0
     </select>
 
     <!-- 根据邮箱查询用户 -->
@@ -39,6 +41,7 @@
         <include refid="Base_Column_List" />
         FROM t_user
         WHERE email = #{email}
+        AND deleted = 0
     </select>
 
     <!-- 根据手机号查询用户 -->
@@ -47,6 +50,16 @@
         <include refid="Base_Column_List" />
         FROM t_user
         WHERE phone = #{phone}
+        AND deleted = 0
+    </select>
+
+    <!-- 根据用户ID查询用户 -->
+    <select id="selectById" parameterType="long" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM t_user
+        WHERE id = #{id}
+        AND deleted = 0
     </select>
 
 </mapper> 

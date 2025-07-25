@@ -67,7 +67,7 @@ public class FollowDomainService {
             // 重新激活关注关系
             cancelledFollow.setStatus(FollowStatus.NORMAL);
             cancelledFollow.setFollowType(followType);
-            cancelledFollow.setUpdateTime(LocalDateTime.now());
+            cancelledFollow.setUpdatedTime(LocalDateTime.now());
             followMapper.updateById(cancelledFollow);
             follow = cancelledFollow;
             log.info("重新激活关注关系。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
@@ -78,8 +78,8 @@ public class FollowDomainService {
             follow.setFollowedUserId(followedUserId);
             follow.setFollowType(followType);
             follow.setStatus(FollowStatus.NORMAL);
-            follow.setCreateTime(LocalDateTime.now());
-            follow.setUpdateTime(LocalDateTime.now());
+            follow.setCreatedTime(LocalDateTime.now());
+            follow.setUpdatedTime(LocalDateTime.now());
             
             followMapper.insert(follow);
             isNewFollow = true;
@@ -115,7 +115,7 @@ public class FollowDomainService {
 
         // 更新为取消状态
         follow.setStatus(FollowStatus.CANCELLED);
-        follow.setUpdateTime(LocalDateTime.now());
+        follow.setUpdatedTime(LocalDateTime.now());
         followMapper.updateById(follow);
 
         // 更新统计数据
@@ -213,8 +213,8 @@ public class FollowDomainService {
             statistics.setUserId(userId);
             statistics.setFollowingCount(0);
             statistics.setFollowerCount(0);
-            statistics.setCreateTime(LocalDateTime.now());
-            statistics.setUpdateTime(LocalDateTime.now());
+            statistics.setCreatedTime(LocalDateTime.now());
+            statistics.setUpdatedTime(LocalDateTime.now());
             followStatisticsMapper.insert(statistics);
         }
         return statistics;

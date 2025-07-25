@@ -176,26 +176,26 @@ public class SocialPost {
      * 创建时间
      */
     @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    private LocalDateTime createdTime;
 
     /**
      * 更新时间
      */
     @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+    private LocalDateTime updatedTime;
 
     /**
      * 发布时间
      */
     @TableField("published_time")
-    private LocalDateTime publishTime;
+    private LocalDateTime publishedTime;
 
     /**
      * 逻辑删除标志
      */
     @TableLogic
     @TableField("deleted")
-    private Boolean deleted;
+    private Integer deleted;
 
     /**
      * 版本号（乐观锁）

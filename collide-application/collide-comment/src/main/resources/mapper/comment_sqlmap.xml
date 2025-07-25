@@ -23,14 +23,14 @@
         <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <result column="is_deleted" property="isDeleted" jdbcType="TINYINT"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
     </resultMap>
 
     <!-- 基础字段（无连表字段） -->
     <sql id="Base_Column_List">
         id, comment_type, target_id, parent_comment_id, root_comment_id, content,
         user_id, reply_to_user_id, status, like_count, reply_count, is_pinned, is_hot,
-        ip_address, device_info, create_time, update_time, is_deleted
+        ip_address, device_info, create_time, update_time, deleted
     </sql>
 
     <!-- 分页查询评论列表（单表查询，无JOIN） -->
@@ -38,7 +38,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
         <if test="commentType != null">
             AND comment_type = #{commentType}
         </if>
@@ -69,7 +69,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND target_id = #{targetId}
           AND comment_type = #{commentType}
         <if test="status != null">
@@ -82,7 +82,7 @@
     <select id="countComments" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND target_id = #{targetId}
           AND comment_type = #{commentType}
         <if test="status != null">
@@ -98,7 +98,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND user_id = #{userId}
         <if test="commentType != null">
             AND comment_type = #{commentType}
@@ -114,7 +114,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND target_id = #{targetId}
           AND comment_type = #{commentType}
           AND status = 'NORMAL'
@@ -129,7 +129,7 @@
         SET reply_count = reply_count + #{increment},
             update_time = NOW()
         WHERE id = #{commentId}
-          AND is_deleted = 0
+          AND deleted = 0
     </update>
 
     <!-- 批量更新点赞数（冗余字段更新，避免连表） -->
@@ -138,7 +138,7 @@
         SET like_count = like_count + #{increment},
             update_time = NOW()
         WHERE id = #{commentId}
-          AND is_deleted = 0
+          AND deleted = 0
     </update>
 
     <!-- 查询子评论列表（单表查询，无JOIN） -->
@@ -146,7 +146,7 @@
         SELECT
         <include refid="Base_Column_List"/>
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND parent_comment_id = #{parentCommentId}
           AND status = 'NORMAL'
         ORDER BY create_time ASC
@@ -161,7 +161,7 @@
             COUNT(*) as totalComments,
             MAX(create_time) as lastCommentTime
         FROM t_comment
-        WHERE is_deleted = 0
+        WHERE deleted = 0
           AND target_id = #{targetId}
           AND comment_type = #{commentType}
           AND status = 'NORMAL'

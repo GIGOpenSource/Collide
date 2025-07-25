@@ -38,12 +38,19 @@ public class FollowStatistics {
     /**
      * 创建时间
      */
-    @TableField(value = "created_time", fill = FieldFill.INSERT)
-    private LocalDateTime createTime;
+    @TableField("created_time")
+    private LocalDateTime createdTime;
 
     /**
      * 更新时间
      */
-    @TableField(value = "updated_time", fill = FieldFill.INSERT_UPDATE)
-    private LocalDateTime updateTime;
+    @TableField("updated_time")
+    private LocalDateTime updatedTime;
+
+    /**
+     * 逻辑删除标记
+     */
+    @TableLogic
+    @TableField("deleted")
+    private Integer deleted;
 } 

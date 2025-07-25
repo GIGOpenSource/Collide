@@ -92,7 +92,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             socialPost.setViewCount(0L);
             socialPost.setFavoriteCount(0L);
             socialPost.setHotScore(0.0);
-            socialPost.setPublishTime(LocalDateTime.now());
+            socialPost.setPublishedTime(LocalDateTime.now());
 
             // 3. 保存动态（单表插入）
             int result = socialPostMapper.insert(socialPost);
@@ -512,9 +512,9 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
         postInfo.setFavoriteCount(post.getFavoriteCount());
         
         // 时间信息
-        postInfo.setCreateTime(post.getCreateTime());
-        postInfo.setUpdateTime(post.getUpdateTime());
-        postInfo.setPublishTime(post.getPublishTime());
+        postInfo.setCreateTime(post.getCreatedTime());
+        postInfo.setUpdateTime(post.getUpdatedTime());
+        postInfo.setPublishTime(post.getPublishedTime());
         
         // 权限信息
         if (currentUserId != null) {

@@ -2,87 +2,93 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.favorite.infrastructure.mapper.FavoriteMapper">
 
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.favorite.domain.entity.Favorite">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="target_id" property="targetId" jdbcType="BIGINT"/>
+        <result column="target_type" property="targetType" jdbcType="VARCHAR"/>
+        <result column="favorite_type" property="favoriteType" jdbcType="TINYINT"/>
+        <result column="folder_id" property="folderId" jdbcType="BIGINT"/>
+        <result column="folder_name" property="folderName" jdbcType="VARCHAR"/>
+        <result column="tags" property="tags" jdbcType="VARCHAR"/>
+        <result column="notes" property="notes" jdbcType="VARCHAR"/>
+        <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
+        <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, target_id, target_type, favorite_type, folder_id, folder_name, 
+        tags, notes, ip_address, device_info, created_time, updated_time, deleted
+    </sql>
+
     <!-- 分页查询用户收藏列表 -->
-    <select id="selectUserFavoritePage" resultType="com.gig.collide.favorite.domain.entity.Favorite">
-        SELECT 
-            favorite_id,
-            favorite_type,
-            target_id,
-            user_id,
-            folder_id,
-            status,
-            remark,
-            favorite_time,
-            target_title,
-            target_cover,
-            target_author_id,
-            target_author_name,
-            target_author_avatar,
-            target_publish_time,
-            target_summary,
-            create_time,
-            update_time,
-            version
-        FROM collide_favorite
+    <select id="selectUserFavoritePage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_favorite
         WHERE user_id = #{userId}
-        AND is_deleted = 0
-        <if test="favoriteType != null">
-            AND favorite_type = #{favoriteType}
+        AND deleted = 0
+        <if test="targetType != null">
+            AND target_type = #{targetType}
         </if>
         <if test="folderId != null">
             AND folder_id = #{folderId}
         </if>
-        <if test="status != null">
-            AND status = #{status}
+        <if test="favoriteType != null">
+            AND favorite_type = #{favoriteType}
         </if>
-        ORDER BY favorite_time DESC
+        ORDER BY created_time DESC
     </select>
 
     <!-- 检查是否已收藏 -->
     <select id="selectFavoriteId" resultType="java.lang.Long">
-        SELECT favorite_id
-        FROM collide_favorite
+        SELECT id
+        FROM t_favorite
         WHERE user_id = #{userId}
-        AND favorite_type = #{favoriteType}
+        AND target_type = #{targetType}
         AND target_id = #{targetId}
-        AND status = 'NORMAL'
-        AND is_deleted = 0
+        AND favorite_type = 1
+        AND deleted = 0
         LIMIT 1
     </select>
 
     <!-- 统计用户收藏数量 -->
     <select id="countUserFavorites" resultType="java.lang.Long">
         SELECT COUNT(1)
-        FROM collide_favorite
+        FROM t_favorite
         WHERE user_id = #{userId}
-        AND status = 'NORMAL'
-        AND is_deleted = 0
-        <if test="favoriteType != null">
-            AND favorite_type = #{favoriteType}
+        AND favorite_type = 1
+        AND deleted = 0
+        <if test="targetType != null">
+            AND target_type = #{targetType}
         </if>
     </select>
 
     <!-- 统计目标被收藏数量 -->
     <select id="countTargetFavorites" resultType="java.lang.Long">
         SELECT COUNT(1)
-        FROM collide_favorite
-        WHERE favorite_type = #{favoriteType}
+        FROM t_favorite
+        WHERE target_type = #{targetType}
         AND target_id = #{targetId}
-        AND status = 'NORMAL'
-        AND is_deleted = 0
+        AND favorite_type = 1
+        AND deleted = 0
     </select>
 
     <!-- 批量更新收藏状态 -->
     <update id="batchUpdateStatus">
-        UPDATE collide_favorite
-        SET status = #{status},
-            update_time = NOW()
+        UPDATE t_favorite
+        SET favorite_type = #{favoriteType},
+            updated_time = NOW()
         WHERE user_id = #{userId}
         AND target_id IN
         <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
             #{targetId}
         </foreach>
-        AND is_deleted = 0
+        AND deleted = 0
     </update>
 
 </mapper> 

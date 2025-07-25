@@ -38,4 +38,12 @@ public interface UserMapper extends BaseMapper<User> {
      * @return 用户信息
      */
     User selectByPhone(@Param("phone") String phone);
+
+    /**
+     * 根据用户ID查询用户
+     *
+     * @param id 用户ID
+     * @return 用户信息
+     */
+    User selectById(@Param("id") Long id);
 } 

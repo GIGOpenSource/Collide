@@ -112,6 +112,13 @@ public class UserProfile {
     private LocalDateTime updateTime;
 
     /**
+     * 逻辑删除标记
+     */
+    @TableLogic
+    @TableField("deleted")
+    private Integer deleted;
+
+    /**
      * 性别枚举
      */
     public enum Gender {

@@ -118,6 +118,12 @@ public class Content {
     private Long likeCount;
 
     /**
+     * 点踩数
+     */
+    @TableField("dislike_count")
+    private Long dislikeCount;
+
+    /**
      * 评论数
      */
     @TableField("comment_count")
@@ -272,6 +278,7 @@ public class Content {
         return (likeCount != null ? likeCount : 0L)
              + (commentCount != null ? commentCount : 0L)
              + (shareCount != null ? shareCount : 0L)
-             + (favoriteCount != null ? favoriteCount : 0L);
+             + (favoriteCount != null ? favoriteCount : 0L)
+             - (dislikeCount != null ? dislikeCount : 0L);
     }
 } 

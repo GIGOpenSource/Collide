@@ -126,6 +126,6 @@ public class Comment {
      * 逻辑删除标记
      */
     @TableLogic
-    @TableField("is_deleted")
-    private Integer isDeleted;
+    @TableField("deleted")
+    private Integer deleted;
 } 

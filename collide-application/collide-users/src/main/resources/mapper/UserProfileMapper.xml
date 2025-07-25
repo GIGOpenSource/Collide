@@ -20,13 +20,14 @@
         <result column="blogger_approve_time" property="bloggerApproveTime" />
         <result column="create_time" property="createTime" />
         <result column="update_time" property="updateTime" />
+        <result column="deleted" property="deleted" />
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
         id, user_id, bio, birthday, gender, location, follower_count, following_count, 
         content_count, like_count, vip_expire_time, blogger_status, blogger_apply_time, 
-        blogger_approve_time, create_time, update_time
+        blogger_approve_time, create_time, update_time, deleted
     </sql>
 
     <!-- 根据用户ID查询用户扩展信息 -->
@@ -35,12 +36,15 @@
         <include refid="Base_Column_List" />
         FROM t_user_profile
         WHERE user_id = #{userId}
+        AND deleted = 0
     </select>
 
     <!-- 根据用户ID删除用户扩展信息 -->
-    <delete id="deleteByUserId">
-        DELETE FROM t_user_profile WHERE user_id = #{userId}
-    </delete>
+    <update id="deleteByUserId">
+        UPDATE t_user_profile 
+        SET deleted = 1, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
 
     <!-- 更新用户统计信息 -->
     <update id="updateCountField">
@@ -48,6 +52,7 @@
         SET ${field} = ${field} + #{incrementValue}, 
             update_time = NOW()
         WHERE user_id = #{userId}
+        AND deleted = 0
     </update>
 
 </mapper> 

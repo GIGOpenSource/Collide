@@ -152,6 +152,22 @@ public interface ContentMapper extends BaseMapper<Content> {
     int decrementLikeCount(@Param("contentId") Long contentId);
 
     /**
+     * 增加点踩数
+     *
+     * @param contentId 内容ID
+     * @return 影响行数
+     */
+    int incrementDislikeCount(@Param("contentId") Long contentId);
+
+    /**
+     * 减少点踩数
+     *
+     * @param contentId 内容ID
+     * @return 影响行数
+     */
+    int decrementDislikeCount(@Param("contentId") Long contentId);
+
+    /**
      * 增加评论数
      *
      * @param contentId 内容ID

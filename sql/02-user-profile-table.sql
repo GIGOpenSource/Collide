@@ -22,10 +22,12 @@ CREATE TABLE IF NOT EXISTS `t_user_profile` (
   `blogger_approve_time` datetime DEFAULT NULL COMMENT '博主认证时间',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  `deleted` tinyint DEFAULT '0' COMMENT '逻辑删除：0-未删除，1-已删除',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_user_id` (`user_id`),
   KEY `idx_blogger_status` (`blogger_status`),
-  KEY `idx_create_time` (`create_time`)
+  KEY `idx_create_time` (`create_time`),
+  KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户扩展信息表';
 
 -- 为现有用户创建默认扩展信息
