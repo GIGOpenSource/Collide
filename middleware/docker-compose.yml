@@ -23,6 +23,9 @@ services:
       interval: 5s
       timeout: 10s
       retries: 10
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.10
 
   # MinIO
   minio:
@@ -43,6 +46,9 @@ services:
       timeout: 20s
       retries: 3
     restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.20
 
   # Nacos
   nacos:
@@ -59,6 +65,9 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.30
 
   # Redis
   redis:
@@ -74,89 +83,16 @@ services:
       - ${PWD}/redis/data:/data:rw
     command:
       /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
-
-#  es:
-#    container_name: es
-#    image: elasticsearch:8.13.0
-#    environment:
-#      - discovery.type=single-node
-#      - ELASTIC_PASSWORD=123456
-#      - TZ=Asia/Shanghai
-#    ports:
-#      - "9200:9200"
-#      - "9300:9300"
-#    mem_limit: 2g
-#    volumes:
-#      - ${PWD}/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-#      - ${PWD}/es/data:/usr/share/elasticsearch/data
-#      - ${PWD}/es/plugins:/usr/share/elasticsearch/plugins
-#    restart: always
-#
-#  xxljob:
-#    image: xuxueli/xxl-job-admin:2.4.1
-#    container_name: xxl-job
-#    volumes:
-#      - ${PWD}/xxl-job/config/application.properties:/application.properties
-#    ports:
-#      - "8881:8080"
-#    restart: always
-#    depends_on:
-#      - mysql
-
-  # RocketMQ
-  namesrv:
-    image: apache/rocketmq:5.2.0
-    container_name: rmqnamesrv
-    ports:
-      - 9876:9876
-    volumes:
-      - ${PWD}/rocketMQ/data/namesrv/logs:/home/rocketmq/logs
-    command: sh mqnamesrv -n 172.16.0.104:9876
-
-  broker:
-    image: apache/rocketmq:5.2.0
-    container_name: rmqbroker
-    ports:
-      - 10909:10909
-      - 10911:10911
-      - 10912:10912
-    volumes:
-      - ${PWD}/rocketMQ/data/broker/logs:/home/rocketmq/logs
-      - ${PWD}/rocketMQ/data/broker/store:/home/rocketmq/store
-      - ${PWD}/rocketMQ/data/broker/conf/broker.conf:/home/rocketmq/rocketmq-5.2.0/conf/broker.conf
-    command: sh mqbroker -n 172.16.0.104:9876  -c /home/rocketmq/rocketmq-5.2.0/conf/broker.conf autoCreateTopicEnable=true
-    depends_on:
-      - namesrv
-
-  rocketmq-dashboard:
-    image: apacherocketmq/rocketmq-dashboard:latest
-    container_name: rocketmq-dashboard
-    environment:
-      - JAVA_OPTS=-Drocketmq.namesrv.addr=172.16.0.104:9876
-    ports:
-      - "8080:8080"
-    restart: always
-    depends_on:
-      - namesrv
-      - broker
-
-#  kibana:
-#    image: kibana:8.13.0
-#    container_name: kibana
-#    restart: always
-#    ports:
-#      - 5601:5601
-#    volumes:
-#      - ${PWD}/kibana/conf/kibana.yml:/usr/share/kibana/config/kibana.yml
-#    depends_on:
-#      - es
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.40
 
   seata-server:
     image: seataio/seata-server:2.0.0
     container_name: seata-server
     environment:
       - STORE_MODE=db
-      - SEATA_IP=172.16.0.104
+      - SEATA_IP=172.20.1.50
       - SEATA_PORT=8091
     volumes:
       - /etc/localtime:/etc/localtime:ro
@@ -166,15 +102,73 @@ services:
       - "7091:7091"
       - "8091:8091"
     restart: always
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.50
 
   sentinel-dashboard:
     image: javajianghu/sentinel-dashboard:v1.8.8
     container_name: sentinel-dashboard
     environment:
-      - dashboard.server=172.16.0.104:8888
+      - dashboard.server=172.20.1.60:8888
     ports:
       - "8888:8888"
     restart: always
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.60
+
+#  # RocketMQ NameServer
+#  rocketmq-nameserver:
+#    image: apache/rocketmq:5.1.4
+#    container_name: rocketmq-nameserver
+#    ports:
+#      - "9876:9876"
+#    environment:
+#      - JAVA_OPT=-server -Xms256m -Xmx256m
+#    command: ["sh", "mqnamesrv"]
+#    restart: always
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.1.70
+#
+#  # RocketMQ Broker
+#  rocketmq-broker:
+#    image: apache/rocketmq:5.1.4
+#    container_name: rocketmq-broker
+#    ports:
+#      - "10909:10909"
+#      - "10911:10911"
+#    environment:
+#      - JAVA_OPT=-server -Xms256m -Xmx256m
+#      - NAMESRV_ADDR=172.20.1.70:9876
+#    command: ["sh", "mqbroker", "-n", "172.20.1.70:9876", "-c", "/home/rocketmq/rocketmq-5.1.4/conf/broker.conf"]
+#    depends_on:
+#      - rocketmq-nameserver
+#    restart: always
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.1.71
+#
+#  # Elasticsearch
+#  elasticsearch:
+#    image: elasticsearch:8.11.0
+#    container_name: elasticsearch
+#    environment:
+#      - discovery.type=single-node
+#      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+#      - xpack.security.enabled=false
+#      - xpack.security.enrollment.enabled=false
+#    ports:
+#      - "9200:9200"
+#      - "9300:9300"
+#    volumes:
+#      - ${PWD}/es/data:/usr/share/elasticsearch/data
+#      - ${PWD}/es/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
+#    restart: always
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.1.80
 
   nginx:
     image: nginx:latest
@@ -185,3 +179,8 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf
     restart: unless-stopped
+
+# 使用外部网络（由init-network.sh脚本创建）
+networks:
+  collide-network:
+    external: true

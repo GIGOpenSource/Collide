@@ -6,19 +6,27 @@ services:
       dockerfile: collide-gateway/Dockerfile
     image: collide/gateway:latest
     container_name: collide-gateway
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     ports:
       - "9501:9501"  # Gateway端口映射
     environment:
       - SERVER_PORT=9501
       - JAVA_OPTS=-Xms256m -Xmx512m -server
+      # 配置Nacos地址为固定IP
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=172.20.1.30:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=172.20.1.30:8848
+      # 配置Redis地址
+      - SPRING_REDIS_HOST=172.20.1.40
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=123456
     restart: unless-stopped
     depends_on:
       - collide-application
     labels:
       - "com.collide.service=gateway"
       - "com.collide.version=1.0.0"
+    networks:
+      collide-network:
+        ipv4_address: 172.20.2.10
 
   # Auth 服务
   collide-auth:
@@ -27,20 +35,30 @@ services:
       dockerfile: collide-auth/Dockerfile
     image: collide/auth:latest
     container_name: collide-auth
-    # 改为端口映射模式
     ports:
       - "9502:9502"  # Auth端口映射
-    # 添加host映射
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       - SERVER_PORT=9502
       - JAVA_OPTS=-Xms256m -Xmx512m -server
+      # 配置Nacos地址为固定IP
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=172.20.1.30:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=172.20.1.30:8848
+      # 配置数据库地址
+      - SPRING_DATASOURCE_URL=jdbc:mysql://172.20.1.10:3306/collide_auth?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=test_user
+      - SPRING_DATASOURCE_PASSWORD=test123
+      # 配置Redis地址
+      - SPRING_REDIS_HOST=172.20.1.40
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=123456
     depends_on:
       - collide-application
     labels:
       - "com.collide.service=auth"
       - "com.collide.version=1.0.0"
+    networks:
+      collide-network:
+        ipv4_address: 172.20.2.20
 
   # Application 服务（业务应用聚合）
   collide-application:
@@ -49,16 +67,42 @@ services:
       dockerfile: collide-application/Dockerfile
     image: collide/application:latest
     container_name: collide-application
-    # 改为端口映射模式
     ports:
       - "9503:9503"  # Application端口映射
-    # 添加host映射
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     environment:
       - SERVER_PORT=9503
       - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      # 配置Nacos地址为固定IP
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=172.20.1.30:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=172.20.1.30:8848
+      # 配置数据库地址
+      - SPRING_DATASOURCE_URL=jdbc:mysql://172.20.1.10:3306/collide_business?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=test_user
+      - SPRING_DATASOURCE_PASSWORD=test123
+      # 配置Redis地址
+      - SPRING_REDIS_HOST=172.20.1.40
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=123456
+      # 配置RocketMQ地址
+      - ROCKETMQ_NAME_SERVER=172.20.1.70:9876
+      # 配置Elasticsearch地址
+      - SPRING_ELASTICSEARCH_URIS=http://172.20.1.80:9200
+      # 配置Seata地址
+      - SEATA_REGISTRY_NACOS_SERVER_ADDR=172.20.1.30:8848
+      - SEATA_CONFIG_NACOS_SERVER_ADDR=172.20.1.30:8848
+      # 配置MinIO地址
+      - MINIO_ENDPOINT=http://172.20.1.20:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
     restart: unless-stopped
     labels:
       - "com.collide.service=application"
       - "com.collide.version=1.0.0"
+    networks:
+      collide-network:
+        ipv4_address: 172.20.2.30
+
+# 使用外部网络
+networks:
+  collide-network:
+    external: true
