@@ -31,7 +31,7 @@
     <delete id="deleteExpiredByUserId">
         DELETE FROM t_search_history 
         WHERE user_id = #{userId}
-          AND create_time < #{beforeTime}
+          AND create_time &lt; #{beforeTime}
     </delete>
 
     <!-- 清空用户搜索历史 -->
