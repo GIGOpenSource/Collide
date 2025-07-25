@@ -12,6 +12,9 @@ import com.gig.collide.follow.infrastructure.mapper.FollowMapper;
 import com.gig.collide.follow.infrastructure.mapper.FollowStatisticsMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +46,12 @@ public class FollowDomainService {
      * @return 关注记录
      */
     @Transactional(rollbackFor = Exception.class)
+    @Caching(evict = {
+        @CacheEvict(value = "follow:relation", key = "'following:' + #followerUserId + ':' + #followedUserId"),
+        @CacheEvict(value = "follow:relation", key = "'following:' + #followedUserId + ':' + #followerUserId"), // 清除反向关系缓存
+        @CacheEvict(value = "follow:statistics", key = "#followerUserId"),
+        @CacheEvict(value = "follow:statistics", key = "#followedUserId")
+    })
     public Follow followUser(Long followerUserId, Long followedUserId, FollowType followType) {
         // 验证参数
         validateFollowParams(followerUserId, followedUserId);
@@ -100,6 +109,12 @@ public class FollowDomainService {
      * @return 是否成功
      */
     @Transactional(rollbackFor = Exception.class)
+    @Caching(evict = {
+        @CacheEvict(value = "follow:relation", key = "'following:' + #followerUserId + ':' + #followedUserId"),
+        @CacheEvict(value = "follow:relation", key = "'following:' + #followedUserId + ':' + #followerUserId"), // 清除反向关系缓存
+        @CacheEvict(value = "follow:statistics", key = "#followerUserId"),
+        @CacheEvict(value = "follow:statistics", key = "#followedUserId")
+    })
     public boolean unfollowUser(Long followerUserId, Long followedUserId) {
         // 验证参数
         validateFollowParams(followerUserId, followedUserId);
@@ -132,7 +147,9 @@ public class FollowDomainService {
      * @param followedUserId 被关注者用户ID
      * @return 是否关注
      */
+    @Cacheable(value = "follow:relation", key = "'following:' + #followerUserId + ':' + #followedUserId")
     public boolean isFollowing(Long followerUserId, Long followedUserId) {
+        log.debug("从数据库查询关注关系，关注者：{}，被关注者：{}", followerUserId, followedUserId);
         Follow follow = followMapper.selectFollowRelation(
             followerUserId, followedUserId, FollowStatus.NORMAL);
         return follow != null;
@@ -205,7 +222,9 @@ public class FollowDomainService {
      * @param userId 用户ID
      * @return 关注统计
      */
+    @Cacheable(value = "follow:statistics", key = "#userId")
     public FollowStatistics getFollowStatistics(Long userId) {
+        log.debug("从数据库查询关注统计，用户ID：{}", userId);
         FollowStatistics statistics = followStatisticsMapper.selectById(userId);
         if (statistics == null) {
             // 如果不存在统计记录，则创建一个

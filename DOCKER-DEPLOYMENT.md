@@ -40,24 +40,41 @@
 - Docker (20.10+)
 - Docker Compose (2.0+)
 
-### 2. 创建网络
+### 2. 创建网络并初始化数据库
 
-在项目根目录下运行网络初始化脚本：
+在项目根目录下运行网络初始化脚本，脚本会自动：
+- 创建Docker自定义网络
+- 检测MySQL容器状态
+- 自动创建collide相关数据库
+- 按顺序导入所有SQL文件
 
 **Linux/macOS:**
 ```bash
 # 赋予执行权限
 chmod +x scripts/init-network.sh
 
-# 运行脚本
+# 运行脚本（会询问是否初始化数据库）
 ./scripts/init-network.sh
 ```
 
 **Windows:**
 ```cmd
-# 运行批处理脚本
+# 运行批处理脚本（会询问是否初始化数据库）
 scripts\init-network.bat
 ```
+
+**数据库初始化功能包括：**
+- 自动创建数据库：`collide_auth`、`collide_business`、`nacos_mysql`
+- 按顺序导入SQL文件：
+  1. `01-init-database.sql` - 初始化数据库结构
+  2. `nacos-mysql.sql` - Nacos配置中心表
+  3. `02-auth-tables.sql` - 认证相关表
+  4. `02-user-profile-table.sql` - 用户配置表
+  5. `collide-business.sql` - 业务核心表
+  6. `03-fix-status-field.sql` - 状态字段修复
+  7. `04-performance-optimization.sql` - 性能优化脚本
+  8. `06-search-tables.sql` - 搜索功能表
+  9. `07-category-tag-system.sql` - 分类标签系统表
 
 ### 3. 启动中间件服务
 
@@ -111,19 +128,15 @@ docker-compose ps
 - **Seata**: `172.20.1.50:8091`
 - **MinIO**: `172.20.1.20:9000`
 
-### 数据库初始化
+### 数据库自动初始化
 
-中间件启动后，需要创建业务数据库：
+如果在步骤2中选择了数据库初始化，所有数据库和表已自动创建。如果跳过了初始化，可以手动运行：
 
-```sql
--- 连接到MySQL (172.20.1.10:3306)
--- 用户名: test_user, 密码: test123
-
-CREATE DATABASE IF NOT EXISTS collide_auth 
-CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-CREATE DATABASE IF NOT EXISTS collide_business 
-CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```bash
+# 手动运行数据库初始化（确保MySQL容器已启动）
+./scripts/init-network.sh  # Linux/macOS
+# 或
+scripts\init-network.bat   # Windows
 ```
 
 ## 📊 服务监控
