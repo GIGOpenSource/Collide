@@ -54,7 +54,11 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- skywalking监控暂时移除，简化网关配置 -->
+        <!-- SkyWalking 链路追踪 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-skywalking</artifactId>
+        </dependency>
 
         <!-- Sa-Token 权限认证 -->
         <dependency>

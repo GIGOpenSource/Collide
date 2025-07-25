@@ -51,6 +51,12 @@
 
         <!-- sensitive日志处理已移除，简化配置 -->
 
+        <!-- SkyWalking 链路追踪 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-skywalking</artifactId>
+        </dependency>
+
         <!-- sensitive-core已移除，简化依赖管理 -->
 
         <!--    spring-web    -->
