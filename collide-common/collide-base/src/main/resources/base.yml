@@ -43,10 +43,10 @@ collide:
       url: 172.20.1.71:9876
     dubbo:
       nacos:
-        namespace: b8bca988-2d8a-4d2b-a9a0-c26127e345bc
+        namespace: 9f415091-0171-449a-908c-302d5fbad355
         group: dubbo
     seata:
       nacos:
         data-id: seataServer.Properties
-        group: seata
-        namespace: 7ebdfb9b-cd9d-4a5e-8969-1ada0bb9ba04
+        group: seata-server
+        namespace: 806e806f-e916-411c-b4ba-9682ae44b47e
