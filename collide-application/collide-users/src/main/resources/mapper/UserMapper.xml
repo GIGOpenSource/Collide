@@ -27,39 +27,43 @@
     </sql>
 
     <!-- 根据用户名查询用户 -->
-    <select id="selectByUsername" parameterType="string" resultMap="BaseResultMap">
+    <select id="selectByUsername" parameterType="string" resultMap="BaseResultMap" useCache="true" flushCache="false">
         SELECT
         <include refid="Base_Column_List" />
-        FROM t_user
+        FROM t_user USE INDEX (uk_username)
         WHERE username = #{username}
         AND deleted = 0
+        LIMIT 1
     </select>
 
     <!-- 根据邮箱查询用户 -->
-    <select id="selectByEmail" parameterType="string" resultMap="BaseResultMap">
+    <select id="selectByEmail" parameterType="string" resultMap="BaseResultMap" useCache="true" flushCache="false">
         SELECT
         <include refid="Base_Column_List" />
-        FROM t_user
+        FROM t_user USE INDEX (uk_email)
         WHERE email = #{email}
         AND deleted = 0
+        LIMIT 1
     </select>
 
     <!-- 根据手机号查询用户 -->
-    <select id="selectByPhone" parameterType="string" resultMap="BaseResultMap">
+    <select id="selectByPhone" parameterType="string" resultMap="BaseResultMap" useCache="true" flushCache="false">
         SELECT
         <include refid="Base_Column_List" />
-        FROM t_user
+        FROM t_user USE INDEX (uk_phone)
         WHERE phone = #{phone}
         AND deleted = 0
+        LIMIT 1
     </select>
 
     <!-- 根据用户ID查询用户 -->
-    <select id="selectById" parameterType="long" resultMap="BaseResultMap">
+    <select id="selectById" parameterType="long" resultMap="BaseResultMap" useCache="true" flushCache="false">
         SELECT
         <include refid="Base_Column_List" />
-        FROM t_user
+        FROM t_user USE INDEX (PRIMARY)
         WHERE id = #{id}
         AND deleted = 0
+        LIMIT 1
     </select>
 
 </mapper> 

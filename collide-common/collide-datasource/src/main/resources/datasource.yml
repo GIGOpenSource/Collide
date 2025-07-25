@@ -8,7 +8,7 @@ spring:
     # 主数据源配置
     primary:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${collide.turbo.mysql.host}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&defaultAuthenticationPlugin=mysql_native_password
+      url: jdbc:mysql://${collide.turbo.mysql.host}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&nullCatalogMeansCurrent=true&useServerPrepStmts=true&cachePrepStmts=true&cacheResultSetMetadata=true&cacheServerConfiguration=true&elideSetAutoCommits=true&maintainTimeStats=false
       username: ${collide.turbo.mysql.username}
       password: ${collide.turbo.mysql.password}
       
@@ -109,9 +109,9 @@ mybatis-plus:
     # 默认执行器类型
     default-executor-type: simple
     # 默认语句超时时间
-    default-statement-timeout: 30
+    default-statement-timeout: 10  # 减少超时时间
     # 默认获取结果集超时时间
-    default-fetch-size: 100
+    default-fetch-size: 50         # 减少批量大小
     # 安全行边界
     safe-row-bounds-enabled: false
     # 安全结果处理
