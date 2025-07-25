@@ -8,7 +8,7 @@ spring:
     # 主数据源配置
     primary:
       driver-class-name: com.mysql.cj.jdbc.Driver
-      url: jdbc:mysql://${collide.turbo.mysql.host}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true
+      url: jdbc:mysql://${collide.turbo.mysql.host}:${collide.turbo.mysql.port}/${collide.turbo.mysql.database}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true&rewriteBatchedStatements=true&defaultAuthenticationPlugin=mysql_native_password
       username: ${collide.turbo.mysql.username}
       password: ${collide.turbo.mysql.password}
       
