@@ -15,6 +15,7 @@ import com.gig.collide.comment.domain.service.CommentDomainService;
 import com.gig.collide.base.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
