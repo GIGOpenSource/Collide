@@ -30,11 +30,24 @@ springdoc:
   cache:
     disabled: false
   
-  # 路径匹配配置
-  paths-to-match: /api/**
+  # 路径匹配配置 - 包含所有API路径
+  paths-to-match: 
+    - /api/**
+    - /health/**
+    - /actuator/**
   
-  # 包扫描配置  
-  packages-to-scan: com.gig.collide
+  # 包扫描配置 - 包含所有控制器包
+  packages-to-scan: 
+    - com.gig.collide.users.controller
+    - com.gig.collide.follow.controller
+    - com.gig.collide.content.controller
+    - com.gig.collide.comment.controller
+    - com.gig.collide.like.controller
+    - com.gig.collide.favorite.controller
+    - com.gig.collide.social.controller
+    - com.gig.collide.business.controller
+    - com.gig.collide.business.infrastructure.controller
+    - com.gig.collide.auth.controller
   
   # 默认响应配置
   default-consumes-media-type: application/json

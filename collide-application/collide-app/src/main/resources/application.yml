@@ -8,6 +8,20 @@ spring:
 server:
   port: 9503
 
+# Swagger配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    try-it-out-enabled: true
+  paths-to-match: 
+    - /api/**
+    - /health/**
+    - /actuator/**
+
 dubbo:
   application:
     qos-port: 33334
