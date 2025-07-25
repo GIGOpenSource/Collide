@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * @author Collide
  * @since 1.0.0
  */
-@DubboService
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 @Slf4j
 public class LikeFacadeServiceImpl implements LikeFacadeService {

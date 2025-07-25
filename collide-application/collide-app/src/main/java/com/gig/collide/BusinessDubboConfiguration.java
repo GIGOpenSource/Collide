@@ -6,6 +6,11 @@ import com.gig.collide.api.comment.service.CommentFacadeService;
 import com.gig.collide.api.content.service.ContentFacadeService;
 import com.gig.collide.api.follow.service.FollowFacadeService;
 import com.gig.collide.api.user.service.UserFacadeService;
+import com.gig.collide.api.like.service.LikeFacadeService;
+import com.gig.collide.api.auth.service.AuthFacadeService;
+import com.gig.collide.api.category.CategoryFacadeService;
+import com.gig.collide.api.tag.TagFacadeService;
+import com.gig.collide.api.search.service.SearchFacadeService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -43,6 +48,21 @@ public class BusinessDubboConfiguration {
 
     @DubboReference(version = "1.0.0")
     private SocialFacadeService socialFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private LikeFacadeService likeFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private AuthFacadeService authFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private CategoryFacadeService categoryFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private TagFacadeService tagFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private SearchFacadeService searchFacadeService;
 
     /**
      * 用户服务 Bean 配置
@@ -87,5 +107,50 @@ public class BusinessDubboConfiguration {
     @ConditionalOnMissingBean(name = "socialFacadeService")
     public SocialFacadeService socialFacadeService() {
         return socialFacadeService;
+    }
+
+    /**
+     * 点赞服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "likeFacadeService")
+    public LikeFacadeService likeFacadeService() {
+        return likeFacadeService;
+    }
+
+    /**
+     * 认证服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "authFacadeService")
+    public AuthFacadeService authFacadeService() {
+        return authFacadeService;
+    }
+
+    /**
+     * 分类服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "categoryFacadeService")
+    public CategoryFacadeService categoryFacadeService() {
+        return categoryFacadeService;
+    }
+
+    /**
+     * 标签服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "tagFacadeService")
+    public TagFacadeService tagFacadeService() {
+        return tagFacadeService;
+    }
+
+    /**
+     * 搜索服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "searchFacadeService")
+    public SearchFacadeService searchFacadeService() {
+        return searchFacadeService;
     }
 }

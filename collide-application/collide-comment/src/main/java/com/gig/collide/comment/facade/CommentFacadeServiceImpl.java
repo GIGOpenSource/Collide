@@ -30,6 +30,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Service
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class CommentFacadeServiceImpl implements CommentFacadeService {
 
