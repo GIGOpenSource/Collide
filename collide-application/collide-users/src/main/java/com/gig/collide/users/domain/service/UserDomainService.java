@@ -12,11 +12,13 @@ import com.gig.collide.base.exception.BizException;
 import com.gig.collide.users.infrastructure.exception.UserErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Caching;
-import org.springframework.cache.CacheManager;
+import com.alicp.jetcache.anno.Cached;
+import com.alicp.jetcache.anno.CacheInvalidate;
+import com.alicp.jetcache.anno.CacheRefresh;
+import com.alicp.jetcache.anno.CacheType;
+import com.gig.collide.cache.constant.CacheConstant;
+
+import java.util.concurrent.TimeUnit;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +44,6 @@ public class UserDomainService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final PasswordEncoder passwordEncoder;
-    private final CacheManager cacheManager;
 
     /**
      * 根据ID查询用户信息
@@ -51,7 +52,14 @@ public class UserDomainService {
      * @return 用户实体
      * @throws UserErrorCode 用户不存在时抛出
      */
-    @Cacheable(value = "user:info", key = "#userId", unless = "#result == null")
+    @Cached(name = CacheConstant.USER_INFO_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#userId", 
+            expire = CacheConstant.USER_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
+    @CacheRefresh(refresh = CacheConstant.USER_CACHE_EXPIRE, timeUnit = TimeUnit.MINUTES)
     public User getUserById(Long userId) {
         log.debug("从数据库查询用户信息，用户ID：{}", userId);
         return userRepository.findById(userId)
@@ -65,7 +73,13 @@ public class UserDomainService {
      * @return 用户实体
      * @throws BizException 用户不存在时抛出
      */
-    @Cacheable(value = "user:username", key = "#username", unless = "#result == null")
+    @Cached(name = CacheConstant.USER_USERNAME_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#username", 
+            expire = CacheConstant.USER_QUERY_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
     public User getUserByUsername(String username) {
         log.debug("从数据库根据用户名查询用户信息：{}", username);
         return userRepository.findByUsername(username)
@@ -79,7 +93,13 @@ public class UserDomainService {
      * @return 用户实体
      * @throws BizException 用户不存在时抛出
      */
-    @Cacheable(value = "user:phone", key = "#phone", unless = "#result == null")
+    @Cached(name = CacheConstant.USER_PHONE_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#phone", 
+            expire = CacheConstant.USER_QUERY_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
     public User getUserByPhone(String phone) {
         log.debug("从数据库根据手机号查询用户信息：{}", phone);
         return userRepository.findByPhone(phone)
@@ -93,7 +113,13 @@ public class UserDomainService {
      * @return 用户实体
      * @throws BizException 用户不存在时抛出
      */
-    @Cacheable(value = "user:email", key = "#email", unless = "#result == null")
+    @Cached(name = CacheConstant.USER_EMAIL_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#email", 
+            expire = CacheConstant.USER_QUERY_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
     public User getUserByEmail(String email) {
         log.debug("从数据库根据邮箱查询用户信息：{}", email);
         return userRepository.findByEmail(email)
@@ -186,14 +212,10 @@ public class UserDomainService {
      * @return 更新后的用户实体
      */
     @Transactional(rollbackFor = Exception.class)
+    @CacheInvalidate(name = CacheConstant.USER_INFO_CACHE, key = "#userId")
+    @CacheInvalidate(name = CacheConstant.USER_PROFILE_CACHE, key = "#userId")
     public User updateUserInfo(Long userId, UserModifyRequest updateRequest) {
-        // 先获取旧的用户信息，用于清除缓存
-        User oldUser = getUserById(userId);
-        String oldUsername = oldUser.getUsername();
-        String oldEmail = oldUser.getEmail();
-        String oldPhone = oldUser.getPhone();
-
-        User user = oldUser;
+        User user = getUserById(userId);
 
         // 更新基础信息
         if (StringUtils.hasText(updateRequest.getNickname())) {
@@ -224,9 +246,6 @@ public class UserDomainService {
 
         // 更新扩展信息
         updateUserProfile(userId, updateRequest);
-
-        // 清除相关缓存
-        clearUserCaches(userId, oldUsername, oldEmail, oldPhone, user.getUsername(), user.getEmail(), user.getPhone());
 
         return user;
     }
@@ -364,7 +383,13 @@ public class UserDomainService {
      * @param userId 用户ID
      * @return 用户扩展信息
      */
-    @Cacheable(value = "user:profile", key = "#userId")
+    @Cached(name = CacheConstant.USER_PROFILE_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#userId", 
+            expire = CacheConstant.USER_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
     public UserProfile getUserProfile(Long userId) {
         log.debug("从数据库查询用户扩展信息，用户ID：{}", userId);
         return userProfileRepository.findByUserId(userId).orElse(null);
@@ -633,82 +658,5 @@ public class UserDomainService {
         return userRepository.existsByPhone(phone);
     }
     
-    /**
-     * 清除用户相关的所有缓存
-     *
-     * @param userId 用户ID
-     * @param oldUsername 旧用户名
-     * @param oldEmail 旧邮箱
-     * @param oldPhone 旧手机号
-     * @param newUsername 新用户名
-     * @param newEmail 新邮箱
-     * @param newPhone 新手机号
-     */
-    private void clearUserCaches(Long userId, String oldUsername, String oldEmail, String oldPhone,
-                                String newUsername, String newEmail, String newPhone) {
-        try {
-            // 清除用户ID缓存
-            clearCache("user:info", userId);
-            clearCache("user:profile", userId);
-            
-            // 清除旧的查询缓存
-            if (oldUsername != null) {
-                clearCache("user:username", oldUsername);
-            }
-            if (oldEmail != null) {
-                clearCache("user:email", oldEmail);
-            }
-            if (oldPhone != null) {
-                clearCache("user:phone", oldPhone);
-            }
-            
-            // 如果信息发生变更，也清除新的查询缓存（预防性清除）
-            if (newUsername != null && !newUsername.equals(oldUsername)) {
-                clearCache("user:username", newUsername);
-            }
-            if (newEmail != null && !newEmail.equals(oldEmail)) {
-                clearCache("user:email", newEmail);
-            }
-            if (newPhone != null && !newPhone.equals(oldPhone)) {
-                clearCache("user:phone", newPhone);
-            }
-            
-            log.info("清除用户缓存完成，用户ID：{}", userId);
-        } catch (Exception e) {
-            log.error("清除用户缓存失败，用户ID：{}", userId, e);
-            // 缓存清除失败不影响业务主流程
-        }
-    }
-    
-    /**
-     * 清除指定缓存
-     *
-     * @param cacheName 缓存名称
-     * @param key 缓存键
-     */
-    private void clearCache(String cacheName, Object key) {
-        try {
-            if (cacheManager.getCache(cacheName) != null) {
-                cacheManager.getCache(cacheName).evict(key);
-                log.debug("清除缓存：{}，键：{}", cacheName, key);
-            }
-        } catch (Exception e) {
-            log.warn("清除缓存失败：{}，键：{}，错误：{}", cacheName, key, e.getMessage());
-        }
-    }
-    
-    /**
-     * 清除用户所有相关缓存（公共方法，供外部调用）
-     *
-     * @param userId 用户ID
-     */
-    public void clearUserAllCaches(Long userId) {
-        try {
-            User user = getUserById(userId);
-            clearUserCaches(userId, user.getUsername(), user.getEmail(), user.getPhone(),
-                           user.getUsername(), user.getEmail(), user.getPhone());
-        } catch (Exception e) {
-            log.error("清除用户所有缓存失败，用户ID：{}", userId, e);
-        }
-    }
+
 } 

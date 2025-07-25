@@ -10,7 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * @author GIG
  */
-@SpringBootApplication(scanBasePackages = "com.gig.collide.users")
+@SpringBootApplication(scanBasePackages = {"com.gig.collide.users", "com.gig.collide.cache"})
 @EnableDubbo
 @MapperScan("com.gig.collide.users.infrastructure.mapper")
 public class CollideUserApplication {

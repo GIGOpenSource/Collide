@@ -12,10 +12,12 @@ import com.gig.collide.content.domain.entity.Content;
 import com.gig.collide.content.infrastructure.mapper.ContentMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
-import org.springframework.cache.annotation.Caching;
+import com.alicp.jetcache.anno.Cached;
+import com.alicp.jetcache.anno.CacheInvalidate;
+import com.alicp.jetcache.anno.CacheType;
+import com.gig.collide.cache.constant.CacheConstant;
+
+import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -82,7 +84,7 @@ public class ContentDomainService {
      * @return 更新后的内容
      */
     @Transactional(rollbackFor = Exception.class)
-    @CacheEvict(value = "content:info", key = "#content.id")
+    @CacheInvalidate(name = CacheConstant.CONTENT_INFO_CACHE, key = "#content.id")
     public Content updateContent(Content content) {
         log.info("更新内容，内容ID：{}", content.getId());
 
@@ -169,10 +171,7 @@ public class ContentDomainService {
      * @return 发布后的内容
      */
     @Transactional(rollbackFor = Exception.class)
-    @Caching(evict = {
-        @CacheEvict(value = "content:info", key = "#contentId"),
-        @CacheEvict(value = "content:hot", allEntries = true) // 发布后可能影响热门内容
-    })
+    @CacheInvalidate(name = CacheConstant.CONTENT_INFO_CACHE, key = "#contentId")
     public Content publishContent(Long contentId, Long publisherId) {
         log.info("发布内容，内容ID：{}，发布者ID：{}", contentId, publisherId);
 
@@ -208,7 +207,13 @@ public class ContentDomainService {
      * @param contentId 内容ID
      * @return 内容对象
      */
-    @Cacheable(value = "content:info", key = "#contentId", unless = "#result == null")
+    @Cached(name = CacheConstant.CONTENT_INFO_CACHE, 
+            cacheType = CacheType.BOTH, 
+            key = "#contentId", 
+            expire = CacheConstant.CONTENT_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheNullValue = true)
     public Content getContentById(Long contentId) {
         if (contentId == null) {
             throw new BizException("内容ID不能为空", CommonErrorCode.PARAM_INVALID);
@@ -248,8 +253,13 @@ public class ContentDomainService {
      * @param status 内容状态
      * @return 内容分页结果
      */
-    @Cacheable(value = "content:list", key = "'page:' + #page + ':size:' + #size + ':type:' + #contentType + ':status:' + #status", 
-               condition = "#page <= 3 && #status?.name() == 'PUBLISHED'") // 只缓存前3页的已发布内容
+    @Cached(name = CacheConstant.CONTENT_LIST_CACHE, 
+            cacheType = CacheType.BOTH,
+            key = "'page:' + #page + ':size:' + #size + ':type:' + #contentType + ':status:' + #status", 
+            expire = CacheConstant.CONTENT_LIST_CACHE_EXPIRE, 
+            localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            condition = "#page <= 3 && #status?.name() == 'PUBLISHED'")
     public IPage<Content> pageContent(int page, int size, ContentType contentType, ContentStatus status) {
         log.debug("从数据库分页查询内容，页码：{}，大小：{}，类型：{}，状态：{}", page, size, contentType, status);
         Page<Content> pageParam = new Page<>(page, size);
