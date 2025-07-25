@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `t_user` (
   `email` varchar(100) DEFAULT NULL COMMENT '邮箱',
   `phone` varchar(20) DEFAULT NULL COMMENT '手机号',
   `password_hash` varchar(255) NOT NULL COMMENT '密码哈希',
-  `salt` varchar(32) NOT NULL COMMENT '密码盐值',
+  `salt` varchar(64) DEFAULT NULL COMMENT '密码盐值',
   `role` enum('user','vip','blogger','admin') NOT NULL DEFAULT 'user' COMMENT '用户角色',
   `status` enum('active','inactive','banned') NOT NULL DEFAULT 'active' COMMENT '用户状态',
   `last_login_time` datetime DEFAULT NULL COMMENT '最后登录时间',

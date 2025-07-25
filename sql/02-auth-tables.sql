@@ -12,7 +12,7 @@ SET sql_mode = '';
 ALTER TABLE `t_user` ADD COLUMN `password_hash` varchar(255) DEFAULT NULL COMMENT '密码哈希' AFTER `nickname`;
 
 -- 添加密码盐值字段  
-ALTER TABLE `t_user` ADD COLUMN `salt` varchar(100) DEFAULT NULL COMMENT '密码盐值' AFTER `password_hash`;
+ALTER TABLE `t_user` ADD COLUMN `salt` varchar(64) DEFAULT NULL COMMENT '密码盐值' AFTER `password_hash`;
 
 -- 添加用户角色字段
 ALTER TABLE `t_user` ADD COLUMN `role` varchar(20) DEFAULT 'user' COMMENT '用户角色：user-普通用户，vip-VIP，blogger-博主，admin-管理员' AFTER `salt`;
