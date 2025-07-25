@@ -2,6 +2,8 @@
 
 # 数据源配置
 spring:
+  autoconfigure:
+    exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   datasource:
     # 主数据源配置
     primary:

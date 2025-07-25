@@ -1,6 +1,8 @@
 # Collide项目多环境基础配置
 # 默认配置（开发环境）
 spring:
+  autoconfigure:
+    exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   servlet:
     multipart:
       max-file-size: 100MB

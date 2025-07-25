@@ -1,4 +1,6 @@
 spring:
+  autoconfigure:
+    exclude: org.apache.shardingsphere.spring.boot.ShardingSphereAutoConfiguration
   cloud:
     nacos:
       username: ${collide.turbo.nacos.server.username}
