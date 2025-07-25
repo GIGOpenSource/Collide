@@ -1,6 +1,6 @@
 dubbo:
   consumer:
-    timeout: 60000
+    timeout: 3000
     retries: 2
     check: false
   protocol:
