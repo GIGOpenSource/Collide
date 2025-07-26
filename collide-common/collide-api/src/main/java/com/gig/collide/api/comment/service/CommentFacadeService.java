@@ -7,6 +7,9 @@ import com.gig.collide.api.comment.response.CommentQueryResponse;
 import com.gig.collide.api.comment.response.data.CommentInfo;
 import com.gig.collide.base.response.PageResponse;
 
+import java.util.List;
+import java.util.Map;
+
 /**
  * 评论服务 Facade 接口
  *
@@ -75,4 +78,62 @@ public interface CommentFacadeService {
      * @return 统计信息响应
      */
     CommentQueryResponse<Long> queryCommentCount(Long targetId, String commentType);
+
+    /**
+     * 查询用户评论历史
+     *
+     * @param userId 用户ID
+     * @param commentType 评论类型（可选）
+     * @param pageNum 页码
+     * @param pageSize 页大小
+     * @return 用户评论列表
+     */
+    PageResponse<CommentInfo> queryUserComments(Long userId, String commentType, Integer pageNum, Integer pageSize);
+
+    /**
+     * 查询热门评论
+     *
+     * @param targetId 目标ID
+     * @param commentType 评论类型
+     * @param limit 查询数量限制
+     * @return 热门评论列表
+     */
+    CommentQueryResponse<List<CommentInfo>> queryHotComments(Long targetId, String commentType, Integer limit);
+
+    /**
+     * 获取评论详细统计信息
+     *
+     * @param targetId 目标ID
+     * @param commentType 评论类型
+     * @return 详细统计信息
+     */
+    CommentQueryResponse<Map<String, Object>> getCommentStatistics(Long targetId, String commentType);
+
+    /**
+     * 检查用户是否已点赞评论
+     *
+     * @param commentId 评论ID
+     * @param userId 用户ID
+     * @return 点赞状态
+     */
+    CommentQueryResponse<Boolean> checkUserLiked(Long commentId, Long userId);
+
+    /**
+     * 查询子评论列表
+     *
+     * @param parentCommentId 父评论ID
+     * @param limit 查询数量限制
+     * @return 子评论列表
+     */
+    CommentQueryResponse<List<CommentInfo>> queryChildComments(Long parentCommentId, Integer limit);
+
+    /**
+     * 更新评论状态
+     *
+     * @param commentId 评论ID
+     * @param userId 操作用户ID
+     * @param status 目标状态
+     * @return 更新结果
+     */
+    CommentResponse updateCommentStatus(Long commentId, Long userId, String status);
 } 

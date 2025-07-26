@@ -40,6 +40,7 @@ import java.util.Objects;
 public class ContentDomainService {
 
     private final ContentMapper contentMapper;
+    private final ContentInteractionService contentInteractionService;
 
     /**
      * 创建内容
@@ -346,6 +347,39 @@ public class ContentDomainService {
     }
 
     /**
+     * 查看内容（同时增加访问量）
+     *
+     * @param contentId 内容ID
+     * @return 内容对象
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public Content viewContent(Long contentId) {
+        if (contentId == null) {
+            throw new BizException("内容ID不能为空", CommonErrorCode.PARAM_INVALID);
+        }
+
+        Content content = getContentById(contentId);
+        if (content == null || content.getDeleted() == 1) {
+            throw new BizException("内容不存在", CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        // 检查内容是否可见
+        if (!content.isVisible()) {
+            throw new BizException("内容不可见", CommonErrorCode.ACCESS_DENIED);
+        }
+
+        // 增加访问量（异步处理，避免影响查询性能）
+        try {
+            incrementViewCount(contentId);
+        } catch (Exception e) {
+            log.warn("增加访问量失败，内容ID：{}", contentId, e);
+            // 访问量更新失败不影响内容查看
+        }
+
+        return content;
+    }
+
+    /**
      * 增加内容访问量
      *
      * @param contentId 内容ID
@@ -356,26 +390,11 @@ public class ContentDomainService {
             return;
         }
 
-        Content content = getContentById(contentId);
-        if (content != null && content.getDeleted() == 0) {
-            content.setViewCount(content.getViewCount() + 1);
-            contentMapper.updateById(content);
+        // 使用数据库层面的原子操作，避免并发问题
+        int result = contentMapper.incrementViewCount(contentId);
+        if (result > 0) {
+            log.debug("成功增加内容访问量，内容ID：{}", contentId);
         }
-    }
-
-    /**
-     * 查看内容（增加访问量）
-     *
-     * @param contentId 内容ID
-     * @return 内容对象
-     */
-    public Content viewContent(Long contentId) {
-        Content content = getContentById(contentId);
-        if (content != null && content.getDeleted() == 0 && content.getStatus() == ContentStatus.PUBLISHED) {
-            // 异步增加访问量
-            incrementViewCount(contentId);
-        }
-        return content;
     }
 
     /**
@@ -491,74 +510,71 @@ public class ContentDomainService {
     }
 
     /**
-     * 点赞内容
+     * 点赞内容（已重构为使用专门的交互服务）
      *
      * @param contentId 内容ID
      * @param userId 用户ID
      * @return 是否成功
      */
-    @Transactional(rollbackFor = Exception.class)
     public boolean likeContent(Long contentId, Long userId) {
-        Content content = getContentById(contentId);
-        if (content == null || content.getDeleted() == 1) {
-            return false;
-        }
-
-        // TODO: 检查用户是否已经点赞，避免重复点赞
-        // TODO: 实现具体的点赞逻辑，可能需要单独的点赞记录表
-
-        // 简单实现：直接增加点赞数
-        content.setLikeCount(content.getLikeCount() + 1);
-        int result = contentMapper.updateById(content);
-        
-        return result > 0;
+        return contentInteractionService.likeContent(contentId, userId);
     }
 
     /**
-     * 收藏内容
+     * 取消点赞内容
      *
      * @param contentId 内容ID
      * @param userId 用户ID
      * @return 是否成功
      */
-    @Transactional(rollbackFor = Exception.class)
+    public boolean unlikeContent(Long contentId, Long userId) {
+        return contentInteractionService.unlikeContent(contentId, userId);
+    }
+
+    /**
+     * 收藏内容（已重构为使用专门的交互服务）
+     *
+     * @param contentId 内容ID
+     * @param userId 用户ID
+     * @return 是否成功
+     */
     public boolean favoriteContent(Long contentId, Long userId) {
-        Content content = getContentById(contentId);
-        if (content == null || content.getDeleted() == 1) {
-            return false;
-        }
-
-        // TODO: 检查用户是否已经收藏，避免重复收藏
-        // TODO: 实现具体的收藏逻辑，可能需要单独的收藏记录表
-
-        // 简单实现：直接增加收藏数
-        content.setFavoriteCount(content.getFavoriteCount() + 1);
-        int result = contentMapper.updateById(content);
-        
-        return result > 0;
+        return contentInteractionService.favoriteContent(contentId, userId);
     }
 
     /**
-     * 分享内容
+     * 取消收藏内容
      *
      * @param contentId 内容ID
      * @param userId 用户ID
      * @return 是否成功
      */
-    @Transactional(rollbackFor = Exception.class)
+    public boolean unfavoriteContent(Long contentId, Long userId) {
+        return contentInteractionService.unfavoriteContent(contentId, userId);
+    }
+
+    /**
+     * 分享内容（已重构为使用专门的交互服务）
+     *
+     * @param contentId 内容ID
+     * @param userId 用户ID
+     * @param platform 分享平台
+     * @param shareText 分享文案
+     * @return 是否成功
+     */
+    public boolean shareContent(Long contentId, Long userId, String platform, String shareText) {
+        return contentInteractionService.shareContent(contentId, userId, platform, shareText);
+    }
+
+    /**
+     * 分享内容（简化版本，兼容原有接口）
+     *
+     * @param contentId 内容ID
+     * @param userId 用户ID
+     * @return 是否成功
+     */
     public boolean shareContent(Long contentId, Long userId) {
-        Content content = getContentById(contentId);
-        if (content == null || content.getDeleted() == 1) {
-            return false;
-        }
-
-        // TODO: 实现具体的分享逻辑，可能需要单独的分享记录表
-
-        // 简单实现：直接增加分享数
-        content.setShareCount(content.getShareCount() + 1);
-        int result = contentMapper.updateById(content);
-        
-        return result > 0;
+        return contentInteractionService.shareContent(contentId, userId, null, null);
     }
 
     /**
@@ -663,7 +679,14 @@ public class ContentDomainService {
      * 检查审核权限
      */
     private boolean hasReviewPermission(Long reviewerId) {
-        // TODO: 实现审核权限检查逻辑
-        return true;
+        try {
+            // 检查用户是否有内容审核员角色或管理员角色
+            return cn.dev33.satoken.stp.StpUtil.hasRole("content_reviewer") 
+                || cn.dev33.satoken.stp.StpUtil.hasRole("admin")
+                || cn.dev33.satoken.stp.StpUtil.hasRole("super_admin");
+        } catch (Exception e) {
+            log.warn("检查审核权限失败，审核员ID：{}", reviewerId, e);
+            return false;
+        }
     }
 } 

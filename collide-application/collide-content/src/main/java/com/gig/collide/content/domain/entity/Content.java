@@ -64,10 +64,28 @@ public class Content {
     private Long authorId;
 
     /**
+     * 作者昵称（冗余字段，避免连表查询）
+     */
+    @TableField("author_nickname")
+    private String authorNickname;
+
+    /**
+     * 作者头像URL（冗余字段，避免连表查询）
+     */
+    @TableField("author_avatar")
+    private String authorAvatar;
+
+    /**
      * 分类ID
      */
     @TableField("category_id")
     private Long categoryId;
+
+    /**
+     * 分类名称（冗余字段，避免连表查询）
+     */
+    @TableField("category_name")
+    private String categoryName;
 
     /**
      * 标签（JSON数组格式存储）

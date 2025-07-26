@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.content.infrastructure.mapper.ContentShareMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.content.domain.entity.ContentShare">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="content_id" property="contentId" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="platform" property="platform" jdbcType="VARCHAR"/>
+        <result column="share_text" property="shareText" jdbcType="VARCHAR"/>
+        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
+        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+    </resultMap>
+
+    <!-- 基础列 -->
+    <sql id="Base_Column_List">
+        id, content_id, user_id, platform, share_text, created_time, deleted
+    </sql>
+
+    <!-- 统计指定内容的分享数量 -->
+    <select id="countByContentId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content_share
+        WHERE deleted = 0
+        AND content_id = #{contentId}
+    </select>
+
+    <!-- 统计用户的分享数量 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content_share
+        WHERE deleted = 0
+        AND user_id = #{userId}
+    </select>
+
+    <!-- 统计指定时间范围内的分享数量 -->
+    <select id="countByContentIdAndTimeRange" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content_share
+        WHERE deleted = 0
+        AND content_id = #{contentId}
+        AND created_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 统计指定平台的分享数量 -->
+    <select id="countByContentIdAndPlatform" resultType="int">
+        SELECT COUNT(*)
+        FROM t_content_share
+        WHERE deleted = 0
+        AND content_id = #{contentId}
+        <if test="platform != null and platform != ''">
+            AND platform = #{platform}
+        </if>
+    </select>
+
+</mapper> 

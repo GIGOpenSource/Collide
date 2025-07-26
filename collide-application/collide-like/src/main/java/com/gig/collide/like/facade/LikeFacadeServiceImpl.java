@@ -65,26 +65,17 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
         try {
             log.info("处理批量点赞操作，请求数量：{}", likeRequests.size());
             
-            int successCount = 0;
-            int failCount = 0;
-            
-            for (LikeRequest request : likeRequests) {
-                try {
-                    likeDomainService.performLikeAction(request);
-                    successCount++;
-                } catch (Exception e) {
-                    log.error("批量点赞中单个操作失败，用户ID：{}，目标对象ID：{}", 
-                            request.getUserId(), request.getTargetId(), e);
-                    failCount++;
-                }
+            // 参数验证
+            if (likeRequests == null || likeRequests.isEmpty()) {
+                return LikeResponse.error("PARAM_ERROR", "批量操作请求列表不能为空");
             }
             
-            if (failCount == 0) {
-                return LikeResponse.success(0L, 0L, "批量操作全部成功");
-            } else {
-                return LikeResponse.error("BATCH_LIKE_PARTIAL_ERROR", 
-                        String.format("批量操作完成，成功：%d，失败：%d", successCount, failCount));
+            if (likeRequests.size() > 100) {
+                return LikeResponse.error("PARAM_ERROR", "单次批量操作不能超过100个");
             }
+            
+            // 使用全局事务处理批量操作
+            return likeDomainService.batchLikeAction(likeRequests);
             
         } catch (Exception e) {
             log.error("批量点赞操作失败", e);

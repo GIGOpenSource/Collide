@@ -4,39 +4,86 @@ spring:
   application:
     name: collide-favorite
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml
+    # ===================== Collide 标准化组件配置导入 =====================
+    import: 
+      # 基础架构配置
+      - classpath:base.yml          # 基础组件配置
+      - classpath:config.yml        # 配置管理
+      - classpath:web.yml           # Web组件配置
+      
+      # 数据访问配置  
+      - classpath:datasource.yml    # 数据源配置
+      - classpath:cache.yml         # 缓存配置
+      
+      # 微服务通信配置
+      - classpath:rpc.yml           # RPC(Dubbo)配置
+      
+      # 功能增强配置
+      - classpath:lock.yml          # 分布式锁配置
+      - classpath:limiter.yml       # 限流配置
+      
+      # 监控运维配置
+      - classpath:prometheus.yml    # 监控指标配置
+      - classpath:skywalking.yml    # 链路追踪配置
 
-# 服务器配置
+# ===================== 服务器配置 =====================
 server:
   port: 9605
 
-# Dubbo 配置
+# ===================== Dubbo 标准化配置 =====================
 dubbo:
   application:
     name: ${spring.application.name}
+    version: 1.0.0
+    # 标准化参数
+    parameters:
+      service: favorite
+      module: collide-application
   protocol:
     name: dubbo
     port: 20888
+    # 标准化性能配置
+    threads: 200
+    accepts: 1000
   registry:
     address: nacos://${collide.turbo.nacos.server.url}
+    timeout: 10000
   provider:
+    # 标准化超时配置
     timeout: 10000
     retries: 0
+    # 标准化负载均衡
+    loadbalance: roundrobin
+    # 标准化集群容错
+    cluster: failfast
+  consumer:
+    # 标准化消费者配置
+    timeout: 10000
+    retries: 2
+    loadbalance: roundrobin
 
-# MyBatis Plus 配置
+# ===================== MyBatis Plus 标准化配置 =====================
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.gig.collide.favorite.domain.entity
   configuration:
+    # 标准化配置
     map-underscore-to-camel-case: true
+    cache-enabled: true
+    call-setters-on-nulls: true
+    jdbc-type-for-null: 'null'
   global-config:
     db-config:
-      logic-delete-field: deleted
+      # 标准化逻辑删除
+      logic-delete-field: is_deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
-      id-type: auto
+      # 标准化主键
+      id-type: ASSIGN_ID
+    # 标准化填充策略
+    meta-object-handler: com.gig.collide.base.handler.MetaObjectHandler
 
-# 收藏服务特定配置
+# ===================== 收藏服务业务配置 =====================
 collide:
   favorite:
     # 默认收藏夹配置
@@ -48,11 +95,53 @@ collide:
     limit:
       max-folders-per-user: 20
       max-items-per-folder: 1000
+    # 缓存配置
+    cache:
+      # 用户收藏缓存TTL(秒)
+      user-favorites-ttl: 1800
+      # 收藏夹信息缓存TTL(秒)
+      folder-info-ttl: 3600
+      # 热门收藏缓存TTL(秒)
+      hot-favorites-ttl: 600
+    # 性能配置
+    performance:
+      # 批量操作大小限制
+      batch-size-limit: 100
+      # 异步任务线程池大小
+      async-pool-size: 10
 
-# 日志配置
+# ===================== 日志标准化配置 =====================
 logging:
   level:
+    # 业务日志
     com.gig.collide.favorite: DEBUG
+    # 标准化组件日志
+    com.gig.collide.base: INFO
+    com.gig.collide.cache: INFO
+    com.gig.collide.rpc: INFO
+    # 框架日志
     org.apache.dubbo: WARN
+    org.springframework.cloud: WARN
+    com.alibaba.nacos: WARN
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n" 
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
+  file:
+    name: logs/collide-favorite.log
+
+# ===================== 管理端点标准化配置 =====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+  info:
+    env:
+      enabled: true 

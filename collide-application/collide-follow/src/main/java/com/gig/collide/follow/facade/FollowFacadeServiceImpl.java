@@ -9,6 +9,7 @@ import com.gig.collide.api.follow.response.FollowQueryResponse;
 import com.gig.collide.api.follow.response.data.FollowInfo;
 import com.gig.collide.api.follow.response.data.FollowStatistics;
 import com.gig.collide.api.follow.service.FollowFacadeService;
+import com.gig.collide.rpc.facade.Facade;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.follow.domain.entity.Follow;
 import com.gig.collide.follow.domain.entity.convertor.FollowConvertor;
@@ -37,6 +38,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     private final FollowDomainService followDomainService;
 
     @Override
+    @Facade
     public FollowResponse follow(FollowRequest followRequest) {
         try {
             log.info("处理关注请求，关注者: {}, 被关注者: {}", 
@@ -75,6 +77,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public FollowResponse unfollow(UnfollowRequest unfollowRequest) {
         try {
             log.info("处理取消关注请求，关注者: {}, 被关注者: {}", 
@@ -103,6 +106,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public FollowQueryResponse<FollowInfo> queryFollow(FollowQueryRequest queryRequest) {
         try {
             boolean isFollowing = followDomainService.isFollowing(
@@ -131,6 +135,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<FollowInfo> pageQueryFollowing(FollowQueryRequest queryRequest) {
         try {
             log.info("查询关注列表，用户: {}, 页码: {}, 每页大小: {}", 
@@ -153,6 +158,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<FollowInfo> pageQueryFollowers(FollowQueryRequest queryRequest) {
         try {
             log.info("查询粉丝列表，用户: {}, 页码: {}, 每页大小: {}", 
@@ -175,6 +181,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public FollowQueryResponse<FollowStatistics> getFollowStatistics(Long userId) {
         try {
             log.info("查询关注统计，用户: {}", userId);
@@ -193,6 +200,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     }
 
     @Override
+    @Facade
     public FollowQueryResponse<List<FollowStatistics>> batchGetFollowStatistics(FollowQueryRequest queryRequest) {
         try {
             log.info("批量查询关注统计，用户列表: {}", queryRequest.getUserIds());
@@ -207,6 +215,45 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
 
         } catch (Exception e) {
             log.error("批量查询关注统计失败", e);
+            return FollowQueryResponse.success(List.of(), 0L);
+        }
+    }
+
+    @Override
+    @Facade
+    public FollowQueryResponse<List<FollowInfo>> batchCheckFollowRelations(FollowQueryRequest queryRequest) {
+        try {
+            log.info("批量检查关注关系，关注者: {}, 被关注者列表: {}", 
+                queryRequest.getFollowerUserId(), queryRequest.getUserIds());
+
+            List<Follow> followRelations = followDomainService.getFollowRelations(
+                queryRequest.getFollowerUserId(), 
+                queryRequest.getUserIds()
+            );
+
+            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(followRelations);
+
+            return FollowQueryResponse.success(followInfoList, (long) followInfoList.size());
+
+        } catch (Exception e) {
+            log.error("批量检查关注关系失败", e);
+            return FollowQueryResponse.success(List.of(), 0L);
+        }
+    }
+
+    @Override
+    @Facade
+    public FollowQueryResponse<List<FollowInfo>> getMutualFollows(FollowQueryRequest queryRequest) {
+        try {
+            log.info("查询相互关注列表，用户: {}", queryRequest.getFollowerUserId());
+
+            List<Follow> mutualFollows = followDomainService.getMutualFollows(queryRequest.getFollowerUserId());
+            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(mutualFollows);
+
+            return FollowQueryResponse.success(followInfoList, (long) followInfoList.size());
+
+        } catch (Exception e) {
+            log.error("查询相互关注列表失败", e);
             return FollowQueryResponse.success(List.of(), 0L);
         }
     }

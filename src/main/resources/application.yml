@@ -1,0 +1,120 @@
+spring:
+  application:
+    name: collide-content
+  profiles:
+    active: local
+  config:
+    import:
+      # 标准化基础架构配置
+      - classpath:base.yml
+      - classpath:config.yml
+      - classpath:web.yml
+      
+      # 标准化数据访问配置
+      - classpath:datasource.yml
+      - classpath:cache.yml
+      
+      # 标准化微服务通信配置
+      - classpath:rpc.yml
+      - classpath:mq.yml
+      
+      # 标准化安全权限配置
+      - classpath:sa-token.yml
+      
+      # 标准化功能增强配置
+      - classpath:file.yml
+      - classpath:limiter.yml
+      - classpath:lock.yml
+      
+      # 标准化监控运维配置
+      - classpath:prometheus.yml
+
+# ===================== 服务端口配置 =====================
+server:
+  port: 9606
+  servlet:
+    context-path: /content
+
+# ===================== 应用级别监控配置 =====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# ===================== MyBatis Plus 标准化配置 =====================
+mybatis-plus:
+  mapper-locations: classpath:mapper/*_sqlmap.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    # 标准化SQL执行优化
+    cache-enabled: true
+    lazy-loading-enabled: true
+    aggressive-lazy-loading: false
+  global-config:
+    db-config:
+      # 标准化逻辑删除配置
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      # 标准化ID生成策略
+      id-type: auto
+    # 标准化性能配置
+    banner: false
+
+# ===================== 标准化日志配置 =====================
+logging:
+  pattern:
+    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] [%X{traceId}] - %msg%n'
+    file: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{36}] [%X{traceId}] - %msg%n'
+  level:
+    root: info
+    # Collide 业务日志
+    com.gig.collide: debug
+    # 标准化框架日志级别
+    org.apache.dubbo: info
+    org.springframework.web: info
+    com.baomidou.mybatisplus: info
+    # 缓存框架日志
+    com.alicp.jetcache: info
+    # 限流框架日志
+    com.alibaba.csp.sentinel: info
+  file:
+    name: logs/collide-content.log
+    max-size: 100MB
+    max-history: 30
+
+# ===================== Content 模块专属配置 =====================
+collide:
+  content:
+    # 内容审核配置
+    review:
+      auto-approve-trusted-authors: true
+      content-check-enabled: true
+      sensitive-word-check: true
+    
+    # 内容推荐配置  
+    recommendation:
+      weight-calculation-enabled: true
+      hot-content-threshold: 1000
+      trending-calculation-interval: 300
+    
+    # 内容缓存配置
+    cache:
+      content-info-ttl: 1800  # 30分钟
+      hot-content-ttl: 3600   # 1小时
+      author-content-ttl: 900 # 15分钟
+    
+    # 内容限流配置
+    limiter:
+      publish-rate: 10        # 每分钟最大发布数
+      view-rate: 1000        # 每分钟最大访问数
+      search-rate: 100       # 每分钟最大搜索数 

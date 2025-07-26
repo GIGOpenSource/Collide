@@ -26,6 +26,8 @@ public enum CommentErrorCode implements ErrorCode {
     COMMENT_CONTENT_TOO_LONG("COMMENT_008", "评论内容过长"),
     COMMENT_ALREADY_DELETED("COMMENT_009", "评论已删除"),
     COMMENT_LIKE_FAILED("COMMENT_010", "评论点赞失败"),
+    COMMENT_DUPLICATE_SUBMISSION("COMMENT_011", "请不要重复提交评论"),
+    LIKE_ALREADY_EXISTS("COMMENT_012", "您已经点过赞了"),
 
     // 参数校验错误码 (PARAM_xxx)
     INVALID_PARAMETER("PARAM_001", "参数无效"),

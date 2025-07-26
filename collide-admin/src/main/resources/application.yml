@@ -1,12 +1,74 @@
+server:
+  port: 9999
+  servlet:
+    context-path: /admin
+
 spring:
   application:
-    name: @application.name@
-  config:
-    import: classpath:base.yml,classpath:cache.yml,classpath:rpc.yml #这里爆红可以直接忽略，没有任何影响
+    name: collide-admin
+  
+  profiles:
+    active: dev
+  
+  # 数据源配置（如果需要直接数据库操作）
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/collide?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 30000
 
+  # Redis配置
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 2  # 管理后台使用database 2
+      lettuce:
+        pool:
+          max-active: 20
+          max-idle: 10
+          min-idle: 5
+          max-wait: 1000ms
+
+  # JSON配置
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+
+# MyBatis-Plus配置
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# Dubbo配置
+dubbo:
+  application:
+    name: ${spring.application.name}
+  registry:
+    address: nacos://localhost:8848
+  protocol:
+    name: dubbo
+    port: -1
+  consumer:
+    timeout: 60000
+    retries: 0
+    check: false
+
+# Sa-Token配置
 sa-token:
   # token 名称（同时也是 cookie 名称）
-  token-name: satoken
+  token-name: Admin-Token
   # token 有效期（单位：秒） 默认30天，-1 代表永久有效
   timeout: 2592000
   # token 最低活跃频率（单位：秒），如果 token 超过此时间没有访问系统就会被冻结，默认-1 代表不限制，永不冻结
@@ -20,5 +82,70 @@ sa-token:
   # 是否输出操作日志
   is-log: true
 
-server:
-  port: 9001
+# 管理后台专用配置
+collide:
+  admin:
+    # 管理员权限配置
+    security:
+      # 超级管理员账号
+      super-admin: admin
+      # 默认密码
+      default-password: admin123
+      # 是否启用验证码
+      captcha-enabled: true
+      # 密码错误次数限制
+      password-max-retry: 5
+      # 账号锁定时间（分钟）
+      lock-time: 30
+    
+    # 系统监控配置
+    monitor:
+      # 是否启用性能监控
+      performance-enabled: true
+      # 数据保留天数
+      data-retention-days: 30
+    
+    # 文件上传配置
+    file:
+      # 上传路径
+      upload-path: /data/collide/admin/uploads/
+      # 最大文件大小（MB）
+      max-file-size: 10
+      # 允许的文件类型
+      allowed-extensions: jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx
+
+# 接口文档配置
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  info:
+    title: Collide 管理后台 API
+    description: Collide 管理后台接口文档
+    version: 1.0.0
+    contact:
+      name: Collide Team
+      email: team@collide.com
+
+# 监控配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# 日志配置
+logging:
+  level:
+    com.gig.collide.admin: DEBUG
+    org.apache.dubbo: WARN
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{36}){cyan} %clr(:){faint} %m%n%wEx"

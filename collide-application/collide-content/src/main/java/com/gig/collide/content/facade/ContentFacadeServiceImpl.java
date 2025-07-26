@@ -13,6 +13,7 @@ import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.content.domain.entity.Content;
 import com.gig.collide.content.domain.entity.convertor.ContentConvertor;
 import com.gig.collide.content.domain.service.ContentDomainService;
+import com.gig.collide.content.domain.service.ContentInfoExtensionService;
 import com.alibaba.fastjson2.JSONObject;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,6 +38,7 @@ import java.util.Map;
 public class ContentFacadeServiceImpl implements ContentFacadeService {
 
     private final ContentDomainService contentDomainService;
+    private final ContentInfoExtensionService contentInfoExtensionService;
 
     @Override
     public ContentResponse createContent(ContentCreateRequest createRequest) {
@@ -183,7 +185,8 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             // 转换为DTO
             ContentInfo contentInfo = ContentConvertor.INSTANCE.toContentInfo(content);
 
-            // TODO: 设置作者信息、分类名称等扩展信息
+            // 设置作者信息、分类名称等扩展信息
+            contentInfoExtensionService.setExtensionInfo(contentInfo, content, queryRequest.getUserId());
 
             return ContentQueryResponse.success(contentInfo);
 
@@ -245,8 +248,12 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             List<ContentInfo> contentInfoList = ContentConvertor.INSTANCE
                 .toContentInfoList(contentPage.getRecords());
 
-            // TODO: 批量设置作者信息和分类名称
-            // TODO: 批量设置用户相关状态
+            // 批量设置作者信息、分类名称和用户相关状态
+            contentInfoExtensionService.batchSetExtensionInfo(
+                contentInfoList, 
+                contentPage.getRecords(), 
+                queryRequest.getUserId()
+            );
 
             return PageResponse.of(
                 contentInfoList,
@@ -276,6 +283,13 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             // 转换为DTO
             List<ContentInfo> contentInfoList = ContentConvertor.INSTANCE
                 .toContentInfoList(contentPage.getRecords());
+
+            // 批量设置扩展信息
+            contentInfoExtensionService.batchSetExtensionInfo(
+                contentInfoList, 
+                contentPage.getRecords(), 
+                queryRequest.getUserId()
+            );
 
             return PageResponse.of(
                 contentInfoList,
@@ -354,7 +368,9 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
 
             boolean success = contentDomainService.shareContent(
                 shareRequest.getContentId(),
-                shareRequest.getUserId()
+                shareRequest.getUserId(),
+                shareRequest.getPlatform(),
+                shareRequest.getShareText()
             );
 
             ContentResponse response = new ContentResponse();

@@ -30,19 +30,21 @@ public interface ContentConvertor {
     ContentConvertor INSTANCE = Mappers.getMapper(ContentConvertor.class);
 
     /**
-     * 转换为 ContentInfo DTO
+     * 转换为 ContentInfo DTO（去连表化设计）
      *
      * @param content 内容实体
      * @return ContentInfo DTO
      */
-    @Mapping(target = "author", ignore = true) // 需要单独设置
-    @Mapping(target = "categoryName", ignore = true) // 需要单独设置
+    @Mapping(target = "author", ignore = true)
+    @Mapping(target = "categoryName", source = "categoryName")
     @Mapping(target = "createTime", source = "createTime")
     @Mapping(target = "contentData", source = "contentData", qualifiedByName = "stringToMap")
     @Mapping(target = "tags", source = "tags", qualifiedByName = "stringToList")
-    @Mapping(target = "liked", ignore = true) // 需要根据当前用户设置
-    @Mapping(target = "favorited", ignore = true) // 需要根据当前用户设置
+    @Mapping(target = "liked", ignore = true)
+    @Mapping(target = "favorited", ignore = true)
     @Mapping(target = "recommended", source = "isRecommended")
+    @Mapping(target = "pinned", source = "isPinned")
+    @Mapping(target = "qualityScore", ignore = true)
     ContentInfo toContentInfo(Content content);
 
     /**

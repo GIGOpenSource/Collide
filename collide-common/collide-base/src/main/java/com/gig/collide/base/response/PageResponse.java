@@ -109,14 +109,14 @@ public class PageResponse<T> extends MultiResponse<T> {
     }
 
     /**
-     * 创建错误响应
+     * 创建失败响应（与其他响应类保持一致）
      *
      * @param errorCode 错误码
      * @param errorMessage 错误信息
      * @param <T> 数据类型
-     * @return 错误响应对象
+     * @return 失败响应对象
      */
-    public static <T> PageResponse<T> error(String errorCode, String errorMessage) {
+    public static <T> PageResponse<T> fail(String errorCode, String errorMessage) {
         PageResponse<T> pageResponse = new PageResponse<>();
         pageResponse.setSuccess(false);
         pageResponse.setResponseCode(errorCode);
@@ -127,5 +127,17 @@ public class PageResponse<T> extends MultiResponse<T> {
         pageResponse.setCurrentPage(0);
         pageResponse.setTotalPage(0);
         return pageResponse;
+    }
+
+    /**
+     * 创建错误响应（保持向后兼容）
+     *
+     * @param errorCode 错误码
+     * @param errorMessage 错误信息
+     * @param <T> 数据类型
+     * @return 错误响应对象
+     */
+    public static <T> PageResponse<T> error(String errorCode, String errorMessage) {
+        return fail(errorCode, errorMessage);
     }
 }

@@ -25,6 +25,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * 关注控制器
@@ -171,6 +172,47 @@ public class FollowController {
         }
     }
 
+    @PostMapping("/batch-check")
+    @SaCheckLogin
+    @Operation(summary = "批量检查关注关系", description = "批量检查当前用户与指定用户列表的关注关系")
+    public Result<List<FollowInfo>> batchCheckFollowRelations(@Valid @RequestBody BatchCheckParam param) {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
+            log.info("批量检查关注关系，当前用户: {}, 检查用户列表: {}", currentUserId, param.getUserIds());
+
+            FollowQueryRequest queryRequest = new FollowQueryRequest();
+            queryRequest.setFollowerUserId(currentUserId);
+            queryRequest.setUserIds(param.getUserIds());
+
+            FollowQueryResponse<List<FollowInfo>> queryResponse = 
+                followFacadeService.batchCheckFollowRelations(queryRequest);
+            return Result.success(queryResponse.getData());
+        } catch (Exception e) {
+            log.error("批量检查关注关系失败", e);
+            return Result.error("BATCH_CHECK_ERROR", "批量检查关注关系失败，请稍后重试");
+        }
+    }
+
+    @GetMapping("/mutual")
+    @SaCheckLogin
+    @Operation(summary = "获取相互关注列表", description = "获取当前用户的相互关注列表")
+    public Result<List<FollowInfo>> getMutualFollows() {
+        try {
+            Long currentUserId = StpUtil.getLoginIdAsLong();
+            log.info("获取相互关注列表，用户: {}", currentUserId);
+
+            FollowQueryRequest queryRequest = new FollowQueryRequest();
+            queryRequest.setFollowerUserId(currentUserId);
+
+            FollowQueryResponse<List<FollowInfo>> queryResponse = 
+                followFacadeService.getMutualFollows(queryRequest);
+            return Result.success(queryResponse.getData());
+        } catch (Exception e) {
+            log.error("获取相互关注列表失败", e);
+            return Result.error("GET_MUTUAL_FOLLOWS_ERROR", "获取相互关注列表失败，请稍后重试");
+        }
+    }
+
     /**
      * 关注请求参数
      */
@@ -194,6 +236,22 @@ public class FollowController {
 
         public void setFollowType(FollowType followType) {
             this.followType = followType;
+        }
+    }
+
+    /**
+     * 批量检查关注关系请求参数
+     */
+    public static class BatchCheckParam {
+        @NotNull(message = "用户ID列表不能为空")
+        private List<Long> userIds;
+
+        public List<Long> getUserIds() {
+            return userIds;
+        }
+
+        public void setUserIds(List<Long> userIds) {
+            this.userIds = userIds;
         }
     }
 } 

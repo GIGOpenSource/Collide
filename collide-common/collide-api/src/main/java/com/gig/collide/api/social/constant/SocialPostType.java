@@ -52,7 +52,12 @@ public enum SocialPostType {
     /**
      * 位置动态
      */
-    LOCATION("LOCATION", "位置动态");
+    LOCATION("LOCATION", "位置动态"),
+
+    /**
+     * 转发动态
+     */
+    SHARE("SHARE", "转发动态");
 
     /**
      * 类型代码

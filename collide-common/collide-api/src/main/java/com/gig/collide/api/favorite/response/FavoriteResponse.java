@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 收藏操作响应
@@ -24,7 +26,7 @@ public class FavoriteResponse extends BaseResponse implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 收藏ID
+     * 收藏ID（单个操作）
      */
     @Schema(description = "收藏ID")
     private Long favoriteId;
@@ -53,6 +55,32 @@ public class FavoriteResponse extends BaseResponse implements Serializable {
     @Schema(description = "收藏总数")
     private Long favoriteCount;
 
+    // === 批量操作相关字段 ===
+
+    /**
+     * 成功的收藏ID列表（批量操作）
+     */
+    @Schema(description = "成功的收藏ID列表")
+    private List<Long> successIds;
+
+    /**
+     * 失败的目标ID及原因（批量操作）
+     */
+    @Schema(description = "失败的目标ID及原因")
+    private Map<Long, String> failureReasons;
+
+    /**
+     * 成功数量（批量操作）
+     */
+    @Schema(description = "成功数量")
+    private Integer successCount;
+
+    /**
+     * 失败数量（批量操作）
+     */
+    @Schema(description = "失败数量")
+    private Integer failureCount;
+
     public FavoriteResponse(Long favoriteId) {
         super();
         this.favoriteId = favoriteId;
@@ -68,6 +96,42 @@ public class FavoriteResponse extends BaseResponse implements Serializable {
      */
     public static FavoriteResponse success(Long favoriteId, String message) {
         FavoriteResponse response = new FavoriteResponse(favoriteId);
+        response.setResponseMessage(message);
+        return response;
+    }
+
+    /**
+     * 创建批量成功响应
+     *
+     * @param successIds 成功的收藏ID列表
+     * @param message 响应消息
+     * @return 响应对象
+     */
+    public static FavoriteResponse success(List<Long> successIds, String message) {
+        FavoriteResponse response = new FavoriteResponse();
+        response.setSuccess(true);
+        response.setSuccessIds(successIds);
+        response.setSuccessCount(successIds != null ? successIds.size() : 0);
+        response.setFailureCount(0);
+        response.setResponseMessage(message);
+        return response;
+    }
+
+    /**
+     * 创建部分成功响应（批量操作）
+     *
+     * @param successIds 成功的收藏ID列表
+     * @param message 响应消息
+     * @param failureReasons 失败原因
+     * @return 响应对象
+     */
+    public static FavoriteResponse partialSuccess(List<Long> successIds, String message, Map<Long, String> failureReasons) {
+        FavoriteResponse response = new FavoriteResponse();
+        response.setSuccess(true); // 部分成功仍然认为是成功
+        response.setSuccessIds(successIds);
+        response.setFailureReasons(failureReasons);
+        response.setSuccessCount(successIds != null ? successIds.size() : 0);
+        response.setFailureCount(failureReasons != null ? failureReasons.size() : 0);
         response.setResponseMessage(message);
         return response;
     }

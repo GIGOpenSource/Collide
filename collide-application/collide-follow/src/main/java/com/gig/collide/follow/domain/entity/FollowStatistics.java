@@ -36,6 +36,12 @@ public class FollowStatistics {
     private Integer followerCount;
 
     /**
+     * 相互关注数（预留字段）
+     */
+    @TableField("mutual_follow_count")
+    private Integer mutualFollowCount;
+
+    /**
      * 创建时间
      */
     @TableField("created_time")

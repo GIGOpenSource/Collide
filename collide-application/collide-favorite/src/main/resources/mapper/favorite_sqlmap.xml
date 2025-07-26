@@ -4,26 +4,38 @@
 
     <!-- 结果映射 -->
     <resultMap id="BaseResultMap" type="com.gig.collide.favorite.domain.entity.Favorite">
-        <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <id column="favorite_id" property="favoriteId" jdbcType="BIGINT"/>
+        <result column="favorite_type" property="favoriteType" jdbcType="VARCHAR" 
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
         <result column="target_id" property="targetId" jdbcType="BIGINT"/>
-        <result column="target_type" property="targetType" jdbcType="VARCHAR"/>
-        <result column="favorite_type" property="favoriteType" jdbcType="TINYINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
         <result column="folder_id" property="folderId" jdbcType="BIGINT"/>
-        <result column="folder_name" property="folderName" jdbcType="VARCHAR"/>
-        <result column="tags" property="tags" jdbcType="VARCHAR"/>
-        <result column="notes" property="notes" jdbcType="VARCHAR"/>
-        <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
-        <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
-        <result column="created_time" property="createdTime" jdbcType="TIMESTAMP"/>
-        <result column="updated_time" property="updatedTime" jdbcType="TIMESTAMP"/>
-        <result column="deleted" property="deleted" jdbcType="TINYINT"/>
+        <result column="status" property="status" jdbcType="VARCHAR" 
+                typeHandler="org.apache.ibatis.type.EnumTypeHandler"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="favorite_time" property="favoriteTime" jdbcType="TIMESTAMP"/>
+        
+        <!-- 冗余字段 -->
+        <result column="target_title" property="targetTitle" jdbcType="VARCHAR"/>
+        <result column="target_cover" property="targetCover" jdbcType="VARCHAR"/>
+        <result column="target_author_id" property="targetAuthorId" jdbcType="BIGINT"/>
+        <result column="target_author_name" property="targetAuthorName" jdbcType="VARCHAR"/>
+        <result column="target_author_avatar" property="targetAuthorAvatar" jdbcType="VARCHAR"/>
+        <result column="target_publish_time" property="targetPublishTime" jdbcType="TIMESTAMP"/>
+        <result column="target_summary" property="targetSummary" jdbcType="LONGVARCHAR"/>
+        
+        <!-- 审计字段 -->
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="is_deleted" property="isDeleted" jdbcType="TINYINT"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
     </resultMap>
 
     <!-- 基础字段列表 -->
     <sql id="Base_Column_List">
-        id, user_id, target_id, target_type, favorite_type, folder_id, folder_name, 
-        tags, notes, ip_address, device_info, created_time, updated_time, deleted
+        favorite_id, favorite_type, target_id, user_id, folder_id, status, remark, favorite_time,
+        target_title, target_cover, target_author_id, target_author_name, target_author_avatar, 
+        target_publish_time, target_summary, create_time, update_time, is_deleted, version
     </sql>
 
     <!-- 分页查询用户收藏列表 -->
@@ -31,29 +43,37 @@
         SELECT <include refid="Base_Column_List"/>
         FROM t_favorite
         WHERE user_id = #{userId}
-        AND deleted = 0
-        <if test="targetType != null">
-            AND target_type = #{targetType}
+        AND is_deleted = 0
+        <if test="favoriteType != null">
+            AND favorite_type = #{favoriteType}
         </if>
         <if test="folderId != null">
             AND folder_id = #{folderId}
         </if>
-        <if test="favoriteType != null">
-            AND favorite_type = #{favoriteType}
+        <if test="status != null">
+            AND status = #{status}
         </if>
-        ORDER BY created_time DESC
+        ORDER BY favorite_time DESC
     </select>
 
     <!-- 检查是否已收藏 -->
     <select id="selectFavoriteId" resultType="java.lang.Long">
-        SELECT id
+        SELECT favorite_id
         FROM t_favorite
         WHERE user_id = #{userId}
-        AND target_type = #{targetType}
+        AND favorite_type = #{favoriteType}
         AND target_id = #{targetId}
-        AND favorite_type = 1
-        AND deleted = 0
+        AND status = 'NORMAL'
+        AND is_deleted = 0
         LIMIT 1
+    </select>
+
+    <!-- 根据收藏ID查询收藏记录 -->
+    <select id="selectByFavoriteId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_favorite
+        WHERE favorite_id = #{favoriteId}
+        AND is_deleted = 0
     </select>
 
     <!-- 统计用户收藏数量 -->
@@ -61,10 +81,10 @@
         SELECT COUNT(1)
         FROM t_favorite
         WHERE user_id = #{userId}
-        AND favorite_type = 1
-        AND deleted = 0
-        <if test="targetType != null">
-            AND target_type = #{targetType}
+        AND status = 'NORMAL'
+        AND is_deleted = 0
+        <if test="favoriteType != null">
+            AND favorite_type = #{favoriteType}
         </if>
     </select>
 
@@ -72,23 +92,57 @@
     <select id="countTargetFavorites" resultType="java.lang.Long">
         SELECT COUNT(1)
         FROM t_favorite
-        WHERE target_type = #{targetType}
+        WHERE favorite_type = #{favoriteType}
         AND target_id = #{targetId}
-        AND favorite_type = 1
-        AND deleted = 0
+        AND status = 'NORMAL'
+        AND is_deleted = 0
     </select>
 
     <!-- 批量更新收藏状态 -->
     <update id="batchUpdateStatus">
         UPDATE t_favorite
-        SET favorite_type = #{favoriteType},
-            updated_time = NOW()
+        SET status = #{status},
+            update_time = NOW()
         WHERE user_id = #{userId}
         AND target_id IN
         <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
             #{targetId}
         </foreach>
-        AND deleted = 0
+        AND is_deleted = 0
     </update>
+
+    <!-- 查询用户收藏的目标ID列表 -->
+    <select id="selectUserFavoriteTargetIds" resultType="java.lang.Long">
+        SELECT DISTINCT target_id
+        FROM t_favorite
+        WHERE user_id = #{userId}
+        AND favorite_type = #{favoriteType}
+        AND status = 'NORMAL'
+        AND is_deleted = 0
+        <if test="targetIds != null and targetIds.size() > 0">
+            AND target_id IN
+            <foreach collection="targetIds" item="targetId" open="(" separator="," close=")">
+                #{targetId}
+            </foreach>
+        </if>
+    </select>
+
+    <!-- 查询收藏夹中的收藏数量 -->
+    <select id="countFolderFavorites" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_favorite
+        WHERE folder_id = #{folderId}
+        AND status = 'NORMAL'
+        AND is_deleted = 0
+    </select>
+
+    <!-- 删除用户收藏记录（物理删除，清理数据用） -->
+    <delete id="deleteUserFavorites">
+        DELETE FROM t_favorite
+        WHERE user_id = #{userId}
+        <if test="favoriteType != null">
+            AND favorite_type = #{favoriteType}
+        </if>
+    </delete>
 
 </mapper> 

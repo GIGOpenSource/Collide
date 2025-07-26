@@ -17,6 +17,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  *   <li>评论服务 (collide-comment) - 评论互动功能</li>
  *   <li>点赞服务 (collide-like) - 点赞点踩功能</li>
  *   <li>收藏服务 (collide-favorite) - 内容收藏功能</li>
+ *   <li>商品服务 (collide-goods) - 商品管理功能</li>
+ *   <li>订单服务 (collide-order) - 订单处理功能</li>
+ *   <li>支付服务 (collide-payment) - 支付处理功能</li>
  * </ul>
  * </p>
  * 
@@ -42,6 +45,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.like",        // ✅ 点赞服务
     "com.gig.collide.favorite",    // ✅ 收藏服务
     "com.gig.collide.social",      // ✅ 社交服务
+    "com.gig.collide.goods",       // ✅ 商品服务
+    "com.gig.collide.order",       // ✅ 订单服务
+    "com.gig.collide.payment",     // ✅ 支付服务
     "com.gig.collide.base",        // ✅ 基础组件
     "com.gig.collide.cache",       // ✅ 缓存组件
     "com.gig.collide.datasource",  // ✅ 数据源组件
@@ -56,7 +62,10 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.comment.facade",
     "com.gig.collide.like.facade",
     "com.gig.collide.favorite.facade",
-    "com.gig.collide.social.facade"
+    "com.gig.collide.social.facade",
+    "com.gig.collide.goods.facade",
+    "com.gig.collide.order.facade",
+    "com.gig.collide.payment.facade"
 })
 public class CollideBusinessApplication {
     
@@ -81,7 +90,7 @@ public class CollideBusinessApplication {
             "  \\____\\___/|_|_|_|\\__,_|\\___| |____/ \\__,_|___/_|_| |_|\\___||___/___/\n" +
             "\n" +
             "🚀 Collide Business Application Started Successfully!\n" +
-            "📱 Services: Users | Follow | Content | Comment | Like | Favorite\n" +
+            "📱 Services: Users | Follow | Content | Comment | Like | Favorite | Goods | Order | Payment\n" +
             "🌐 Server Port: 9503\n" +
             "📋 Environment: Development\n" +
             "🔗 Health Check: http://localhost:8080/actuator/health\n"

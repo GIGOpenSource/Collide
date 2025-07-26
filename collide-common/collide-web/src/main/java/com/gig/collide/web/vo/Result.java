@@ -59,7 +59,11 @@ public class Result<T> {
         return new Result<>(true, SUCCESS.name(), SUCCESS.name(), data);
     }
 
-    public static <T> Result<T> error(String errorCode,String errorMsg) {
+    public static <T> Result<T> fail(String errorCode, String errorMsg) {
         return new Result<>(false, errorCode, errorMsg, null);
+    }
+
+    public static <T> Result<T> error(String errorCode,String errorMsg) {
+        return fail(errorCode, errorMsg);
     }
 }

@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0
  * @since 2024-01-01
  */
-@SpringBootApplication(scanBasePackages = {"com.gig.collide.content", "com.gig.collide.cache"})
+@SpringBootApplication(scanBasePackages = {"com.gig.collide.content", "com.gig.collide.cache", "com.gig.collide.base"})
 @EnableDubbo
 @MapperScan("com.gig.collide.content.infrastructure.mapper")
 public class CollideContentApplication {

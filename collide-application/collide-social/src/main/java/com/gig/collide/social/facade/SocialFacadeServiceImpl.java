@@ -2,6 +2,7 @@ package com.gig.collide.social.facade;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.api.social.constant.SocialPostStatus;
+import com.gig.collide.api.social.constant.SocialPostType;
 import com.gig.collide.api.social.request.SocialPostCreateRequest;
 import com.gig.collide.api.social.request.SocialPostQueryRequest;
 import com.gig.collide.api.social.response.SocialPostResponse;
@@ -343,9 +344,82 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
 
     @Override
     public SocialPostResponse sharePost(Long postId, Long userId, String comment) {
-        // TODO: 实现转发功能
-        log.info("转发动态功能待实现，动态ID：{}，用户ID：{}", postId, userId);
-        return SocialPostResponse.error("NOT_IMPLEMENTED", "转发功能待实现");
+        try {
+            log.info("转发动态，动态ID：{}，用户ID：{}，评论：{}", postId, userId, comment);
+
+            // 1. 检查原动态是否存在（单表查询）
+            SocialPost originalPost = socialPostMapper.selectById(postId);
+            if (originalPost == null) {
+                return SocialPostResponse.error("POST_NOT_FOUND", "原动态不存在");
+            }
+
+            // 2. 检查是否允许转发
+            if (!originalPost.getAllowShares()) {
+                return SocialPostResponse.error("SHARE_NOT_ALLOWED", "该动态不允许转发");
+            }
+
+            // 3. 检查权限（根据可见性设置）
+            if (!hasViewPermission(originalPost, userId)) {
+                return SocialPostResponse.error("ACCESS_DENIED", "无权限转发此动态");
+            }
+
+            // 4. 获取转发用户信息
+            UserInfo userInfo = getUserInfo(userId);
+            if (userInfo == null) {
+                return SocialPostResponse.error("USER_NOT_FOUND", "转发用户不存在");
+            }
+
+            // 5. 创建转发动态
+            SocialPost sharePost = new SocialPost();
+            sharePost.setPostType(SocialPostType.SHARE); // 转发类型
+            
+            // 构建转发内容（包含原动态引用和用户评论）
+            String shareContent = String.format("转发了 @%s 的动态 (动态ID: %d)", 
+                originalPost.getAuthorUsername(), postId);
+            if (comment != null && !comment.trim().isEmpty()) {
+                shareContent = comment + " // " + shareContent;
+            }
+            sharePost.setContent(shareContent);
+            sharePost.setStatus(SocialPostStatus.PUBLISHED);
+            sharePost.setVisibility(0); // 转发动态默认公开
+            sharePost.setAllowComments(true);
+            sharePost.setAllowShares(true);
+
+            // 设置转发用户信息（冗余存储）
+            sharePost.setAuthorId(userInfo.getUserId());
+            sharePost.setAuthorUsername(userInfo.getUsername());
+            sharePost.setAuthorNickname(userInfo.getNickName());
+            sharePost.setAuthorAvatar(userInfo.getProfilePhotoUrl());
+            sharePost.setAuthorVerified(userInfo.isBlogger());
+
+            // 初始化统计信息
+            sharePost.setLikeCount(0L);
+            sharePost.setCommentCount(0L);
+            sharePost.setShareCount(0L);
+            sharePost.setViewCount(0L);
+            sharePost.setFavoriteCount(0L);
+            sharePost.setHotScore(0.0);
+            sharePost.setPublishedTime(LocalDateTime.now());
+
+            // 6. 保存转发动态
+            int insertResult = socialPostMapper.insert(sharePost);
+            if (insertResult <= 0) {
+                return SocialPostResponse.error("SHARE_FAILED", "转发失败");
+            }
+
+            // 7. 增加原动态的转发数
+            int updateResult = socialPostMapper.incrementShareCount(postId, 1);
+            if (updateResult <= 0) {
+                log.warn("更新原动态转发数失败，动态ID：{}", postId);
+            }
+
+            log.info("动态转发成功，原动态ID：{}，转发动态ID：{}", postId, sharePost.getId());
+            return SocialPostResponse.success(sharePost.getId(), "转发成功");
+
+        } catch (Exception e) {
+            log.error("转发动态失败，动态ID：{}，用户ID：{}", postId, userId, e);
+            return SocialPostResponse.error("SYSTEM_ERROR", "系统异常，转发失败");
+        }
     }
 
     @Override

@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.comment.infrastructure.mapper.CommentMapper">
 
-    <!-- 结果映射 -->
+    <!-- 结果映射 - 完全去连表化设计 -->
     <resultMap id="BaseResultMap" type="com.gig.collide.comment.domain.entity.Comment">
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="comment_type" property="commentType" jdbcType="VARCHAR" 
@@ -12,25 +12,53 @@
         <result column="root_comment_id" property="rootCommentId" jdbcType="BIGINT"/>
         <result column="content" property="content" jdbcType="VARCHAR"/>
         <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <!-- 冗余用户信息，避免连表查询 -->
+        <result column="user_nickname" property="userNickname" jdbcType="VARCHAR"/>
+        <result column="user_avatar" property="userAvatar" jdbcType="VARCHAR"/>
+        <result column="user_verified" property="userVerified" jdbcType="TINYINT"/>
         <result column="reply_to_user_id" property="replyToUserId" jdbcType="BIGINT"/>
+        <result column="reply_to_user_nickname" property="replyToUserNickname" jdbcType="VARCHAR"/>
         <result column="status" property="status" jdbcType="VARCHAR" 
                 typeHandler="com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler"/>
+        <!-- 冗余统计字段，避免连表统计 -->
         <result column="like_count" property="likeCount" jdbcType="INTEGER"/>
         <result column="reply_count" property="replyCount" jdbcType="INTEGER"/>
-        <result column="is_pinned" property="isPinned" jdbcType="BOOLEAN"/>
-        <result column="is_hot" property="isHot" jdbcType="BOOLEAN"/>
+        <result column="report_count" property="reportCount" jdbcType="INTEGER"/>
+        <!-- 状态标识字段 -->
+        <result column="is_pinned" property="isPinned" jdbcType="TINYINT"/>
+        <result column="is_hot" property="isHot" jdbcType="TINYINT"/>
+        <result column="is_essence" property="isEssence" jdbcType="TINYINT"/>
+        <result column="quality_score" property="qualityScore" jdbcType="DECIMAL"/>
+        <!-- 附加信息字段 -->
         <result column="ip_address" property="ipAddress" jdbcType="VARCHAR"/>
         <result column="device_info" property="deviceInfo" jdbcType="VARCHAR"/>
+        <result column="location" property="location" jdbcType="VARCHAR"/>
+        <result column="mention_user_ids" property="mentionUserIds" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="images" property="images" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <result column="extra_data" property="extraData" jdbcType="VARCHAR" 
+                typeHandler="com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler"/>
+        <!-- 审核字段 -->
+        <result column="audit_status" property="auditStatus" jdbcType="VARCHAR"/>
+        <result column="audit_reason" property="auditReason" jdbcType="VARCHAR"/>
+        <!-- 时间字段 -->
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
         <result column="deleted" property="deleted" jdbcType="TINYINT"/>
     </resultMap>
 
-    <!-- 基础字段（无连表字段） -->
+    <!-- 基础字段（完全去连表化） -->
     <sql id="Base_Column_List">
         id, comment_type, target_id, parent_comment_id, root_comment_id, content,
-        user_id, reply_to_user_id, status, like_count, reply_count, is_pinned, is_hot,
-        ip_address, device_info, create_time, update_time, deleted
+        user_id, user_nickname, user_avatar, user_verified,
+        reply_to_user_id, reply_to_user_nickname, status,
+        like_count, reply_count, report_count,
+        is_pinned, is_hot, is_essence, quality_score,
+        ip_address, device_info, location,
+        mention_user_ids, images, extra_data,
+        audit_status, audit_reason,
+        create_time, update_time, deleted
     </sql>
 
     <!-- 分页查询评论列表（单表查询，无JOIN） -->

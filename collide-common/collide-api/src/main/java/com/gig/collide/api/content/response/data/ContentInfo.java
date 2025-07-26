@@ -64,7 +64,17 @@ public class ContentInfo implements Serializable {
     private Long authorId;
 
     /**
-     * 作者信息
+     * 作者昵称（冗余字段，去连表化设计）
+     */
+    private String authorNickname;
+
+    /**
+     * 作者头像URL（冗余字段，去连表化设计）
+     */
+    private String authorAvatar;
+
+    /**
+     * 作者信息（详细信息，可为空）
      */
     private BasicUserInfo author;
 
@@ -147,6 +157,16 @@ public class ContentInfo implements Serializable {
      * 是否为推荐内容
      */
     private Boolean recommended;
+
+    /**
+     * 是否置顶
+     */
+    private Boolean pinned;
+
+    /**
+     * 权重分数（用于推荐算法）
+     */
+    private Double weightScore;
 
     /**
      * 内容质量评分

@@ -74,4 +74,20 @@ public interface FollowFacadeService {
      * @return 关注统计列表
      */
     FollowQueryResponse<java.util.List<FollowStatistics>> batchGetFollowStatistics(FollowQueryRequest queryRequest);
+
+    /**
+     * 批量检查关注关系
+     *
+     * @param queryRequest 批量查询请求
+     * @return 关注关系列表
+     */
+    FollowQueryResponse<java.util.List<FollowInfo>> batchCheckFollowRelations(FollowQueryRequest queryRequest);
+
+    /**
+     * 获取相互关注列表
+     *
+     * @param queryRequest 查询请求
+     * @return 相互关注列表
+     */
+    FollowQueryResponse<java.util.List<FollowInfo>> getMutualFollows(FollowQueryRequest queryRequest);
 } 

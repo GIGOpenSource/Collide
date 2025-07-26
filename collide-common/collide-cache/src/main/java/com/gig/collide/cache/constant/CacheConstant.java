@@ -72,6 +72,32 @@ public class CacheConstant {
      */
     public static final String COMMENT_LIST_CACHE = ":comment:cache:list:";
 
+    // ========== 点赞相关缓存 ==========
+    /**
+     * 用户点赞状态缓存
+     */
+    public static final String LIKE_USER_STATUS_CACHE = ":like:cache:user:status:";
+    
+    /**
+     * 点赞统计信息缓存
+     */
+    public static final String LIKE_STATISTICS_CACHE = ":like:cache:statistics:";
+    
+    /**
+     * 用户点赞历史缓存
+     */
+    public static final String LIKE_USER_HISTORY_CACHE = ":like:cache:user:history:";
+    
+    /**
+     * 热门点赞内容缓存
+     */
+    public static final String LIKE_HOT_CONTENT_CACHE = ":like:cache:hot:content:";
+    
+    /**
+     * 活跃点赞用户缓存
+     */
+    public static final String LIKE_ACTIVE_USERS_CACHE = ":like:cache:active:users:";
+
     // ========== 缓存时间配置（分钟） ==========
     /**
      * 用户信息缓存时间 - 60分钟
@@ -102,6 +128,21 @@ public class CacheConstant {
      * 关注统计缓存时间 - 60分钟
      */
     public static final int FOLLOW_STATISTICS_CACHE_EXPIRE = 60;
+    
+    /**
+     * 点赞状态缓存时间 - 15分钟
+     */
+    public static final int LIKE_STATUS_CACHE_EXPIRE = 15;
+    
+    /**
+     * 点赞统计缓存时间 - 30分钟
+     */
+    public static final int LIKE_STATISTICS_CACHE_EXPIRE = 30;
+    
+    /**
+     * 点赞历史缓存时间 - 5分钟
+     */
+    public static final int LIKE_HISTORY_CACHE_EXPIRE = 5;
     
     /**
      * 本地缓存时间 - 10分钟

@@ -1,0 +1,56 @@
+package com.gig.collide.content.infrastructure.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.gig.collide.content.domain.entity.ContentShare;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+
+import java.time.LocalDateTime;
+
+/**
+ * 内容分享记录数据访问映射器
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-01-01
+ */
+@Mapper
+public interface ContentShareMapper extends BaseMapper<ContentShare> {
+
+    /**
+     * 统计指定内容的分享数量
+     *
+     * @param contentId 内容ID
+     * @return 分享数量
+     */
+    int countByContentId(@Param("contentId") Long contentId);
+
+    /**
+     * 统计用户的分享数量
+     *
+     * @param userId 用户ID
+     * @return 分享数量
+     */
+    int countByUserId(@Param("userId") Long userId);
+
+    /**
+     * 统计指定时间范围内的分享数量
+     *
+     * @param contentId 内容ID
+     * @param startTime 开始时间
+     * @param endTime   结束时间
+     * @return 分享数量
+     */
+    int countByContentIdAndTimeRange(@Param("contentId") Long contentId,
+                                    @Param("startTime") LocalDateTime startTime,
+                                    @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 统计指定平台的分享数量
+     *
+     * @param contentId 内容ID
+     * @param platform  分享平台
+     * @return 分享数量
+     */
+    int countByContentIdAndPlatform(@Param("contentId") Long contentId, @Param("platform") String platform);
+} 

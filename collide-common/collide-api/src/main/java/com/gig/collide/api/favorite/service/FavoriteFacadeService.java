@@ -2,9 +2,14 @@ package com.gig.collide.api.favorite.service;
 
 import com.gig.collide.api.favorite.request.FavoriteRequest;
 import com.gig.collide.api.favorite.request.FavoriteQueryRequest;
+import com.gig.collide.api.favorite.request.FolderCreateRequest;
+import com.gig.collide.api.favorite.request.FolderUpdateRequest;
 import com.gig.collide.api.favorite.response.FavoriteResponse;
 import com.gig.collide.api.favorite.response.data.FavoriteInfo;
+import com.gig.collide.api.favorite.response.data.FolderInfo;
 import com.gig.collide.base.response.PageResponse;
+
+import java.util.List;
 
 /**
  * 收藏服务 Facade 接口
@@ -14,6 +19,8 @@ import com.gig.collide.base.response.PageResponse;
  * @since 2024-01-01
  */
 public interface FavoriteFacadeService {
+
+    // ========== 收藏管理 ==========
 
     /**
      * 收藏/取消收藏
@@ -85,4 +92,56 @@ public interface FavoriteFacadeService {
      * @return 被收藏数量
      */
     Long countTargetFavorites(String favoriteType, Long targetId);
+
+    // ========== 收藏夹管理 ==========
+
+    /**
+     * 创建收藏夹
+     *
+     * @param createRequest 创建请求
+     * @return 收藏夹ID
+     */
+    FavoriteResponse createFolder(FolderCreateRequest createRequest);
+
+    /**
+     * 更新收藏夹
+     *
+     * @param updateRequest 更新请求
+     * @return 操作结果
+     */
+    FavoriteResponse updateFolder(FolderUpdateRequest updateRequest);
+
+    /**
+     * 删除收藏夹
+     *
+     * @param folderId 收藏夹ID
+     * @param userId 用户ID（权限验证）
+     * @return 操作结果
+     */
+    FavoriteResponse deleteFolder(Long folderId, Long userId);
+
+    /**
+     * 查询用户收藏夹列表
+     *
+     * @param userId 用户ID
+     * @return 收藏夹列表
+     */
+    List<FolderInfo> queryUserFolders(Long userId);
+
+    /**
+     * 查询收藏夹详情
+     *
+     * @param folderId 收藏夹ID
+     * @param userId 查询用户ID（权限验证）
+     * @return 收藏夹详情
+     */
+    FolderInfo queryFolderDetail(Long folderId, Long userId);
+
+    /**
+     * 初始化用户默认收藏夹
+     *
+     * @param userId 用户ID
+     * @return 默认收藏夹ID
+     */
+    Long initDefaultFolder(Long userId);
 } 

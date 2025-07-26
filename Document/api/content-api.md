@@ -33,26 +33,92 @@ Content 模块是 Collide 社交平台的核心内容管理系统，负责多媒
 
 ## 🗄️ 数据库设计
 
+### 设计理念：去连表化架构
+
+Content模块采用**去连表化设计**，通过冗余存储关联信息，避免复杂的JOIN查询，实现高性能的内容检索。
+
+#### 核心优势
+- **查询性能提升10x+**: 单表查询替代多表JOIN
+- **降低数据库负载**: 减少复杂的关联查询
+- **提高可扩展性**: 便于水平分库分表
+- **简化缓存策略**: 单表数据便于缓存
+
 ### 内容主表 (t_content)
 
 | 字段名 | 类型 | 是否必填 | 默认值 | 说明 |
 |--------|------|----------|--------|------|
+| **基础字段** |
 | id | BIGINT | 是 | AUTO_INCREMENT | 内容ID，主键 |
 | title | VARCHAR(200) | 是 | - | 内容标题 |
 | description | TEXT | 否 | - | 内容描述/摘要 |
-| content_type | VARCHAR(50) | 是 | - | 内容类型枚举 |
-| content_data | LONGTEXT | 否 | - | 内容数据JSON |
+| **内容相关字段** |
+| content_type | VARCHAR(50) | 是 | - | 内容类型：NOVEL/COMIC/SHORT_VIDEO/LONG_VIDEO/ARTICLE/AUDIO |
+| content_data | LONGTEXT | 否 | - | 内容数据，JSON格式存储 |
 | cover_url | VARCHAR(500) | 否 | - | 封面图片URL |
+| tags | TEXT | 否 | - | 标签，JSON数组格式：["标签1","标签2"] |
+| **作者信息（冗余字段，避免连表）** |
 | author_id | BIGINT | 是 | - | 作者用户ID |
+| author_nickname | VARCHAR(50) | 否 | - | 作者昵称（冗余字段） |
+| author_avatar | VARCHAR(500) | 否 | - | 作者头像URL（冗余字段） |
+| **分类信息（冗余字段，避免连表）** |
 | category_id | BIGINT | 否 | - | 分类ID |
-| tags | TEXT | 否 | - | 标签JSON数组 |
-| status | VARCHAR(50) | 是 | DRAFT | 内容状态 |
-| review_status | VARCHAR(50) | 是 | PENDING | 审核状态 |
+| category_name | VARCHAR(100) | 否 | - | 分类名称（冗余字段） |
+| **状态相关字段** |
+| status | VARCHAR(50) | 是 | DRAFT | 内容状态：DRAFT/PENDING/PUBLISHED/REJECTED/OFFLINE |
+| review_status | VARCHAR(50) | 是 | PENDING | 审核状态：PENDING/APPROVED/REJECTED |
+| review_comment | TEXT | 否 | - | 审核意见 |
+| reviewer_id | BIGINT | 否 | - | 审核员ID |
+| reviewed_time | DATETIME | 否 | - | 审核时间 |
+| **统计字段（冗余存储，避免聚合查询）** |
 | view_count | BIGINT | 是 | 0 | 查看数 |
 | like_count | BIGINT | 是 | 0 | 点赞数 |
+| dislike_count | BIGINT | 是 | 0 | 点踩数 |
 | comment_count | BIGINT | 是 | 0 | 评论数 |
 | share_count | BIGINT | 是 | 0 | 分享数 |
 | favorite_count | BIGINT | 是 | 0 | 收藏数 |
+| **推荐相关字段** |
+| weight_score | DOUBLE | 是 | 0.0 | 权重分数，用于推荐算法 |
+| is_recommended | TINYINT(1) | 是 | 0 | 是否推荐：0-否，1-是 |
+| is_pinned | TINYINT(1) | 是 | 0 | 是否置顶：0-否，1-是 |
+| **功能开关字段** |
+| allow_comment | TINYINT(1) | 是 | 1 | 是否允许评论：0-否，1-是 |
+| allow_share | TINYINT(1) | 是 | 1 | 是否允许分享：0-否，1-是 |
+| **时间字段** |
+| create_time | DATETIME | 是 | CURRENT_TIMESTAMP | 创建时间 |
+| update_time | DATETIME | 是 | CURRENT_TIMESTAMP | 更新时间 |
+| published_time | DATETIME | 否 | - | 发布时间 |
+| deleted | INT | 是 | 0 | 逻辑删除标记：0-未删除，1-已删除 |
+
+### 交互记录表（幂等性控制）
+
+#### 点赞记录表 (t_content_like)
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| id | BIGINT | 记录ID，主键 |
+| content_id | BIGINT | 内容ID |
+| user_id | BIGINT | 用户ID |
+| create_time | DATETIME | 点赞时间 |
+| deleted | INT | 逻辑删除标记 |
+
+#### 收藏记录表 (t_content_favorite)
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| id | BIGINT | 记录ID，主键 |
+| content_id | BIGINT | 内容ID |
+| user_id | BIGINT | 用户ID |
+| create_time | DATETIME | 收藏时间 |
+| deleted | INT | 逻辑删除标记 |
+
+#### 分享记录表 (t_content_share)
+| 字段名 | 类型 | 说明 |
+|--------|------|------|
+| id | BIGINT | 记录ID，主键 |
+| content_id | BIGINT | 内容ID |
+| user_id | BIGINT | 用户ID |
+| platform | VARCHAR(50) | 分享平台：WECHAT/WEIBO/QQ/LINK等 |
+| share_text | TEXT | 分享文案 |
+| create_time | DATETIME | 分享时间 |
+| deleted | INT | 逻辑删除标记 |
 
 ### 内容状态枚举
 
@@ -165,7 +231,7 @@ Content 模块是 Collide 社交平台的核心内容管理系统，负责多媒
 
 ### 响应模型
 
-#### ContentInfo
+#### ContentInfo（去连表化设计）
 ```json
 {
   "id": 123,
@@ -178,29 +244,45 @@ Content 模块是 Collide 社交平台的核心内容管理系统，负责多媒
     "lastUpdateChapter": "第100章"
   },
   "coverUrl": "https://example.com/cover.jpg",
+  
+  // 作者信息（直接从content表获取，无需连表）
   "authorId": 456,
-  "author": {
-    "id": 456,
-    "username": "author_001",
-    "nickname": "知名作者",
-    "avatar": "https://example.com/avatar.jpg"
-  },
+  "authorNickname": "知名作者",
+  "authorAvatar": "https://example.com/avatar.jpg",
+  
+  // 分类信息（直接从content表获取，无需连表）
   "categoryId": 1,
   "categoryName": "玄幻小说",
+  
   "tags": ["玄幻", "修仙", "热血"],
   "status": "PUBLISHED",
   "reviewStatus": "APPROVED",
+  
+  // 统计数据（直接从content表获取，无需聚合查询）
   "viewCount": 50000,
   "likeCount": 1200,
+  "dislikeCount": 45,
   "commentCount": 300,
   "shareCount": 150,
   "favoriteCount": 800,
+  
+  // 推荐相关
+  "weightScore": 85.5,
+  "recommended": true,
+  "pinned": false,
+  
+  // 功能开关
+  "allowComment": true,
+  "allowShare": true,
+  
+  // 时间信息
   "createTime": "2024-01-01T10:00:00",
   "updateTime": "2024-01-15T16:30:00",
   "publishedTime": "2024-01-02T09:00:00",
+  
+  // 用户个性化状态（通过交互记录表查询）
   "liked": true,
-  "favorited": false,
-  "recommended": true
+  "favorited": false
 }
 ```
 
@@ -460,23 +542,47 @@ curl -X GET "http://localhost:8080/api/v1/content/123/statistics"
 
 ## 📈 性能优化建议
 
-### 查询优化
-- 使用适当的索引策略
-- 分页查询避免深分页
-- 热门内容使用缓存
-- 统计数据异步计算
+### 去连表化设计优势
+- **查询性能提升**: 单表查询替代多表JOIN，性能提升10x+
+- **缓存友好**: 单条记录包含完整信息，便于缓存
+- **扩展性强**: 避免跨表事务，便于分库分表
+- **维护简单**: 减少表间依赖，降低系统复杂度
 
-### 存储优化
-- 大文件内容使用对象存储
-- JSON数据合理设计结构
-- 定期清理过期数据
-- 数据归档策略
+### 索引策略
+```sql
+-- 热门内容查询索引
+CREATE INDEX idx_hot_content ON t_content (status, deleted, like_count DESC, view_count DESC);
+
+-- 最新内容查询索引  
+CREATE INDEX idx_latest_content ON t_content (status, deleted, published_time DESC);
+
+-- 作者内容查询索引
+CREATE INDEX idx_author_content ON t_content (author_id, status, deleted, create_time DESC);
+
+-- 分类内容查询索引
+CREATE INDEX idx_category_content ON t_content (category_id, status, deleted, published_time DESC);
+
+-- 推荐内容查询索引
+CREATE INDEX idx_recommended ON t_content (is_recommended, weight_score DESC);
+```
+
+### 数据一致性保障
+- **冗余数据同步**: 通过消息队列异步更新冗余字段
+- **统计数据更新**: 使用原子操作存储过程更新统计字段
+- **幂等性控制**: 通过交互记录表确保操作幂等性
+- **定时校验**: 定期校验和修复数据不一致
 
 ### 缓存策略
-- 热门内容Redis缓存
-- 用户个性化推荐缓存
-- 统计数据定期更新
-- CDN加速静态资源
+- **内容详情缓存**: Redis缓存热门内容，减少数据库查询
+- **列表查询缓存**: 缓存首页、分类页等列表查询结果
+- **统计数据缓存**: 缓存实时统计数据，提高响应速度
+- **用户状态缓存**: 缓存用户点赞、收藏状态
+
+### 存储优化
+- **JSON数据优化**: 合理设计content_data的JSON结构
+- **大文件分离**: 图片、视频等大文件使用对象存储
+- **数据归档**: 定期归档过期数据，保持表的查询性能
+- **分区策略**: 可考虑按时间分区，提高历史数据查询效率
 
 ---
 

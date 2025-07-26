@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * @since 2024-01-01
  */
 @Data
-@TableName("collide_favorite")
+@TableName("t_favorite")
 public class Favorite implements Serializable {
 
     private static final long serialVersionUID = 1L;

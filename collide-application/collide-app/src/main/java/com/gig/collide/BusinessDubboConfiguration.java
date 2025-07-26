@@ -11,6 +11,9 @@ import com.gig.collide.api.auth.service.AuthFacadeService;
 import com.gig.collide.api.category.CategoryFacadeService;
 import com.gig.collide.api.tag.TagFacadeService;
 import com.gig.collide.api.search.service.SearchFacadeService;
+import com.gig.collide.api.goods.service.GoodsFacadeService;
+import com.gig.collide.api.order.service.OrderFacadeService;
+import com.gig.collide.api.payment.service.PaymentFacadeService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +26,9 @@ import org.springframework.context.annotation.Configuration;
  * - UserFacadeService: 用户服务
  * - FollowFacadeService: 关注服务
  * - ContentFacadeService: 内容服务
+ * - GoodsFacadeService: 商品服务
+ * - OrderFacadeService: 订单服务
+ * - PaymentFacadeService: 支付服务
  *
  * @author Collide Team
  * @version 1.0
@@ -63,6 +69,15 @@ public class BusinessDubboConfiguration {
 
     @DubboReference(version = "1.0.0")
     private SearchFacadeService searchFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private GoodsFacadeService goodsFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private OrderFacadeService orderFacadeService;
+
+    @DubboReference(version = "1.0.0")
+    private PaymentFacadeService paymentFacadeService;
 
     /**
      * 用户服务 Bean 配置
@@ -152,5 +167,32 @@ public class BusinessDubboConfiguration {
     @ConditionalOnMissingBean(name = "searchFacadeService")
     public SearchFacadeService searchFacadeService() {
         return searchFacadeService;
+    }
+
+    /**
+     * 商品服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "goodsFacadeService")
+    public GoodsFacadeService goodsFacadeService() {
+        return goodsFacadeService;
+    }
+
+    /**
+     * 订单服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "orderFacadeService")
+    public OrderFacadeService orderFacadeService() {
+        return orderFacadeService;
+    }
+
+    /**
+     * 支付服务 Bean 配置
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "paymentFacadeService")
+    public PaymentFacadeService paymentFacadeService() {
+        return paymentFacadeService;
     }
 }

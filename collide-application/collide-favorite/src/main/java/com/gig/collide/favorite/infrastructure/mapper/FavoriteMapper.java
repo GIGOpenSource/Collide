@@ -9,6 +9,8 @@ import com.gig.collide.favorite.domain.entity.Favorite;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 收藏 Mapper 接口
  *
@@ -52,6 +54,14 @@ public interface FavoriteMapper extends BaseMapper<Favorite> {
     );
 
     /**
+     * 根据收藏ID查询收藏记录
+     *
+     * @param favoriteId 收藏ID
+     * @return 收藏记录
+     */
+    Favorite selectByFavoriteId(@Param("favoriteId") Long favoriteId);
+
+    /**
      * 统计用户收藏数量
      *
      * @param userId 用户ID
@@ -85,7 +95,41 @@ public interface FavoriteMapper extends BaseMapper<Favorite> {
      */
     Integer batchUpdateStatus(
         @Param("userId") Long userId,
-        @Param("targetIds") java.util.List<Long> targetIds,
+        @Param("targetIds") List<Long> targetIds,
         @Param("status") FavoriteStatus status
+    );
+
+    /**
+     * 查询用户收藏的目标ID列表
+     *
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetIds 目标ID列表（过滤条件）
+     * @return 已收藏的目标ID列表
+     */
+    List<Long> selectUserFavoriteTargetIds(
+        @Param("userId") Long userId,
+        @Param("favoriteType") FavoriteType favoriteType,
+        @Param("targetIds") List<Long> targetIds
+    );
+
+    /**
+     * 查询收藏夹中的收藏数量
+     *
+     * @param folderId 收藏夹ID
+     * @return 收藏数量
+     */
+    Long countFolderFavorites(@Param("folderId") Long folderId);
+
+    /**
+     * 删除用户收藏记录（物理删除，清理数据用）
+     *
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型（可选）
+     * @return 删除数量
+     */
+    Integer deleteUserFavorites(
+        @Param("userId") Long userId,
+        @Param("favoriteType") FavoriteType favoriteType
     );
 } 

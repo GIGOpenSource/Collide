@@ -15,22 +15,22 @@
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        
+
         <!-- Spring 生态版本 -->
         <spring-boot.version>3.2.2</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.2</spring-cloud-alibaba.version>
-        
+
         <!-- 微服务框架版本 -->
         <dubbo.version>3.2.10</dubbo.version>
-        
+
         <!-- Collide业务特色技术栈版本 -->
         <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
         <mysql.version>8.0.33</mysql.version>
         <sa-token.version>1.37.0</sa-token.version>
         <mapstruct.version>1.5.5.Final</mapstruct.version>
         <rocketmq.version>5.3.0</rocketmq.version>
-        
+
         <!-- 工具库版本 -->
         <lombok.version>1.18.34</lombok.version>
         <fastjson2.version>2.0.42</fastjson2.version>
@@ -48,12 +48,19 @@
         <module>collide-common</module>
         <module>collide-gateway</module>
         <module>collide-auth</module>
-<!--        <module>collide-admin</module>-->
+        <module>collide-admin</module>
         <module>collide-application</module>
     </modules>
 
     <dependencyManagement>
         <dependencies>
+
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-client</artifactId>
+                <version>5.3.0</version>
+            </dependency>
+
             <!-- ===================== Spring Cloud 生态 ===================== -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
@@ -96,6 +103,12 @@
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-limiter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-mq</artifactId>
+                <version>${project.version}</version>
             </dependency>
 
             <!-- 数据访问模块 -->
@@ -194,11 +207,11 @@
                 <artifactId>collide-auth</artifactId>
                 <version>${project.version}</version>
             </dependency>
-<!--            <dependency>-->
-<!--                <groupId>com.gig</groupId>-->
-<!--                <artifactId>collide-admin</artifactId>-->
-<!--                <version>${project.version}</version>-->
-<!--            </dependency>-->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-admin</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- ===================== Collide 业务模块 ===================== -->
             <!-- 用户相关 -->
@@ -247,6 +260,24 @@
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-social</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-goods</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-order</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-payment</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -410,7 +441,7 @@
             </snapshots>
         </repository>
     </repositories>
-    
+
     <pluginRepositories>
         <pluginRepository>
             <id>spring-milestones</id>

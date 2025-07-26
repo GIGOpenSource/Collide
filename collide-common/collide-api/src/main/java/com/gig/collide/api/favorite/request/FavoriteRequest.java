@@ -6,6 +6,7 @@ import lombok.Data;
 
 import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * 收藏操作请求
@@ -28,11 +29,16 @@ public class FavoriteRequest implements Serializable {
     private FavoriteType favoriteType;
 
     /**
-     * 目标ID（内容ID、用户ID等）
+     * 目标ID（内容ID、用户ID等）- 单个收藏使用
      */
-    @NotNull(message = "目标ID不能为空")
     @Schema(description = "目标ID", example = "123")
     private Long targetId;
+
+    /**
+     * 目标ID列表 - 批量收藏使用
+     */
+    @Schema(description = "目标ID列表（批量收藏时使用）", example = "[123, 456, 789]")
+    private List<Long> targetIds;
 
     /**
      * 收藏用户ID
@@ -59,4 +65,24 @@ public class FavoriteRequest implements Serializable {
      */
     @Schema(description = "收藏备注", example = "很棒的内容")
     private String remark;
+    
+    /**
+     * 是否为批量操作
+     */
+    public boolean isBatchOperation() {
+        return targetIds != null && !targetIds.isEmpty();
+    }
+    
+    /**
+     * 获取所有目标ID（兼容单个和批量）
+     */
+    public List<Long> getAllTargetIds() {
+        if (isBatchOperation()) {
+            return targetIds;
+        } else if (targetId != null) {
+            return List.of(targetId);
+        } else {
+            return List.of();
+        }
+    }
 } 

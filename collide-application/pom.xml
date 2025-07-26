@@ -9,7 +9,6 @@
         <groupId>com.gig</groupId>
         <artifactId>Collide</artifactId>
         <version>1.0.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <groupId>com.gig</groupId>
@@ -32,6 +31,9 @@
         <module>collide-like</module>
         <module>collide-favorite</module>
         <module>collide-social</module>
+        <module>collide-goods</module>
+        <module>collide-order</module>
+        <module>collide-payment</module>
         <module>collide-app</module>
     </modules>
 

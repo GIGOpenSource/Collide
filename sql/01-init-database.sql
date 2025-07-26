@@ -225,33 +225,90 @@ CREATE TABLE IF NOT EXISTS `t_like` (
 -- 收藏相关表
 -- ==========================================
 
--- 收藏表
+-- 收藏表（更新版，支持幂等性和去连表化设计）
 CREATE TABLE IF NOT EXISTS `t_favorite` (
-    `id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
-    `user_id` BIGINT NOT NULL COMMENT '用户ID',
-    `target_id` BIGINT NOT NULL COMMENT '目标对象ID（内容ID、评论ID等）',
-    `target_type` VARCHAR(50) NOT NULL COMMENT '目标类型：CONTENT、COMMENT、SOCIAL_POST',
-    `favorite_type` TINYINT NOT NULL DEFAULT 1 COMMENT '收藏类型：1-普通收藏，2-重要收藏',
-    `folder_id` BIGINT DEFAULT 0 COMMENT '收藏夹ID，0表示默认收藏夹',
-    `folder_name` VARCHAR(100) DEFAULT '默认收藏夹' COMMENT '收藏夹名称',
-    `tags` VARCHAR(500) DEFAULT NULL COMMENT '标签，逗号分隔',
-    `notes` TEXT DEFAULT NULL COMMENT '备注',
-    `ip_address` VARCHAR(45) COMMENT '收藏IP地址',
-    `device_info` VARCHAR(200) COMMENT '设备信息',
-    `created_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `updated_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    `deleted` TINYINT NOT NULL DEFAULT 0 COMMENT '逻辑删除标记：0-未删除，1-已删除',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_target_type` (`user_id`, `target_id`, `target_type`),
+    `favorite_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏ID',
+    `favorite_type` VARCHAR(50) NOT NULL COMMENT '收藏类型：CONTENT、USER、SOCIAL_POST等',
+    `target_id` BIGINT NOT NULL COMMENT '目标对象ID',
+    `user_id` BIGINT NOT NULL COMMENT '收藏用户ID',
+    `folder_id` BIGINT DEFAULT 1 COMMENT '收藏夹ID，默认为1（默认收藏夹）',
+    `status` VARCHAR(20) NOT NULL DEFAULT 'NORMAL' COMMENT '收藏状态：NORMAL-正常，CANCELLED-已取消',
+    `remark` VARCHAR(500) DEFAULT NULL COMMENT '收藏备注',
+    `favorite_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+    
+    -- 去连表化冗余字段
+    `target_title` VARCHAR(500) DEFAULT NULL COMMENT '目标标题（冗余字段）',
+    `target_cover` VARCHAR(500) DEFAULT NULL COMMENT '目标封面/头像（冗余字段）',
+    `target_author_id` BIGINT DEFAULT NULL COMMENT '目标作者ID（冗余字段）',
+    `target_author_name` VARCHAR(100) DEFAULT NULL COMMENT '目标作者名称（冗余字段）',
+    `target_author_avatar` VARCHAR(500) DEFAULT NULL COMMENT '目标作者头像（冗余字段）',
+    `target_publish_time` DATETIME DEFAULT NULL COMMENT '目标发布时间（冗余字段）',
+    `target_summary` TEXT DEFAULT NULL COMMENT '目标摘要/描述（冗余字段）',
+    
+    -- 审计字段
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `is_deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-否，1-是',
+    `version` INT NOT NULL DEFAULT 1 COMMENT '版本号（乐观锁）',
+    
+    PRIMARY KEY (`favorite_id`),
+    
+    -- 核心唯一约束：确保同一用户对同一目标同一类型只能有一条有效收藏记录
+    UNIQUE KEY `uk_user_favorite_target` (`user_id`, `favorite_type`, `target_id`, `is_deleted`),
+    
+    -- 查询性能索引
     KEY `idx_user_id` (`user_id`),
-    KEY `idx_target_id` (`target_id`),
-    KEY `idx_target_type` (`target_type`),
-    KEY `idx_favorite_type` (`favorite_type`),
+    KEY `idx_target` (`favorite_type`, `target_id`),
     KEY `idx_folder_id` (`folder_id`),
-    KEY `idx_created_time` (`created_time`),
-    KEY `idx_deleted` (`deleted`),
-    KEY `idx_target_favorite` (`target_id`, `target_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
+    KEY `idx_status` (`status`),
+    KEY `idx_favorite_time` (`favorite_time`),
+    KEY `idx_create_time` (`create_time`),
+    KEY `idx_is_deleted` (`is_deleted`),
+    
+    -- 复合查询索引
+    KEY `idx_user_type_status` (`user_id`, `favorite_type`, `status`),
+    KEY `idx_user_folder_time` (`user_id`, `folder_id`, `favorite_time` DESC),
+    KEY `idx_target_status_time` (`favorite_type`, `target_id`, `status`, `favorite_time` DESC)
+    
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表（支持幂等性和去连表化设计）';
+
+-- 收藏夹表
+CREATE TABLE IF NOT EXISTS `t_favorite_folder` (
+    `folder_id` BIGINT NOT NULL AUTO_INCREMENT COMMENT '收藏夹ID',
+    `folder_name` VARCHAR(50) NOT NULL COMMENT '收藏夹名称',
+    `description` VARCHAR(200) DEFAULT NULL COMMENT '收藏夹描述',
+    `folder_type` VARCHAR(20) NOT NULL DEFAULT 'CUSTOM' COMMENT '收藏夹类型：DEFAULT-默认，CUSTOM-自定义，PRIVATE-私密，PUBLIC-公开',
+    `user_id` BIGINT NOT NULL COMMENT '用户ID',
+    `is_default` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否为默认收藏夹：0-否，1-是',
+    `cover_image` VARCHAR(500) DEFAULT NULL COMMENT '收藏夹封面图片',
+    `sort_order` INT NOT NULL DEFAULT 0 COMMENT '排序权重',
+    `item_count` INT NOT NULL DEFAULT 0 COMMENT '收藏数量',
+    
+    -- 审计字段
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    `is_deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除：0-否，1-是',
+    `version` INT NOT NULL DEFAULT 1 COMMENT '版本号（乐观锁）',
+    
+    PRIMARY KEY (`folder_id`),
+    
+    -- 业务约束
+    UNIQUE KEY `uk_user_folder_name` (`user_id`, `folder_name`, `is_deleted`),
+    UNIQUE KEY `uk_user_default_folder` (`user_id`, `is_default`, `is_deleted`),
+    
+    -- 查询索引
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_folder_type` (`folder_type`),
+    KEY `idx_is_default` (`is_default`),
+    KEY `idx_sort_order` (`sort_order`),
+    KEY `idx_create_time` (`create_time`),
+    KEY `idx_is_deleted` (`is_deleted`),
+    
+    -- 复合查询索引
+    KEY `idx_user_type_order` (`user_id`, `folder_type`, `sort_order`),
+    KEY `idx_user_default_order` (`user_id`, `is_default`, `sort_order`)
+    
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏夹表';
 
 -- ==========================================
 -- 社交动态相关表（完全去连表化设计）

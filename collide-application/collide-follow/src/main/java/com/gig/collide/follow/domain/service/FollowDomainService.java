@@ -8,6 +8,7 @@ import com.gig.collide.base.exception.BizException;
 import com.gig.collide.base.exception.CommonErrorCode;
 import com.gig.collide.follow.domain.entity.Follow;
 import com.gig.collide.follow.domain.entity.FollowStatistics;
+import com.gig.collide.follow.domain.event.FollowEvent;
 import com.gig.collide.follow.infrastructure.mapper.FollowMapper;
 import com.gig.collide.follow.infrastructure.mapper.FollowStatisticsMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,9 +21,12 @@ import com.gig.collide.cache.constant.CacheConstant;
 import java.util.concurrent.TimeUnit;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.time.Duration;
 
 /**
  * 关注业务服务
@@ -39,9 +43,11 @@ public class FollowDomainService {
 
     private final FollowMapper followMapper;
     private final FollowStatisticsMapper followStatisticsMapper;
+    private final RedisTemplate<String, String> redisTemplate;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
-     * 关注用户
+     * 关注用户（带分布式锁保证幂等性）
      *
      * @param followerUserId 关注者用户ID
      * @param followedUserId 被关注者用户ID
@@ -54,53 +60,78 @@ public class FollowDomainService {
         // 验证参数
         validateFollowParams(followerUserId, followedUserId);
 
-        // 检查是否已经关注
-        Follow existingFollow = followMapper.selectFollowRelation(
-            followerUserId, followedUserId, FollowStatus.NORMAL);
+        // 分布式锁key
+        String lockKey = "follow:lock:" + followerUserId + ":" + followedUserId;
         
-        if (existingFollow != null) {
-            log.warn("用户已关注，无需重复操作。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
-            return existingFollow;
-        }
+        try {
+            // 获取分布式锁，防止重复关注
+            Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(10));
+            if (!locked) {
+                log.warn("获取关注锁失败，可能有并发操作。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+                // 再次检查关注关系
+                Follow existingFollow = followMapper.selectFollowRelation(
+                    followerUserId, followedUserId, FollowStatus.NORMAL);
+                if (existingFollow != null) {
+                    return existingFollow;
+                }
+                throw new BizException("系统繁忙，请稍后重试", CommonErrorCode.PARAM_INVALID);
+            }
 
-        // 检查是否存在已取消的关注记录
-        Follow cancelledFollow = followMapper.selectFollowRelation(
-            followerUserId, followedUserId, FollowStatus.CANCELLED);
-
-        Follow follow;
-        boolean isNewFollow = false;
-
-        if (cancelledFollow != null) {
-            // 重新激活关注关系
-            cancelledFollow.setStatus(FollowStatus.NORMAL);
-            cancelledFollow.setFollowType(followType);
-            cancelledFollow.setUpdatedTime(LocalDateTime.now());
-            followMapper.updateById(cancelledFollow);
-            follow = cancelledFollow;
-            log.info("重新激活关注关系。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
-        } else {
-            // 创建新的关注记录
-            follow = new Follow();
-            follow.setFollowerUserId(followerUserId);
-            follow.setFollowedUserId(followedUserId);
-            follow.setFollowType(followType);
-            follow.setStatus(FollowStatus.NORMAL);
-            follow.setCreatedTime(LocalDateTime.now());
-            follow.setUpdatedTime(LocalDateTime.now());
+            // 检查是否已经关注
+            Follow existingFollow = followMapper.selectFollowRelation(
+                followerUserId, followedUserId, FollowStatus.NORMAL);
             
-            followMapper.insert(follow);
-            isNewFollow = true;
-            log.info("创建新关注关系。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+            if (existingFollow != null) {
+                log.warn("用户已关注，无需重复操作。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+                return existingFollow;
+            }
+
+            // 检查是否存在已取消的关注记录
+            Follow cancelledFollow = followMapper.selectFollowRelation(
+                followerUserId, followedUserId, FollowStatus.CANCELLED);
+
+            Follow follow;
+            boolean isNewFollow = false;
+
+            if (cancelledFollow != null) {
+                // 重新激活关注关系
+                cancelledFollow.setStatus(FollowStatus.NORMAL);
+                cancelledFollow.setFollowType(followType);
+                cancelledFollow.setUpdatedTime(LocalDateTime.now());
+                followMapper.updateById(cancelledFollow);
+                follow = cancelledFollow;
+                log.info("重新激活关注关系。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+            } else {
+                // 创建新的关注记录
+                follow = new Follow();
+                follow.setFollowerUserId(followerUserId);
+                follow.setFollowedUserId(followedUserId);
+                follow.setFollowType(followType);
+                follow.setStatus(FollowStatus.NORMAL);
+                follow.setCreatedTime(LocalDateTime.now());
+                follow.setUpdatedTime(LocalDateTime.now());
+                
+                followMapper.insert(follow);
+                isNewFollow = true;
+                log.info("创建新关注关系。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+            }
+
+            // 更新统计数据
+            updateFollowStatistics(followerUserId, followedUserId, true);
+
+            // 发布关注成功事件（异步处理相关业务）
+            publishFollowEvent(followerUserId, followedUserId, true, follow.getId());
+
+            return follow;
+            
+        } finally {
+            // 释放分布式锁
+            redisTemplate.delete(lockKey);
         }
-
-        // 更新统计数据
-        updateFollowStatistics(followerUserId, followedUserId, true);
-
-        return follow;
     }
 
     /**
-     * 取消关注用户
+     * 取消关注用户（带分布式锁保证幂等性）
      *
      * @param followerUserId 关注者用户ID
      * @param followedUserId 被关注者用户ID
@@ -112,25 +143,47 @@ public class FollowDomainService {
         // 验证参数
         validateFollowParams(followerUserId, followedUserId);
 
-        // 查询关注关系
-        Follow follow = followMapper.selectFollowRelation(
-            followerUserId, followedUserId, FollowStatus.NORMAL);
+        // 分布式锁key
+        String lockKey = "unfollow:lock:" + followerUserId + ":" + followedUserId;
         
-        if (follow == null) {
-            log.warn("关注关系不存在。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
-            return false;
+        try {
+            // 获取分布式锁，防止重复取消关注
+            Boolean locked = redisTemplate.opsForValue().setIfAbsent(lockKey, "1", Duration.ofSeconds(10));
+            if (!locked) {
+                log.warn("获取取消关注锁失败，可能有并发操作。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+                // 再次检查关注关系
+                Follow existingFollow = followMapper.selectFollowRelation(
+                    followerUserId, followedUserId, FollowStatus.NORMAL);
+                return existingFollow == null; // 如果关注关系已不存在，说明已成功取消
+            }
+
+            // 查询关注关系
+            Follow follow = followMapper.selectFollowRelation(
+                followerUserId, followedUserId, FollowStatus.NORMAL);
+            
+            if (follow == null) {
+                log.warn("关注关系不存在。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+                return false;
+            }
+
+            // 更新为取消状态
+            follow.setStatus(FollowStatus.CANCELLED);
+            follow.setUpdatedTime(LocalDateTime.now());
+            followMapper.updateById(follow);
+
+            // 更新统计数据
+            updateFollowStatistics(followerUserId, followedUserId, false);
+
+            // 发布取消关注事件（异步处理相关业务）
+            publishFollowEvent(followerUserId, followedUserId, false, follow.getId());
+
+            log.info("取消关注成功。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
+            return true;
+            
+        } finally {
+            // 释放分布式锁
+            redisTemplate.delete(lockKey);
         }
-
-        // 更新为取消状态
-        follow.setStatus(FollowStatus.CANCELLED);
-        follow.setUpdatedTime(LocalDateTime.now());
-        followMapper.updateById(follow);
-
-        // 更新统计数据
-        updateFollowStatistics(followerUserId, followedUserId, false);
-
-        log.info("取消关注成功。关注者: {}, 被关注者: {}", followerUserId, followedUserId);
-        return true;
     }
 
     /**
@@ -310,6 +363,33 @@ public class FollowDomainService {
             }
         } catch (Exception e) {
             log.error("更新关注统计失败。关注者: {}, 被关注者: {}, 操作: {}", 
+                followerUserId, followedUserId, isFollow ? "关注" : "取消关注", e);
+        }
+    }
+
+    /**
+     * 发布关注事件（用于异步处理相关业务）
+     *
+     * @param followerUserId 关注者用户ID
+     * @param followedUserId 被关注者用户ID
+     * @param isFollow 是否为关注操作
+     * @param followId 关注ID
+     */
+    private void publishFollowEvent(Long followerUserId, Long followedUserId, boolean isFollow, Long followId) {
+        try {
+            FollowEvent event = FollowEvent.builder()
+                .followerUserId(followerUserId)
+                .followedUserId(followedUserId)
+                .followId(followId)
+                .isFollow(isFollow)
+                .eventTime(LocalDateTime.now())
+                .build();
+            
+            eventPublisher.publishEvent(event);
+            log.info("发布关注事件成功: {}", event);
+            
+        } catch (Exception e) {
+            log.error("发布关注事件失败。关注者: {}, 被关注者: {}, 操作: {}", 
                 followerUserId, followedUserId, isFollow ? "关注" : "取消关注", e);
         }
     }
