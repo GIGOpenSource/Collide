@@ -1,4 +1,4 @@
-package com.gig.collide.search.domain.search;
+package com.gig.collide.search.domain;
 
 import com.gig.collide.api.search.request.SearchRequest;
 import com.gig.collide.api.search.request.SearchSuggestionRequest;

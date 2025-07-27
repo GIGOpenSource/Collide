@@ -1,4 +1,4 @@
-package com.gig.collide.business.infrastructure.controller;
+package com.gig.collide.search.infrastructure.controller;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

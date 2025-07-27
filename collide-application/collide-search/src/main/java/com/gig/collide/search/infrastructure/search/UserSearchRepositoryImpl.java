@@ -2,7 +2,7 @@ package com.gig.collide.search.infrastructure.search;
 
 import com.gig.collide.api.search.response.data.SearchResult;
 import com.gig.collide.api.search.response.data.SuggestionItem;
-import com.gig.collide.search.domain.search.UserSearchRepository;
+import com.gig.collide.search.domain.UserSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;

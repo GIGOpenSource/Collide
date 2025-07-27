@@ -1,4 +1,4 @@
-package com.gig.collide.business.infrastructure.config;
+package com.gig.collide.search.infrastructure.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;

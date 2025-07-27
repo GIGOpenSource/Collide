@@ -24,7 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SearchDomainServiceImpl implements SearchDomainService {
 
-    private final com.gig.collide.search.domain.search.SearchDomainService searchBusinessService;
+    private final com.gig.collide.search.domain.SearchDomainService searchBusinessService;
 
     @Override
     public SearchResponse search(SearchRequest searchRequest) {
