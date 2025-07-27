@@ -93,6 +93,31 @@ public class CategoryInfo implements Serializable {
     private Integer statusInt;
 
     /**
+     * 版本号（乐观锁）
+     */
+    private Integer version;
+
+    /**
+     * 创建者ID（去连表化字段）
+     */
+    private Long creatorId;
+
+    /**
+     * 创建者名称（冗余存储，避免连表查询）
+     */
+    private String creatorName;
+
+    /**
+     * 最后修改者ID（去连表化字段）
+     */
+    private Long lastModifierId;
+
+    /**
+     * 最后修改者名称（冗余存储，避免连表查询）
+     */
+    private String lastModifierName;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
@@ -142,5 +167,40 @@ public class CategoryInfo implements Serializable {
             this.statusInt = (Integer) status;
             this.status = String.valueOf(status);
         }
+    }
+    
+    /**
+     * 设置版本号
+     */
+    public void setVersion(Integer version) {
+        this.version = version;
+    }
+    
+    /**
+     * 设置创建者ID
+     */
+    public void setCreatorId(Long creatorId) {
+        this.creatorId = creatorId;
+    }
+    
+    /**
+     * 设置创建者名称
+     */
+    public void setCreatorName(String creatorName) {
+        this.creatorName = creatorName;
+    }
+    
+    /**
+     * 设置最后修改者ID
+     */
+    public void setLastModifierId(Long lastModifierId) {
+        this.lastModifierId = lastModifierId;
+    }
+    
+    /**
+     * 设置最后修改者名称
+     */
+    public void setLastModifierName(String lastModifierName) {
+        this.lastModifierName = lastModifierName;
     }
 } 

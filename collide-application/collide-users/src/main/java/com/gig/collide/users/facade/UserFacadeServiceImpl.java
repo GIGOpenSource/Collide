@@ -9,7 +9,7 @@ import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.users.domain.entity.User;
+import com.gig.collide.users.domain.entity.UserUnified;
 import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserDomainService;
 import lombok.RequiredArgsConstructor;
@@ -38,7 +38,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             log.info("查询用户信息，请求参数：{}", userQueryRequest);
             
             // 根据不同查询条件调用对应的查询方法
-            User user = null;
+            UserUnified user = null;
             if (userQueryRequest.getUserIdQueryCondition() != null) {
                 user = userDomainService.getUserById(userQueryRequest.getUserIdQueryCondition().getUserId());
             } else if (userQueryRequest.getUserUserNameQueryCondition() != null) {
@@ -77,7 +77,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             log.info("用户分页查询请求：{}", userPageQueryRequest);
             
             // 调用领域服务进行分页查询
-            com.baomidou.mybatisplus.core.metadata.IPage<User> pageResult = userDomainService.pageQueryUsers(
+            com.baomidou.mybatisplus.core.metadata.IPage<UserUnified> pageResult = userDomainService.pageQueryUsers(
                 userPageQueryRequest.getPageNum(),
                 userPageQueryRequest.getPageSize(),
                 userPageQueryRequest.getUsernameKeyword(),
@@ -115,7 +115,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             log.info("用户注册请求，用户名：{}", userRegisterRequest.getUsername());
             
             // 调用领域服务进行用户注册
-            User user = userDomainService.registerUser(userRegisterRequest);
+            UserUnified user = userDomainService.registerUser(userRegisterRequest);
             
             // 构建成功响应
             UserOperatorResponse response = new UserOperatorResponse();
@@ -145,7 +145,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             log.info("用户信息修改请求，用户ID：{}", userModifyRequest.getUserId());
             
             // 调用领域服务修改用户信息
-            User user = userDomainService.updateUserInfo(userModifyRequest.getUserId(), userModifyRequest);
+            UserUnified user = userDomainService.updateUserInfo(userModifyRequest.getUserId(), userModifyRequest);
             
             // 构建成功响应
             UserOperatorResponse response = new UserOperatorResponse();

@@ -198,7 +198,7 @@ public class UserDomainService {
             if (!updateRequest.getGender().matches("^(male|female|unknown)$")) {
                 throw new BizException(UserErrorCode.INVALID_GENDER);
             }
-            user.setGender(updateRequest.getGender());
+            user.setGender(UserUnified.Gender.valueOf(updateRequest.getGender()));
         }
         if (updateRequest.getBirthday() != null) {
             user.setBirthday(updateRequest.getBirthday());
@@ -228,13 +228,13 @@ public class UserDomainService {
         }
 
         // 检查当前博主认证状态
-        String currentBloggerStatus = user.getBloggerStatus();
+        UserUnified.BloggerStatus currentBloggerStatus = user.getBloggerStatus();
         switch (currentBloggerStatus) {
-            case "approved":
+            case approved:
                 return "您已经是认证博主了";
-            case "applying":
+            case applying:
                 return "您的博主申请正在审核中，请耐心等待";
-            case "rejected":
+            case rejected:
                 // 检查是否可以重新申请（距离上次申请是否超过30天）
                 if (user.getBloggerApplyTime() != null &&
                         user.getBloggerApplyTime().isAfter(LocalDateTime.now().minusDays(30))) {
@@ -244,7 +244,7 @@ public class UserDomainService {
         }
 
         // 更新博主申请状态
-        user.setBloggerStatus("applying");
+        user.setBloggerStatus(UserUnified.BloggerStatus.applying);
         user.setBloggerApplyTime(LocalDateTime.now());
         userUnifiedRepository.save(user);
 
@@ -263,12 +263,12 @@ public class UserDomainService {
         UserUnified user = getUserById(userId);
 
         // 检查当前博主认证状态
-        if (!"applying".equals(user.getBloggerStatus())) {
+        if (user.getBloggerStatus() != UserUnified.BloggerStatus.applying) {
             return "当前没有待审核的申请";
         }
 
         // 重置博主申请状态
-        user.setBloggerStatus("none");
+        user.setBloggerStatus(UserUnified.BloggerStatus.none);
         user.setBloggerApplyTime(null);
         userUnifiedRepository.save(user);
 
@@ -531,7 +531,7 @@ public class UserDomainService {
         UserUnified currentUser = getUserById(userId);
         
         // 2. 确定目标状态
-        UserStateEnum targetStatus = active ? UserStateEnum.ACTIVE : UserStateEnum.SUSPENDED;
+        UserStateEnum targetStatus = active ? UserStateEnum.ACTIVE : UserStateEnum.INACTIVE;
         
         // 3. 检查当前状态，如果已经是目标状态则直接返回
         if (currentUser.getStatus() == targetStatus) {
@@ -592,11 +592,9 @@ public class UserDomainService {
         // 定义合法的状态转换规则
         switch (fromStatus) {
             case INACTIVE:
-                return toStatus == UserStateEnum.ACTIVE || toStatus == UserStateEnum.SUSPENDED;
-            case ACTIVE:
-                return toStatus == UserStateEnum.SUSPENDED || toStatus == UserStateEnum.BANNED;
-            case SUSPENDED:
                 return toStatus == UserStateEnum.ACTIVE || toStatus == UserStateEnum.BANNED;
+            case ACTIVE:
+                return toStatus == UserStateEnum.INACTIVE || toStatus == UserStateEnum.BANNED;
             case BANNED:
                 return toStatus == UserStateEnum.ACTIVE; // 只允许管理员恢复被封禁用户
             default:
@@ -901,13 +899,13 @@ public class UserDomainService {
         user.setInviteCode(generateInviteCode()); // 生成自己的邀请码
         
         // 6. 设置默认的扩展信息
-        user.setBloggerStatus("none");
-        user.setGender("unknown");
-        user.setFollowerCount(0);
-        user.setFollowingCount(0);
-        user.setContentCount(0);
-        user.setLikeCount(0);
-        user.setInvitedCount(0);
+        user.setBloggerStatus(UserUnified.BloggerStatus.none);
+        user.setGender(UserUnified.Gender.unknown);
+        user.setFollowerCount(0L);
+        user.setFollowingCount(0L);
+        user.setContentCount(0L);
+        user.setLikeCount(0L);
+        user.setInvitedCount(0L);
         
         // 7. 保存用户
         user = userUnifiedRepository.save(user);

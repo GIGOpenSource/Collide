@@ -1,4 +1,4 @@
-package com.gig.collide.business.domain.search;
+package com.gig.collide.search.domain.search;
 
 import com.gig.collide.api.search.response.data.SearchResult;
 

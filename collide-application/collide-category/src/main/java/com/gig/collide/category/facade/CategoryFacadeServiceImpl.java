@@ -39,7 +39,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryOperatorResponse.success(categoryId);
         } catch (Exception e) {
             log.error("创建分类失败", e);
-            return CategoryOperatorResponse.fail("CATEGORY_CREATE_FAILED", "创建分类失败");
+            return CategoryOperatorResponse.error("CATEGORY_CREATE_FAILED", "创建分类失败");
         }
     }
 
@@ -50,7 +50,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryOperatorResponse.success();
         } catch (Exception e) {
             log.error("更新分类失败", e);
-            return CategoryOperatorResponse.fail("CATEGORY_UPDATE_FAILED", "更新分类失败");
+            return CategoryOperatorResponse.error("CATEGORY_UPDATE_FAILED", "更新分类失败");
         }
     }
 
@@ -61,7 +61,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryOperatorResponse.success();
         } catch (Exception e) {
             log.error("删除分类失败", e);
-            return CategoryOperatorResponse.fail("CATEGORY_DELETE_FAILED", "删除分类失败");
+            return CategoryOperatorResponse.error("CATEGORY_DELETE_FAILED", "删除分类失败");
         }
     }
 
@@ -72,7 +72,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryQueryResponse.success(categoryInfo);
         } catch (Exception e) {
             log.error("查询分类详情失败", e);
-            return CategoryQueryResponse.fail("CATEGORY_QUERY_FAILED", "查询分类详情失败");
+            return CategoryQueryResponse.error("CATEGORY_QUERY_FAILED", "查询分类详情失败");
         }
     }
 
@@ -83,7 +83,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryQueryResponse.success(result);
         } catch (Exception e) {
             log.error("分页查询分类失败", e);
-            return CategoryQueryResponse.fail("CATEGORY_PAGE_QUERY_FAILED", "分页查询分类失败");
+            return CategoryQueryResponse.error("CATEGORY_PAGE_QUERY_FAILED", "分页查询分类失败");
         }
     }
 
@@ -94,7 +94,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryQueryResponse.success(categoryTree);
         } catch (Exception e) {
             log.error("获取分类树失败", e);
-            return CategoryQueryResponse.fail("CATEGORY_TREE_QUERY_FAILED", "获取分类树失败");
+            return CategoryQueryResponse.error("CATEGORY_TREE_QUERY_FAILED", "获取分类树失败");
         }
     }
 
@@ -105,7 +105,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryQueryResponse.success(hotCategories);
         } catch (Exception e) {
             log.error("获取热门分类失败", e);
-            return CategoryQueryResponse.fail("HOT_CATEGORY_QUERY_FAILED", "获取热门分类失败");
+            return CategoryQueryResponse.error("HOT_CATEGORY_QUERY_FAILED", "获取热门分类失败");
         }
     }
 
@@ -116,7 +116,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             return CategoryQueryResponse.success(categories);
         } catch (Exception e) {
             log.error("搜索分类失败", e);
-            return CategoryQueryResponse.fail("CATEGORY_SEARCH_FAILED", "搜索分类失败");
+            return CategoryQueryResponse.error("CATEGORY_SEARCH_FAILED", "搜索分类失败");
         }
     }
 } 

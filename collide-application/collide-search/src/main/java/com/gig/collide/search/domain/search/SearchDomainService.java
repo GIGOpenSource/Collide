@@ -1,4 +1,4 @@
-package com.gig.collide.business.domain.search;
+package com.gig.collide.search.domain.search;
 
 import com.gig.collide.api.search.request.SearchRequest;
 import com.gig.collide.api.search.request.SearchSuggestionRequest;
@@ -6,9 +6,9 @@ import com.gig.collide.api.search.response.SearchResponse;
 import com.gig.collide.api.search.response.SearchSuggestionResponse;
 import com.gig.collide.api.search.response.data.SearchResult;
 import com.gig.collide.api.search.response.data.SuggestionItem;
-import com.gig.collide.business.domain.tag.service.UserInterestTagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 /**
  * 搜索领域服务
  * 
- * @author GIG Team
+ * @author Collide Team
  */
 @Slf4j
 @Service
@@ -30,11 +30,12 @@ public class SearchDomainService {
     private final ContentSearchRepository contentSearchRepository;
     private final CommentSearchRepository commentSearchRepository;
     private final SearchRecordRepository searchRecordRepository;
-    private final UserInterestTagService userInterestTagService;
 
     /**
-     * 执行搜索
+     * 执行搜索（添加缓存支持）
      */
+    @Cacheable(value = "search_results", key = "#request.keyword + ':' + #request.searchType + ':' + #request.pageNum + ':' + #request.pageSize", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1", unless = "#result.totalCount == 0")
     public SearchResponse search(SearchRequest request) {
         long startTime = System.currentTimeMillis();
         
@@ -88,6 +89,9 @@ public class SearchDomainService {
         long searchTime = System.currentTimeMillis() - startTime;
         int totalPages = (int) Math.ceil((double) totalCount / request.getPageSize());
 
+        // 异步记录搜索行为（不影响响应性能）
+        recordSearchAsync(request.getKeyword(), null, totalCount);
+
         return SearchResponse.builder()
                 .keyword(request.getKeyword())
                 .searchType(request.getSearchType())
@@ -105,8 +109,10 @@ public class SearchDomainService {
     }
 
     /**
-     * 搜索用户
+     * 搜索用户（添加缓存）
      */
+    @Cacheable(value = "user_search", key = "#request.keyword + ':' + #request.pageNum + ':' + #request.pageSize", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private List<SearchResult> searchUsers(SearchRequest request) {
         return userSearchRepository.searchUsers(
                 request.getKeyword(),
@@ -117,72 +123,28 @@ public class SearchDomainService {
     }
 
     /**
-     * 搜索内容
+     * 搜索内容（添加缓存）
      */
+    @Cacheable(value = "content_search", key = "#request.keyword + ':' + #request.contentType + ':' + #request.pageNum + ':' + #request.pageSize", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private List<SearchResult> searchContent(SearchRequest request) {
-        // 检查是否需要使用增强搜索
-        boolean useEnhancedSearch = request.getCategoryIds() != null || 
-                                   request.getTagIds() != null || 
-                                   Boolean.TRUE.equals(request.getUseUserInterest()) ||
-                                   Boolean.TRUE.equals(request.getHotContent());
-        
-        if (useEnhancedSearch) {
-            // 如果启用了用户兴趣筛选但没有指定标签，自动获取用户兴趣标签
-            List<Long> effectiveTagIds = request.getTagIds();
-            if (Boolean.TRUE.equals(request.getUseUserInterest()) && request.getUserId() != null) {
-                try {
-                    List<Long> userInterestTagIds = userInterestTagService.getUserInterestTags(
-                        request.getUserId(), request.getTagType()
-                    ).stream()
-                    .map(uit -> uit.getTagId())
-                    .collect(java.util.stream.Collectors.toList());
-                    
-                    if (effectiveTagIds == null) {
-                        effectiveTagIds = userInterestTagIds;
-                    } else {
-                        // 合并用户指定的标签和用户兴趣标签
-                        effectiveTagIds = new ArrayList<>(effectiveTagIds);
-                        effectiveTagIds.addAll(userInterestTagIds);
-                    }
-                } catch (Exception e) {
-                    log.warn("获取用户兴趣标签失败，用户ID：{}", request.getUserId(), e);
-                }
-            }
-            
-            return contentSearchRepository.searchContentEnhanced(
-                    request.getKeyword(),
-                    request.getContentType(),
-                    request.getOnlyPublished(),
-                    request.getTimeRange(),
-                    request.getMinLikeCount(),
-                    request.getCategoryIds(),
-                    effectiveTagIds,
-                    request.getTagType(),
-                    request.getUserId(),
-                    request.getUseUserInterest(),
-                    request.getHotContent(),
-                    request.getPageNum(),
-                    request.getPageSize(),
-                    request.getHighlight()
-            );
-        } else {
-            // 使用原有的搜索逻辑
-            return contentSearchRepository.searchContent(
-                    request.getKeyword(),
-                    request.getContentType(),
-                    request.getOnlyPublished(),
-                    request.getTimeRange(),
-                    request.getMinLikeCount(),
-                    request.getPageNum(),
-                    request.getPageSize(),
-                    request.getHighlight()
-            );
-        }
+        return contentSearchRepository.searchContent(
+                request.getKeyword(),
+                request.getContentType(),
+                request.getOnlyPublished(),
+                request.getTimeRange(),
+                request.getMinLikeCount(),
+                request.getPageNum(),
+                request.getPageSize(),
+                request.getHighlight()
+        );
     }
 
     /**
-     * 搜索评论
+     * 搜索评论（添加缓存）
      */
+    @Cacheable(value = "comment_search", key = "#request.keyword + ':' + #request.timeRange + ':' + #request.pageNum + ':' + #request.pageSize", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private List<SearchResult> searchComments(SearchRequest request) {
         return commentSearchRepository.searchComments(
                 request.getKeyword(),
@@ -238,8 +200,10 @@ public class SearchDomainService {
     }
 
     /**
-     * 统计各类型搜索结果数量
+     * 统计各类型搜索结果数量（添加缓存）
      */
+    @Cacheable(value = "search_statistics", key = "#request.keyword + ':stats'", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private Map<String, Long> getSearchStatistics(SearchRequest request) {
         Map<String, Long> statistics = new HashMap<>();
         
@@ -255,69 +219,34 @@ public class SearchDomainService {
     }
 
     /**
-     * 统计用户搜索结果数量
+     * 统计用户搜索结果数量（添加缓存）
      */
+    @Cacheable(value = "user_count", key = "#request.keyword", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private long countUsers(SearchRequest request) {
         return userSearchRepository.countUsers(request.getKeyword());
     }
 
     /**
-     * 统计内容搜索结果数量
+     * 统计内容搜索结果数量（添加缓存）
      */
+    @Cacheable(value = "content_count", key = "#request.keyword + ':' + #request.contentType", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private long countContent(SearchRequest request) {
-        // 检查是否需要使用增强统计
-        boolean useEnhancedCount = request.getCategoryIds() != null || 
-                                  request.getTagIds() != null || 
-                                  Boolean.TRUE.equals(request.getUseUserInterest());
-        
-        if (useEnhancedCount) {
-            // 如果启用了用户兴趣筛选但没有指定标签，自动获取用户兴趣标签
-            List<Long> effectiveTagIds = request.getTagIds();
-            if (Boolean.TRUE.equals(request.getUseUserInterest()) && request.getUserId() != null) {
-                try {
-                    List<Long> userInterestTagIds = userInterestTagService.getUserInterestTags(
-                        request.getUserId(), request.getTagType()
-                    ).stream()
-                    .map(uit -> uit.getTagId())
-                    .collect(java.util.stream.Collectors.toList());
-                    
-                    if (effectiveTagIds == null) {
-                        effectiveTagIds = userInterestTagIds;
-                    } else {
-                        effectiveTagIds = new ArrayList<>(effectiveTagIds);
-                        effectiveTagIds.addAll(userInterestTagIds);
-                    }
-                } catch (Exception e) {
-                    log.warn("统计时获取用户兴趣标签失败，用户ID：{}", request.getUserId(), e);
-                }
-            }
-            
-            return contentSearchRepository.countContentEnhanced(
-                    request.getKeyword(),
-                    request.getContentType(),
-                    request.getOnlyPublished(),
-                    request.getTimeRange(),
-                    request.getMinLikeCount(),
-                    request.getCategoryIds(),
-                    effectiveTagIds,
-                    request.getTagType(),
-                    request.getUserId(),
-                    request.getUseUserInterest()
-            );
-        } else {
-            return contentSearchRepository.countContent(
-                    request.getKeyword(),
-                    request.getContentType(),
-                    request.getOnlyPublished(),
-                    request.getTimeRange(),
-                    request.getMinLikeCount()
-            );
-        }
+        return contentSearchRepository.countContent(
+                request.getKeyword(),
+                request.getContentType(),
+                request.getOnlyPublished(),
+                request.getTimeRange(),
+                request.getMinLikeCount()
+        );
     }
 
     /**
-     * 统计评论搜索结果数量
+     * 统计评论搜索结果数量（添加缓存）
      */
+    @Cacheable(value = "comment_count", key = "#request.keyword + ':' + #request.timeRange", 
+               condition = "#request.keyword != null && #request.keyword.length() > 1")
     private long countComments(SearchRequest request) {
         return commentSearchRepository.countComments(
                 request.getKeyword(),
@@ -379,11 +308,21 @@ public class SearchDomainService {
     }
 
     /**
-     * 生成搜索建议
+     * 生成搜索建议（添加缓存）
      */
+    @Cacheable(value = "search_suggestions", key = "#keyword", 
+               condition = "#keyword != null && #keyword.length() > 0")
     private List<String> generateSearchSuggestions(String keyword) {
-        // TODO: 基于搜索历史和热门关键词生成建议
-        return new ArrayList<>();
+        try {
+            // 基于关键词获取相关建议
+            List<SuggestionItem> suggestions = searchRecordRepository.getKeywordSuggestions(keyword, 5);
+            return suggestions.stream()
+                    .map(SuggestionItem::getText)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("生成搜索建议失败", e);
+            return new ArrayList<>();
+        }
     }
 
     /**
@@ -395,8 +334,10 @@ public class SearchDomainService {
     }
 
     /**
-     * 获取搜索建议
+     * 获取搜索建议（添加缓存）
      */
+    @Cacheable(value = "suggestions", key = "#request.keyword + ':' + #request.suggestionType + ':' + #request.limit", 
+               condition = "#request.keyword != null && #request.keyword.length() > 0")
     public SearchSuggestionResponse getSuggestions(SearchSuggestionRequest request) {
         log.info("获取搜索建议，关键词：{}，类型：{}", request.getKeyword(), request.getSuggestionType());
 
@@ -428,29 +369,36 @@ public class SearchDomainService {
     }
 
     /**
-     * 获取用户建议
+     * 获取用户建议（添加缓存）
      */
+    @Cacheable(value = "user_suggestions", key = "#keyword + ':' + #limit", 
+               condition = "#keyword != null && #keyword.length() > 0")
     private List<SuggestionItem> getUserSuggestions(String keyword, Integer limit) {
         return userSearchRepository.getUserSuggestions(keyword, limit);
     }
 
     /**
-     * 获取标签建议
+     * 获取标签建议（添加缓存）
      */
+    @Cacheable(value = "tag_suggestions", key = "#keyword + ':' + #limit", 
+               condition = "#keyword != null && #keyword.length() > 0")
     private List<SuggestionItem> getTagSuggestions(String keyword, Integer limit) {
         return contentSearchRepository.getTagSuggestions(keyword, limit);
     }
 
     /**
-     * 获取关键词建议
+     * 获取关键词建议（添加缓存）
      */
+    @Cacheable(value = "keyword_suggestions", key = "#keyword + ':' + #limit", 
+               condition = "#keyword != null && #keyword.length() > 0")
     private List<SuggestionItem> getKeywordSuggestions(String keyword, Integer limit) {
         return searchRecordRepository.getKeywordSuggestions(keyword, limit);
     }
 
     /**
-     * 获取热门搜索关键词
+     * 获取热门搜索关键词（添加缓存）
      */
+    @Cacheable(value = "hot_keywords", key = "#limit", unless = "#result.size() == 0")
     public List<String> getHotKeywords(Integer limit) {
         try {
             return searchRecordRepository.getHotKeywords(limit != null ? limit : 10);
@@ -461,7 +409,7 @@ public class SearchDomainService {
     }
 
     /**
-     * 记录搜索行为
+     * 记录搜索行为（无缓存，每次都记录）
      */
     public void recordSearch(String keyword, Long userId, Long resultCount) {
         try {
@@ -471,6 +419,18 @@ public class SearchDomainService {
             }
         } catch (Exception e) {
             log.error("记录搜索行为失败", e);
+        }
+    }
+
+    /**
+     * 异步记录搜索行为
+     */
+    private void recordSearchAsync(String keyword, Long userId, Long resultCount) {
+        // 在实际项目中，这里可以使用 @Async 注解或消息队列来异步处理
+        try {
+            recordSearch(keyword, userId, resultCount);
+        } catch (Exception e) {
+            log.error("异步记录搜索行为失败", e);
         }
     }
 } 

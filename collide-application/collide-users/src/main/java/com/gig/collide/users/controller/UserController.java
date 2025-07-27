@@ -284,7 +284,7 @@ public class UserController {
         UserInfo userInfo = new UserInfo();
         userInfo.setUserId(user.getId());
         userInfo.setUsername(user.getUsername());
-        userInfo.setNickname(user.getNickname());
+        userInfo.setNickName(user.getNickname());
         userInfo.setAvatar(user.getAvatar());
         userInfo.setEmail(user.getEmail());
         userInfo.setPhone(user.getPhone());
@@ -293,10 +293,9 @@ public class UserController {
         
         // 扩展信息（原UserProfile中的字段）
         userInfo.setBio(user.getBio());
-        userInfo.setGender(user.getGender());
+        userInfo.setGender(user.getGender().toString());
         userInfo.setBirthday(user.getBirthday());
         userInfo.setLocation(user.getLocation());
-        userInfo.setWebsite(user.getWebsite());
         
         // 统计信息
         userInfo.setFollowerCount(user.getFollowerCount());

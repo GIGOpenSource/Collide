@@ -65,3 +65,5 @@ public class UserRegisterRequest extends BaseRequest {
     private String source;
 
     private String inviteCode;
+
+}

@@ -287,6 +287,18 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-category</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-tag</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- 业务聚合 -->
             <dependency>
                 <groupId>com.gig</groupId>

@@ -78,13 +78,13 @@ public class BloggerController {
             
             String statusMessage;
             switch (user.getBloggerStatus()) {
-                case "approved":
+                case approved:
                     statusMessage = "博主认证已通过";
                     break;
-                case "applying":
+                case applying:
                     statusMessage = "博主申请审核中，请耐心等待";
                     break;
-                case "rejected":
+                case rejected:
                     statusMessage = "博主申请已被拒绝";
                     break;
                 default:

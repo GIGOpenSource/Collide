@@ -1,6 +1,7 @@
 package com.gig.collide.api.search.response;
 
 import com.gig.collide.api.search.response.data.SearchResult;
+import com.gig.collide.base.response.BaseResponse;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +21,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 @Schema(description = "搜索响应")
-public class SearchResponse {
+public class SearchResponse extends BaseResponse {
 
     @Schema(description = "搜索关键词")
     private String keyword;
@@ -57,4 +58,28 @@ public class SearchResponse {
 
     @Schema(description = "相关搜索")
     private List<String> relatedSearches;
+
+    /**
+     * 创建失败响应
+     *
+     * @param errorCode 错误码
+     * @param errorMessage 错误消息
+     * @return 失败响应
+     */
+    public static SearchResponse fail(String errorCode, String errorMessage) {
+        SearchResponse response = new SearchResponse();
+        response.setKeyword("");
+        response.setSearchType("");
+        response.setTotalCount(0L);
+        response.setSearchTime(0L);
+        response.setPageNum(1);
+        response.setPageSize(10);
+        response.setTotalPages(0);
+        response.setHasNext(false);
+        response.setResults(java.util.Collections.emptyList());
+        response.setStatistics(java.util.Collections.emptyMap());
+        response.setSuggestions(java.util.Collections.emptyList());
+        response.setRelatedSearches(java.util.Collections.emptyList());
+        return response;
+    }
 } 

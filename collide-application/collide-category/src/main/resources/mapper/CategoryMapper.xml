@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.category.infrastructure.mapper.CategoryMapper">
+
+    <!-- 结果映射 - 严格去连表化，所有字段对齐 -->
+    <resultMap id="CategoryResultMap" type="com.gig.collide.category.domain.entity.Category">
+        <id column="id" property="id"/>
+        <result column="parent_id" property="parentId"/>
+        <result column="name" property="name"/>
+        <result column="description" property="description"/>
+        <result column="icon_url" property="iconUrl"/>
+        <result column="cover_url" property="coverUrl"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="level" property="level"/>
+        <result column="path" property="path"/>
+        <result column="content_count" property="contentCount"/>
+        <result column="status" property="status"/>
+        <result column="version" property="version"/>
+        <result column="creator_id" property="creatorId"/>
+        <result column="creator_name" property="creatorName"/>
+        <result column="last_modifier_id" property="lastModifierId"/>
+        <result column="last_modifier_name" property="lastModifierName"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据父分类ID查询子分类列表 -->
+    <select id="selectByParentId" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE parent_id = #{parentId}
+          AND status = 'ACTIVE'
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 根据分类名称搜索分类 -->
+    <select id="searchByName" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE status = 'ACTIVE'
+          AND name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY content_count DESC, sort_order ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取热门分类（按内容数量排序） -->
+    <select id="selectHotCategories" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE status = 'ACTIVE'
+          AND content_count > 0
+        ORDER BY content_count DESC, sort_order ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 更新分类内容数量 -->
+    <update id="updateContentCount">
+        UPDATE t_category
+        SET content_count = content_count + #{delta},
+            update_time = NOW()
+        WHERE id = #{categoryId}
+    </update>
+
+    <!-- 批量更新分类状态 -->
+    <update id="updateStatusBatch">
+        UPDATE t_category
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="categoryIds" item="categoryId" open="(" separator="," close=")">
+            #{categoryId}
+        </foreach>
+    </update>
+
+    <!-- 根据层级查询分类 -->
+    <select id="selectByLevel" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE level = #{level}
+          AND status = 'ACTIVE'
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 查询分类及其所有子分类的路径 -->
+    <select id="selectByPathPrefix" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE path LIKE CONCAT(#{pathPrefix}, '%')
+          AND status = 'ACTIVE'
+        ORDER BY level ASC, sort_order ASC
+    </select>
+
+    <!-- 幂等性更新分类信息 - 严格去连表化 -->
+    <update id="updateCategoryIdempotent">
+        UPDATE t_category
+        SET name = COALESCE(#{name}, name),
+            description = COALESCE(#{description}, description),
+            icon_url = COALESCE(#{iconUrl}, icon_url),
+            cover_url = COALESCE(#{coverUrl}, cover_url),
+            sort_order = COALESCE(#{sortOrder}, sort_order),
+            last_modifier_id = COALESCE(#{lastModifierId}, last_modifier_id),
+            last_modifier_name = COALESCE(#{lastModifierName}, last_modifier_name),
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{categoryId}
+          AND version = #{expectedVersion}
+    </update>
+
+    <!-- 幂等性更新分类状态 -->
+    <update id="updateStatusIdempotent">
+        UPDATE t_category
+        SET status = #{newStatus},
+            version = version + 1,
+            update_time = NOW()
+        WHERE id = #{categoryId}
+          AND status = #{expectedStatus}
+          AND version = #{expectedVersion}
+    </update>
+
+    <!-- 检查分类名称是否存在 -->
+    <select id="checkNameExists" resultType="int">
+        SELECT COUNT(1) FROM t_category
+        WHERE parent_id = #{parentId}
+          AND name = #{name}
+          AND status = 'ACTIVE'
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 获取分类的完整路径 -->
+    <select id="selectCategoryPath" resultType="string">
+        SELECT path FROM t_category
+        WHERE id = #{categoryId}
+    </select>
+
+    <!-- 获取所有根分类 -->
+    <select id="selectRootCategories" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE parent_id = 0
+          AND status = 'ACTIVE'
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
+    <!-- 递归查询所有子分类ID - 严格去连表化，使用应用层递归 -->
+    <select id="selectAllChildrenIds" resultType="long">
+        <!-- 注意：此方法应该在应用层实现递归，避免数据库层JOIN -->
+        <!-- 这里只返回直接子分类，递归逻辑在Service层实现 -->
+        SELECT id FROM t_category 
+        WHERE parent_id = #{parentId}
+          AND status = 'ACTIVE'
+    </select>
+
+    <!-- 统计分类总数 -->
+    <select id="countCategories" resultType="long">
+        SELECT COUNT(1) FROM t_category
+        <where>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据创建者ID查询分类 -->
+    <select id="selectByCreatorId" resultMap="CategoryResultMap">
+        SELECT * FROM t_category
+        WHERE creator_id = #{creatorId}
+          AND status = 'ACTIVE'
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+</mapper> 

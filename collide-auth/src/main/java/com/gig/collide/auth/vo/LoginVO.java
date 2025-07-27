@@ -80,7 +80,7 @@ public class LoginVO implements Serializable {
     private Map<String, Object> buildUserInfo(UserInfo userInfo) {
         Map<String, Object> user = new HashMap<>();
         user.put("id", userInfo.getUserId());
-        user.put("username", userInfo.getUserName());
+        user.put("username", userInfo.getUsername());
         user.put("nickname", userInfo.getNickName());
         user.put("avatar", userInfo.getProfilePhotoUrl());
         user.put("role", userInfo.getRole());

@@ -1,10 +1,11 @@
-package com.gig.collide.business.infrastructure.search;
+package com.gig.collide.search.infrastructure.search;
 
 import com.gig.collide.api.search.response.data.SearchResult;
-import com.gig.collide.business.domain.search.CommentSearchRepository;
+import com.gig.collide.search.domain.search.CommentSearchRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 import org.springframework.util.StringUtils;
 
@@ -12,14 +13,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 评论搜索仓储实现
+ * 评论搜索仓储实现（去连表设计）
+ * 基于t_comment单表查询，无JOIN操作
  * 
- * @author GIG Team
+ * @author Collide Team
+ * @version 1.0
  */
 @Slf4j
 @Repository
@@ -37,41 +39,45 @@ public class CommentSearchRepositoryImpl implements CommentSearchRepository {
 
         try {
             StringBuilder sql = new StringBuilder();
-            sql.append("SELECT cm.id, cm.content, cm.target_id, cm.comment_type, ");
-            sql.append("       cm.user_id, cm.like_count, cm.reply_count, ");
-            sql.append("       cm.create_time, cm.is_pinned, cm.is_hot, ");
-            sql.append("       u.username, u.nickname, u.avatar, ");
-            sql.append("       (CASE WHEN cm.content LIKE ? THEN 10 ELSE 5 END) AS relevance_score ");
-            sql.append("FROM t_comment cm ");
-            sql.append("LEFT JOIN t_user u ON cm.user_id = u.id ");
-            sql.append("WHERE cm.is_deleted = 0 AND cm.status = 'NORMAL' ");
-            sql.append("  AND cm.content LIKE ? ");
+            sql.append("SELECT id, content_text, target_id, target_type, ");
+            sql.append("       user_id, user_nickname, user_avatar, ");
+            sql.append("       parent_comment_id, root_comment_id, ");
+            sql.append("       like_count, reply_count, ");
+            sql.append("       create_time, status, ");
+            
+            // 相关度计算：评论内容匹配
+            sql.append("       (CASE ");
+            sql.append("         WHEN content_text LIKE ? THEN 10 ");
+            sql.append("         ELSE 1 END) AS relevance_score ");
+            
+            sql.append("FROM t_comment ");
+            sql.append("WHERE deleted = 0 AND status = 'normal' ");
+            sql.append("  AND content_text LIKE ? ");
 
             List<Object> params = new ArrayList<>();
             String likeKeyword = "%" + keyword + "%";
-            
-            // 相关度计算参数
-            params.add(likeKeyword);
-            
+            params.add(likeKeyword); // 相关度计算
+            params.add(likeKeyword); // WHERE条件
+
             // 时间范围过滤
             if (timeRange != null && timeRange > 0) {
-                sql.append("  AND cm.create_time >= DATE_SUB(NOW(), INTERVAL ? DAY) ");
+                sql.append("  AND create_time >= DATE_SUB(NOW(), INTERVAL ? DAY) ");
                 params.add(timeRange);
             }
 
-            // 关键词搜索条件
-            params.add(likeKeyword);
-
-            sql.append("ORDER BY relevance_score DESC, cm.like_count DESC, cm.create_time DESC ");
+            sql.append("ORDER BY relevance_score DESC, like_count DESC, create_time DESC ");
             sql.append("LIMIT ?, ?");
 
             int offset = (pageNum - 1) * pageSize;
             params.add(offset);
             params.add(pageSize);
 
+            log.info("执行评论搜索查询，关键词：{}，时间范围：{}天，偏移：{}，限制：{}", 
+                keyword, timeRange, offset, pageSize);
+
             return jdbcTemplate.query(sql.toString(), 
                 params.toArray(),
-                (rs, rowNum) -> mapCommentSearchResult(rs, keyword, highlight)
+                new CommentSearchResultMapper(keyword, highlight)
             );
 
         } catch (Exception e) {
@@ -88,17 +94,17 @@ public class CommentSearchRepositoryImpl implements CommentSearchRepository {
 
         try {
             StringBuilder sql = new StringBuilder();
-            sql.append("SELECT COUNT(*) FROM t_comment cm ");
-            sql.append("WHERE cm.is_deleted = 0 AND cm.status = 'NORMAL' ");
-            sql.append("  AND cm.content LIKE ? ");
+            sql.append("SELECT COUNT(*) FROM t_comment ");
+            sql.append("WHERE deleted = 0 AND status = 'normal' ");
+            sql.append("  AND content_text LIKE ? ");
 
             List<Object> params = new ArrayList<>();
             String likeKeyword = "%" + keyword + "%";
             params.add(likeKeyword);
 
-            // 时间范围过滤
+            // 时间范围过滤（与搜索逻辑保持一致）
             if (timeRange != null && timeRange > 0) {
-                sql.append("  AND cm.create_time >= DATE_SUB(NOW(), INTERVAL ? DAY) ");
+                sql.append("  AND create_time >= DATE_SUB(NOW(), INTERVAL ? DAY) ");
                 params.add(timeRange);
             }
 
@@ -112,86 +118,111 @@ public class CommentSearchRepositoryImpl implements CommentSearchRepository {
     }
 
     /**
-     * 映射评论搜索结果
+     * 评论搜索结果映射器
      */
-    private SearchResult mapCommentSearchResult(ResultSet rs, String keyword, Boolean highlight) throws SQLException {
-        Long commentId = rs.getLong("id");
-        String content = rs.getString("content");
-        Long targetId = rs.getLong("target_id");
-        String commentType = rs.getString("comment_type");
-        Long userId = rs.getLong("user_id");
-        Long likeCount = rs.getLong("like_count");
-        Long replyCount = rs.getLong("reply_count");
-        LocalDateTime createTime = rs.getTimestamp("create_time").toLocalDateTime();
-        boolean isPinned = rs.getBoolean("is_pinned");
-        boolean isHot = rs.getBoolean("is_hot");
-        
-        String username = rs.getString("username");
-        String nickname = rs.getString("nickname");
-        String avatar = rs.getString("avatar");
-        Double relevanceScore = rs.getDouble("relevance_score");
+    private static class CommentSearchResultMapper implements RowMapper<SearchResult> {
+        private final String keyword;
+        private final Boolean highlight;
 
-        // 构建作者信息
-        SearchResult.AuthorInfo authorInfo = SearchResult.AuthorInfo.builder()
-                .userId(userId)
-                .username(username)
-                .nickname(nickname)
-                .avatar(avatar)
-                .bio(null)
-                .verified(false)
-                .build();
-
-        // 构建统计信息
-        SearchResult.StatisticsInfo statistics = SearchResult.StatisticsInfo.builder()
-                .viewCount(null)
-                .likeCount(likeCount)
-                .commentCount(replyCount)
-                .favoriteCount(null)
-                .shareCount(null)
-                .build();
-
-        // 生成内容预览
-        String contentPreview = content.length() > 150 ? content.substring(0, 150) + "..." : content;
-
-        // 高亮处理
-        String displayTitle = "评论";
-        String displayDescription = content;
-        String displayPreview = contentPreview;
-        
-        if (highlight != null && highlight) {
-            displayDescription = highlightMatch(content, keyword);
-            displayPreview = highlightMatch(contentPreview, keyword);
+        public CommentSearchResultMapper(String keyword, Boolean highlight) {
+            this.keyword = keyword;
+            this.highlight = highlight != null ? highlight : false;
         }
 
-        // 构建扩展信息
-        Map<String, Object> extraInfo = new HashMap<>();
-        extraInfo.put("commentType", commentType);
-        extraInfo.put("targetId", targetId);
-        extraInfo.put("isPinned", isPinned);
-        extraInfo.put("isHot", isHot);
+        @Override
+        public SearchResult mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long commentId = rs.getLong("id");
+            String contentText = rs.getString("content_text");
+            Long targetId = rs.getLong("target_id");
+            String targetType = rs.getString("target_type");
+            Long userId = rs.getLong("user_id");
+            String userNickname = rs.getString("user_nickname");
+            String userAvatar = rs.getString("user_avatar");
+            Long parentCommentId = rs.getLong("parent_comment_id");
+            Long rootCommentId = rs.getLong("root_comment_id");
+            long likeCount = rs.getLong("like_count");
+            long replyCount = rs.getLong("reply_count");
+            LocalDateTime createTime = rs.getTimestamp("create_time").toLocalDateTime();
+            String status = rs.getString("status");
+            Double relevanceScore = rs.getDouble("relevance_score");
 
-        return SearchResult.builder()
-                .id(commentId)
-                .resultType("COMMENT")
-                .title(displayTitle)
-                .description(displayDescription)
-                .contentPreview(displayPreview)
-                .coverUrl(null)
-                .author(authorInfo)
-                .statistics(statistics)
-                .tags(new ArrayList<>())
-                .contentType("COMMENT")
-                .createTime(createTime)
-                .publishTime(null)
-                .relevanceScore(relevanceScore)
-                .extraInfo(extraInfo)
-                .build();
+            // 构建作者信息
+            SearchResult.AuthorInfo authorInfo = SearchResult.AuthorInfo.builder()
+                    .userId(userId)
+                    .username(null) // 评论表中没有用户名信息
+                    .nickname(userNickname)
+                    .avatar(userAvatar)
+                    .bio(null)
+                    .verified(false) // TODO: 根据用户状态判断认证状态
+                    .build();
+
+            // 构建统计信息
+            SearchResult.StatisticsInfo statisticsInfo = SearchResult.StatisticsInfo.builder()
+                    .viewCount(0L) // 评论没有浏览量概念
+                    .likeCount(likeCount)
+                    .commentCount(replyCount) // 使用回复数作为评论数
+                    .shareCount(0L) // 评论没有分享量概念
+                    .build();
+
+            // 生成内容预览（截取前100字符）
+            String contentPreview = null;
+            if (StringUtils.hasText(contentText)) {
+                contentPreview = contentText.length() > 100 ? 
+                    contentText.substring(0, 100) + "..." : contentText;
+            }
+
+            // 高亮处理
+            String displayTitle = "评论：" + (contentPreview != null ? contentPreview : "");
+            String displayDescription = contentText;
+            if (highlight) {
+                displayTitle = highlightMatch(displayTitle, keyword);
+                displayDescription = highlightMatch(contentText, keyword);
+            }
+
+            // 构建标签
+            List<String> tags = new ArrayList<>();
+            if (StringUtils.hasText(targetType)) {
+                tags.add("评论对象：" + targetType);
+            }
+            if (parentCommentId != null && parentCommentId > 0) {
+                tags.add("回复评论");
+            } else {
+                tags.add("原始评论");
+            }
+            if (StringUtils.hasText(status)) {
+                tags.add(status);
+            }
+
+            return SearchResult.builder()
+                    .id(commentId)
+                    .resultType("COMMENT")
+                    .title(displayTitle)
+                    .description(displayDescription)
+                    .contentPreview(contentPreview)
+                    .coverUrl(null) // 评论没有封面图
+                    .author(authorInfo)
+                    .statistics(statisticsInfo)
+                    .tags(tags)
+                    .contentType("COMMENT")
+                    .createTime(createTime)
+                    .publishTime(null) // 评论没有发布时间概念
+                    .relevanceScore(relevanceScore)
+                    .extraInfo(Map.of(
+                        "targetId", targetId,
+                        "targetType", targetType,
+                        "parentCommentId", parentCommentId != null ? parentCommentId : 0,
+                        "rootCommentId", rootCommentId != null ? rootCommentId : 0,
+                        "status", status,
+                        "contentLength", contentText.length()
+                    ))
+                    .build();
+        }
     }
 
     /**
      * 高亮匹配的关键词
      */
-    private String highlightMatch(String text, String keyword) {
+    private static String highlightMatch(String text, String keyword) {
         if (!StringUtils.hasText(text) || !StringUtils.hasText(keyword)) {
             return text;
         }

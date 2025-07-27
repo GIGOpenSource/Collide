@@ -63,6 +63,16 @@ public class CategoryCreateRequest implements Serializable {
     private Integer status;
 
     /**
+     * 创建者ID（去连表化字段）
+     */
+    private Long creatorId;
+
+    /**
+     * 创建者名称（冗余存储，避免连表查询）
+     */
+    private String creatorName;
+
+    /**
      * 参数验证
      * 
      * @return 是否有效
@@ -83,5 +93,19 @@ public class CategoryCreateRequest implements Serializable {
      */
     public Integer getStatus() {
         return status;
+    }
+    
+    /**
+     * 获取创建者ID
+     */
+    public Long getCreatorId() {
+        return creatorId;
+    }
+    
+    /**
+     * 获取创建者名称
+     */
+    public String getCreatorName() {
+        return creatorName;
     }
 } 

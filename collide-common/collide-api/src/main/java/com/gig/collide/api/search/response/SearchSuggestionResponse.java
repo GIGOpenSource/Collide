@@ -32,4 +32,20 @@ public class SearchSuggestionResponse {
 
     @Schema(description = "热门搜索关键词")
     private List<String> hotKeywords;
+
+    /**
+     * 创建失败响应
+     *
+     * @param errorCode 错误码
+     * @param errorMessage 错误消息
+     * @return 失败响应
+     */
+    public static SearchSuggestionResponse fail(String errorCode, String errorMessage) {
+        SearchSuggestionResponse response = new SearchSuggestionResponse();
+        response.setKeyword("");
+        response.setSuggestionType("");
+        response.setSuggestions(java.util.Collections.emptyList());
+        response.setHotKeywords(java.util.Collections.emptyList());
+        return response;
+    }
 } 

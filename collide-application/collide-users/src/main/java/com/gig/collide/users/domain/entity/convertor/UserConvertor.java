@@ -2,8 +2,7 @@ package com.gig.collide.users.domain.entity.convertor;
 
 import com.gig.collide.api.user.response.data.BasicUserInfo;
 import com.gig.collide.api.user.response.data.UserInfo;
-import com.gig.collide.users.domain.entity.User;
-import com.gig.collide.users.domain.entity.UserProfile;
+import com.gig.collide.users.domain.entity.UserUnified;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Named;
@@ -36,11 +35,15 @@ public interface UserConvertor {
     @Mapping(target = "userId", source = "id")
     @Mapping(target = "nickName", source = "nickname")
     @Mapping(target = "profilePhotoUrl", source = "avatar")
-    @Mapping(target = "bio", ignore = true)
-    @Mapping(target = "gender", ignore = true)
-    @Mapping(target = "birthday", ignore = true)
-    @Mapping(target = "location", ignore = true)
-    UserInfo mapToVo(User user);
+    @Mapping(target = "followerCount", source = "followerCount")
+    @Mapping(target = "followingCount", source = "followingCount")
+    @Mapping(target = "contentCount", source = "contentCount")
+    @Mapping(target = "likeCount", source = "likeCount")
+    @Mapping(target = "bio", source = "bio")
+    @Mapping(target = "gender", source = "gender", qualifiedByName = "genderToString")
+    @Mapping(target = "birthday", source = "birthday")
+    @Mapping(target = "location", source = "location")
+    UserInfo mapToVo(UserUnified user);
 
     /**
      * 转换为简单的 BasicUserInfo VO
@@ -52,20 +55,21 @@ public interface UserConvertor {
     @Mapping(target = "userId", source = "id")
     @Mapping(target = "nickName", source = "nickname")
     @Mapping(target = "profilePhotoUrl", source = "avatar")
-    BasicUserInfo mapToBasicVo(User user);
+    BasicUserInfo mapToBasicVo(UserUnified user);
 
     /**
      * 转换为用户实体
      *
      * @param userInfo UserInfo DTO
-     * @return User 实体
+     * @return 用户实体
      */
     @Mapping(target = "id", source = "userId")
     @Mapping(target = "nickname", source = "nickName")
     @Mapping(target = "avatar", source = "profilePhotoUrl")
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "salt", ignore = true)
-    User mapToEntity(UserInfo userInfo);
+    @Mapping(target = "deleted", ignore = true)
+    UserUnified mapToEntity(UserInfo userInfo);
 
     /**
      * 批量转换为 UserInfo VO 列表
@@ -74,7 +78,7 @@ public interface UserConvertor {
      * @return UserInfo DTO 列表
      */
     @IterableMapping(qualifiedByName = "mapToUserInfo")
-    List<UserInfo> mapToUserInfoList(List<User> users);
+    List<UserInfo> mapToUserInfoList(List<UserUnified> users);
 
     /**
      * 批量转换为 BasicUserInfo VO 列表
@@ -83,40 +87,28 @@ public interface UserConvertor {
      * @return BasicUserInfo DTO 列表
      */
     @IterableMapping(qualifiedByName = "mapToBasicUserInfo")
-    List<BasicUserInfo> mapToBasicUserInfoList(List<User> users);
+    List<BasicUserInfo> mapToBasicUserInfoList(List<UserUnified> users);
 
     /**
-     * 合并 User 和 UserProfile 转换为 UserInfo
+     * 将UserUnified转换为完整的UserInfo（兼容性方法）
      *
-     * @param user 用户基础信息
-     * @param userProfile 用户扩展信息
+     * @param userUnified 统一用户实体
      * @return UserInfo DTO
      */
-    default UserInfo mapToUserInfo(User user, UserProfile userProfile) {
-        if (user == null) {
+    default UserInfo mapToUserInfo(UserUnified userUnified) {
+        if (userUnified == null) {
             return null;
         }
         
-        UserInfo userInfo = mapToVo(user);
-        
-        if (userProfile != null) {
-            userInfo.setBio(userProfile.getBio());
-            userInfo.setGender(userProfile.getGender() != null ? userProfile.getGender().toString() : null);
-            userInfo.setBirthday(userProfile.getBirthday());
-            userInfo.setLocation(userProfile.getLocation());
-        }
-        
-        return userInfo;
+        // 直接使用主映射方法，因为UserUnified已经包含了所有字段
+        return mapToVo(userUnified);
     }
 
     /**
-     * 性别枚举转换为字符串
-     *
-     * @param gender 性别枚举
-     * @return 性别字符串
+     * Gender枚举转换为字符串
      */
     @Named("genderToString")
-    default String genderToString(UserProfile.Gender gender) {
-        return gender != null ? gender.toString() : null;
+    default String genderToString(UserUnified.Gender gender) {
+        return gender != null ? gender.name() : null;
     }
 } 

@@ -60,11 +60,35 @@ public class CategoryUpdateRequest implements Serializable {
      * 分类状态
      */
     private String status;
+
+    /**
+     * 最后修改者ID（去连表化字段）
+     */
+    private Long lastModifierId;
+
+    /**
+     * 最后修改者名称（冗余存储，避免连表查询）
+     */
+    private String lastModifierName;
     
     /**
      * 获取排序值（优先使用sort，然后是sortOrder）
      */
     public Integer getSort() {
         return sort != null ? sort : sortOrder;
+    }
+    
+    /**
+     * 获取最后修改者ID
+     */
+    public Long getLastModifierId() {
+        return lastModifierId;
+    }
+    
+    /**
+     * 获取最后修改者名称
+     */
+    public String getLastModifierName() {
+        return lastModifierName;
     }
 } 

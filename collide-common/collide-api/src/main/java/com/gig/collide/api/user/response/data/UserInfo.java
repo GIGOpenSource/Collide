@@ -40,6 +40,31 @@ public class UserInfo extends BasicUserInfo {
     private String phone;
 
     /**
+     * 头像
+     */
+    private String avatar;
+
+    /**
+     * 粉丝数
+     */
+    private Long followerCount;
+
+    /**
+     * 关注数
+     */
+    private Long followingCount;
+
+    /**
+     * 内容数
+     */
+    private Long contentCount;
+
+    /**
+     * 获得点赞数
+     */
+    private Long likeCount;
+
+    /**
      * 个人简介
      */
     private String bio;
@@ -58,11 +83,6 @@ public class UserInfo extends BasicUserInfo {
      * 所在地
      */
     private String location;
-
-    /**
-     * 个人网站
-     */
-    private String website;
 
     /**
      * 用户状态

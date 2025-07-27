@@ -253,7 +253,7 @@ public class UserUnified {
         this.passwordHash = passwordHash;
         this.salt = salt;
         this.role = UserRole.user;
-        this.status = UserStateEnum.inactive;
+        this.status = UserStateEnum.INACTIVE;
         this.inviteCode = generateInviteCode();
         this.inviterId = inviterId;
         this.gender = Gender.unknown;
@@ -275,8 +275,8 @@ public class UserUnified {
      * @return 当前实体
      */
     public UserUnified activate() {
-        if (this.status == UserStateEnum.inactive) {
-            this.status = UserStateEnum.active;
+        if (this.status == UserStateEnum.INACTIVE) {
+            this.status = UserStateEnum.ACTIVE;
         }
         return this;
     }
@@ -287,7 +287,7 @@ public class UserUnified {
      * @return 当前实体
      */
     public UserUnified applyBlogger() {
-        if (this.status == UserStateEnum.active && this.bloggerStatus == BloggerStatus.none) {
+        if (this.status == UserStateEnum.ACTIVE && this.bloggerStatus == BloggerStatus.none) {
             this.bloggerStatus = BloggerStatus.applying;
             this.bloggerApplyTime = LocalDateTime.now();
         }
@@ -393,7 +393,7 @@ public class UserUnified {
      * @return true if can modify
      */
     public boolean canModifyProfile() {
-        return status == UserStateEnum.active || status == UserStateEnum.inactive;
+        return status == UserStateEnum.ACTIVE || status == UserStateEnum.INACTIVE;
     }
 
     /**
@@ -423,7 +423,7 @@ public class UserUnified {
      * @return true if can apply
      */
     public boolean canApplyBlogger() {
-        return status == UserStateEnum.active && 
+        return status == UserStateEnum.ACTIVE && 
                (bloggerStatus == BloggerStatus.none || 
                 (bloggerStatus == BloggerStatus.rejected && 
                  bloggerApplyTime != null && 
