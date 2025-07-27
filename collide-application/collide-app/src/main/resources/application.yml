@@ -37,31 +37,6 @@ management:
     health:
       show-details: always
 
-# =====================================
-# Swagger API 文档配置
-# =====================================
-springdoc:
-  api-docs:
-    enabled: true
-    path: /v3/api-docs
-  swagger-ui:
-    enabled: true
-    path: /swagger-ui.html
-    try-it-out-enabled: true
-    operations-sorter: method
-    tags-sorter: alpha
-  paths-to-match: 
-    - /api/**
-    - /health/**
-    - /actuator/**
-  group-configs:
-    - group: 'business-api'
-      display-name: '业务 API'
-      paths-to-match: '/api/**'
-    - group: 'management-api'
-      display-name: '管理 API'
-      paths-to-match: '/actuator/**'
-
 dubbo:
   application:
     name: ${spring.application.name}
@@ -91,13 +66,6 @@ logging:
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
 
-#seata:
-#  enabled: true
-#  application-id: ${spring.application.name}
-#  tx-service-group: collide-tx-group
-#  enable-auto-data-source-proxy: false
-#  use-jdk-proxy: true
-
 collide:
   features:
     # 启用的业务功能模块
@@ -115,6 +83,4 @@ collide:
     # 基础设施功能开关
     prometheus-enabled: true
     skywalking-enabled: true
-    seata-enabled: true
-    tcc-enabled: true
     cache-enabled: true
