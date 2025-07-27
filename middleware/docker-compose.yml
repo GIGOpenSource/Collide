@@ -99,8 +99,8 @@ services:
       - ${PWD}/seata-server/resources/application.yml:/seata-server/resources/application.yml
       - ${PWD}/seata-server/logs:/seata-server/logs
     ports:
-      - "11091:7091"
-      - "12091:8091"
+      - "7091:7091"
+      - "8091:8091"
     restart: always
     networks:
       collide-network:
