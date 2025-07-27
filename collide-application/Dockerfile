@@ -18,7 +18,7 @@ RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
 # 从构建目录复制JAR文件（聚合应用JAR）
-COPY collide-application/collide-app/target/collide-app.jar app.jar
+COPY collide-application/collide-app/target/collide-business-app.jar app.jar
 
 # 创建日志目录
 RUN mkdir -p /app/logs
