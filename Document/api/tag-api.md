@@ -1,4 +1,7 @@
- # Tag 模块 API 接口文档
+# Tag 模块 API 接口文档
+
+> **⚠️ 重要说明**: Tag 模块采用强制去连表设计（No-Join Design），所有查询均基于单表操作。
+> API 响应中不包含任何连表查询的冗余字段（如 categoryName 等），如需关联数据请通过单独的 API 调用获取。
 
 ## 📋 目录
 - [模块概述](#模块概述)
@@ -29,6 +32,8 @@ Tag 模块是 Collide 社交平台的标签管理系统，提供标签的创建�
 - **SYSTEM**: 系统标签，平台预设的功能性标签
 
 ### 技术特色
+- **去连表设计**: 强制采用单表查询，避免复杂的连表操作
+- **高性能查询**: 基于索引优化的快速单表查询
 - **热度算法**: 基于使用次数和时间衰减的热度计算
 - **兴趣画像**: 用户多维度兴趣偏好建模
 - **智能推荐**: 协同过滤和内容匹配算法
@@ -48,7 +53,7 @@ Tag 模块是 Collide 社交平台的标签管理系统，提供标签的创建�
 | color | VARCHAR(20) | 否 | #1890ff | 标签颜色（十六进制） |
 | icon_url | VARCHAR(500) | 否 | - | 标签图标URL |
 | tag_type | ENUM | 是 | content | 标签类型：content、interest、system |
-| category_id | BIGINT | 否 | - | 所属分类ID |
+| category_id | BIGINT | 否 | - | 所属分类ID（仅存储ID，不做连表查询） |
 | usage_count | BIGINT | 是 | 0 | 使用次数 |
 | heat_score | DECIMAL(10,2) | 是 | 0.00 | 热度分数 |
 | status | ENUM | 是 | active | 标签状态：active、inactive |
@@ -60,8 +65,8 @@ Tag 模块是 Collide 社交平台的标签管理系统，提供标签的创建�
 | 字段名 | 类型 | 是否必填 | 默认值 | 说明 |
 |--------|------|----------|--------|------|
 | id | BIGINT | 是 | AUTO_INCREMENT | 记录ID，主键 |
-| user_id | BIGINT | 是 | - | 用户ID |
-| tag_id | BIGINT | 是 | - | 标签ID |
+| user_id | BIGINT | 是 | - | 用户ID（仅存储ID，不做连表查询） |
+| tag_id | BIGINT | 是 | - | 标签ID（仅存储ID，不做连表查询） |
 | interest_score | DECIMAL(5,2) | 是 | 0.00 | 兴趣分数（0-100） |
 | interest_source | VARCHAR(50) | 是 | - | 兴趣来源：manual、behavior、system |
 | create_time | TIMESTAMP | 是 | CURRENT_TIMESTAMP | 创建时间 |
@@ -216,7 +221,6 @@ Tag 模块是 Collide 社交平台的标签管理系统，提供标签的创建�
     "iconUrl": "https://example.com/ai-icon.png",
     "tagType": "content",
     "categoryId": 123,
-    "categoryName": "科技",
     "usageCount": 1500,
     "heatScore": 85.5,
     "status": "active",
@@ -581,8 +585,7 @@ Tag 模块是 Collide 社交平台的标签管理系统，提供标签的创建�
 | color | String | 标签颜色（十六进制） |
 | iconUrl | String | 标签图标URL |
 | tagType | String | 标签类型 |
-| categoryId | Long | 所属分类ID |
-| categoryName | String | 所属分类名称 |
+| categoryId | Long | 所属分类ID（仅存储ID，不做连表查询） |
 | usageCount | Long | 使用次数 |
 | heatScore | BigDecimal | 热度分数 |
 | status | String | 标签状态 |

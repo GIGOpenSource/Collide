@@ -27,11 +27,6 @@ public class TagInfo implements Serializable {
      * 标签ID
      */
     private Long id;
-    
-    /**
-     * 标签ID（兼容性字段）
-     */
-    private Long tagId;
 
     /**
      * 标签名称
@@ -59,14 +54,9 @@ public class TagInfo implements Serializable {
     private String tagType;
 
     /**
-     * 所属分类ID
+     * 所属分类ID（仅存储ID，不做连表查询）
      */
     private Long categoryId;
-
-    /**
-     * 所属分类名称
-     */
-    private String categoryName;
 
     /**
      * 使用次数
@@ -107,7 +97,6 @@ public class TagInfo implements Serializable {
      * 设置标签ID（兼容性方法）
      */
     public void setTagId(Long tagId) {
-        this.tagId = tagId;
         this.id = tagId;
     }
     
@@ -115,6 +104,6 @@ public class TagInfo implements Serializable {
      * 获取标签ID（兼容性方法）
      */
     public Long getTagId() {
-        return tagId != null ? tagId : id;
+        return this.id;
     }
 } 

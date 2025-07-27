@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.tag.infrastructure.mapper.TagMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.tag.infrastructure.entity.TagEntity">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="name" property="name" jdbcType="VARCHAR"/>
+        <result column="description" property="description" jdbcType="LONGVARCHAR"/>
+        <result column="color" property="color" jdbcType="VARCHAR"/>
+        <result column="icon_url" property="iconUrl" jdbcType="VARCHAR"/>
+        <result column="tag_type" property="tagType" jdbcType="VARCHAR"/>
+        <result column="category_id" property="categoryId" jdbcType="BIGINT"/>
+        <result column="usage_count" property="usageCount" jdbcType="BIGINT"/>
+        <result column="heat_score" property="heatScore" jdbcType="DECIMAL"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, name, description, color, icon_url, tag_type, category_id, 
+        usage_count, heat_score, status, create_time, update_time, version
+    </sql>
+
+    <!-- 根据类型获取标签列表 -->
+    <select id="selectByTagType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE 1=1
+        <if test="tagType != null and tagType != ''">
+            AND tag_type = #{tagType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY usage_count DESC, heat_score DESC, create_time DESC
+    </select>
+
+    <!-- 获取热门标签列表 -->
+    <select id="selectHotTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE status = 'active'
+        <if test="tagType != null and tagType != ''">
+            AND tag_type = #{tagType}
+        </if>
+        ORDER BY heat_score DESC, usage_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 搜索标签 -->
+    <select id="searchTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE status = 'active'
+        AND (name LIKE CONCAT('%', #{keyword}, '%') 
+             OR description LIKE CONCAT('%', #{keyword}, '%'))
+        <if test="tagType != null and tagType != ''">
+            AND tag_type = #{tagType}
+        </if>
+        ORDER BY 
+            CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
+            heat_score DESC, usage_count DESC
+    </select>
+
+    <!-- 分页查询标签 -->
+    <select id="selectTagPage" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE 1=1
+        <if test="tagType != null and tagType != ''">
+            AND tag_type = #{tagType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (name LIKE CONCAT('%', #{keyword}, '%') 
+                 OR description LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY heat_score DESC, usage_count DESC, create_time DESC
+    </select>
+
+    <!-- 增加标签使用次数 -->
+    <update id="increaseUsageCount">
+        UPDATE t_tag 
+        SET usage_count = usage_count + #{count},
+            update_time = NOW()
+        WHERE id = #{tagId}
+    </update>
+
+    <!-- 更新标签热度分数 -->
+    <update id="updateHeatScore">
+        UPDATE t_tag 
+        SET heat_score = #{heatScore},
+            update_time = NOW()
+        WHERE id = #{tagId}
+    </update>
+
+    <!-- 批量查询标签 -->
+    <select id="selectByIds" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </select>
+
+    <!-- 根据名称和类型查询标签 -->
+    <select id="selectByNameAndType" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_tag
+        WHERE name = #{name} AND tag_type = #{tagType}
+        LIMIT 1
+    </select>
+
+</mapper> 

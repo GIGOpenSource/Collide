@@ -39,7 +39,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success(tagId);
         } catch (Exception e) {
             log.error("创建标签失败", e);
-            return TagOperatorResponse.fail("TAG_CREATE_FAILED", "创建标签失败");
+            return TagOperatorResponse.error("TAG_CREATE_FAILED", "创建标签失败");
         }
     }
 
@@ -50,7 +50,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success();
         } catch (Exception e) {
             log.error("更新标签失败", e);
-            return TagOperatorResponse.fail("TAG_UPDATE_FAILED", "更新标签失败");
+            return TagOperatorResponse.error("TAG_UPDATE_FAILED", "更新标签失败");
         }
     }
 
@@ -61,7 +61,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success();
         } catch (Exception e) {
             log.error("删除标签失败", e);
-            return TagOperatorResponse.fail("TAG_DELETE_FAILED", "删除标签失败");
+            return TagOperatorResponse.error("TAG_DELETE_FAILED", "删除标签失败");
         }
     }
 
@@ -72,7 +72,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(tagInfo);
         } catch (Exception e) {
             log.error("查询标签详情失败", e);
-            return TagQueryResponse.fail("TAG_QUERY_FAILED", "查询标签详情失败");
+            return TagQueryResponse.error("TAG_QUERY_FAILED", "查询标签详情失败");
         }
     }
 
@@ -83,7 +83,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(result);
         } catch (Exception e) {
             log.error("分页查询标签失败", e);
-            return TagQueryResponse.fail("TAG_PAGE_QUERY_FAILED", "分页查询标签失败");
+            return TagQueryResponse.error("TAG_PAGE_QUERY_FAILED", "分页查询标签失败");
         }
     }
 
@@ -94,7 +94,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(tags);
         } catch (Exception e) {
             log.error("根据类型查询标签失败", e);
-            return TagQueryResponse.fail("TAG_TYPE_QUERY_FAILED", "根据类型查询标签失败");
+            return TagQueryResponse.error("TAG_TYPE_QUERY_FAILED", "根据类型查询标签失败");
         }
     }
 
@@ -105,7 +105,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(hotTags);
         } catch (Exception e) {
             log.error("获取热门标签失败", e);
-            return TagQueryResponse.fail("HOT_TAG_QUERY_FAILED", "获取热门标签失败");
+            return TagQueryResponse.error("HOT_TAG_QUERY_FAILED", "获取热门标签失败");
         }
     }
 
@@ -116,7 +116,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(tags);
         } catch (Exception e) {
             log.error("搜索标签失败", e);
-            return TagQueryResponse.fail("TAG_SEARCH_FAILED", "搜索标签失败");
+            return TagQueryResponse.error("TAG_SEARCH_FAILED", "搜索标签失败");
         }
     }
 
@@ -127,7 +127,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(userTags);
         } catch (Exception e) {
             log.error("获取用户兴趣标签失败", e);
-            return TagQueryResponse.fail("USER_TAG_QUERY_FAILED", "获取用户兴趣标签失败");
+            return TagQueryResponse.error("USER_TAG_QUERY_FAILED", "获取用户兴趣标签失败");
         }
     }
 
@@ -138,7 +138,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success();
         } catch (Exception e) {
             log.error("设置用户兴趣标签失败", e);
-            return TagOperatorResponse.fail("USER_TAG_SET_FAILED", "设置用户兴趣标签失败");
+            return TagOperatorResponse.error("USER_TAG_SET_FAILED", "设置用户兴趣标签失败");
         }
     }
 
@@ -149,7 +149,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success();
         } catch (Exception e) {
             log.error("添加用户兴趣标签失败", e);
-            return TagOperatorResponse.fail("USER_TAG_ADD_FAILED", "添加用户兴趣标签失败");
+            return TagOperatorResponse.error("USER_TAG_ADD_FAILED", "添加用户兴趣标签失败");
         }
     }
 
@@ -160,7 +160,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagOperatorResponse.success();
         } catch (Exception e) {
             log.error("移除用户兴趣标签失败", e);
-            return TagOperatorResponse.fail("USER_TAG_REMOVE_FAILED", "移除用户兴趣标签失败");
+            return TagOperatorResponse.error("USER_TAG_REMOVE_FAILED", "移除用户兴趣标签失败");
         }
     }
 
@@ -171,7 +171,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
             return TagQueryResponse.success(recommendedTags);
         } catch (Exception e) {
             log.error("推荐标签给用户失败", e);
-            return TagQueryResponse.fail("TAG_RECOMMEND_FAILED", "推荐标签给用户失败");
+            return TagQueryResponse.error("TAG_RECOMMEND_FAILED", "推荐标签给用户失败");
         }
     }
 } 

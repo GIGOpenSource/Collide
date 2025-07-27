@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.tag.infrastructure.mapper.UserInterestTagMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.tag.infrastructure.entity.UserInterestTagEntity">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="user_id" property="userId" jdbcType="BIGINT"/>
+        <result column="tag_id" property="tagId" jdbcType="BIGINT"/>
+        <result column="interest_score" property="interestScore" jdbcType="DECIMAL"/>
+        <result column="source" property="source" jdbcType="VARCHAR"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <!-- 基础字段 -->
+    <sql id="Base_Column_List">
+        id, user_id, tag_id, interest_score, source, status, create_time, update_time, version
+    </sql>
+
+    <!-- 根据用户ID获取兴趣标签列表 -->
+    <select id="selectByUserId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_interest_tag
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY interest_score DESC, create_time DESC
+    </select>
+
+    <!-- 根据标签ID获取感兴趣的用户列表 -->
+    <select id="selectByTagId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_interest_tag
+        WHERE tag_id = #{tagId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY interest_score DESC, create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询用户对指定标签的兴趣记录 -->
+    <select id="selectByUserIdAndTagId" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_interest_tag
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+        LIMIT 1
+    </select>
+
+    <!-- 批量插入用户兴趣标签 -->
+    <insert id="batchInsert">
+        INSERT INTO t_user_interest_tag (user_id, tag_id, interest_score, source, status, create_time, update_time)
+        VALUES
+        <foreach collection="entities" item="entity" separator=",">
+            (#{entity.userId}, #{entity.tagId}, #{entity.interestScore}, #{entity.source}, 
+             #{entity.status}, NOW(), NOW())
+        </foreach>
+    </insert>
+
+    <!-- 批量删除用户兴趣标签 -->
+    <delete id="batchDeleteByUserIdAndTagIds">
+        DELETE FROM t_user_interest_tag
+        WHERE user_id = #{userId}
+        AND tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </delete>
+
+    <!-- 更新用户对标签的兴趣分数 -->
+    <update id="updateInterestScore">
+        UPDATE t_user_interest_tag
+        SET interest_score = #{interestScore},
+            update_time = NOW()
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+    </update>
+
+    <!-- 获取用户的高兴趣标签 -->
+    <select id="selectHighInterestTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_interest_tag
+        WHERE user_id = #{userId}
+        AND status = 'active'
+        AND interest_score >= #{minScore}
+        ORDER BY interest_score DESC, create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 清空用户的所有兴趣标签 -->
+    <delete id="deleteAllByUserId">
+        DELETE FROM t_user_interest_tag WHERE user_id = #{userId}
+    </delete>
+
+</mapper> 
