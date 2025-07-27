@@ -91,18 +91,14 @@ logging:
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
 
-seata:
-  enabled: true
-  application-id: ${spring.application.name}
-  tx-service-group: collide-tx-group
-  enable-auto-data-source-proxy: false
-  use-jdk-proxy: true
+#seata:
+#  enabled: true
+#  application-id: ${spring.application.name}
+#  tx-service-group: collide-tx-group
+#  enable-auto-data-source-proxy: false
+#  use-jdk-proxy: true
 
 collide:
-  business:
-    name: "Collide Business Platform"
-    version: "2.0.0"
-    description: "参考 nft-turbo-app 架构的聚合业务平台"
   features:
     # 启用的业务功能模块
     users: true
