@@ -1,1 +1,1 @@
-com.gig.collide.mq.config.RocketMQAutoConfiguration 
+com.gig.collide.mq.config.StreamConfiguration
