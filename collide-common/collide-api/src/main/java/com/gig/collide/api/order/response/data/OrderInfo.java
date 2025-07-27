@@ -31,6 +31,12 @@ public class OrderInfo {
     @Schema(description = "商品类型")
     private String goodsType;
 
+    @Schema(description = "商品价格")
+    private BigDecimal goodsPrice;
+
+    @Schema(description = "购买数量")
+    private Integer quantity;
+
     @Schema(description = "订单金额")
     private BigDecimal totalAmount;
 
@@ -45,6 +51,9 @@ public class OrderInfo {
 
     @Schema(description = "支付时间")
     private LocalDateTime payTime;
+
+    @Schema(description = "订单过期时间")
+    private LocalDateTime expireTime;
 
     @Schema(description = "创建时间")
     private LocalDateTime createTime;
@@ -76,6 +85,12 @@ public class OrderInfo {
     public String getGoodsType() { return goodsType; }
     public void setGoodsType(String goodsType) { this.goodsType = goodsType; }
 
+    public BigDecimal getGoodsPrice() { return goodsPrice; }
+    public void setGoodsPrice(BigDecimal goodsPrice) { this.goodsPrice = goodsPrice; }
+
+    public Integer getQuantity() { return quantity; }
+    public void setQuantity(Integer quantity) { this.quantity = quantity; }
+
     public BigDecimal getTotalAmount() { return totalAmount; }
     public void setTotalAmount(BigDecimal totalAmount) { this.totalAmount = totalAmount; }
 
@@ -90,6 +105,9 @@ public class OrderInfo {
 
     public LocalDateTime getPayTime() { return payTime; }
     public void setPayTime(LocalDateTime payTime) { this.payTime = payTime; }
+
+    public LocalDateTime getExpireTime() { return expireTime; }
+    public void setExpireTime(LocalDateTime expireTime) { this.expireTime = expireTime; }
 
     public LocalDateTime getCreateTime() { return createTime; }
     public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }

@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.order.infrastructure.mapper.OrderInfoMapper">
+    <!--  Generate by Collide Team Date: 2024-01-01 -->
+    
+    <!-- ========================================================================
+         订单信息 ResultMap - 完整字段映射
+         支持双订单类型：GOODS(商品购买) 和 CONTENT(内容直购)
+         ======================================================================== -->
+    <resultMap id="orderInfoMap" type="com.gig.collide.order.domain.entity.OrderInfo">
+        <!-- 基础字段 -->
+        <result property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        
+        <!-- 订单类型字段 -->
+        <result property="orderType" column="order_type"/>
+        
+        <!-- 商品信息（商品购买时使用，冗余存储避免连表查询） -->
+        <result property="goodsId" column="goods_id"/>
+        <result property="goodsName" column="goods_name"/>
+        <result property="goodsType" column="goods_type"/>
+        <result property="goodsPrice" column="goods_price"/>
+        
+        <!-- 内容信息（内容直购时使用，冗余存储避免连表查询） -->
+        <result property="contentId" column="content_id"/>
+        <result property="contentTitle" column="content_title"/>
+        <result property="contentType" column="content_type"/>
+        <result property="contentPrice" column="content_price"/>
+        
+        <!-- 通用订单字段 -->
+        <result property="quantity" column="quantity"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="payAmount" column="pay_amount"/>
+        <result property="discountAmount" column="discount_amount"/>
+        <result property="status" column="status"/>
+        <result property="payType" column="pay_type"/>
+        <result property="payTime" column="pay_time"/>
+        <result property="expireTime" column="expire_time"/>
+        <result property="remark" column="remark"/>
+        
+        <!-- 系统字段 -->
+        <result property="version" column="version"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- ========================================================================
+         核心查询方法 - 遵循去连表化设计原则
+         ======================================================================== -->
+    
+    <!-- 根据订单号查询（常用查询） -->
+    <select id="selectByOrderNo" resultMap="orderInfoMap">
+        SELECT * FROM `order_info`
+        WHERE `deleted` = 0 
+        AND `order_no` = #{orderNo}
+    </select>
+    
+    <!-- 根据订单号查询并加锁（用于幂等性控制） -->
+    <select id="selectByOrderNoForUpdate" resultMap="orderInfoMap">
+        SELECT * FROM `order_info`
+        WHERE `deleted` = 0 
+        AND `order_no` = #{orderNo}
+        FOR UPDATE
+    </select>
+    
+    <!-- 分页查询订单 - 支持多条件筛选 -->
+    <select id="pageQuery" resultMap="orderInfoMap">
+        SELECT * FROM `order_info`
+        WHERE `deleted` = 0
+        <if test="queryParams.userId != null">
+            AND `user_id` = #{queryParams.userId}
+        </if>
+        <if test="queryParams.status != null and queryParams.status != ''">
+            AND `status` = #{queryParams.status}
+        </if>
+        <if test="queryParams.orderType != null and queryParams.orderType != ''">
+            AND `order_type` = #{queryParams.orderType}
+        </if>
+        <if test="queryParams.goodsId != null">
+            AND `goods_id` = #{queryParams.goodsId}
+        </if>
+        <if test="queryParams.contentId != null">
+            AND `content_id` = #{queryParams.contentId}
+        </if>
+        <if test="queryParams.startTime != null">
+            AND `create_time` &gt;= #{queryParams.startTime}
+        </if>
+        <if test="queryParams.endTime != null">
+            AND `create_time` &lt;= #{queryParams.endTime}
+        </if>
+        ORDER BY `create_time` DESC
+    </select>
+
+    <!-- ========================================================================
+         状态更新方法 - 支持幂等性控制
+         ======================================================================== -->
+    
+    <!-- 幂等性状态更新（基于版本号乐观锁） -->
+    <update id="updateStatusIdempotent">
+        UPDATE `order_info` 
+        SET `status` = #{newStatus},
+            `update_time` = NOW(),
+            `version` = `version` + 1
+            <if test="newStatus == 'PAID'">
+                ,`pay_time` = NOW()
+            </if>
+            <if test="newStatus == 'CANCELLED'">
+                ,`cancel_time` = NOW()
+            </if>
+            <if test="newStatus == 'REFUNDED'">
+                ,`refund_time` = NOW()
+            </if>
+        WHERE `order_no` = #{orderNo}
+        AND `status` = #{oldStatus}
+        AND `version` = #{version}
+        AND `deleted` = 0
+    </update>
+    
+    <!-- 批量更新订单状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE `order_info`
+        SET `status` = #{status},
+            `update_time` = NOW(),
+            `version` = `version` + 1
+        WHERE `order_no` IN
+        <foreach collection="orderNos" item="orderNo" open="(" separator="," close=")">
+            #{orderNo}
+        </foreach>
+        AND `deleted` = 0
+    </update>
+
+    <!-- ========================================================================
+         统计查询方法 - 业务报表支持
+         ======================================================================== -->
+    
+    <!-- 订单统计查询 -->
+    <select id="getOrderStatistics" resultType="java.util.HashMap">
+        SELECT 
+            COUNT(*) as totalCount,
+            COUNT(CASE WHEN status = 'UNPAID' THEN 1 END) as unpaidCount,
+            COUNT(CASE WHEN status = 'PAID' THEN 1 END) as paidCount,
+            COUNT(CASE WHEN status = 'CANCELLED' THEN 1 END) as cancelledCount,
+            COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) as refundedCount,
+            COUNT(CASE WHEN order_type = 'GOODS' THEN 1 END) as goodsOrderCount,
+            COUNT(CASE WHEN order_type = 'CONTENT' THEN 1 END) as contentOrderCount,
+            COALESCE(SUM(CASE WHEN status = 'PAID' THEN total_amount END), 0) as totalAmount,
+            COALESCE(AVG(CASE WHEN status = 'PAID' THEN total_amount END), 0) as avgAmount
+        FROM `order_info`
+        WHERE `deleted` = 0
+        <if test="startTime != null">
+            AND `create_time` &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND `create_time` &lt;= #{endTime}
+        </if>
+        <if test="dimension != null and dimension != ''">
+            <!-- 这里可以根据维度添加更多GROUP BY条件 -->
+        </if>
+    </select>
+    
+    <!-- 用户订单数量统计 -->
+    <select id="getUserOrderCount" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM `order_info`
+        WHERE `user_id` = #{userId}
+        AND `deleted` = 0
+        <if test="status != null and status != ''">
+            AND `status` = #{status}
+        </if>
+        <if test="orderType != null and orderType != ''">
+            AND `order_type` = #{orderType}
+        </if>
+    </select>
+
+</mapper> 

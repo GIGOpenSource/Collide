@@ -12,7 +12,9 @@ import com.gig.collide.social.infrastructure.mapper.SocialPostMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
-import org.springframework.cache.annotation.Cacheable;
+import com.alicp.jetcache.anno.CacheType;
+import com.alicp.jetcache.anno.Cached;
+import com.gig.collide.cache.constant.CacheConstant;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -138,7 +141,11 @@ public class TimelineService {
      * @param userId 用户ID
      * @return 关注用户ID列表
      */
-    @Cacheable(value = "followingUserIds", key = "#userId", unless = "#result.isEmpty()")
+    @Cached(name = CacheConstant.SOCIAL_FOLLOWING_USERS_CACHE, 
+            key = "#userId",
+            expire = CacheConstant.SOCIAL_FOLLOWING_CACHE_EXPIRE, 
+            timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
     public List<Long> getFollowingUserIds(Long userId) {
         try {
             log.debug("查询用户关注列表，用户ID：{}", userId);

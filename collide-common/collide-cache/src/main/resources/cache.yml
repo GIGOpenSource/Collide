@@ -4,8 +4,13 @@ spring:
       host: ${collide.turbo.redis.url}
       port: ${collide.turbo.redis.port}
       password: ${collide.turbo.redis.password}
-      ssl:
-        enabled: true
+      database: ${collide.turbo.redis.database}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 100
+          max-idle: 10
+          min-idle: 5
   redis:
     redisson:
       config: |
@@ -15,15 +20,15 @@ spring:
           timeout: 3000
           retryAttempts: 3
           retryInterval: 1500
-          password: 123456
+          password: ${collide.turbo.redis.password}
           subscriptionsPerConnection: 5
           clientName: null
-          address: "redis://172.20.1.40:6379"
+          address: "redis://${collide.turbo.redis.url}:${collide.turbo.redis.port}"
           subscriptionConnectionMinimumIdleSize: 1
           subscriptionConnectionPoolSize: 50
           connectionMinimumIdleSize: 24
           connectionPoolSize: 64
-          database: 0
+          database: ${collide.turbo.redis.database}
           dnsMonitoringInterval: 5000
         threads: 16
         nettyThreads: 32

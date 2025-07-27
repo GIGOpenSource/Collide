@@ -5,7 +5,7 @@ import com.gig.collide.api.social.request.SocialPostQueryRequest;
 import com.gig.collide.api.social.response.SocialPostResponse;
 import com.gig.collide.api.social.response.data.SocialPostInfo;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.social.facade.SocialFacadeServiceImpl;
+import com.gig.collide.api.social.service.SocialFacadeService;
 import com.gig.collide.web.vo.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -30,16 +30,16 @@ import jakarta.validation.Valid;
 @Tag(name = "社交动态", description = "社交动态相关接口")
 public class SocialController {
 
-    private final SocialFacadeServiceImpl socialFacadeService;
+    private final SocialFacadeService socialFacadeService;
 
     @Operation(summary = "发布动态", description = "发布新的社交动态")
     @PostMapping("/posts")
     public Result<Long> publishPost(@Valid @RequestBody SocialPostCreateRequest request) {
         SocialPostResponse response = socialFacadeService.publishPost(request);
-        if (response.isSuccess()) {
-            return Result.success(response.getData());
+        if (response.getSuccess()) {
+            return Result.success(response.getPostId());
         }
-        return Result.error(response.getErrorCode(), response.getErrorMessage());
+        return Result.error(response.getResponseCode(), response.getResponseMessage());
     }
 
     @Operation(summary = "分页查询动态", description = "分页查询社交动态列表")
@@ -85,10 +85,10 @@ public class SocialController {
             @Parameter(description = "是否点赞") @RequestParam Boolean isLike) {
         
         SocialPostResponse response = socialFacadeService.likePost(postId, userId, isLike);
-        if (response.isSuccess()) {
+        if (response.getSuccess()) {
             return Result.success(null);
         }
-        return Result.error(response.getErrorCode(), response.getErrorMessage());
+        return Result.error(response.getResponseCode(), response.getResponseMessage());
     }
 
     @Operation(summary = "转发动态", description = "转发指定的社交动态")
@@ -99,10 +99,10 @@ public class SocialController {
             @Parameter(description = "转发评论") @RequestParam(required = false) String comment) {
         
         SocialPostResponse response = socialFacadeService.sharePost(postId, userId, comment);
-        if (response.isSuccess()) {
-            return Result.success(response.getData());
+        if (response.getSuccess()) {
+            return Result.success(response.getPostId());
         }
-        return Result.error(response.getErrorCode(), response.getErrorMessage());
+        return Result.error(response.getResponseCode(), response.getResponseMessage());
     }
 
     @Operation(summary = "删除动态", description = "删除指定的社交动态")
@@ -112,10 +112,10 @@ public class SocialController {
             @Parameter(description = "用户ID") @RequestParam Long userId) {
         
         SocialPostResponse response = socialFacadeService.deletePost(postId, userId);
-        if (response.isSuccess()) {
+        if (response.getSuccess()) {
             return Result.success(null);
         }
-        return Result.error(response.getErrorCode(), response.getErrorMessage());
+        return Result.error(response.getResponseCode(), response.getResponseMessage());
     }
 
     @Operation(summary = "获取用户时间线", description = "获取指定用户的动态时间线")

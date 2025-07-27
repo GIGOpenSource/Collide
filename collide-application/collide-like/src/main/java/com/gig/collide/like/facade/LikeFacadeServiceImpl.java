@@ -11,11 +11,15 @@ import com.gig.collide.api.like.service.LikeFacadeService;
 import com.gig.collide.like.domain.entity.Like;
 import com.gig.collide.like.domain.service.LikeDomainService;
 import com.gig.collide.like.infrastructure.converter.LikeConverter;
+import com.gig.collide.rpc.facade.Facade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 @DubboService(version = "1.0.0")
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class LikeFacadeServiceImpl implements LikeFacadeService {
@@ -34,6 +39,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     private final LikeConverter likeConverter;
     
     @Override
+    @Facade
     public LikeResponse likeAction(LikeRequest likeRequest) {
         try {
             log.info("处理点赞操作，用户ID：{}，目标对象ID：{}，类型：{}，动作：{}", 
@@ -61,6 +67,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     }
     
     @Override
+    @Facade
     public LikeResponse batchLikeAction(List<LikeRequest> likeRequests) {
         try {
             log.info("处理批量点赞操作，请求数量：{}", likeRequests.size());
@@ -84,6 +91,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     }
     
     @Override
+    @Facade
     public LikeQueryResponse queryLikes(LikeQueryRequest queryRequest) {
         try {
             log.info("查询点赞记录，用户ID：{}，目标对象ID：{}，类型：{}", 
@@ -109,6 +117,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     }
     
     @Override
+    @Facade
     public LikeResponse checkUserLikeStatus(Long userId, Long targetId, String likeType) {
         try {
             log.info("检查用户点赞状态，用户ID：{}，目标对象ID：{}，类型：{}", userId, targetId, likeType);
@@ -132,6 +141,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     }
     
     @Override
+    @Facade
     public LikeResponse getLikeStatistics(Long targetId, String likeType) {
         try {
             log.info("获取点赞统计，目标对象ID：{}，类型：{}", targetId, likeType);
@@ -151,6 +161,7 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     }
     
     @Override
+    @Facade
     public LikeQueryResponse getUserLikeHistory(LikeQueryRequest queryRequest) {
         try {
             log.info("获取用户点赞历史，用户ID：{}，类型：{}", queryRequest.getUserId(), queryRequest.getLikeType());

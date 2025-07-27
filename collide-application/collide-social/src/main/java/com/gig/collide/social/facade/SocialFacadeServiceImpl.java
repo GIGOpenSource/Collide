@@ -16,7 +16,13 @@ import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.social.domain.entity.SocialPost;
 import com.gig.collide.social.domain.service.TimelineService;
+import com.gig.collide.social.domain.service.IdempotentHelper;
+import com.gig.collide.social.domain.service.UserInteractionService;
+import com.gig.collide.social.domain.service.SocialEventService;
 import com.gig.collide.social.infrastructure.mapper.SocialPostMapper;
+import com.gig.collide.rpc.facade.Facade;
+import com.gig.collide.mq.producer.StreamProducer;
+import com.alibaba.fastjson2.JSON;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -27,8 +33,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 
@@ -49,12 +58,47 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
 
     private final SocialPostMapper socialPostMapper;
     private final TimelineService timelineService;
+    private final IdempotentHelper idempotentHelper;
+    private final UserInteractionService userInteractionService;
+    private final SocialEventService socialEventService;
+    private final StreamProducer streamProducer;
 
     @DubboReference(version = "1.0.0", check = false)
     private UserFacadeService userFacadeService;
 
     @Override
+    @Facade
     public SocialPostResponse publishPost(SocialPostCreateRequest createRequest) {
+        // 1. 基础参数验证
+        if (createRequest == null) {
+            return SocialPostResponse.error("PARAM_ERROR", "请求参数不能为空");
+        }
+        
+        if (createRequest.getAuthorId() == null) {
+            return SocialPostResponse.error("PARAM_ERROR", "作者ID不能为空");
+        }
+        
+        if (createRequest.getPostType() == null) {
+            return SocialPostResponse.error("PARAM_ERROR", "动态类型不能为空");
+        }
+        
+        // 2. 内容验证
+        if (!StringUtils.hasText(createRequest.getContent()) && 
+            CollectionUtils.isEmpty(createRequest.getMediaUrls())) {
+            return SocialPostResponse.error("PARAM_ERROR", "动态内容不能为空");
+        }
+        
+        // 3. 内容长度验证
+        if (createRequest.getContent() != null && createRequest.getContent().length() > 2000) {
+            return SocialPostResponse.error("PARAM_ERROR", "动态内容不能超过2000字符");
+        }
+        
+        // 4. 媒体文件数量验证
+        if (!CollectionUtils.isEmpty(createRequest.getMediaUrls()) && 
+            createRequest.getMediaUrls().size() > 9) {
+            return SocialPostResponse.error("PARAM_ERROR", "媒体文件数量不能超过9个");
+        }
+        
         try {
             log.info("发布社交动态，作者ID：{}，动态类型：{}", createRequest.getAuthorId(), createRequest.getPostType());
 
@@ -99,6 +143,15 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             int result = socialPostMapper.insert(socialPost);
             if (result > 0) {
                 log.info("动态发布成功，动态ID：{}", socialPost.getId());
+                
+                // 4. 发送动态发布事件（异步）
+                socialEventService.publishSocialPostPublished(
+                    socialPost.getId(), 
+                    socialPost.getAuthorId(), 
+                    socialPost.getPostType().toString(), 
+                    socialPost.getContent()
+                );
+                
                 return SocialPostResponse.success(socialPost.getId(), "动态发布成功");
             } else {
                 return SocialPostResponse.error("PUBLISH_FAILED", "动态发布失败");
@@ -111,6 +164,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public SocialPostResponse updatePost(Long postId, SocialPostCreateRequest updateRequest) {
         try {
             log.info("更新社交动态，动态ID：{}，作者ID：{}", postId, updateRequest.getAuthorId());
@@ -154,6 +208,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public SocialPostResponse deletePost(Long postId, Long userId) {
         try {
             log.info("删除社交动态，动态ID：{}，用户ID：{}", postId, userId);
@@ -175,6 +230,10 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             
             if (result > 0) {
                 log.info("动态删除成功，动态ID：{}", postId);
+                
+                // 4. 发送动态删除事件（异步）
+                socialEventService.publishSocialPostDeleted(postId, userId);
+                
                 return SocialPostResponse.success(postId, "动态删除成功");
             } else {
                 return SocialPostResponse.error("DELETE_FAILED", "动态删除失败");
@@ -187,6 +246,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<SocialPostInfo> pageQueryPosts(SocialPostQueryRequest queryRequest) {
         try {
             log.info("分页查询社交动态，查询类型：{}", queryRequest.getQueryType());
@@ -239,6 +299,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public SocialPostInfo queryPostDetail(Long postId, Long currentUserId) {
         try {
             log.info("查询动态详情，动态ID：{}，当前用户ID：{}", postId, currentUserId);
@@ -268,6 +329,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<SocialPostInfo> getUserTimeline(Long userId, Integer currentPage, Integer pageSize) {
         PageResponse<SocialPost> postPage = timelineService.getUserTimeline(userId, currentPage, pageSize);
         List<SocialPostInfo> postInfos = convertToPostInfos(postPage.getDatas());
@@ -275,6 +337,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<SocialPostInfo> getFollowingFeed(Long userId, Integer currentPage, Integer pageSize) {
         PageResponse<SocialPost> postPage = timelineService.getFollowingFeed(userId, currentPage, pageSize);
         List<SocialPostInfo> postInfos = convertToPostInfos(postPage.getDatas());
@@ -282,15 +345,17 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<SocialPostInfo> getHotPosts(Integer currentPage, Integer pageSize, String timeRange) {
         PageResponse<SocialPost> postPage = timelineService.getRecommendedFeed(null, currentPage, pageSize, timeRange);
         List<SocialPostInfo> postInfos = convertToPostInfos(postPage.getDatas());
         return PageResponse.of(postInfos, postPage.getTotal(), postPage.getPageSize(), postPage.getCurrentPage());
     }
 
-    @Override
-    public PageResponse<SocialPostInfo> getNearbyPosts(Double longitude, Double latitude, Double radius, 
-                                                       Integer currentPage, Integer pageSize) {
+        @Override
+    @Facade
+    public PageResponse<SocialPostInfo> getNearbyPosts(Double longitude, Double latitude, Double radius,
+                                                         Integer currentPage, Integer pageSize) {
         try {
             Page<SocialPost> page = new Page<>(currentPage, pageSize);
             IPage<SocialPost> resultPage = socialPostMapper.selectNearbyPostsPage(page, longitude, latitude, radius, SocialPostStatus.PUBLISHED);
@@ -304,6 +369,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public PageResponse<SocialPostInfo> searchPosts(String keyword, Integer currentPage, Integer pageSize) {
         try {
             Page<SocialPost> page = new Page<>(currentPage, pageSize);
@@ -318,31 +384,77 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public SocialPostResponse likePost(Long postId, Long userId, Boolean isLike) {
+        if (postId == null || userId == null || isLike == null) {
+            return SocialPostResponse.error("PARAM_ERROR", "参数不能为空");
+        }
+        
+        String lockKey = "social:like:lock:" + postId + ":" + userId;
+        String operationKey = "social:like:status:" + postId + ":" + userId;
+        String expectedValue = isLike.toString();
+        
         try {
             log.info("动态点赞操作，动态ID：{}，用户ID：{}，操作：{}", postId, userId, isLike ? "点赞" : "取消点赞");
 
-            // 更新点赞数（单表操作）
-            int increment = isLike ? 1 : -1;
-            int result = socialPostMapper.incrementLikeCount(postId, increment);
+            // 使用幂等性处理
+            Integer result = idempotentHelper.executeIdempotent(
+                lockKey, 
+                operationKey, 
+                expectedValue,
+                () -> {
+                    // 1. 检查动态是否存在
+                    SocialPost post = socialPostMapper.selectById(postId);
+                    if (post == null) {
+                        throw new RuntimeException("POST_NOT_FOUND");
+                    }
+                    
+                    // 2. 更新点赞数（单表操作）
+                    int increment = isLike ? 1 : -1;
+                    int updateResult = socialPostMapper.incrementLikeCount(postId, increment);
+                    
+                    if (updateResult <= 0) {
+                        throw new RuntimeException("UPDATE_FAILED");
+                    }
+                    
+                    // 3. 记录用户互动状态到缓存
+                    userInteractionService.recordLikeStatus(userId, postId, isLike);
+                    
+                    // 4. 发送统计变更事件（异步）
+                    socialEventService.publishStatisticsChanged(postId, "SOCIAL_POST", "LIKE", increment);
+                    
+                    return updateResult;
+                },
+                Duration.ofSeconds(30),  // 锁过期时间
+                Duration.ofHours(1)      // 状态过期时间
+            );
             
-            if (result > 0) {
-                // 这里可以异步记录点赞关系到 t_social_post_interaction 表
-                // 或者发送消息队列事件
-                
-                String message = isLike ? "点赞成功" : "取消点赞成功";
-                return SocialPostResponse.success(postId, message);
-            } else {
-                return SocialPostResponse.error("OPERATION_FAILED", "操作失败");
-            }
+            String message = isLike ? "点赞成功" : "取消点赞成功";
+            return SocialPostResponse.success(postId, message);
 
+        } catch (RuntimeException e) {
+            String errorMessage = e.getMessage();
+            switch (errorMessage) {
+                case "OPERATION_PENDING":
+                    return SocialPostResponse.error("OPERATION_PENDING", "操作正在处理中，请稍后");
+                case "ALREADY_OPERATED":
+                    return SocialPostResponse.error("ALREADY_OPERATED", "已经执行过该操作");
+                case "POST_NOT_FOUND":
+                    return SocialPostResponse.error("POST_NOT_FOUND", "动态不存在");
+                case "UPDATE_FAILED":
+                    return SocialPostResponse.error("UPDATE_FAILED", "操作失败");
+                default:
+                    log.error("动态点赞操作失败，动态ID：{}，用户ID：{}", postId, userId, e);
+                    return SocialPostResponse.error("SYSTEM_ERROR", "系统异常");
+            }
         } catch (Exception e) {
-            log.error("动态点赞操作失败，动态ID：{}", postId, e);
+            log.error("动态点赞操作失败，动态ID：{}，用户ID：{}", postId, userId, e);
             return SocialPostResponse.error("SYSTEM_ERROR", "系统异常");
         }
     }
 
     @Override
+    @Facade
     public SocialPostResponse sharePost(Long postId, Long userId, String comment) {
         try {
             log.info("转发动态，动态ID：{}，用户ID：{}，评论：{}", postId, userId, comment);
@@ -423,13 +535,104 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public SocialPostResponse reportPost(Long postId, Long userId, String reason) {
-        // TODO: 实现举报功能
-        log.info("举报动态功能待实现，动态ID：{}，用户ID：{}", postId, userId);
-        return SocialPostResponse.error("NOT_IMPLEMENTED", "举报功能待实现");
+        if (postId == null || userId == null) {
+            return SocialPostResponse.error("PARAM_ERROR", "参数不能为空");
+        }
+        
+        if (reason == null || reason.trim().isEmpty()) {
+            return SocialPostResponse.error("PARAM_ERROR", "举报原因不能为空");
+        }
+        
+        String lockKey = "social:report:lock:" + postId + ":" + userId;
+        String reportKey = "social:report:status:" + postId + ":" + userId;
+        
+        try {
+            log.info("举报动态，动态ID：{}，用户ID：{}，原因：{}", postId, userId, reason);
+            
+            // 使用幂等性处理防止重复举报
+            String result = idempotentHelper.executeIdempotent(
+                lockKey,
+                reportKey,
+                reason.trim(),
+                () -> {
+                    // 1. 检查动态是否存在
+                    SocialPost post = socialPostMapper.selectById(postId);
+                    if (post == null) {
+                        throw new RuntimeException("POST_NOT_FOUND");
+                    }
+                    
+                    // 2. 检查是否是自己的动态（不能举报自己）
+                    if (post.getAuthorId().equals(userId)) {
+                        throw new RuntimeException("CANNOT_REPORT_SELF");
+                    }
+                    
+                    // 3. 发送举报审核事件
+                    publishReportEvent(postId, userId, reason, post);
+                    
+                    return "举报成功";
+                },
+                Duration.ofSeconds(30),  // 锁过期时间
+                Duration.ofDays(1)       // 举报状态过期时间（24小时内不能重复举报同一动态）
+            );
+            
+            return SocialPostResponse.success(postId, "举报成功，我们会尽快处理");
+            
+        } catch (RuntimeException e) {
+            String errorMessage = e.getMessage();
+            switch (errorMessage) {
+                case "OPERATION_PENDING":
+                    return SocialPostResponse.error("OPERATION_PENDING", "举报正在处理中，请稍后");
+                case "ALREADY_OPERATED":
+                    return SocialPostResponse.error("ALREADY_REPORTED", "您已经举报过该动态");
+                case "POST_NOT_FOUND":
+                    return SocialPostResponse.error("POST_NOT_FOUND", "动态不存在");
+                case "CANNOT_REPORT_SELF":
+                    return SocialPostResponse.error("CANNOT_REPORT_SELF", "不能举报自己的动态");
+                default:
+                    log.error("举报动态失败，动态ID：{}，用户ID：{}", postId, userId, e);
+                    return SocialPostResponse.error("SYSTEM_ERROR", "系统异常，举报失败");
+            }
+        } catch (Exception e) {
+            log.error("举报动态失败，动态ID：{}，用户ID：{}", postId, userId, e);
+            return SocialPostResponse.error("SYSTEM_ERROR", "系统异常，举报失败");
+        }
+    }
+    
+    /**
+     * 发送举报审核事件
+     */
+    private void publishReportEvent(Long postId, Long reporterId, String reason, SocialPost post) {
+        try {
+            // 构建举报事件数据
+            Map<String, Object> reportData = new HashMap<>();
+            reportData.put("postId", postId);
+            reportData.put("reporterId", reporterId);
+            reportData.put("reason", reason);
+            reportData.put("authorId", post.getAuthorId());
+            reportData.put("postType", post.getPostType().toString());
+            reportData.put("postContent", post.getContent());
+            reportData.put("reportTime", LocalDateTime.now());
+            
+            // 使用标准化 StreamProducer 发送消息
+            String messageBody = JSON.toJSONString(reportData);
+            String tag = "POST_REPORTED";
+            
+            boolean result = streamProducer.send("social-post-reported-out-0", tag, messageBody);
+            if (result) {
+                log.info("举报事件发送成功，动态ID：{}，标签：{}", postId, tag);
+            } else {
+                log.error("举报事件发送失败，动态ID：{}", postId);
+            }
+            
+        } catch (Exception e) {
+            log.error("发送举报事件失败，动态ID：{}", postId, e);
+        }
     }
 
     @Override
+    @Facade
     public Long countUserPosts(Long userId) {
         try {
             return socialPostMapper.countUserPosts(userId, SocialPostStatus.PUBLISHED);
@@ -440,6 +643,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public void incrementViewCount(Long postId, Long userId) {
         try {
             socialPostMapper.incrementViewCount(postId);
@@ -449,6 +653,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     }
 
     @Override
+    @Facade
     public Double calculateHotScore(Long postId) {
         // TODO: 实现热度分数计算
         log.debug("热度分数计算功能待实现，动态ID：{}", postId);
@@ -595,11 +800,16 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             postInfo.setCanEdit(post.getAuthorId().equals(currentUserId));
             postInfo.setCanDelete(post.getAuthorId().equals(currentUserId));
             
-            // TODO: 查询当前用户的互动状态（点赞、收藏等）
-            // 这里可以批量查询互动关系，避免N+1查询
-            postInfo.setCurrentUserLiked(false);
-            postInfo.setCurrentUserFavorited(false);
-            postInfo.setCurrentUserFollowed(false);
+            // 查询当前用户的互动状态（点赞、收藏、关注等）
+            UserInteractionService.UserInteractionStatus interactionStatus = 
+                userInteractionService.getUserInteractionStatus(currentUserId, post.getId());
+            
+            postInfo.setCurrentUserLiked(interactionStatus.isLiked());
+            postInfo.setCurrentUserFavorited(interactionStatus.isFavorited());
+            
+            // 查询是否关注作者
+            boolean isFollowing = userInteractionService.isFollowing(currentUserId, post.getAuthorId());
+            postInfo.setCurrentUserFollowed(isFollowing);
         }
         
         postInfo.setHotScore(post.getHotScore());

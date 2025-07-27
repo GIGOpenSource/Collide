@@ -1,75 +1,12 @@
 spring:
   application:
-    name: collide-goods
+    name: @application.name@
   profiles:
     active: local
-  
-  # 数据源配置
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://${collide.mysql.host:localhost}:${collide.mysql.port:3306}/${spring.application.name}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false&allowPublicKeyRetrieval=true
-    username: ${collide.mysql.username:root}
-    password: ${collide.mysql.password:123456}
-    hikari:
-      minimum-idle: 5
-      maximum-pool-size: 20
-      idle-timeout: 30000
-      connection-timeout: 20000
-      max-lifetime: 1800000
-
-  # Redis 配置
-  data:
-    redis:
-      host: ${collide.redis.host:localhost}
-      port: ${collide.redis.port:6379}
-      password: ${collide.redis.password:}
-      database: ${collide.redis.database:2}
-      timeout: 6000ms
-      lettuce:
-        pool:
-          max-active: 20
-          max-idle: 10
-          min-idle: 5
-          max-wait: 5000ms
-
-# Dubbo 配置
-dubbo:
-  application:
-    name: ${spring.application.name}
-    version: 1.0.0
-  registry:
-    address: nacos://${collide.nacos.host:localhost}:${collide.nacos.port:8848}
-    username: ${collide.nacos.username:nacos}
-    password: ${collide.nacos.password:nacos}
-  protocol:
-    name: dubbo
-    port: 20883
-    threads: 200
-  provider:
-    timeout: 5000
-    retries: 0
-    delay: -1
-
-# MyBatis Plus 配置
-mybatis-plus:
-  configuration:
-    map-underscore-to-camel-case: true
-    cache-enabled: false
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-  mapper-locations: classpath*:mapper/*.xml
-  type-aliases-package: com.gig.collide.goods.domain.entity
-  global-config:
-    db-config:
-      id-type: ASSIGN_ID
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      update-strategy: NOT_NULL
-    banner: false
 
 # 服务端口配置
 server:
-  port: ${collide.goods.port:9503}
+  port: 9503
   servlet:
     context-path: /goods
   tomcat:
@@ -77,16 +14,17 @@ server:
       max: 200
       min-spare: 10
 
-# 日志配置
-logging:
-  level:
-    com.gig.collide.goods: DEBUG
-    com.gig.collide.goods.infrastructure.mapper: DEBUG
-    org.springframework.transaction: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
+# Dubbo 端口配置 (应用特定)
+dubbo:
+  protocol:
+    port: 20883
 
-# 业务配置
+# MyBatis Plus 配置 (应用特定)
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.goods.domain.entity
+
+# 业务配置 (商品模块特定)
 collide:
   goods:
     # 库存相关配置
@@ -114,7 +52,7 @@ collide:
       key-prefix: "goods:idempotent:"
       ttl: 300                   # 幂等键过期时间（秒）
 
-# 监控配置
+# 监控配置 (应用特定)
 management:
   endpoints:
     web:
@@ -123,10 +61,19 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
+  prometheus:
+    metrics:
+      export:
         enabled: true
+
+# 日志配置 (应用特定) 
+logging:
+  level:
+    com.gig.collide.goods: DEBUG
+    com.gig.collide.goods.infrastructure.mapper: DEBUG
+    org.springframework.transaction: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n"
 
 ---
 # 本地开发环境
@@ -143,23 +90,6 @@ logging:
     root: INFO
     com.gig.collide.goods: DEBUG
 
-collide:
-  mysql:
-    host: localhost
-    port: 3306
-    username: root
-    password: 123456
-  redis:
-    host: localhost
-    port: 6379
-    password: ""
-    database: 2
-  nacos:
-    host: localhost
-    port: 8848
-    username: nacos
-    password: nacos
-
 ---
 # Docker 环境
 spring:
@@ -175,23 +105,6 @@ logging:
     root: INFO
     com.gig.collide.goods: INFO
 
-collide:
-  mysql:
-    host: mysql
-    port: 3306
-    username: root
-    password: 123456
-  redis:
-    host: redis
-    port: 6379
-    password: ""
-    database: 2
-  nacos:
-    host: nacos
-    port: 8848
-    username: nacos
-    password: nacos
-
 ---
 # 生产环境
 spring:
@@ -205,21 +118,4 @@ server:
 logging:
   level:
     root: WARN
-    com.gig.collide.goods: INFO
-
-collide:
-  mysql:
-    host: ${MYSQL_HOST}
-    port: ${MYSQL_PORT:3306}
-    username: ${MYSQL_USERNAME}
-    password: ${MYSQL_PASSWORD}
-  redis:
-    host: ${REDIS_HOST}
-    port: ${REDIS_PORT:6379}
-    password: ${REDIS_PASSWORD}
-    database: ${REDIS_DATABASE:2}
-  nacos:
-    host: ${NACOS_HOST}
-    port: ${NACOS_PORT:8848}
-    username: ${NACOS_USERNAME}
-    password: ${NACOS_PASSWORD} 
+    com.gig.collide.goods: INFO 

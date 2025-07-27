@@ -15,6 +15,13 @@
     <name>collide-like</name>
     <description>Collide 点赞服务</description>
     
+    <properties>
+        <application.name>collide-like</application.name>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
     <dependencies>
         <!-- Spring Boot Web Starter -->
         <dependency>

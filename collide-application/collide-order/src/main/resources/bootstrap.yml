@@ -1,0 +1,64 @@
+server:
+  port: 9503
+
+spring:
+  application:
+    name: collide-order
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${collide.turbo.nacos.addr:localhost:8848}
+        namespace: ${collide.turbo.nacos.namespace:collide}
+        username: ${collide.turbo.nacos.username:nacos}
+        password: ${collide.turbo.nacos.password:nacos}
+        register-enabled: true
+        metadata:
+          version: 1.0.0
+          author: Collide Team
+          module: order
+      config:
+        server-addr: ${collide.turbo.nacos.addr:localhost:8848}
+        namespace: ${collide.turbo.nacos.namespace:collide}
+        username: ${collide.turbo.nacos.username:nacos}
+        password: ${collide.turbo.nacos.password:nacos}
+        file-extension: yml
+        group: COLLIDE_GROUP
+        refresh-enabled: true
+
+# ========================================================================
+# 基础配置 - 环境变量配置，支持容器化部署
+# ========================================================================
+collide:
+  turbo:
+    nacos:
+      addr: ${NACOS_SERVER_ADDR:localhost:8848}
+      namespace: ${NACOS_NAMESPACE:collide}
+      username: ${NACOS_USERNAME:nacos}
+      password: ${NACOS_PASSWORD:nacos}
+    mysql:
+      url: ${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}
+      username: ${MYSQL_USERNAME:root}
+      password: ${MYSQL_PASSWORD:123456}
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+# ========================================================================
+# 监控配置 - 标准化监控端点配置
+# ========================================================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,dubbo
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true 

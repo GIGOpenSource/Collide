@@ -1,0 +1,173 @@
+# Collide Payment Service 配置文件 (v2.0.0 去连表设计)
+spring:
+  profiles:
+    active: prod
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml
+
+server:
+  port: 9503
+  servlet:
+    context-path: /payment
+
+# MyBatis Plus 配置 (修复 linter 错误)
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: true
+    lazy-loading-enabled: true
+    multiple-result-sets-enabled: true
+  mapper-locations: classpath*:mapper/*_sqlmap.xml
+  type-aliases-package: com.gig.collide.payment.infrastructure.entity
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      insert-strategy: not_null
+      update-strategy: not_null
+      select-strategy: not_null
+
+# 监控配置 (修复 Prometheus 配置)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+
+# Collide Payment 业务配置 (v2.0.0)
+collide:
+  payment:
+    # 支付基础配置
+    config:
+      enabled: true
+      version: "2.0.0"
+      env: ${spring.profiles.active}
+      
+    # 幂等配置
+    idempotent:
+      enabled: true
+      expire-seconds: 3600
+      key-prefix: "payment:idempotent:"
+      
+    # 缓存配置
+    cache:
+      enabled: true
+      ttl: 300
+      prefix: "payment:cache:"
+      
+    # 风控配置
+    risk:
+      enabled: true
+      max-daily-amount: 50000.00
+      max-single-amount: 10000.00
+      max-retry-count: 3
+      
+    # 回调配置
+    callback:
+      enabled: true
+      timeout: 30000
+      max-retry: 5
+      retry-interval: 60000
+      
+    # 统计配置
+    statistics:
+      enabled: true
+      batch-size: 100
+      flush-interval: 60
+      
+    # 支付方式配置
+    channels:
+      alipay:
+        enabled: true
+        timeout: 30000
+      wechat:
+        enabled: true
+        timeout: 30000
+      unionpay:
+        enabled: false
+        timeout: 30000
+      test:
+        enabled: true
+        auto-success: true
+
+---
+# 本地开发环境配置
+spring:
+  config:
+    activate:
+      on-profile: local
+
+server:
+  port: 9503
+
+logging:
+  level:
+    com.gig.collide.payment: DEBUG
+    org.springframework.web: DEBUG
+    com.baomidou.mybatisplus: DEBUG
+
+collide:
+  payment:
+    config:
+      env: local
+    channels:
+      test:
+        enabled: true
+        auto-success: true
+
+---
+# Docker 环境配置
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.gig.collide.payment: INFO
+
+collide:
+  payment:
+    config:
+      env: docker
+    channels:
+      test:
+        enabled: false
+
+---
+# 生产环境配置
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+logging:
+  level:
+    root: WARN
+    com.gig.collide.payment: INFO
+
+collide:
+  payment:
+    config:
+      env: prod
+    risk:
+      max-daily-amount: 100000.00
+      max-single-amount: 50000.00
+    channels:
+      test:
+        enabled: false 

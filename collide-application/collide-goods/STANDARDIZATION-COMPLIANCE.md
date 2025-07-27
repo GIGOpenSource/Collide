@@ -160,7 +160,74 @@ spring:
     password: ${collide.mysql.password:123456}
 ```
 
-### 5. 去连表化设计合规性
+### 5. 配置文件标准化 - 学习Code/项目思想
+
+#### 实现位置
+- `bootstrap.yml` - 基础配置和模块导入
+- `application.yml` - 应用特定配置
+- `pom.xml` - Maven属性定义
+
+#### 标准化特点
+```xml
+<!-- pom.xml - 应用名定义 -->
+<properties>
+    <application.name>collide-goods</application.name>
+</properties>
+
+<build>
+    <resources>
+        <resource>
+            <directory>src/main/resources</directory>
+            <filtering>true</filtering>  <!-- ✅ 启用资源过滤 -->
+        </resource>
+    </resources>
+</build>
+```
+
+```yaml
+# bootstrap.yml - 标准化的配置导入
+spring:
+  application:
+    name: @application.name@  # ✅ 使用占位符，Maven构建时替换
+  config:
+    import: 
+      - classpath:base.yml        # 基础配置
+      - classpath:datasource.yml  # 数据源配置
+      - classpath:cache.yml       # 缓存配置
+      - classpath:rpc.yml         # RPC配置
+      - classpath:config.yml      # 配置中心
+```
+
+```yaml
+# application.yml - 仅包含应用特定配置
+spring:
+  application:
+    name: @application.name@
+
+server:
+  port: 9503                    # ✅ 应用特定端口
+  servlet:
+    context-path: /goods        # ✅ 应用特定上下文
+
+dubbo:
+  protocol:
+    port: 20883                 # ✅ 应用特定Dubbo端口
+
+collide:
+  goods:                        # ✅ 应用特定业务配置
+    stock:
+      low-threshold: 10
+    cache:
+      enabled: true
+```
+
+#### 配置分离策略
+- **通用配置**: 数据源、缓存、RPC等通过config.import导入
+- **应用配置**: 端口、上下文路径、业务参数等在application.yml
+- **环境配置**: 不同环境的变量通过外部注入
+- **Maven变量**: 应用名等通过Maven属性管理
+
+### 6. 去连表化设计合规性
 
 #### 数据库设计
 ```sql
@@ -210,6 +277,7 @@ CREATE TABLE `goods` (
 - 统一的配置变量命名规范
 - 环境无关的配置模板
 - 易于部署和维护
+- 配置文件模块化和通用化
 
 ### 3. 代码风格一致
 - 统一的错误处理模式
@@ -235,6 +303,9 @@ CREATE TABLE `goods` (
 - [x] 实现多层缓存策略
 - [x] 乐观锁并发控制
 - [x] 幂等性保障机制
+- [x] 配置文件标准化（bootstrap.yml + application.yml分离）
+- [x] Maven资源过滤和占位符替换
+- [x] 通用配置模块化导入
 
 ### 📋 持续改进点
 

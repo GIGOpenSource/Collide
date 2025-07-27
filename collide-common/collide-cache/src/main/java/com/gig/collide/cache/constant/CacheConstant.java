@@ -98,6 +98,32 @@ public class CacheConstant {
      */
     public static final String LIKE_ACTIVE_USERS_CACHE = ":like:cache:active:users:";
 
+    // ========== 社交相关缓存 ==========
+    /**
+     * 用户关注列表缓存
+     */
+    public static final String SOCIAL_FOLLOWING_USERS_CACHE = ":social:cache:following:users:";
+    
+    /**
+     * 社交动态信息缓存
+     */
+    public static final String SOCIAL_POST_INFO_CACHE = ":social:cache:post:info:";
+    
+    /**
+     * 用户时间线缓存
+     */
+    public static final String SOCIAL_USER_TIMELINE_CACHE = ":social:cache:user:timeline:";
+    
+    /**
+     * 推荐时间线缓存
+     */
+    public static final String SOCIAL_RECOMMEND_TIMELINE_CACHE = ":social:cache:recommend:timeline:";
+    
+    /**
+     * 热门动态缓存
+     */
+    public static final String SOCIAL_HOT_POSTS_CACHE = ":social:cache:hot:posts:";
+
     // ========== 缓存时间配置（分钟） ==========
     /**
      * 用户信息缓存时间 - 60分钟
@@ -148,4 +174,19 @@ public class CacheConstant {
      * 本地缓存时间 - 10分钟
      */
     public static final int LOCAL_CACHE_EXPIRE = 10;
+    
+    /**
+     * 社交关注列表缓存时间 - 60分钟
+     */
+    public static final int SOCIAL_FOLLOWING_CACHE_EXPIRE = 60;
+    
+    /**
+     * 社交动态信息缓存时间 - 30分钟
+     */
+    public static final int SOCIAL_POST_CACHE_EXPIRE = 30;
+    
+    /**
+     * 社交时间线缓存时间 - 15分钟
+     */
+    public static final int SOCIAL_TIMELINE_CACHE_EXPIRE = 15;
 }

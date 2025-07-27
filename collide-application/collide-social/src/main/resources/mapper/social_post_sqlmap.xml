@@ -58,7 +58,7 @@
         <if test="status != null">
             AND status = #{status}
         </if>
-        ORDER BY created_time DESC
+        ORDER BY published_time DESC, created_time DESC
     </select>
 
     <!-- 分页查询关注用户的动态流 - 应用层传入关注用户ID列表，无连表 -->

@@ -52,6 +52,12 @@
             <artifactId>collide-rpc</artifactId>
         </dependency>
         
+        <!-- Collide MQ 模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-mq</artifactId>
+        </dependency>
+        
         <!-- Collide Web 模块 -->
         <dependency>
             <groupId>com.gig</groupId>

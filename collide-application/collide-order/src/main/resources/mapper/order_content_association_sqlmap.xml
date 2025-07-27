@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.order.infrastructure.mapper.OrderContentAssociationMapper">
+    <!--  Generate by Collide Team Date: 2024-01-01 -->
+    
+    <!-- ========================================================================
+         订单内容关联 ResultMap - 完整字段映射
+         用于管理订单与内容的访问权限关联关系
+         ======================================================================== -->
+    <resultMap id="orderContentAssociationMap" type="com.gig.collide.order.domain.entity.OrderContentAssociation">
+        <!-- 基础字段 -->
+        <result property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="userId" column="user_id"/>
+        <result property="contentId" column="content_id"/>
+        
+        <!-- 内容信息（冗余存储避免连表查询） -->
+        <result property="contentTitle" column="content_title"/>
+        <result property="contentType" column="content_type"/>
+        <result property="contentCreatorId" column="content_creator_id"/>
+        <result property="contentCreatorName" column="content_creator_name"/>
+        
+        <!-- 权限相关字段 -->
+        <result property="accessStatus" column="access_status"/>
+        <result property="accessLevel" column="access_level"/>
+        <result property="activateTime" column="activate_time"/>
+        <result property="expireTime" column="expire_time"/>
+        <result property="revokeTime" column="revoke_time"/>
+        <result property="revokeReason" column="revoke_reason"/>
+        
+        <!-- 系统字段 -->
+        <result property="version" column="version"/>
+        <result property="deleted" column="deleted"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <!-- ========================================================================
+         核心查询方法 - 遵循去连表化设计原则
+         ======================================================================== -->
+    
+    <!-- 根据订单号查询关联内容 -->
+    <select id="selectByOrderNo" resultMap="orderContentAssociationMap">
+        SELECT * FROM `order_content_association`
+        WHERE `deleted` = 0 
+        AND `order_no` = #{orderNo}
+        ORDER BY `create_time` DESC
+    </select>
+    
+    <!-- 检查用户内容访问权限 -->
+    <select id="checkUserContentAccess" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM `order_content_association`
+        WHERE `deleted` = 0
+        AND `user_id` = #{userId}
+        AND `content_id` = #{contentId}
+        AND `access_status` = 'ACTIVE'
+        AND (`expire_time` IS NULL OR `expire_time` > NOW())
+    </select>
+    
+    <!-- 根据用户ID和内容ID查询权限详情 -->  
+    <select id="selectByUserAndContent" resultMap="orderContentAssociationMap">
+        SELECT * FROM `order_content_association`
+        WHERE `deleted` = 0
+        AND `user_id` = #{userId}
+        AND `content_id` = #{contentId}
+        ORDER BY `create_time` DESC
+        LIMIT 1
+    </select>
+    
+    <!-- 分页查询用户的内容权限 -->
+    <select id="pageQueryUserContent" resultMap="orderContentAssociationMap">
+        SELECT * FROM `order_content_association`
+        WHERE `deleted` = 0
+        AND `user_id` = #{userId}
+        <if test="contentType != null and contentType != ''">
+            AND `content_type` = #{contentType}
+        </if>
+        <if test="accessStatus != null and accessStatus != ''">
+            AND `access_status` = #{accessStatus}
+        </if>
+        ORDER BY `create_time` DESC
+    </select>
+
+    <!-- ========================================================================
+         权限管理方法 - 支持状态变更和幂等性控制
+         ======================================================================== -->
+    
+    <!-- 批量更新订单相关内容的访问状态 -->
+    <update id="batchUpdateStatusByOrderNo">
+        UPDATE `order_content_association`
+        SET `access_status` = #{status},
+            `update_time` = NOW(),
+            `version` = `version` + 1
+            <if test="status == 'REVOKED'">
+                ,`revoke_time` = NOW()
+                ,`revoke_reason` = #{reason}
+            </if>
+            <if test="status == 'EXPIRED'">
+                ,`expire_time` = NOW()
+            </if>
+        WHERE `order_no` = #{orderNo}
+        AND `deleted` = 0
+    </update>
+    
+    <!-- 更新单个内容权限状态 -->
+    <update id="updateAccessStatus">
+        UPDATE `order_content_association`
+        SET `access_status` = #{status},
+            `update_time` = NOW(),
+            `version` = `version` + 1
+            <if test="status == 'ACTIVE'">
+                ,`activate_time` = NOW()
+            </if>
+            <if test="status == 'REVOKED'">
+                ,`revoke_time` = NOW()
+                ,`revoke_reason` = #{reason}
+            </if>
+            <if test="status == 'EXPIRED'">
+                ,`expire_time` = NOW()
+            </if>
+        WHERE `id` = #{id}
+        AND `version` = #{version}
+        AND `deleted` = 0
+    </update>
+    
+    <!-- 批量激活权限 -->
+    <update id="batchActivateAccess">
+        UPDATE `order_content_association`
+        SET `access_status` = 'ACTIVE',
+            `activate_time` = NOW(),
+            `update_time` = NOW(),
+            `version` = `version` + 1
+        WHERE `order_no` IN
+        <foreach collection="orderNos" item="orderNo" open="(" separator="," close=")">
+            #{orderNo}
+        </foreach>
+        AND `access_status` = 'PENDING'
+        AND `deleted` = 0
+    </update>
+
+    <!-- ========================================================================
+         统计查询方法 - 业务报表支持
+         ======================================================================== -->
+    
+    <!-- 用户内容权限统计 -->
+    <select id="getUserContentStats" resultType="java.util.HashMap">
+        SELECT 
+            COUNT(*) as totalCount,
+            COUNT(CASE WHEN access_status = 'ACTIVE' THEN 1 END) as activeCount,
+            COUNT(CASE WHEN access_status = 'PENDING' THEN 1 END) as pendingCount,
+            COUNT(CASE WHEN access_status = 'REVOKED' THEN 1 END) as revokedCount,
+            COUNT(CASE WHEN access_status = 'EXPIRED' THEN 1 END) as expiredCount,
+            COUNT(CASE WHEN content_type = 'VIDEO' THEN 1 END) as videoCount,
+            COUNT(CASE WHEN content_type = 'ARTICLE' THEN 1 END) as articleCount,
+            COUNT(CASE WHEN content_type = 'COURSE' THEN 1 END) as courseCount,
+            COUNT(CASE WHEN content_type = 'LIVE' THEN 1 END) as liveCount
+        FROM `order_content_association`
+        WHERE `deleted` = 0
+        AND `user_id` = #{userId}
+        <if test="startTime != null">
+            AND `create_time` &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND `create_time` &lt;= #{endTime}
+        </if>
+    </select>
+    
+    <!-- 内容访问权限分布统计 -->
+    <select id="getContentAccessStats" resultType="java.util.HashMap">
+        SELECT 
+            `content_id`,
+            `content_title`,
+            `content_type`,
+            COUNT(*) as accessCount,
+            COUNT(CASE WHEN access_status = 'ACTIVE' THEN 1 END) as activeAccessCount,
+            MAX(`create_time`) as latestAccessTime
+        FROM `order_content_association`
+        WHERE `deleted` = 0
+        <if test="contentType != null and contentType != ''">
+            AND `content_type` = #{contentType}
+        </if>
+        <if test="startTime != null">
+            AND `create_time` &gt;= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND `create_time` &lt;= #{endTime}
+        </if>
+        GROUP BY `content_id`, `content_title`, `content_type`
+        ORDER BY `accessCount` DESC
+        LIMIT #{limit}
+    </select>
+    
+    <!-- 即将过期的权限查询 -->
+    <select id="selectExpiringAccess" resultMap="orderContentAssociationMap">
+        SELECT * FROM `order_content_association`
+        WHERE `deleted` = 0
+        AND `access_status` = 'ACTIVE'
+        AND `expire_time` IS NOT NULL
+        AND `expire_time` BETWEEN NOW() AND DATE_ADD(NOW(), INTERVAL #{days} DAY)
+        ORDER BY `expire_time` ASC
+    </select>
+
+</mapper> 

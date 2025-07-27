@@ -2,25 +2,17 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml   #这里爆红可以直接忽略，没有任何影响
+    import: classpath:base.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:stream.yml
 
 server:
   port: 9602
 
-# Dubbo 配置
+# Dubbo 协议端口 (应用特定)
 dubbo:
-  application:
-    name: ${spring.application.name}
   protocol:
-    name: dubbo
     port: 20886
-  registry:
-    address: nacos://${nacos.server.address}
-  provider:
-    timeout: 10000
-    retries: 0
 
-# MyBatis Plus 配置
+# MyBatis Plus 配置 (应用特定)
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
   type-aliases-package: com.gig.collide.social.domain.entity

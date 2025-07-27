@@ -3,6 +3,7 @@ package com.gig.collide.like.controller;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gig.collide.api.like.request.LikeQueryRequest;
 import com.gig.collide.api.like.request.LikeRequest;
+import com.gig.collide.api.like.constant.LikeType;
 import com.gig.collide.base.response.BaseResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.base.response.SingleResponse;
@@ -39,169 +40,189 @@ public class LikeController {
     private final LikeConverter likeConverter;
     
     @PostMapping("/action")
-    @Operation(summary = "点赞/取消点赞/点踩", description = "执行点赞相关操作，支持幂等性")
-    public Result<LikeActionResult> likeAction(@Valid @RequestBody LikeRequest likeRequest) {
+    @Operation(summary = "点赞操作", description = "执行点赞、取消点赞或点踩操作")
+    public Result<LikeActionResult> likeAction(@RequestBody @Valid LikeRequest likeRequest) {
         try {
             Like like = likeDomainService.performLikeAction(likeRequest);
             LikeActionResult result = LikeActionResult.builder()
+                .userId(like.getUserId())
+                .targetId(like.getTargetId())
+                .targetType(like.getTargetType())
+                .actionType(like.getActionType().toString())
+                .actionTime(like.getUpdatedTime())
+                .message("操作成功")
+                .build();
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("点赞操作失败: userId={}, targetId={}, likeType={}, action={}", 
+                      likeRequest.getUserId(), likeRequest.getTargetId(), likeRequest.getLikeType(), likeRequest.getAction(), e);
+            return Result.fail("LIKE_ACTION_FAILED", e.getMessage());
+        }
+    }
+
+    @PostMapping("/batch")
+    @Operation(summary = "批量点赞", description = "执行批量点赞操作") 
+    public Result<BatchActionResult> batchLikeAction(@RequestBody @Valid BatchLikeRequest batchRequest) {
+        if (batchRequest.getRequests() == null || batchRequest.getRequests().isEmpty()) {
+            return Result.fail("INVALID_BATCH_REQUEST", "批量请求不能为空");
+        }
+        if (batchRequest.getRequests().size() > 100) {
+            return Result.fail("BATCH_SIZE_EXCEEDED", "批量操作数量不能超过100");
+        }
+        
+        try {
+            var response = likeDomainService.batchLikeAction(batchRequest.getRequests());
+            // 计算成功和失败数量
+            int successCount = response.getSuccess() ? batchRequest.getRequests().size() : 0;
+            int failureCount = batchRequest.getRequests().size() - successCount;
+            
+            BatchActionResult result = BatchActionResult.builder()
+                .batchId(batchRequest.getBatchId())
+                .successCount(successCount)
+                .totalCount(batchRequest.getRequests().size())
+                .failureCount(failureCount)
+                .message(response.getResponseMessage())
+                .build();
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("批量点赞操作失败: batchId={}", batchRequest.getBatchId(), e);
+            return Result.fail("BATCH_ACTION_FAILED", e.getMessage());
+        }
+    }
+
+    @GetMapping("/query")
+    @Operation(summary = "查询点赞记录", description = "分页查询点赞记录")
+    public PageResponse<Like> queryLikes(@Valid LikeQueryRequest request) {
+        try {
+            IPage<Like> result = likeDomainService.queryLikes(request);
+            return PageResponse.of(result.getRecords(), (int) result.getTotal(), 
+                request.getPageSize(), request.getCurrentPage());
+        } catch (Exception e) {
+            log.error("查询点赞记录失败: request={}", request, e);
+            return PageResponse.fail("QUERY_LIKES_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/status")
+    @Operation(summary = "检查点赞状态", description = "检查用户对特定目标的点赞状态")
+    public Result<UserLikeStatus> checkUserLikeStatus(
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "目标ID") @RequestParam Long targetId,
+            @Parameter(description = "目标类型") @RequestParam String targetType) {
+        try {
+            LikeType likeType = LikeType.fromCode(targetType);
+            Like like = likeDomainService.getUserLikeStatus(userId, targetId, likeType);
+            UserLikeStatus status = UserLikeStatus.builder()
+                .userId(userId)
+                .targetId(targetId)
+                .targetType(targetType)
+                .hasLiked(like != null && like.getActionType() == 1)
+                .hasDisliked(like != null && like.getActionType() == -1)
+                .currentAction(like != null ? like.getActionType().toString() : "NONE")
+                .actionTime(like != null ? like.getCreatedTime() : null)
+                .build();
+            return Result.success(status);
+        } catch (Exception e) {
+            log.error("检查点赞状态失败: userId={}, targetId={}, targetType={}", userId, targetId, targetType, e);
+            return Result.fail("CHECK_STATUS_FAILED", "检查状态失败");
+        }
+    }
+
+    @GetMapping("/statistics")
+    @Operation(summary = "获取点赞统计", description = "获取目标对象的点赞统计信息")
+    public Result<LikeStatistics> getLikeStatistics(
+            @Parameter(description = "目标ID") @RequestParam Long targetId,
+            @Parameter(description = "目标类型") @RequestParam String targetType) {
+        try {
+            LikeType likeType = LikeType.fromCode(targetType);
+            var stats = likeDomainService.getLikeStatistics(targetId, likeType);
+            LikeStatistics statistics = LikeStatistics.builder()
+                .targetId(targetId)
+                .targetType(targetType)
+                .totalLikes(stats.getTotalLikeCount())
+                .totalDislikes(stats.getTotalDislikeCount())
+                .build();
+            return Result.success(statistics);
+        } catch (Exception e) {
+            log.error("获取点赞统计失败: targetId={}, targetType={}", targetId, targetType, e);
+            return Result.fail("GET_STATISTICS_FAILED", "获取统计失败");
+        }
+    }
+
+    @GetMapping("/history")
+    @Operation(summary = "获取用户点赞历史", description = "分页获取用户的点赞历史记录")
+    public PageResponse<LikeRecord> getUserLikeHistory(
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer page,
+            @Parameter(description = "页大小") @RequestParam(defaultValue = "20") Integer size) {
+        try {
+            // 构建查询请求对象
+            LikeQueryRequest queryRequest = new LikeQueryRequest();
+            queryRequest.setUserId(userId);
+            queryRequest.setCurrentPage(page);
+            queryRequest.setPageSize(size);
+            
+            IPage<Like> result = likeDomainService.queryLikes(queryRequest);
+            List<LikeRecord> records = result.getRecords().stream()
+                .map(like -> LikeRecord.builder()
+                    .id(like.getId())
                     .userId(like.getUserId())
                     .targetId(like.getTargetId())
                     .targetType(like.getTargetType())
-                    .action(like.getActionTypeDescription())
-                    .timestamp(like.getUpdatedTime())
-                    .build();
-            
-            return Result.success(result);
+                    .actionType(like.getActionType().toString())
+                    .userInfo(UserInfo.builder()
+                        .userId(like.getUserId())
+                        .nickname(like.getUserNickname())
+                        .avatar(like.getUserAvatar())
+                        .build())
+                    .targetInfo(TargetInfo.builder()
+                        .targetId(like.getTargetId())
+                        .title(like.getTargetTitle())
+                        .authorId(like.getTargetAuthorId())
+                        .build())
+                    .platform(like.getPlatform())
+                    .ipAddress(like.getIpAddress())
+                    .createdTime(like.getCreatedTime())
+                    .updatedTime(like.getUpdatedTime())
+                    .build())
+                .collect(Collectors.toList());
+            return PageResponse.of(records, (int) result.getTotal(), size, page);
         } catch (Exception e) {
-            log.error("点赞操作失败", e);
-            return Result.fail("LIKE_ACTION_ERROR", "点赞操作失败：" + e.getMessage());
+            log.error("获取用户点赞历史失败: userId={}", userId, e);
+            return PageResponse.fail("GET_HISTORY_FAILED", "获取历史记录失败: " + e.getMessage());
         }
     }
-    
-    @PostMapping("/batch-action")
-    @Operation(summary = "批量点赞操作", description = "批量执行点赞操作，全局事务保证")
-    public Result<BatchActionResult> batchLikeAction(@Valid @RequestBody BatchLikeRequest batchRequest) {
+
+    @PostMapping("/batch/status")
+    @Operation(summary = "批量检查点赞状态", description = "批量检查用户对多个目标的点赞状态")
+    public Result<BatchStatusResult> batchCheckUserLikeStatus(@RequestBody @Valid BatchStatusRequest request) {
         try {
-            // 参数验证
-            if (batchRequest.getRequests() == null || batchRequest.getRequests().isEmpty()) {
-                return Result.fail("PARAM_ERROR", "批量操作请求列表不能为空");
-            }
-            if (batchRequest.getRequests().size() > 100) {
-                return Result.fail("PARAM_ERROR", "单次批量操作不能超过100个");
-            }
-            
-            // 执行批量操作
-            var response = likeDomainService.batchLikeAction(batchRequest.getRequests());
-            
-            BatchActionResult result = BatchActionResult.builder()
-                    .batchId(batchRequest.getBatchId())
-                    .totalCount(batchRequest.getRequests().size())
-                    .message("批量操作完成")
-                    .build();
-            
-            return Result.success(result);
-        } catch (Exception e) {
-            log.error("批量点赞操作失败", e);
-            return Result.fail("BATCH_LIKE_ERROR", "批量点赞操作失败：" + e.getMessage());
-        }
-    }
-    
-    @PostMapping("/query")
-    @Operation(summary = "查询点赞记录", description = "分页查询点赞记录，包含冗余信息")
-    public PageResponse<LikeRecord> queryLikes(@Valid @RequestBody LikeQueryRequest queryRequest) {
-        try {
-            IPage<Like> page = likeDomainService.queryLikes(queryRequest);
-            List<LikeRecord> records = page.getRecords().stream()
-                    .map(this::convertToLikeRecord)
-                    .collect(Collectors.toList());
-            
-            return PageResponse.of(records, (int) page.getTotal(), 
-                    queryRequest.getPageSize(), queryRequest.getCurrentPage());
-        } catch (Exception e) {
-            log.error("查询点赞记录失败", e);
-            return PageResponse.fail("QUERY_ERROR", "查询失败：" + e.getMessage());
-        }
-    }
-    
-    @GetMapping("/check-status")
-    @Operation(summary = "检查用户点赞状态", description = "快速检查用户对指定对象的点赞状态")
-    public SingleResponse<UserLikeStatus> checkUserLikeStatus(
-            @Parameter(description = "用户ID") @RequestParam Long userId,
-            @Parameter(description = "目标对象ID") @RequestParam Long targetId,
-            @Parameter(description = "目标类型") @RequestParam String targetType) {
-        try {
-            Like like = likeDomainService.getUserLikeStatus(userId, targetId, 
-                    com.gig.collide.api.like.constant.LikeType.valueOf(targetType));
-            
-            UserLikeStatus status = UserLikeStatus.builder()
-                    .userId(userId)
-                    .targetId(targetId)
-                    .targetType(targetType)
-                    .hasLiked(like != null && like.isLiked())
-                    .hasDisliked(like != null && like.isDisliked())
-                    .currentAction(like != null ? like.getActionTypeDescription() : null)
-                    .actionTime(like != null ? like.getCreatedTime() : null)
-                    .build();
-            
-            return SingleResponse.of(status);
-        } catch (Exception e) {
-            log.error("检查用户点赞状态失败", e);
-            return SingleResponse.fail("CHECK_STATUS_ERROR", "检查状态失败：" + e.getMessage());
-        }
-    }
-    
-    @GetMapping("/statistics")
-    @Operation(summary = "获取点赞统计", description = "获取指定对象的点赞统计信息，基于冗余字段")
-    public SingleResponse<LikeStatistics> getLikeStatistics(
-            @Parameter(description = "目标对象ID") @RequestParam Long targetId,
-            @Parameter(description = "目标类型") @RequestParam String targetType) {
-        try {
-            var statistics = likeDomainService.getLikeStatistics(targetId, 
-                    com.gig.collide.api.like.constant.LikeType.valueOf(targetType));
-            
-            LikeStatistics result = LikeStatistics.builder()
-                    .targetId(statistics.getTargetId())
-                    .targetType(statistics.getTargetType())
-                    .totalLikes(statistics.getTotalLikeCount())
-                    .totalDislikes(statistics.getTotalDislikeCount())
-                    .build();
-            
-            return SingleResponse.of(result);
-        } catch (Exception e) {
-            log.error("获取点赞统计失败", e);
-            return SingleResponse.fail("STATISTICS_ERROR", "获取统计失败：" + e.getMessage());
-        }
-    }
-    
-    @PostMapping("/user-history")
-    @Operation(summary = "获取用户点赞历史", description = "分页获取用户的点赞历史记录，包含冗余目标信息")
-    public PageResponse<LikeRecord> getUserLikeHistory(@Valid @RequestBody LikeQueryRequest queryRequest) {
-        try {
-            IPage<Like> page = likeDomainService.getUserLikeHistory(queryRequest);
-            List<LikeRecord> records = page.getRecords().stream()
-                    .map(this::convertToLikeRecord)
-                    .collect(Collectors.toList());
-            
-            return PageResponse.of(records, (int) page.getTotal(), 
-                    queryRequest.getPageSize(), queryRequest.getCurrentPage());
-        } catch (Exception e) {
-            log.error("获取用户点赞历史失败", e);
-            return PageResponse.fail("USER_HISTORY_ERROR", "获取历史失败：" + e.getMessage());
-        }
-    }
-    
-    @PostMapping("/batch-status")
-    @Operation(summary = "批量查询点赞状态", description = "批量查询用户对多个对象的点赞状态")
-    public SingleResponse<BatchStatusResult> getBatchUserLikeStatus(@Valid @RequestBody BatchStatusRequest request) {
-        try {
-            Map<String, Object> results = request.getTargets().stream()
-                    .collect(Collectors.toMap(
-                            target -> target.getTargetId() + ":" + target.getTargetType(),
-                            target -> {
-                                Like like = likeDomainService.getUserLikeStatus(request.getUserId(), 
-                                        target.getTargetId(), 
-                                        com.gig.collide.api.like.constant.LikeType.valueOf(target.getTargetType()));
-                                return UserLikeStatus.builder()
-                                        .userId(request.getUserId())
-                                        .targetId(target.getTargetId())
-                                        .targetType(target.getTargetType())
-                                        .hasLiked(like != null && like.isLiked())
-                                        .hasDisliked(like != null && like.isDisliked())
-                                        .currentAction(like != null ? like.getActionTypeDescription() : null)
-                                        .actionTime(like != null ? like.getCreatedTime() : null)
-                                        .build();
-                            }
-                    ));
+            Map<String, Object> statusMap = request.getTargets().stream()
+                .collect(Collectors.toMap(
+                    target -> target.getTargetId() + ":" + target.getTargetType(),
+                    target -> {
+                        LikeType likeType = LikeType.fromCode(target.getTargetType());
+                        Like like = likeDomainService.getUserLikeStatus(request.getUserId(), target.getTargetId(), likeType);
+                        return UserLikeStatus.builder()
+                            .userId(request.getUserId())
+                            .targetId(target.getTargetId())
+                            .targetType(target.getTargetType())
+                            .hasLiked(like != null && like.getActionType() == 1)
+                            .hasDisliked(like != null && like.getActionType() == -1)
+                            .currentAction(like != null ? like.getActionType().toString() : "NONE")
+                            .actionTime(like != null ? like.getCreatedTime() : null)
+                            .build();
+                    }
+                ));
             
             BatchStatusResult result = BatchStatusResult.builder()
-                    .userId(request.getUserId())
-                    .results(results)
-                    .build();
-            
-            return SingleResponse.of(result);
+                .userId(request.getUserId())
+                .results(statusMap)
+                .build();
+            return Result.success(result);
         } catch (Exception e) {
-            log.error("批量查询点赞状态失败", e);
-            return SingleResponse.fail("BATCH_STATUS_ERROR", "批量查询失败：" + e.getMessage());
+            log.error("批量检查点赞状态失败: userId={}", request.getUserId(), e);
+            return Result.fail("BATCH_CHECK_FAILED", "批量检查失败");
         }
     }
     
@@ -231,7 +252,7 @@ public class LikeController {
                 .build();
     }
     
-    // ========== 内部数据类 ==========
+    // ========== 内部类定义 ==========
     
     @lombok.Data
     @lombok.Builder
@@ -239,14 +260,17 @@ public class LikeController {
         private Long userId;
         private Long targetId;
         private String targetType;
-        private String action;
-        private java.time.LocalDateTime timestamp;
+        private String actionType;
+        private java.time.LocalDateTime actionTime;
+        private String message;
     }
     
     @lombok.Data
     @lombok.Builder
     public static class BatchActionResult {
         private String batchId;
+        private Integer successCount;
+        private Integer failureCount;
         private Integer totalCount;
         private String message;
     }
