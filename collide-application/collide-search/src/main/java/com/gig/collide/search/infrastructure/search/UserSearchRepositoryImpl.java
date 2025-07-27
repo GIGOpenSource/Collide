@@ -1,0 +1,369 @@
+package com.gig.collide.business.infrastructure.search;
+
+import com.gig.collide.api.search.response.data.SearchResult;
+import com.gig.collide.api.search.response.data.SuggestionItem;
+import com.gig.collide.business.domain.search.UserSearchRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+import org.springframework.util.StringUtils;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 用户搜索仓储实现（去连表设计）
+ * 重构后基于t_user_unified单表查询，无JOIN操作
+ * 
+ * @author GIG Team
+ * @version 2.0 (重构版本)
+ */
+@Slf4j
+@Repository
+@RequiredArgsConstructor
+public class UserSearchRepositoryImpl implements UserSearchRepository {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    @Override
+    public List<SearchResult> searchUsers(String keyword, Integer pageNum, Integer pageSize, Boolean highlight) {
+        if (!StringUtils.hasText(keyword)) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // 构建单表SQL查询（去除LEFT JOIN）
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT id, username, nickname, avatar, bio, create_time, ");
+            sql.append("       gender, location, ");
+            
+            // 相关度计算：用户名匹配权重最高，昵称次之，简介最低
+            sql.append("       (CASE ");
+            sql.append("         WHEN username LIKE ? THEN 10 ");
+            sql.append("         WHEN nickname LIKE ? THEN 8 ");
+            sql.append("         WHEN bio LIKE ? THEN 5 ");
+            sql.append("         ELSE 1 END) AS relevance_score ");
+            
+            // 从统一用户表查询（单表，无JOIN）
+            sql.append("FROM t_user_unified ");
+            sql.append("WHERE deleted = 0 AND status = 'active' ");
+            sql.append("  AND (username LIKE ? OR nickname LIKE ? OR bio LIKE ?) ");
+            sql.append("ORDER BY relevance_score DESC, create_time DESC ");
+            sql.append("LIMIT ?, ?");
+
+            String likeKeyword = "%" + keyword + "%";
+            int offset = (pageNum - 1) * pageSize;
+
+            log.info("执行用户搜索查询（单表），关键词：{}，偏移：{}，限制：{}", keyword, offset, pageSize);
+
+            return jdbcTemplate.query(sql.toString(), 
+                new Object[]{
+                    likeKeyword, likeKeyword, likeKeyword, // 相关度计算
+                    likeKeyword, likeKeyword, likeKeyword, // WHERE条件
+                    offset, pageSize
+                },
+                new UserSearchResultMapper(keyword, highlight)
+            );
+
+        } catch (Exception e) {
+            log.error("搜索用户失败：keyword={}", keyword, e);
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public long countUsers(String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return 0;
+        }
+
+        try {
+            // 单表统计查询（去除JOIN）
+            String sql = "SELECT COUNT(*) FROM t_user_unified " +
+                        "WHERE deleted = 0 AND status = 'active' " +
+                        "  AND (username LIKE ? OR nickname LIKE ? OR bio LIKE ?)";
+            
+            String likeKeyword = "%" + keyword + "%";
+            Long count = jdbcTemplate.queryForObject(sql, Long.class, likeKeyword, likeKeyword, likeKeyword);
+            return count != null ? count : 0;
+
+        } catch (Exception e) {
+            log.error("统计用户搜索结果失败：keyword={}", keyword, e);
+            return 0;
+        }
+    }
+
+    @Override
+    public List<SuggestionItem> getUserSuggestions(String keyword, Integer limit) {
+        if (!StringUtils.hasText(keyword)) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // 单表建议查询（去除JOIN）
+            String sql = "SELECT username, nickname, avatar, " +
+                        "       (CASE WHEN username LIKE ? THEN 2 ELSE 1 END) AS relevance " +
+                        "FROM t_user_unified " +
+                        "WHERE deleted = 0 AND status = 'active' " +
+                        "  AND (username LIKE ? OR nickname LIKE ?) " +
+                        "ORDER BY relevance DESC, username ASC " +
+                        "LIMIT ?";
+
+            String likeKeyword = keyword + "%"; // 前缀匹配
+
+            log.debug("执行用户建议查询（单表），关键词：{}，限制：{}", keyword, limit);
+
+            return jdbcTemplate.query(sql, 
+                new Object[]{likeKeyword, likeKeyword, likeKeyword, limit},
+                (rs, rowNum) -> {
+                    String username = rs.getString("username");
+                    String nickname = rs.getString("nickname");
+                    String avatar = rs.getString("avatar");
+                    double relevance = rs.getDouble("relevance");
+
+                    // 构建显示文本
+                    String displayText = StringUtils.hasText(nickname) ? 
+                        nickname + " (@" + username + ")" : username;
+
+                    // 高亮匹配部分
+                    String highlightText = highlightMatch(displayText, keyword);
+
+                    return SuggestionItem.builder()
+                            .text(displayText)
+                            .type("USER")
+                            .searchCount(0L) // 用户建议不需要搜索次数
+                            .relevanceScore(relevance)
+                            .highlightText(highlightText)
+                            .extraInfo(avatar) // 头像URL
+                            .build();
+                }
+            );
+
+        } catch (Exception e) {
+            log.error("获取用户建议失败：keyword={}", keyword, e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 用户搜索结果映射器（重构版本）
+     * 适应新的单表结构
+     */
+    private static class UserSearchResultMapper implements RowMapper<SearchResult> {
+        private final String keyword;
+        private final Boolean highlight;
+
+        public UserSearchResultMapper(String keyword, Boolean highlight) {
+            this.keyword = keyword;
+            this.highlight = highlight != null ? highlight : false;
+        }
+
+        @Override
+        public SearchResult mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long userId = rs.getLong("id");
+            String username = rs.getString("username");
+            String nickname = rs.getString("nickname");
+            String avatar = rs.getString("avatar");
+            String bio = rs.getString("bio");
+            LocalDateTime createTime = rs.getTimestamp("create_time").toLocalDateTime();
+            String gender = rs.getString("gender");
+            String location = rs.getString("location");
+            Double relevanceScore = rs.getDouble("relevance_score");
+
+            // 构建作者信息
+            SearchResult.AuthorInfo authorInfo = SearchResult.AuthorInfo.builder()
+                    .userId(userId)
+                    .username(username)
+                    .nickname(nickname)
+                    .avatar(avatar)
+                    .bio(bio)
+                    .verified(false) // TODO: 根据blogger_status实现用户认证逻辑
+                    .build();
+
+            // 构建标题和描述
+            String title = StringUtils.hasText(nickname) ? nickname : username;
+            String description = StringUtils.hasText(bio) ? bio : "用户：" + username;
+
+            // 高亮处理
+            if (highlight) {
+                title = highlightMatch(title, keyword);
+                description = highlightMatch(description, keyword);
+            }
+
+            return SearchResult.builder()
+                    .id(userId)
+                    .resultType("USER")
+                    .title(title)
+                    .description(description)
+                    .contentPreview(null)
+                    .coverUrl(avatar)
+                    .author(authorInfo)
+                    .statistics(null) // 用户搜索结果不需要统计信息
+                    .tags(location != null ? List.of(location) : new ArrayList<>())
+                    .contentType("USER")
+                    .createTime(createTime)
+                    .publishTime(null)
+                    .relevanceScore(relevanceScore)
+                    .extraInfo(gender != null ? Map.of("gender", gender, "location", location) : null)
+                    .build();
+        }
+    }
+
+    /**
+     * 高亮匹配的关键词
+     */
+    private static String highlightMatch(String text, String keyword) {
+        if (!StringUtils.hasText(text) || !StringUtils.hasText(keyword)) {
+            return text;
+        }
+        
+        // 使用HTML标签高亮显示
+        return text.replaceAll("(?i)" + keyword, "<mark>$0</mark>");
+    }
+
+    /**
+     * 获取用户详细搜索信息（新增方法）
+     * 用于支持更丰富的用户搜索结果展示
+     */
+    public List<SearchResult> searchUsersWithDetails(String keyword, Integer pageNum, Integer pageSize, Boolean highlight) {
+        if (!StringUtils.hasText(keyword)) {
+            return new ArrayList<>();
+        }
+
+        try {
+            // 单表查询，包含更多用户信息
+            StringBuilder sql = new StringBuilder();
+            sql.append("SELECT id, username, nickname, avatar, bio, create_time, ");
+            sql.append("       gender, location, role, blogger_status, ");
+            sql.append("       follower_count, following_count, content_count, like_count, ");
+            sql.append("       (CASE ");
+            sql.append("         WHEN username LIKE ? THEN 10 ");
+            sql.append("         WHEN nickname LIKE ? THEN 8 ");
+            sql.append("         WHEN bio LIKE ? THEN 5 ");
+            sql.append("         ELSE 1 END) AS relevance_score ");
+            
+            sql.append("FROM t_user_unified ");
+            sql.append("WHERE deleted = 0 AND status = 'active' ");
+            sql.append("  AND (username LIKE ? OR nickname LIKE ? OR bio LIKE ?) ");
+            sql.append("ORDER BY relevance_score DESC, follower_count DESC, create_time DESC ");
+            sql.append("LIMIT ?, ?");
+
+            String likeKeyword = "%" + keyword + "%";
+            int offset = (pageNum - 1) * pageSize;
+
+            log.info("执行用户详细搜索查询（单表），关键词：{}，偏移：{}，限制：{}", keyword, offset, pageSize);
+
+            return jdbcTemplate.query(sql.toString(), 
+                new Object[]{
+                    likeKeyword, likeKeyword, likeKeyword, // 相关度计算
+                    likeKeyword, likeKeyword, likeKeyword, // WHERE条件
+                    offset, pageSize
+                },
+                new DetailedUserSearchResultMapper(keyword, highlight)
+            );
+
+        } catch (Exception e) {
+            log.error("详细搜索用户失败：keyword={}", keyword, e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 详细用户搜索结果映射器
+     * 包含用户统计信息和认证状态
+     */
+    private static class DetailedUserSearchResultMapper implements RowMapper<SearchResult> {
+        private final String keyword;
+        private final Boolean highlight;
+
+        public DetailedUserSearchResultMapper(String keyword, Boolean highlight) {
+            this.keyword = keyword;
+            this.highlight = highlight != null ? highlight : false;
+        }
+
+        @Override
+        public SearchResult mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Long userId = rs.getLong("id");
+            String username = rs.getString("username");
+            String nickname = rs.getString("nickname");
+            String avatar = rs.getString("avatar");
+            String bio = rs.getString("bio");
+            LocalDateTime createTime = rs.getTimestamp("create_time").toLocalDateTime();
+            String gender = rs.getString("gender");
+            String location = rs.getString("location");
+            String role = rs.getString("role");
+            String bloggerStatus = rs.getString("blogger_status");
+            long followerCount = rs.getLong("follower_count");
+            long followingCount = rs.getLong("following_count");
+            long contentCount = rs.getLong("content_count");
+            long likeCount = rs.getLong("like_count");
+            Double relevanceScore = rs.getDouble("relevance_score");
+
+            // 判断是否为认证用户
+            boolean verified = "blogger".equals(role) && "approved".equals(bloggerStatus);
+
+            // 构建作者信息
+            SearchResult.AuthorInfo authorInfo = SearchResult.AuthorInfo.builder()
+                    .userId(userId)
+                    .username(username)
+                    .nickname(nickname)
+                    .avatar(avatar)
+                    .bio(bio)
+                    .verified(verified)
+                    .build();
+
+            // 构建统计信息
+            SearchResult.StatisticsInfo statisticsInfo = SearchResult.StatisticsInfo.builder()
+                    .viewCount(0L) // 用户没有浏览量概念
+                    .likeCount(likeCount)
+                    .commentCount(0L) // 用户没有评论量概念
+                    .shareCount(0L) // 用户没有分享量概念
+                    .collectCount(followerCount) // 使用粉丝数作为收藏量
+                    .build();
+
+            // 构建标题和描述
+            String title = StringUtils.hasText(nickname) ? nickname : username;
+            String description = StringUtils.hasText(bio) ? bio : "用户：" + username;
+
+            // 高亮处理
+            if (highlight) {
+                title = highlightMatch(title, keyword);
+                description = highlightMatch(description, keyword);
+            }
+
+            // 构建标签（包含用户角色和地理位置）
+            List<String> tags = new ArrayList<>();
+            if (location != null) tags.add(location);
+            if (verified) tags.add("认证博主");
+            if ("vip".equals(role)) tags.add("VIP用户");
+
+            return SearchResult.builder()
+                    .id(userId)
+                    .resultType("USER")
+                    .title(title)
+                    .description(description)
+                    .contentPreview(String.format("粉丝 %d · 关注 %d · 内容 %d", followerCount, followingCount, contentCount))
+                    .coverUrl(avatar)
+                    .author(authorInfo)
+                    .statistics(statisticsInfo)
+                    .tags(tags)
+                    .contentType("USER")
+                    .createTime(createTime)
+                    .publishTime(null)
+                    .relevanceScore(relevanceScore)
+                    .extraInfo(Map.of(
+                        "gender", gender != null ? gender : "unknown",
+                        "location", location != null ? location : "",
+                        "role", role,
+                        "verified", verified
+                    ))
+                    .build();
+        }
+    }
+} 

@@ -1,4 +1,4 @@
-package com.gig.collide.business.controller;
+package com.gig.collide.search.controller;
 
 import com.gig.collide.api.category.CategoryFacadeService;
 import com.gig.collide.api.category.request.CategoryCreateRequest;
@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +22,9 @@ import java.util.List;
 /**
  * 分类管理控制器
  *
- * @author GIG Team
- * @version 1.0.0
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-12-19
  */
 @RestController
 @RequestMapping("/api/v1/categories")
@@ -33,8 +33,7 @@ import java.util.List;
 @Tag(name = "分类管理", description = "内容分类管理相关接口")
 public class CategoryController {
 
-    @DubboReference(version = "1.0.0", timeout = 3000)
-    private CategoryFacadeService categoryFacadeService;
+    private final CategoryFacadeService categoryFacadeService;
 
     @Operation(summary = "创建分类", description = "创建新的内容分类")
     @PostMapping

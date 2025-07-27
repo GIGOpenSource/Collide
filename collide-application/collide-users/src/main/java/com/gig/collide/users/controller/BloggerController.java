@@ -13,6 +13,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import com.gig.collide.api.user.request.UserModifyRequest;
+import com.gig.collide.users.domain.entity.UserUnified;
+import com.gig.collide.users.domain.service.UserDomainService;
+
 /**
  * 博主申请控制器
  * 处理用户申请成为博主的业务
@@ -28,6 +35,8 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "博主申请", description = "博主申请、审核相关接口")
 public class BloggerController {
 
+    private final UserDomainService userDomainService;
+
     /**
      * 申请成为博主
      */
@@ -39,12 +48,10 @@ public class BloggerController {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             log.info("用户申请成为博主，用户ID: {}, 申请类型: {}", currentUserId, request.getApplyType());
 
-            // TODO: 实现博主申请逻辑
-            // 1. 验证用户资格
-            // 2. 保存申请信息
-            // 3. 发送审核通知
-
-            return Result.success("申请提交成功，请等待审核");
+            // 调用领域服务处理博主申请
+            String resultMessage = userDomainService.applyForBlogger(currentUserId);
+            
+            return Result.success(resultMessage);
         } catch (Exception e) {
             log.error("申请成为博主失败", e);
             return Result.error("BLOGGER_APPLY_ERROR", "申请失败，请稍后重试");
@@ -61,8 +68,32 @@ public class BloggerController {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             
-            // TODO: 实现查询申请状态逻辑
-            return Result.success("申请审核中");
+            // 获取用户信息并返回博主申请状态
+            UserUnified user = userDomainService.getUserById(currentUserId);
+            
+            Map<String, Object> statusInfo = new HashMap<>();
+            statusInfo.put("bloggerStatus", user.getBloggerStatus());
+            statusInfo.put("bloggerApplyTime", user.getBloggerApplyTime());
+            statusInfo.put("isBlogger", userDomainService.isBloggerUser(currentUserId));
+            
+            String statusMessage;
+            switch (user.getBloggerStatus()) {
+                case "approved":
+                    statusMessage = "博主认证已通过";
+                    break;
+                case "applying":
+                    statusMessage = "博主申请审核中，请耐心等待";
+                    break;
+                case "rejected":
+                    statusMessage = "博主申请已被拒绝";
+                    break;
+                default:
+                    statusMessage = "尚未申请博主认证";
+            }
+            
+            statusInfo.put("statusMessage", statusMessage);
+            
+            return Result.success(statusInfo);
         } catch (Exception e) {
             log.error("查询申请状态失败", e);
             return Result.error("APPLY_STATUS_ERROR", "查询失败，请稍后重试");
@@ -80,8 +111,10 @@ public class BloggerController {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             log.info("用户取消博主申请，用户ID: {}", currentUserId);
 
-            // TODO: 实现取消申请逻辑
-            return Result.success("申请已取消");
+            // 调用领域服务取消博主申请
+            String resultMessage = userDomainService.cancelBloggerApply(currentUserId);
+            
+            return Result.success(resultMessage);
         } catch (Exception e) {
             log.error("取消申请失败", e);
             return Result.error("CANCEL_APPLY_ERROR", "取消失败，请稍后重试");
@@ -98,8 +131,8 @@ public class BloggerController {
         try {
             Long currentUserId = StpUtil.getLoginIdAsLong();
             
-            // TODO: 实现检查博主权限逻辑
-            boolean hasPermission = false; // 这里需要根据实际业务逻辑判断
+            // 调用领域服务检查博主权限
+            boolean hasPermission = userDomainService.isBloggerUser(currentUserId);
             
             return Result.success(hasPermission);
         } catch (Exception e) {

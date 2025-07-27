@@ -21,7 +21,8 @@ public enum AuthErrorCode implements ErrorCode {
     LOGIN_FAILED("AUTH_010", "登录失败"),
     REGISTER_FAILED("AUTH_011", "注册失败"),
     NOT_LOGGED_IN("AUTH_012", "用户未登录"),
-    SYSTEM_ERROR("AUTH_999", "系统异常");
+    SYSTEM_ERROR("AUTH_999", "系统异常"),
+    USER_STATUS_IS_NOT_ACTIVE("AUTH_999","用户未激活");
 
     private final String code;
     private final String message;

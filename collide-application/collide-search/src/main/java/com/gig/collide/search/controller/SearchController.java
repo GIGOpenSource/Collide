@@ -1,4 +1,4 @@
-package com.gig.collide.business.controller;
+package com.gig.collide.search.controller;
 
 import com.gig.collide.api.search.request.SearchRequest;
 import com.gig.collide.api.search.request.SearchSuggestionRequest;
@@ -13,14 +13,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-// import javax.validation.Valid;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 搜索控制器
- * 
- * @author GIG Team
+ *
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-12-19
  */
 @Slf4j
 @RestController

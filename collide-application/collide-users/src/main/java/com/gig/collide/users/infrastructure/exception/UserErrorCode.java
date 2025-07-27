@@ -26,6 +26,9 @@ public enum UserErrorCode implements ErrorCode {
     PASSWORD_INCORRECT("USER_008", "密码错误"),
     USER_DISABLED("USER_009", "用户已被禁用"),
     USER_NOT_ACTIVATED("USER_010", "用户未激活"),
+    INVALID_STATUS_TRANSITION("USER_011", "无效的状态转换"),
+    STATUS_UPDATE_CONFLICT("USER_012", "状态更新冲突，请重试"),
+    STATUS_UPDATE_ERROR("USER_013", "状态更新失败"),
 
     // 博主认证相关错误码 (BLOGGER_xxx)
     BLOGGER_APPLY_REJECTED("BLOGGER_001", "博主申请已被拒绝"),

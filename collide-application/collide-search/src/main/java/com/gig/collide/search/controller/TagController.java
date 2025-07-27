@@ -1,4 +1,4 @@
-package com.gig.collide.business.controller;
+package com.gig.collide.search.controller;
 
 import com.gig.collide.api.tag.TagFacadeService;
 import com.gig.collide.api.tag.request.TagCreateRequest;
@@ -15,7 +15,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +22,9 @@ import java.util.List;
 /**
  * 标签管理控制器
  *
- * @author GIG Team
- * @version 1.0.0
+ * @author Collide Team
+ * @version 1.0
+ * @since 2024-12-19
  */
 @RestController
 @RequestMapping("/api/v1/tags")
@@ -33,8 +33,7 @@ import java.util.List;
 @Tag(name = "标签管理", description = "标签和用户兴趣管理相关接口")
 public class TagController {
 
-    @DubboReference(version = "1.0.0", timeout = 3000)
-    private TagFacadeService tagFacadeService;
+    private final TagFacadeService tagFacadeService;
 
     @Operation(summary = "创建标签", description = "创建新的标签")
     @PostMapping

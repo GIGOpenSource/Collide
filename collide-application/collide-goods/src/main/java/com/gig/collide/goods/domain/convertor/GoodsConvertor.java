@@ -33,11 +33,13 @@ public interface GoodsConvertor {
     /**
      * 实体转换为VO
      */
+    @Mapping(target = "goodsId", source = "id")
     GoodsInfo mapToVo(Goods goods);
     
     /**
      * VO转换为实体
      */
+    @Mapping(target = "id", source = "goodsId")
     @Mapping(target = "createTime", ignore = true)
     @Mapping(target = "updateTime", ignore = true)
     @Mapping(target = "deleted", ignore = true)

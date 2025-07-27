@@ -1,4 +1,5 @@
 # Collide Auth Bootstrap 配置
+# 简化认证系统启动配置
 spring:
   application:
     name: collide-auth

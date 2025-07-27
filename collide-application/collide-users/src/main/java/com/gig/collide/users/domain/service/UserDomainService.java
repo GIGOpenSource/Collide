@@ -2,10 +2,8 @@ package com.gig.collide.users.domain.service;
 
 import com.gig.collide.api.user.constant.UserRole;
 import com.gig.collide.api.user.constant.UserStateEnum;
-import com.gig.collide.users.domain.entity.User;
-import com.gig.collide.users.domain.entity.UserProfile;
-import com.gig.collide.users.domain.repository.UserRepository;
-import com.gig.collide.users.domain.repository.UserProfileRepository;
+import com.gig.collide.users.domain.entity.UserUnified;
+import com.gig.collide.users.domain.repository.UserUnifiedRepository;
 import com.gig.collide.api.user.request.UserModifyRequest;
 import com.gig.collide.api.user.request.UserRegisterRequest;
 import com.gig.collide.base.exception.BizException;
@@ -27,6 +25,8 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import java.util.Random;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 用户领域服务
@@ -41,9 +41,11 @@ import java.util.Random;
 @RequiredArgsConstructor
 public class UserDomainService {
 
-    private final UserRepository userRepository;
-    private final UserProfileRepository userProfileRepository;
+    private final UserUnifiedRepository userUnifiedRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final SmsService smsService;
+    private final ActivationCodeService activationCodeService;
 
     /**
      * 根据ID查询用户信息
@@ -60,9 +62,9 @@ public class UserDomainService {
             timeUnit = TimeUnit.MINUTES,
             cacheNullValue = true)
     @CacheRefresh(refresh = CacheConstant.USER_CACHE_EXPIRE, timeUnit = TimeUnit.MINUTES)
-    public User getUserById(Long userId) {
+    public UserUnified getUserById(Long userId) {
         log.debug("从数据库查询用户信息，用户ID：{}", userId);
-        return userRepository.findById(userId)
+        return userUnifiedRepository.findById(userId)
                 .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
     }
 
@@ -80,9 +82,9 @@ public class UserDomainService {
             localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
             timeUnit = TimeUnit.MINUTES,
             cacheNullValue = true)
-    public User getUserByUsername(String username) {
+    public UserUnified getUserByUsername(String username) {
         log.debug("从数据库根据用户名查询用户信息：{}", username);
-        return userRepository.findByUsername(username)
+        return userUnifiedRepository.findByUsername(username)
                 .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
     }
 
@@ -100,9 +102,9 @@ public class UserDomainService {
             localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
             timeUnit = TimeUnit.MINUTES,
             cacheNullValue = true)
-    public User getUserByPhone(String phone) {
+    public UserUnified getUserByPhone(String phone) {
         log.debug("从数据库根据手机号查询用户信息：{}", phone);
-        return userRepository.findByPhone(phone)
+        return userUnifiedRepository.findByPhone(phone)
                 .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
     }
 
@@ -120,66 +122,25 @@ public class UserDomainService {
             localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
             timeUnit = TimeUnit.MINUTES,
             cacheNullValue = true)
-    public User getUserByEmail(String email) {
+    public UserUnified getUserByEmail(String email) {
         log.debug("从数据库根据邮箱查询用户信息：{}", email);
-        return userRepository.findByEmail(email)
+        return userUnifiedRepository.findByEmail(email)
                 .orElseThrow(() -> new BizException(UserErrorCode.USER_NOT_FOUND));
     }
 
     /**
-     * 用户注册
-     *
-     * @param registerRequest 注册请求
-     * @return 新注册的用户实体
+     * 用户注册（已弃用，使用 simpleRegister 替代）
+     * @deprecated 使用 simpleRegister(String username, String password, String inviteCode) 替代
      */
+    @Deprecated
     @Transactional(rollbackFor = Exception.class)
-    public User registerUser(UserRegisterRequest registerRequest) {
-        // 1. 校验用户名唯一性
-        if (StringUtils.hasText(registerRequest.getUsername()) && 
-            userRepository.existsByUsername(registerRequest.getUsername())) {
-            throw new BizException(UserErrorCode.USERNAME_ALREADY_EXISTS);
-        }
-
-        // 2. 校验邮箱唯一性
-        if (StringUtils.hasText(registerRequest.getEmail()) && 
-            userRepository.existsByEmail(registerRequest.getEmail())) {
-            throw new BizException(UserErrorCode.EMAIL_ALREADY_EXISTS);
-        }
-
-        // 3. 校验手机号唯一性
-        if (StringUtils.hasText(registerRequest.getPhone()) && 
-            userRepository.existsByPhone(registerRequest.getPhone())) {
-            throw new BizException(UserErrorCode.PHONE_ALREADY_EXISTS);
-        }
-
-        // 4. 创建用户实体
-        User user = new User();
-        user.setUsername(registerRequest.getUsername());
-        user.setNickname(StringUtils.hasText(registerRequest.getNickname()) ? 
-                        registerRequest.getNickname() : generateDefaultNickname());
-        user.setEmail(registerRequest.getEmail());
-        user.setPhone(registerRequest.getPhone());
-        
-        // 5. 加密密码
-        if (StringUtils.hasText(registerRequest.getPassword())) {
-            String salt = UUID.randomUUID().toString();
-            String passwordHash = passwordEncoder.encode(registerRequest.getPassword());
-            user.setPasswordHash(passwordHash);
-            user.setSalt(salt);
-        }
-
-        // 6. 设置用户默认状态
-        user.setRole(UserRole.user); // 默认为普通用户
-        user.setStatus(UserStateEnum.ACTIVE); // 直接激活，不需要邮箱验证
-        
-        // 7. 保存用户
-        user = userRepository.save(user);
-        
-        // 8. 创建用户扩展信息
-        createDefaultUserProfile(user.getId());
-        
-        log.info("新用户注册成功，用户ID: {}, 用户名: {}", user.getId(), user.getUsername());
-        return user;
+    public UserUnified registerUser(UserRegisterRequest registerRequest) {
+        // 兼容性保留，建议使用 simpleRegister 方法
+        return simpleRegister(
+            registerRequest.getUsername(),
+            registerRequest.getPassword(),
+            null // 旧接口不支持邀请码
+        );
     }
 
     /**
@@ -192,19 +153,6 @@ public class UserDomainService {
     }
 
     /**
-     * 创建默认的用户扩展信息
-     *
-     * @param userId 用户ID
-     */
-    private void createDefaultUserProfile(Long userId) {
-        UserProfile userProfile = new UserProfile();
-        userProfile.setUserId(userId);
-        userProfile.setBloggerStatus(UserProfile.BloggerStatus.none);
-        userProfile.setGender(UserProfile.Gender.unknown);
-        userProfileRepository.save(userProfile);
-    }
-
-    /**
      * 更新用户基础信息
      *
      * @param userId        用户ID
@@ -214,8 +162,8 @@ public class UserDomainService {
     @Transactional(rollbackFor = Exception.class)
     @CacheInvalidate(name = CacheConstant.USER_INFO_CACHE, key = "#userId")
     @CacheInvalidate(name = CacheConstant.USER_PROFILE_CACHE, key = "#userId")
-    public User updateUserInfo(Long userId, UserModifyRequest updateRequest) {
-        User user = getUserById(userId);
+    public UserUnified updateUserInfo(Long userId, UserModifyRequest updateRequest) {
+        UserUnified user = getUserById(userId);
 
         // 更新基础信息
         if (StringUtils.hasText(updateRequest.getNickname())) {
@@ -226,7 +174,7 @@ public class UserDomainService {
         }
         if (StringUtils.hasText(updateRequest.getEmail())) {
             // 检查邮箱是否已被其他用户使用
-            if (userRepository.existsByEmail(updateRequest.getEmail()) && 
+            if (userUnifiedRepository.existsByEmail(updateRequest.getEmail()) && 
                 !updateRequest.getEmail().equals(user.getEmail())) {
                 throw new BizException(UserErrorCode.EMAIL_ALREADY_EXISTS);
             }
@@ -234,56 +182,34 @@ public class UserDomainService {
         }
         if (StringUtils.hasText(updateRequest.getPhone())) {
             // 检查手机号是否已被其他用户使用
-            if (userRepository.existsByPhone(updateRequest.getPhone()) && 
+            if (userUnifiedRepository.existsByPhone(updateRequest.getPhone()) && 
                 !updateRequest.getPhone().equals(user.getPhone())) {
                 throw new BizException(UserErrorCode.PHONE_ALREADY_EXISTS);
             }
             user.setPhone(updateRequest.getPhone());
         }
 
-        // 保存用户基础信息
-        user = userRepository.save(user);
-
-        // 更新扩展信息
-        updateUserProfile(userId, updateRequest);
-
-        return user;
-    }
-
-    /**
-     * 更新用户扩展信息
-     *
-     * @param userId        用户ID
-     * @param updateRequest 更新请求
-     */
-    private void updateUserProfile(Long userId, UserModifyRequest updateRequest) {
-        UserProfile userProfile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserProfile newProfile = new UserProfile();
-                    newProfile.setUserId(userId);
-                    return newProfile;
-                });
-
-        // 更新扩展信息
+        // 更新扩展信息（原本在UserProfile中的字段）
         if (StringUtils.hasText(updateRequest.getBio())) {
-            userProfile.setBio(updateRequest.getBio());
+            user.setBio(updateRequest.getBio());
         }
         if (StringUtils.hasText(updateRequest.getGender())) {
-            try {
-                UserProfile.Gender gender = UserProfile.Gender.valueOf(updateRequest.getGender().toLowerCase());
-                userProfile.setGender(gender);
-            } catch (IllegalArgumentException e) {
+            // 验证性别值的合法性
+            if (!updateRequest.getGender().matches("^(male|female|unknown)$")) {
                 throw new BizException(UserErrorCode.INVALID_GENDER);
             }
+            user.setGender(updateRequest.getGender());
         }
         if (updateRequest.getBirthday() != null) {
-            userProfile.setBirthday(updateRequest.getBirthday());
+            user.setBirthday(updateRequest.getBirthday());
         }
         if (StringUtils.hasText(updateRequest.getLocation())) {
-            userProfile.setLocation(updateRequest.getLocation());
+            user.setLocation(updateRequest.getLocation());
         }
 
-        userProfileRepository.save(userProfile);
+        // 保存用户统一信息
+        user = userUnifiedRepository.save(user);
+        return user;
     }
 
     /**
@@ -294,43 +220,60 @@ public class UserDomainService {
      */
     @Transactional(rollbackFor = Exception.class)
     public String applyForBlogger(Long userId) {
-        User user = getUserById(userId);
+        UserUnified user = getUserById(userId);
 
         // 检查用户状态
         if (user.getStatus() != UserStateEnum.ACTIVE) {
             throw new BizException(UserErrorCode.USER_STATUS_INVALID);
         }
 
-        // 获取或创建用户扩展信息
-        UserProfile userProfile = userProfileRepository.findByUserId(userId)
-                .orElseGet(() -> {
-                    UserProfile newProfile = new UserProfile();
-                    newProfile.setUserId(userId);
-                    return newProfile;
-                });
-
         // 检查当前博主认证状态
-        switch (userProfile.getBloggerStatus()) {
-            case approved:
+        String currentBloggerStatus = user.getBloggerStatus();
+        switch (currentBloggerStatus) {
+            case "approved":
                 return "您已经是认证博主了";
-            case applying:
+            case "applying":
                 return "您的博主申请正在审核中，请耐心等待";
-            case rejected:
+            case "rejected":
                 // 检查是否可以重新申请（距离上次申请是否超过30天）
-                if (userProfile.getBloggerApplyTime() != null &&
-                        userProfile.getBloggerApplyTime().isAfter(LocalDateTime.now().minusDays(30))) {
+                if (user.getBloggerApplyTime() != null &&
+                        user.getBloggerApplyTime().isAfter(LocalDateTime.now().minusDays(30))) {
                     return "博主申请被拒绝后需等待30天才能重新申请";
                 }
                 break;
         }
 
         // 更新博主申请状态
-        userProfile.setBloggerStatus(UserProfile.BloggerStatus.applying);
-        userProfile.setBloggerApplyTime(LocalDateTime.now());
-        userProfileRepository.save(userProfile);
+        user.setBloggerStatus("applying");
+        user.setBloggerApplyTime(LocalDateTime.now());
+        userUnifiedRepository.save(user);
 
         log.info("用户 {} 申请博主认证", userId);
         return "博主认证申请已提交，我们将在3-5个工作日内完成审核";
+    }
+
+    /**
+     * 取消博主申请
+     *
+     * @param userId 用户ID
+     * @return 取消结果信息
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String cancelBloggerApply(Long userId) {
+        UserUnified user = getUserById(userId);
+
+        // 检查当前博主认证状态
+        if (!"applying".equals(user.getBloggerStatus())) {
+            return "当前没有待审核的申请";
+        }
+
+        // 重置博主申请状态
+        user.setBloggerStatus("none");
+        user.setBloggerApplyTime(null);
+        userUnifiedRepository.save(user);
+
+        log.info("用户 {} 取消博主申请", userId);
+        return "博主申请已取消";
     }
 
     /**
@@ -340,12 +283,9 @@ public class UserDomainService {
      * @return 是否为VIP
      */
     public boolean isVipUser(Long userId) {
-        User user = getUserById(userId);
+        UserUnified user = getUserById(userId);
         if (user.getRole() == UserRole.vip) {
-            UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
-            if (profile != null && profile.getVipExpireTime() != null) {
-                return profile.getVipExpireTime().isAfter(LocalDateTime.now());
-            }
+            return user.getVipExpireTime() != null && user.getVipExpireTime().isAfter(LocalDateTime.now());
         }
         return false;
     }
@@ -357,12 +297,8 @@ public class UserDomainService {
      * @return 是否为博主
      */
     public boolean isBloggerUser(Long userId) {
-        User user = getUserById(userId);
-        if (user.getRole() == UserRole.blogger) {
-            UserProfile profile = userProfileRepository.findByUserId(userId).orElse(null);
-            return profile != null && profile.getBloggerStatus() == UserProfile.BloggerStatus.approved;
-        }
-        return false;
+        UserUnified user = getUserById(userId);
+        return user.getRole() == UserRole.blogger && "approved".equals(user.getBloggerStatus());
     }
 
     /**
@@ -372,16 +308,17 @@ public class UserDomainService {
      */
     @Transactional(rollbackFor = Exception.class)
     public void updateLastLoginTime(Long userId) {
-        User user = getUserById(userId);
+        UserUnified user = getUserById(userId);
         user.setLastLoginTime(LocalDateTime.now());
-        userRepository.save(user);
+        userUnifiedRepository.save(user);
     }
 
     /**
-     * 获取用户扩展信息
+     * 获取用户完整信息（包含扩展信息）
+     * 在UserUnified统一架构中，用户基础信息和扩展信息已合并
      *
      * @param userId 用户ID
-     * @return 用户扩展信息
+     * @return 用户完整信息
      */
     @Cached(name = CacheConstant.USER_PROFILE_CACHE, 
             cacheType = CacheType.BOTH, 
@@ -390,9 +327,9 @@ public class UserDomainService {
             localExpire = CacheConstant.LOCAL_CACHE_EXPIRE,
             timeUnit = TimeUnit.MINUTES,
             cacheNullValue = true)
-    public UserProfile getUserProfile(Long userId) {
-        log.debug("从数据库查询用户扩展信息，用户ID：{}", userId);
-        return userProfileRepository.findByUserId(userId).orElse(null);
+    public UserUnified getUserProfile(Long userId) {
+        log.debug("从数据库查询用户完整信息，用户ID：{}", userId);
+        return userUnifiedRepository.findById(userId).orElse(null);
     }
 
     /**
@@ -402,7 +339,7 @@ public class UserDomainService {
      * @param password 原始密码
      * @return 是否匹配
      */
-    public boolean validatePassword(User user, String password) {
+    public boolean validatePassword(UserUnified user, String password) {
         if (user.getPasswordHash() == null || password == null) {
             return false;
         }
@@ -419,7 +356,7 @@ public class UserDomainService {
      * @param role            用户角色
      * @return 分页结果
      */
-    public com.baomidou.mybatisplus.core.metadata.IPage<User> pageQueryUsers(
+    public com.baomidou.mybatisplus.core.metadata.IPage<UserUnified> pageQueryUsers(
             Integer pageNum, Integer pageSize, String usernameKeyword, 
             String status, String role) {
         
@@ -435,129 +372,72 @@ public class UserDomainService {
         }
 
         // 调用Repository层进行分页查询
-        return userRepository.pageQuery(pageNum, pageSize, usernameKeyword, status, role);
+        return userUnifiedRepository.pageQuery(pageNum, pageSize, usernameKeyword, status, role);
     }
 
     /**
-     * 生成用户激活码
-     *
-     * @param userId 用户ID
-     * @return 激活码
+     * 生成用户激活码（已弃用，简化认证系统不再使用）
+     * @deprecated 系统已简化为直接激活，不再需要激活码验证
      */
+    @Deprecated
     public String generateActivationCode(Long userId) {
-        // 生成6位数字激活码
-        Random random = new Random();
-        String code = String.format("%06d", random.nextInt(1000000));
-        
-        log.info("为用户{}生成激活码：{}", userId, code);
-        
-        // TODO: 这里应该将激活码存储到Redis或数据库中，设置过期时间
-        // 目前为了演示，直接返回激活码
-        
-        return code;
+        log.warn("generateActivationCode 方法已弃用，系统已简化为直接激活模式");
+        return "000000"; // 返回虚拟激活码以保持兼容性
     }
 
     /**
-     * 验证激活码并激活用户
-     *
-     * @param userId         用户ID
-     * @param activationCode 激活码
-     * @return 激活结果信息
+     * 验证激活码并激活用户（已弃用，简化认证系统不再使用）
+     * @deprecated 系统已简化为注册时直接激活，不再需要激活码验证
      */
+    @Deprecated
     @Transactional
     public String activateUser(Long userId, String activationCode) {
-        log.info("激活用户账号，用户ID：{}，激活码：{}", userId, activationCode);
+        log.warn("activateUser 方法已弃用，系统已简化为注册时直接激活");
         
-        // 1. 查询用户
-        User user = getUserById(userId);
-        
-        // 2. 检查用户状态
-        if (user.getStatus() == UserStateEnum.ACTIVE) {
-            log.warn("用户{}已经是激活状态", userId);
-            return "用户已经激活，无需重复激活";
+        // 为了兼容性，确保用户是激活状态
+        UserUnified user = getUserById(userId);
+        if (user.getStatus() != UserStateEnum.ACTIVE) {
+            user.setStatus(UserStateEnum.ACTIVE);
+            userUnifiedRepository.save(user);
+            return "用户已激活";
         }
         
-        if (user.getStatus() == UserStateEnum.BANNED) {
-            log.warn("用户{}已被禁用，无法激活", userId);
-            throw new BizException(UserErrorCode.USER_DISABLED);
-        }
-        
-        // 3. 验证激活码
-        // TODO: 这里应该从Redis或数据库中验证激活码的有效性
-        // 目前为了演示，使用简单的验证逻辑
-        if (!isValidActivationCode(userId, activationCode)) {
-            log.warn("用户{}的激活码{}无效", userId, activationCode);
-            throw new IllegalArgumentException("激活码无效或已过期");
-        }
-        
-        // 4. 激活用户
-        user.setStatus(UserStateEnum.ACTIVE);
-        user.setUpdateTime(LocalDateTime.now());
-        userRepository.save(user);
-        
-        log.info("用户{}激活成功", userId);
-        return "用户激活成功";
+        return "用户已经是激活状态";
     }
 
     /**
-     * 发送激活码
-     *
-     * @param userId         用户ID
-     * @param activationType 激活类型
-     * @return 发送结果
+     * 发送激活码（已弃用，简化认证系统不再使用）
+     * @deprecated 系统已简化为注册时直接激活，不再需要发送激活码
      */
+    @Deprecated
     public String sendActivationCode(Long userId, String activationType) {
-        log.info("发送激活码，用户ID：{}，激活类型：{}", userId, activationType);
+        log.warn("sendActivationCode 方法已弃用，系统已简化为注册时直接激活");
         
-        // 1. 查询用户
-        User user = getUserById(userId);
-        
-        // 2. 检查用户状态
-        if (user.getStatus() == UserStateEnum.ACTIVE) {
-            return "用户已经激活，无需发送激活码";
+        // 为了兼容性，确保用户是激活状态
+        UserUnified user = getUserById(userId);
+        if (user.getStatus() != UserStateEnum.ACTIVE) {
+            user.setStatus(UserStateEnum.ACTIVE);
+            userUnifiedRepository.save(user);
         }
         
-        // 3. 生成激活码
-        String activationCode = generateActivationCode(userId);
-        
-        // 4. 根据激活类型发送激活码
-        boolean sendSuccess = false;
-        String targetAddress = "";
-        
-        if ("EMAIL".equals(activationType)) {
-            if (StringUtils.hasText(user.getEmail())) {
-                targetAddress = user.getEmail();
-                sendSuccess = sendActivationEmail(user.getEmail(), activationCode);
-            } else {
-                throw new IllegalArgumentException("用户邮箱为空，无法发送邮件激活码");
-            }
-        } else if ("SMS".equals(activationType)) {
-            if (StringUtils.hasText(user.getPhone())) {
-                targetAddress = user.getPhone();
-                sendSuccess = sendActivationSms(user.getPhone(), activationCode);
-            } else {
-                throw new IllegalArgumentException("用户手机号为空，无法发送短信激活码");
-            }
-        } else {
-            throw new IllegalArgumentException("不支持的激活类型：" + activationType);
-        }
-        
-        if (sendSuccess) {
-            log.info("激活码发送成功，用户ID：{}，发送地址：{}", userId, targetAddress);
-            return String.format("激活码已发送至%s", maskSensitiveInfo(targetAddress, activationType));
-        } else {
-            log.error("激活码发送失败，用户ID：{}，发送地址：{}", userId, targetAddress);
-            throw new RuntimeException("激活码发送失败，请稍后重试");
-        }
+        return "系统已简化为直接激活模式，无需发送激活码";
     }
 
     /**
      * 验证激活码是否有效
      */
     private boolean isValidActivationCode(Long userId, String activationCode) {
-        // TODO: 这里应该从Redis或数据库中验证激活码
-        // 目前为了演示，使用简单的验证逻辑：6位数字
-        return activationCode != null && activationCode.matches("\\d{6}");
+        log.debug("验证用户{}的激活码", userId);
+        
+        // 使用ActivationCodeService验证并消费激活码
+        ActivationCodeService.ActivationCodeValidationResult result = 
+            activationCodeService.validateAndConsumeCode(userId, activationCode, ActivationCodeService.CodeType.ACCOUNT_ACTIVATION);
+        
+        if (!result.isValid()) {
+            log.warn("激活码验证失败，用户ID：{}，原因：{}", userId, result.getMessage());
+        }
+        
+        return result.isValid();
     }
 
     /**
@@ -565,23 +445,8 @@ public class UserDomainService {
      */
     private boolean sendActivationEmail(String email, String activationCode) {
         try {
-            // TODO: 集成邮件服务发送激活邮件
             log.info("发送激活邮件到：{}，激活码：{}", email, activationCode);
-            
-            // 模拟邮件发送
-            String emailContent = String.format(
-                "您好！\n\n" +
-                "欢迎注册Collide社交平台！\n\n" +
-                "您的激活码是：%s\n\n" +
-                "请在10分钟内使用此激活码激活您的账号。\n\n" +
-                "如果您没有注册此账号，请忽略此邮件。\n\n" +
-                "Collide团队",
-                activationCode
-            );
-            
-            log.info("邮件内容：{}", emailContent);
-            return true;
-            
+            return emailService.sendActivationEmail(email, activationCode);
         } catch (Exception e) {
             log.error("发送激活邮件失败：{}", e.getMessage(), e);
             return false;
@@ -593,18 +458,8 @@ public class UserDomainService {
      */
     private boolean sendActivationSms(String phone, String activationCode) {
         try {
-            // TODO: 集成短信服务发送激活短信
             log.info("发送激活短信到：{}，激活码：{}", phone, activationCode);
-            
-            // 模拟短信发送
-            String smsContent = String.format(
-                "【Collide】您的激活码是：%s，请在10分钟内使用。如非本人操作，请忽略此短信。",
-                activationCode
-            );
-            
-            log.info("短信内容：{}", smsContent);
-            return true;
-            
+            return smsService.sendActivationSms(phone, activationCode);
         } catch (Exception e) {
             log.error("发送激活短信失败：{}", e.getMessage(), e);
             return false;
@@ -641,22 +496,614 @@ public class UserDomainService {
      * 检查用户名是否存在
      */
     public boolean checkUsernameExists(String username) {
-        return userRepository.existsByUsername(username);
+        return userUnifiedRepository.existsByUsername(username);
     }
 
     /**
      * 检查邮箱是否存在
      */
     public boolean checkEmailExists(String email) {
-        return userRepository.existsByEmail(email);
+        return userUnifiedRepository.existsByEmail(email);
     }
 
     /**
      * 检查手机号是否存在
      */
     public boolean checkPhoneExists(String phone) {
-        return userRepository.existsByPhone(phone);
+        return userUnifiedRepository.existsByPhone(phone);
     }
-    
 
+    // ================================ 幂等性操作方法（新增） ================================
+
+    /**
+     * 幂等性更新用户状态
+     * 使用乐观锁机制，确保状态更新的幂等性和并发安全
+     *
+     * @param userId 用户ID
+     * @param active 是否激活（true=激活，false=禁用）
+     * @return 更新结果消息
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public String updateUserStatusIdempotent(Long userId, Boolean active) {
+        log.info("幂等性更新用户状态，用户ID：{}，激活状态：{}", userId, active);
+        
+        // 1. 查询当前用户信息（包含版本号）
+        UserUnified currentUser = getUserById(userId);
+        
+        // 2. 确定目标状态
+        UserStateEnum targetStatus = active ? UserStateEnum.ACTIVE : UserStateEnum.SUSPENDED;
+        
+        // 3. 检查当前状态，如果已经是目标状态则直接返回
+        if (currentUser.getStatus() == targetStatus) {
+            String message = active ? "用户已经是激活状态，无需重复操作" : "用户已经是禁用状态，无需重复操作";
+            log.info("用户状态无需更新，用户ID：{}，当前状态：{}", userId, currentUser.getStatus());
+            return message;
+        }
+        
+        // 4. 状态合法性检查
+        if (!isValidStatusTransition(currentUser.getStatus(), targetStatus)) {
+            throw new BizException(UserErrorCode.INVALID_STATUS_TRANSITION);
+        }
+        
+        // 5. 使用幂等性更新（最多重试3次处理并发冲突）
+        int maxRetries = 3;
+        for (int i = 0; i < maxRetries; i++) {
+            try {
+                // 获取最新的用户信息和版本号
+                UserUnified latestUser = getUserById(userId);
+                
+                // 使用幂等性更新
+                boolean updateSuccess = userUnifiedRepository.updateStatusIdempotent(
+                    userId,
+                    latestUser.getStatus().name(),
+                    targetStatus.name(),
+                    latestUser.getVersion()
+                );
+                
+                if (updateSuccess) {
+                    // 清除相关缓存
+                    invalidateUserCache(userId);
+                    
+                    String message = active ? "用户状态已更新为激活" : "用户状态已更新为禁用";
+                    log.info("用户状态更新成功，用户ID：{}，新状态：{}", userId, targetStatus);
+                    return message;
+                } else {
+                    // 更新失败，可能是版本冲突，重试
+                    log.warn("用户状态更新失败，重试第{}次，用户ID：{}", i + 1, userId);
+                    if (i == maxRetries - 1) {
+                        throw new BizException(UserErrorCode.STATUS_UPDATE_CONFLICT);
+                    }
+                    // 短暂等待后重试
+                    Thread.sleep(50 * (i + 1)); // 递增等待时间
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BizException(UserErrorCode.STATUS_UPDATE_ERROR);
+            }
+        }
+        
+        throw new BizException(UserErrorCode.STATUS_UPDATE_ERROR);
+    }
+
+    /**
+     * 检查状态转换是否合法
+     */
+    private boolean isValidStatusTransition(UserStateEnum fromStatus, UserStateEnum toStatus) {
+        // 定义合法的状态转换规则
+        switch (fromStatus) {
+            case INACTIVE:
+                return toStatus == UserStateEnum.ACTIVE || toStatus == UserStateEnum.SUSPENDED;
+            case ACTIVE:
+                return toStatus == UserStateEnum.SUSPENDED || toStatus == UserStateEnum.BANNED;
+            case SUSPENDED:
+                return toStatus == UserStateEnum.ACTIVE || toStatus == UserStateEnum.BANNED;
+            case BANNED:
+                return toStatus == UserStateEnum.ACTIVE; // 只允许管理员恢复被封禁用户
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 清除用户相关缓存
+     */
+    @CacheInvalidate(name = CacheConstant.USER_INFO_CACHE, key = "#userId")
+    @CacheInvalidate(name = CacheConstant.USER_PROFILE_CACHE, key = "#userId")
+    private void invalidateUserCache(Long userId) {
+        log.debug("清除用户缓存，用户ID：{}", userId);
+    }
+
+    // ================================ 批量操作功能（新增） ================================
+
+    /**
+     * 批量保存用户
+     * 适用于用户导入、批量注册等场景
+     *
+     * @param users 用户列表
+     * @return 成功保存的数量
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int batchSaveUsers(List<UserUnified> users) {
+        log.info("批量保存用户，数量：{}", users.size());
+        
+        if (users == null || users.isEmpty()) {
+            log.warn("批量保存用户列表为空");
+            return 0;
+        }
+        
+        // 验证数据完整性
+        for (UserUnified user : users) {
+            validateUserForBatchSave(user);
+        }
+        
+        return userUnifiedRepository.batchSave(users);
+    }
+
+    /**
+     * 批量更新用户状态
+     * 适用于批量激活、禁用用户等场景
+     *
+     * @param userIds 用户ID列表
+     * @param status 新状态
+     * @return 成功更新的数量
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int batchUpdateUserStatus(List<Long> userIds, UserStateEnum status) {
+        log.info("批量更新用户状态，用户数：{}，新状态：{}", userIds.size(), status);
+        
+        if (userIds == null || userIds.isEmpty()) {
+            log.warn("批量更新用户状态，用户ID列表为空");
+            return 0;
+        }
+        
+        int result = userUnifiedRepository.batchUpdateStatus(userIds, status.name());
+        
+        // 批量清除缓存
+        for (Long userId : userIds) {
+            invalidateUserCache(userId);
+        }
+        
+        return result;
+    }
+
+    /**
+     * 批量更新用户统计字段
+     * 适用于批量增加关注数、内容数等统计字段
+     *
+     * @param userIds 用户ID列表
+     * @param field 统计字段名
+     * @param increment 增量
+     * @return 成功更新的数量
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public int batchUpdateStatisticsField(List<Long> userIds, String field, long increment) {
+        log.info("批量更新用户统计字段，用户数：{}，字段：{}，增量：{}", userIds.size(), field, increment);
+        
+        if (userIds == null || userIds.isEmpty()) {
+            log.warn("批量更新统计字段，用户ID列表为空");
+            return 0;
+        }
+        
+        // 验证字段名是否合法
+        if (!isValidStatisticsField(field)) {
+            throw new IllegalArgumentException("无效的统计字段：" + field);
+        }
+        
+        return userUnifiedRepository.batchUpdateStatisticsField(userIds, field, increment);
+    }
+
+    /**
+     * 更新单个用户的统计字段
+     * 适用于单个用户的统计数据更新
+     *
+     * @param userId 用户ID
+     * @param field 统计字段名
+     * @param increment 增量
+     * @return 是否更新成功
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateUserStatisticsField(Long userId, String field, long increment) {
+        log.debug("更新用户统计字段，用户ID：{}，字段：{}，增量：{}", userId, field, increment);
+        
+        // 验证字段名是否合法
+        if (!isValidStatisticsField(field)) {
+            throw new IllegalArgumentException("无效的统计字段：" + field);
+        }
+        
+        return userUnifiedRepository.updateStatisticsField(userId, field, increment);
+    }
+
+    // ================================ 统计查询功能（新增） ================================
+
+    /**
+     * 获取系统全局用户统计信息
+     * 包含总用户数、活跃用户数、博主数等
+     *
+     * @return 统计信息Map
+     */
+    public Map<String, Long> getGlobalUserStatistics() {
+        log.info("获取全局用户统计信息");
+        return userUnifiedRepository.getUserStatistics();
+    }
+
+    /**
+     * 获取活跃用户统计
+     * 统计指定天数内有登录记录的用户数量
+     *
+     * @param days 统计天数
+     * @return 活跃用户数
+     */
+    public long getActiveUsersCount(int days) {
+        log.info("获取{}天内活跃用户统计", days);
+        
+        if (days <= 0) {
+            throw new IllegalArgumentException("统计天数必须大于0");
+        }
+        
+        return userUnifiedRepository.countActiveUsers(days);
+    }
+
+    /**
+     * 按博主状态统计用户数量
+     *
+     * @param bloggerStatus 博主状态
+     * @return 用户数量
+     */
+    public long countUsersByBloggerStatus(String bloggerStatus) {
+        log.info("按博主状态统计用户数量，状态：{}", bloggerStatus);
+        return userUnifiedRepository.countByBloggerStatus(bloggerStatus);
+    }
+
+    /**
+     * 获取邀请排行榜
+     * 按邀请人数倒序排列
+     *
+     * @param limit 返回数量限制
+     * @return 邀请排行榜
+     */
+    public List<UserUnified> getInviteRanking(int limit) {
+        log.info("获取邀请排行榜，限制：{}", limit);
+        
+        if (limit <= 0 || limit > 100) {
+            limit = 10; // 默认返回前10名
+        }
+        
+        return userUnifiedRepository.getInviteRanking(limit);
+    }
+
+    /**
+     * 用户搜索功能
+     * 支持用户名、昵称、简介的模糊搜索
+     *
+     * @param keyword 搜索关键词
+     * @param pageNum 页码
+     * @param pageSize 页大小
+     * @return 搜索结果
+     */
+    public com.baomidou.mybatisplus.core.metadata.IPage<UserUnified> searchUsers(
+            String keyword, Integer pageNum, Integer pageSize) {
+        log.info("用户搜索，关键词：{}，页码：{}，页大小：{}", keyword, pageNum, pageSize);
+        
+        // 参数验证
+        if (pageNum == null || pageNum < 1) {
+            pageNum = 1;
+        }
+        if (pageSize == null || pageSize < 1 || pageSize > 100) {
+            pageSize = 10;
+        }
+        
+        return userUnifiedRepository.searchUsers(keyword, pageNum, pageSize);
+    }
+
+    // ================================ 工具方法 ================================
+
+    /**
+     * 验证批量保存用户数据的完整性
+     */
+    private void validateUserForBatchSave(UserUnified user) {
+        if (user == null) {
+            throw new IllegalArgumentException("用户信息不能为空");
+        }
+        
+        if (!StringUtils.hasText(user.getUsername())) {
+            throw new IllegalArgumentException("用户名不能为空");
+        }
+        
+        // 检查用户名唯一性
+        if (userUnifiedRepository.existsByUsername(user.getUsername())) {
+            throw new IllegalArgumentException("用户名已存在：" + user.getUsername());
+        }
+        
+        // 检查邮箱唯一性（如果提供）
+        if (StringUtils.hasText(user.getEmail()) && 
+            userUnifiedRepository.existsByEmail(user.getEmail())) {
+            throw new IllegalArgumentException("邮箱已存在：" + user.getEmail());
+        }
+        
+        // 检查手机号唯一性（如果提供）
+        if (StringUtils.hasText(user.getPhone()) && 
+            userUnifiedRepository.existsByPhone(user.getPhone())) {
+            throw new IllegalArgumentException("手机号已存在：" + user.getPhone());
+        }
+    }
+
+    /**
+     * 验证统计字段名是否合法
+     */
+    private boolean isValidStatisticsField(String field) {
+        if (!StringUtils.hasText(field)) {
+            return false;
+        }
+        
+        // 定义允许的统计字段
+        String[] validFields = {
+            "follower_count", "following_count", "content_count", 
+            "like_count", "invited_count", "view_count"
+        };
+        
+        for (String validField : validFields) {
+            if (validField.equals(field)) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    // ================================ 简化的注册登录功能（新增） ================================
+
+    /**
+     * 简化的用户注册（仅用户名密码）
+     * 支持邀请码功能
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @param inviteCode 邀请码（可选）
+     * @return 注册后的用户实体
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public UserUnified simpleRegister(String username, String password, String inviteCode) {
+        log.info("简化注册，用户名：{}，邀请码：{}", username, inviteCode);
+        
+        // 1. 校验用户名唯一性
+        if (userUnifiedRepository.existsByUsername(username)) {
+            throw new BizException(UserErrorCode.USERNAME_ALREADY_EXISTS);
+        }
+        
+        // 2. 处理邀请码
+        Long inviterId = null;
+        if (StringUtils.hasText(inviteCode)) {
+            UserUnified inviter = userUnifiedRepository.findByInviteCode(inviteCode).orElse(null);
+            if (inviter != null) {
+                inviterId = inviter.getId();
+                log.info("用户{}通过邀请码{}注册，邀请人：{}", username, inviteCode, inviter.getUsername());
+            } else {
+                log.warn("无效的邀请码：{}", inviteCode);
+                // 不抛异常，允许继续注册，只是没有邀请关系
+            }
+        }
+        
+        // 3. 创建用户实体
+        UserUnified user = new UserUnified();
+        user.setUsername(username);
+        user.setNickname(generateDefaultNickname());
+        
+        // 4. 加密密码
+        String salt = UUID.randomUUID().toString();
+        String passwordHash = passwordEncoder.encode(password);
+        user.setPasswordHash(passwordHash);
+        user.setSalt(salt);
+        
+        // 5. 设置基本信息
+        user.setRole(UserRole.user);
+        user.setStatus(UserStateEnum.ACTIVE); // 直接激活，无需邮件验证
+        user.setInviterId(inviterId);
+        user.setInviteCode(generateInviteCode()); // 生成自己的邀请码
+        
+        // 6. 设置默认的扩展信息
+        user.setBloggerStatus("none");
+        user.setGender("unknown");
+        user.setFollowerCount(0);
+        user.setFollowingCount(0);
+        user.setContentCount(0);
+        user.setLikeCount(0);
+        user.setInvitedCount(0);
+        
+        // 7. 保存用户
+        user = userUnifiedRepository.save(user);
+        
+        // 8. 更新邀请人的邀请统计
+        if (inviterId != null) {
+            updateUserStatisticsField(inviterId, "invited_count", 1);
+            log.info("更新邀请人{}的邀请统计", inviterId);
+        }
+        
+        log.info("用户注册成功，用户ID: {}, 用户名: {}, 邀请人ID: {}", user.getId(), user.getUsername(), inviterId);
+        return user;
+    }
+
+    /**
+     * 用户登录（支持自动注册）
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @param autoRegister 如果用户不存在是否自动注册
+     * @param inviteCode 自动注册时使用的邀请码（可选）
+     * @return 登录结果
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public LoginResult loginWithAutoRegister(String username, String password, boolean autoRegister, String inviteCode) {
+        log.info("用户登录，用户名：{}，自动注册：{}", username, autoRegister);
+        
+        try {
+            // 1. 尝试查找用户
+            UserUnified user = userUnifiedRepository.findByUsername(username).orElse(null);
+            
+            if (user != null) {
+                // 用户存在，验证密码
+                if (validatePassword(user, password)) {
+                    // 密码正确，更新登录信息
+                    updateLoginInfo(user);
+                    log.info("用户登录成功，用户ID：{}", user.getId());
+                    return LoginResult.success(user, false);
+                } else {
+                    // 密码错误
+                    log.warn("用户{}密码错误", username);
+                    return LoginResult.failure("用户名或密码错误");
+                }
+            } else {
+                // 用户不存在
+                if (autoRegister) {
+                    // 自动注册
+                    log.info("用户{}不存在，执行自动注册", username);
+                    user = simpleRegister(username, password, inviteCode);
+                    updateLoginInfo(user);
+                    log.info("用户自动注册并登录成功，用户ID：{}", user.getId());
+                    return LoginResult.success(user, true);
+                } else {
+                    // 不自动注册
+                    log.warn("用户{}不存在", username);
+                    return LoginResult.failure("用户名或密码错误");
+                }
+            }
+        } catch (BizException e) {
+            log.error("登录失败：{}", e.getMessage());
+            return LoginResult.failure(e.getMessage());
+        } catch (Exception e) {
+            log.error("登录异常", e);
+            return LoginResult.failure("系统异常，请稍后重试");
+        }
+    }
+
+    /**
+     * 标准用户登录（不自动注册）
+     *
+     * @param username 用户名
+     * @param password 密码
+     * @return 登录结果
+     */
+    public LoginResult login(String username, String password) {
+        return loginWithAutoRegister(username, password, false, null);
+    }
+
+    /**
+     * 根据邀请码查找邀请人信息
+     *
+     * @param inviteCode 邀请码
+     * @return 邀请人信息
+     */
+    public UserUnified findInviterByCode(String inviteCode) {
+        if (!StringUtils.hasText(inviteCode)) {
+            return null;
+        }
+        
+        return userUnifiedRepository.findByInviteCode(inviteCode).orElse(null);
+    }
+
+    /**
+     * 获取用户的邀请统计信息
+     *
+     * @param userId 用户ID
+     * @return 邀请统计信息
+     */
+    public InviteStatistics getInviteStatistics(Long userId) {
+        UserUnified user = getUserById(userId);
+        
+        // 获取被该用户邀请的用户列表
+        List<UserUnified> invitedUsers = userUnifiedRepository.findByInviterId(userId, 1, 100).getRecords();
+        
+        return new InviteStatistics(
+            user.getInviteCode(),
+            user.getInvitedCount(),
+            invitedUsers.size(),
+            invitedUsers
+        );
+    }
+
+    /**
+     * 更新用户登录信息
+     */
+    private void updateLoginInfo(UserUnified user) {
+        user.setLastLoginTime(LocalDateTime.now());
+        user.setLoginCount(user.getLoginCount() + 1);
+        userUnifiedRepository.save(user);
+        
+        // 清除缓存
+        invalidateUserCache(user.getId());
+    }
+
+    /**
+     * 生成邀请码
+     */
+    private String generateInviteCode() {
+        String code;
+        int attempts = 0;
+        do {
+            code = UUID.randomUUID().toString()
+                      .replace("-", "")
+                      .substring(0, 8)
+                      .toUpperCase();
+            attempts++;
+        } while (userUnifiedRepository.existsByInviteCode(code) && attempts < 10);
+        
+        if (attempts >= 10) {
+            throw new RuntimeException("生成邀请码失败，请重试");
+        }
+        
+        return code;
+    }
+
+    // ================================ 内部类定义 ================================
+
+    /**
+     * 登录结果类
+     */
+    public static class LoginResult {
+        private final boolean success;
+        private final String message;
+        private final UserUnified user;
+        private final boolean isNewUser;
+
+        public LoginResult(boolean success, String message, UserUnified user, boolean isNewUser) {
+            this.success = success;
+            this.message = message;
+            this.user = user;
+            this.isNewUser = isNewUser;
+        }
+
+        public static LoginResult success(UserUnified user, boolean isNewUser) {
+            return new LoginResult(true, "登录成功", user, isNewUser);
+        }
+
+        public static LoginResult failure(String message) {
+            return new LoginResult(false, message, null, false);
+        }
+
+        public boolean isSuccess() { return success; }
+        public String getMessage() { return message; }
+        public UserUnified getUser() { return user; }
+        public boolean isNewUser() { return isNewUser; }
+    }
+
+    /**
+     * 邀请统计信息类
+     */
+    public static class InviteStatistics {
+        private final String inviteCode;
+        private final Long totalInvitedCount;
+        private final Integer currentPageCount;
+        private final List<UserUnified> invitedUsers;
+
+        public InviteStatistics(String inviteCode, Long totalInvitedCount, Integer currentPageCount, List<UserUnified> invitedUsers) {
+            this.inviteCode = inviteCode;
+            this.totalInvitedCount = totalInvitedCount;
+            this.currentPageCount = currentPageCount;
+            this.invitedUsers = invitedUsers;
+        }
+
+        public String getInviteCode() { return inviteCode; }
+        public Long getTotalInvitedCount() { return totalInvitedCount; }
+        public Integer getCurrentPageCount() { return currentPageCount; }
+        public List<UserUnified> getInvitedUsers() { return invitedUsers; }
+    }
 } 

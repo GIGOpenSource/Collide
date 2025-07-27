@@ -63,4 +63,5 @@ public class UserRegisterRequest extends BaseRequest {
      * 注册来源
      */
     private String source;
-}
+
+    private String inviteCode;

@@ -1,14 +1,51 @@
-# Collide Business 多环境配置
+# =====================================
+# Collide Business 聚合应用配置
+# 参考 nft-turbo-app 的配置管理架构
+# =====================================
 spring:
   application:
     name: @application.name@
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml,classpath:swagger.yml
+    # 参考 nft-turbo-app 的多配置文件导入方式
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml,classpath:swagger.yml,classpath:seata.yml,classpath:job.yml
+  # 参考 nft-turbo-app 的主配置懒加载优化
+  main:
+    lazy-initialization: true
+    allow-bean-definition-overriding: true
 
+# =====================================
+# 服务器配置
+# =====================================
 server:
   port: 9503
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+    min-response-size: 1024
 
-# Swagger配置
+# =====================================
+# 管理端点配置（参考 nft-turbo-app）
+# =====================================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+# =====================================
+# Swagger API 文档配置
+# =====================================
 springdoc:
   api-docs:
     enabled: true
@@ -17,11 +54,89 @@ springdoc:
     enabled: true
     path: /swagger-ui.html
     try-it-out-enabled: true
+    operations-sorter: method
+    tags-sorter: alpha
   paths-to-match: 
     - /api/**
     - /health/**
     - /actuator/**
+  group-configs:
+    - group: 'business-api'
+      display-name: '业务 API'
+      paths-to-match: '/api/**'
+    - group: 'management-api'
+      display-name: '管理 API'
+      paths-to-match: '/actuator/**'
 
+# =====================================
+# Dubbo 配置（参考 nft-turbo-app）
+# =====================================
 dubbo:
   application:
+    name: ${spring.application.name}
     qos-port: 33334
+    qos-enable: true
+  registry:
+    address: nacos://localhost:8848
+    group: DEFAULT_GROUP
+    timeout: 3000
+  protocol:
+    name: dubbo
+    port: -1
+    threads: 200
+  consumer:
+    timeout: 3000
+    retries: 0
+    check: false
+  provider:
+    timeout: 3000
+    threads: 200
+
+# =====================================
+# 日志配置
+# =====================================
+logging:
+  level:
+    com.gig.collide: info
+    org.apache.dubbo: warn
+    com.alibaba.nacos: warn
+  pattern:
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
+
+# =====================================
+# 分布式事务配置（参考 nft-turbo-app）
+# =====================================
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: collide-tx-group
+  enable-auto-data-source-proxy: false
+  use-jdk-proxy: true
+
+# =====================================
+# 应用特定配置
+# =====================================
+collide:
+  business:
+    name: "Collide Business Platform"
+    version: "2.0.0"
+    description: "参考 nft-turbo-app 架构的聚合业务平台"
+  features:
+    # 启用的业务功能模块
+    users: true
+    follow: true
+    content: true
+    comment: true
+    like: true
+    favorite: true
+    social: true
+    goods: true
+    order: true
+    payment: true
+  infrastructure:
+    # 基础设施功能开关
+    prometheus-enabled: true
+    skywalking-enabled: true
+    seata-enabled: true
+    tcc-enabled: true
+    cache-enabled: true

@@ -239,14 +239,16 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             log.info("用户状态更新请求，用户ID：{}，启用状态：{}", 
                 userStatusRequest.getUserId(), userStatusRequest.getActive());
             
-            // TODO: 实现用户状态更新逻辑
-            // 这里需要调用领域服务来更新用户状态
-            // 暂时返回成功响应
+            // 调用领域服务进行幂等性状态更新
+            String resultMessage = userDomainService.updateUserStatusIdempotent(
+                userStatusRequest.getUserId(), 
+                userStatusRequest.getActive()
+            );
             
             // 构建成功响应
             UserOperatorResponse response = new UserOperatorResponse();
             response.setSuccess(true);
-            response.setResponseMessage(userStatusRequest.getActive() ? "用户已启用" : "用户已禁用");
+            response.setResponseMessage(resultMessage);
             
             log.info("用户状态更新成功，用户ID：{}", userStatusRequest.getUserId());
             return response;

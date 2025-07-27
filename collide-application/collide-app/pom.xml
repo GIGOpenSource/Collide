@@ -13,7 +13,7 @@
     <groupId>com.gig</groupId>
     <artifactId>collide-app</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Collide 业务聚合启动模块</description>
+    <description>Collide 业务聚合启动模块 - 整合所有业务服务的统一入口</description>
 
     <properties>
         <application.name>collide-business</application.name>
@@ -23,71 +23,89 @@
     </properties>
 
     <dependencies>
-        <!-- API 接口定义模块 -->
+        <!-- ================================= -->
+        <!-- API 接口定义模块                  -->
+        <!-- ================================= -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-api</artifactId>
         </dependency>
 
-        <!-- 业务模块依赖 -->
+        <!-- ================================= -->
+        <!-- 核心业务模块依赖                  -->
+        <!-- ================================= -->
+        <!-- 用户服务 - 用户管理、认证授权 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-users</artifactId>
         </dependency>
 
+        <!-- 关注服务 - 用户关注关系管理 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-follow</artifactId>
         </dependency>
 
+        <!-- 内容服务 - 内容创作与管理 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-content</artifactId>
         </dependency>
 
+        <!-- 评论服务 - 评论互动功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-comment</artifactId>
         </dependency>
 
+        <!-- 点赞服务 - 点赞点踩功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-like</artifactId>
         </dependency>
 
-        <!-- Collide Favorite 模块 -->
+        <!-- 收藏服务 - 内容收藏功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-favorite</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
-        <!-- Collide Social 模块 -->
+        <!-- 社交服务 - 社交互动功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-social</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
-        <!-- 新商品/订单/支付模块 -->
+        <!-- 搜索服务 - 分类、标签、搜索功能 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-search</artifactId>
+        </dependency>
+
+        <!-- ================================= -->
+        <!-- 商业化模块依赖                    -->
+        <!-- ================================= -->
+        <!-- 商品服务 - 商品管理功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-goods</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
+        <!-- 订单服务 - 订单处理功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-order</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
+        <!-- 支付服务 - 支付处理功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-payment</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
         </dependency>
 
+        <!-- ================================= -->
+        <!-- Spring Boot & Cloud 基础设施     -->
+        <!-- ================================= -->
         <!-- Spring Boot Web Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -106,18 +124,58 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- 公共模块依赖 -->
+        <!-- ================================= -->
+        <!-- 公共基础设施模块                  -->
+        <!-- ================================= -->
+        <!-- 监控模块 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-prometheus</artifactId>
         </dependency>
 
+        <!-- 链路跟踪模块 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-skywalking</artifactId>
         </dependency>
 
-        <!--  SnakeYaml 版本兼容性处理  -->
+        <!-- 分布式事务模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-seata</artifactId>
+        </dependency>
+
+        <!-- TCC 事务补偿模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-tcc</artifactId>
+        </dependency>
+
+        <!-- 缓存模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-cache</artifactId>
+        </dependency>
+
+        <!-- 数据源模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-datasource</artifactId>
+        </dependency>
+
+        <!-- Web 配置模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-web</artifactId>
+        </dependency>
+
+        <!-- RPC 配置模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-rpc</artifactId>
+        </dependency>
+
+        <!-- SnakeYaml 版本兼容性处理（参考 nft-turbo-app） -->
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
@@ -125,9 +183,11 @@
         </dependency>
     </dependencies>
 
-    <!-- 构建配置 -->
+    <!-- ================================= -->
+    <!-- 构建配置                          -->
+    <!-- ================================= -->
     <build>
-        <finalName>collide-app</finalName>
+        <finalName>collide-business-app</finalName>
         <plugins>
             <!-- Spring Boot Maven Plugin -->
             <plugin>

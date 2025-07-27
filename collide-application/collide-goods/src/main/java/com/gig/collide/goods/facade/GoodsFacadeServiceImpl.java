@@ -41,7 +41,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("创建商品，请求：{}", createRequest);
             
             if (createRequest == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "创建商品请求不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "创建商品请求不能为空");
             }
 
             // 幂等性处理
@@ -54,23 +54,23 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                     });
                     
                     log.info("商品创建成功（幂等），商品ID：{}", goodsId);
-                    return SingleResponse.buildSuccess(goodsId);
+                    return SingleResponse.of(goodsId);
                     
                 } catch (IllegalStateException e) {
                     log.warn("重复创建商品请求：{}", createRequest.getIdempotentKey());
-                    return SingleResponse.buildFailure("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
+                    return SingleResponse.fail("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
                 }
             } else {
                 // 无幂等键，直接处理
                 Long goodsId = goodsDomainService.createGoods(createRequest);
                 
                 log.info("商品创建成功，商品ID：{}", goodsId);
-                return SingleResponse.buildSuccess(goodsId);
+                return SingleResponse.of(goodsId);
             }
             
         } catch (Exception e) {
             log.error("创建商品失败", e);
-            return SingleResponse.buildFailure("CREATE_GOODS_ERROR", "创建商品失败：" + e.getMessage());
+            return SingleResponse.fail("CREATE_GOODS_ERROR", "创建商品失败：" + e.getMessage());
         }
     }
 
@@ -80,7 +80,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("更新商品，请求：{}", updateRequest);
             
             if (updateRequest == null || updateRequest.getGoodsId() == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "更新商品请求或商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "更新商品请求或商品ID不能为空");
             }
 
             // 幂等性处理
@@ -95,23 +95,23 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                     });
                     
                     log.info("商品更新成功（幂等），商品ID：{}", updateRequest.getGoodsId());
-                    return SingleResponse.buildSuccess();
+                    return SingleResponse.of(null);
                     
                 } catch (IllegalStateException e) {
                     log.warn("重复更新商品请求，商品ID：{}，幂等键：{}", updateRequest.getGoodsId(), updateRequest.getIdempotentKey());
-                    return SingleResponse.buildFailure("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
+                    return SingleResponse.fail("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
                 }
             } else {
                 // 无幂等键，直接处理
                 goodsDomainService.updateGoods(updateRequest);
                 
                 log.info("商品更新成功，商品ID：{}", updateRequest.getGoodsId());
-                return SingleResponse.buildSuccess();
+                return SingleResponse.of(null);
             }
             
         } catch (Exception e) {
             log.error("更新商品失败，商品ID：{}", updateRequest != null ? updateRequest.getGoodsId() : null, e);
-            return SingleResponse.buildFailure("UPDATE_GOODS_ERROR", "更新商品失败：" + e.getMessage());
+            return SingleResponse.fail("UPDATE_GOODS_ERROR", "更新商品失败：" + e.getMessage());
         }
     }
 
@@ -121,17 +121,17 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("删除商品，商品ID：{}", goodsId);
             
             if (goodsId == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID不能为空");
             }
 
             goodsDomainService.deleteGoods(goodsId);
             
             log.info("商品删除成功，商品ID：{}", goodsId);
-            return SingleResponse.buildSuccess();
+            return SingleResponse.of(null);
             
         } catch (Exception e) {
             log.error("删除商品失败，商品ID：{}", goodsId, e);
-            return SingleResponse.buildFailure("DELETE_GOODS_ERROR", "删除商品失败：" + e.getMessage());
+            return SingleResponse.fail("DELETE_GOODS_ERROR", "删除商品失败：" + e.getMessage());
         }
     }
 
@@ -141,20 +141,20 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("获取商品详情，商品ID：{}", goodsId);
             
             if (goodsId == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID不能为空");
             }
 
             GoodsInfo goodsInfo = goodsDomainService.getGoodsDetail(goodsId);
             if (goodsInfo == null) {
-                return SingleResponse.buildFailure("GOODS_NOT_FOUND", "商品不存在");
+                return SingleResponse.fail("GOODS_NOT_FOUND", "商品不存在");
             }
             
             log.info("获取商品详情成功，商品ID：{}", goodsId);
-            return SingleResponse.buildSuccess(goodsInfo);
+            return SingleResponse.of(goodsInfo);
             
         } catch (Exception e) {
             log.error("获取商品详情失败，商品ID：{}", goodsId, e);
-            return SingleResponse.buildFailure("GET_GOODS_DETAIL_ERROR", "获取商品详情失败：" + e.getMessage());
+            return SingleResponse.fail("GET_GOODS_DETAIL_ERROR", "获取商品详情失败：" + e.getMessage());
         }
     }
 
@@ -184,17 +184,17 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("商品上架，商品ID：{}", goodsId);
             
             if (goodsId == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID不能为空");
             }
 
             goodsDomainService.putOnSale(goodsId);
             
             log.info("商品上架成功，商品ID：{}", goodsId);
-            return SingleResponse.buildSuccess();
+            return SingleResponse.of(null);
             
         } catch (Exception e) {
             log.error("商品上架失败，商品ID：{}", goodsId, e);
-            return SingleResponse.buildFailure("PUT_ON_SALE_ERROR", "商品上架失败：" + e.getMessage());
+            return SingleResponse.fail("PUT_ON_SALE_ERROR", "商品上架失败：" + e.getMessage());
         }
     }
 
@@ -204,17 +204,17 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("商品下架，商品ID：{}", goodsId);
             
             if (goodsId == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID不能为空");
             }
 
             goodsDomainService.putOffSale(goodsId);
             
             log.info("商品下架成功，商品ID：{}", goodsId);
-            return SingleResponse.buildSuccess();
+            return SingleResponse.of(null);
             
         } catch (Exception e) {
             log.error("商品下架失败，商品ID：{}", goodsId, e);
-            return SingleResponse.buildFailure("PUT_OFF_SALE_ERROR", "商品下架失败：" + e.getMessage());
+            return SingleResponse.fail("PUT_OFF_SALE_ERROR", "商品下架失败：" + e.getMessage());
         }
     }
 
@@ -224,17 +224,17 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("批量商品上架，商品ID列表：{}", goodsIds);
             
             if (goodsIds == null || goodsIds.isEmpty()) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID列表不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID列表不能为空");
             }
 
             goodsDomainService.batchPutOnSale(goodsIds);
             
             log.info("批量商品上架成功，数量：{}", goodsIds.size());
-            return SingleResponse.buildSuccess("批量上架成功，共处理 " + goodsIds.size() + " 个商品");
+            return SingleResponse.of("批量上架成功，共处理 " + goodsIds.size() + " 个商品");
             
         } catch (Exception e) {
             log.error("批量商品上架失败", e);
-            return SingleResponse.buildFailure("BATCH_PUT_ON_SALE_ERROR", "批量商品上架失败：" + e.getMessage());
+            return SingleResponse.fail("BATCH_PUT_ON_SALE_ERROR", "批量商品上架失败：" + e.getMessage());
         }
     }
 
@@ -244,17 +244,17 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("批量商品下架，商品ID列表：{}", goodsIds);
             
             if (goodsIds == null || goodsIds.isEmpty()) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "商品ID列表不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "商品ID列表不能为空");
             }
 
             goodsDomainService.batchPutOffSale(goodsIds);
             
             log.info("批量商品下架成功，数量：{}", goodsIds.size());
-            return SingleResponse.buildSuccess("批量下架成功，共处理 " + goodsIds.size() + " 个商品");
+            return SingleResponse.of("批量下架成功，共处理 " + goodsIds.size() + " 个商品");
             
         } catch (Exception e) {
             log.error("批量商品下架失败", e);
-            return SingleResponse.buildFailure("BATCH_PUT_OFF_SALE_ERROR", "批量商品下架失败：" + e.getMessage());
+            return SingleResponse.fail("BATCH_PUT_OFF_SALE_ERROR", "批量商品下架失败：" + e.getMessage());
         }
     }
 
@@ -264,7 +264,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("更新商品库存，请求：{}", stockRequest);
             
             if (stockRequest == null || stockRequest.getGoodsId() == null) {
-                return SingleResponse.buildFailure("PARAM_ERROR", "库存更新请求或商品ID不能为空");
+                return SingleResponse.fail("PARAM_ERROR", "库存更新请求或商品ID不能为空");
             }
 
             // 幂等性处理（库存操作需要特别注意幂等性）
@@ -279,12 +279,12 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                     });
                     
                     log.info("商品库存更新成功（幂等），商品ID：{}", stockRequest.getGoodsId());
-                    return SingleResponse.buildSuccess();
+                    return SingleResponse.of(null);
                     
                 } catch (IllegalStateException e) {
                     log.warn("重复库存更新请求，商品ID：{}，操作：{}，幂等键：{}", 
                         stockRequest.getGoodsId(), stockRequest.getOperationType(), stockRequest.getIdempotentKey());
-                    return SingleResponse.buildFailure("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
+                    return SingleResponse.fail("DUPLICATE_REQUEST", "重复请求，请勿重复提交");
                 }
             } else {
                 // 无幂等键，直接处理（风险提示）
@@ -292,12 +292,12 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 goodsDomainService.updateStock(stockRequest);
                 
                 log.info("商品库存更新成功，商品ID：{}", stockRequest.getGoodsId());
-                return SingleResponse.buildSuccess();
+                return SingleResponse.of(null);
             }
             
         } catch (Exception e) {
             log.error("更新商品库存失败，商品ID：{}", stockRequest != null ? stockRequest.getGoodsId() : null, e);
-            return SingleResponse.buildFailure("UPDATE_STOCK_ERROR", "更新商品库存失败：" + e.getMessage());
+            return SingleResponse.fail("UPDATE_STOCK_ERROR", "更新商品库存失败：" + e.getMessage());
         }
     }
 }

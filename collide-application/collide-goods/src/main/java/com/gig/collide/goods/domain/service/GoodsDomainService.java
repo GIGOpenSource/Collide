@@ -12,7 +12,8 @@ import com.gig.collide.goods.domain.convertor.GoodsConvertor;
 import com.gig.collide.goods.domain.entity.Goods;
 import com.gig.collide.goods.infrastructure.mapper.GoodsMapper;
 import com.gig.collide.goods.infrastructure.service.GoodsCacheService;
-import com.gig.collide.base.exception.BusinessException;
+import com.gig.collide.goods.infrastructure.exception.GoodsBusinessException;
+import com.gig.collide.goods.infrastructure.exception.GoodsErrorCode;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -52,7 +53,7 @@ public class GoodsDomainService {
         log.info("获取商品详情，商品ID：{}", goodsId);
         
         if (goodsId == null) {
-            throw new BusinessException("商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.GOODS_ID_EMPTY);
         }
         
         Goods goods = goodsMapper.selectById(goodsId);
@@ -315,7 +316,7 @@ public class GoodsDomainService {
         // 保存到数据库
         int inserted = goodsMapper.insert(goods);
         if (inserted <= 0) {
-            throw new BusinessException("创建商品失败");
+            throw GoodsBusinessException.of(GoodsErrorCode.CREATE_GOODS_FAILED);
         }
         
         // 清除列表缓存（新商品可能影响列表展示）
@@ -338,13 +339,13 @@ public class GoodsDomainService {
         
         // 参数校验
         if (updateRequest == null || updateRequest.getGoodsId() == null) {
-            throw new BusinessException("更新请求或商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "更新请求或商品ID不能为空");
         }
         
         // 检查商品是否存在
         Goods existingGoods = getGoodsById(updateRequest.getGoodsId());
         if (existingGoods == null) {
-            throw new BusinessException("商品不存在");
+            throw GoodsBusinessException.goodsNotFound(updateRequest.getGoodsId());
         }
         
         // 构建更新对象
@@ -359,8 +360,8 @@ public class GoodsDomainService {
         if (updateRequest.getPrice() != null) {
             updateGoods.setPrice(updateRequest.getPrice());
         }
-        if (StringUtils.hasText(updateRequest.getImageUrl())) {
-            updateGoods.setImageUrl(updateRequest.getImageUrl());
+        if (StringUtils.hasText(updateRequest.getMainImage())) {
+            updateGoods.setImageUrl(updateRequest.getMainImage());
         }
         if (updateRequest.getRecommended() != null) {
             updateGoods.setRecommended(updateRequest.getRecommended());
@@ -373,7 +374,7 @@ public class GoodsDomainService {
         // 执行更新
         int updated = goodsMapper.updateById(updateGoods);
         if (updated <= 0) {
-            throw new BusinessException("更新商品失败");
+            throw GoodsBusinessException.of(GoodsErrorCode.UPDATE_GOODS_FAILED);
         }
         
         // 清除相关缓存
@@ -393,13 +394,13 @@ public class GoodsDomainService {
         
         // 参数校验
         if (stockRequest == null || stockRequest.getGoodsId() == null) {
-            throw new BusinessException("库存更新请求或商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "库存更新请求或商品ID不能为空");
         }
         
         // 获取当前商品信息
         Goods goods = getGoodsById(stockRequest.getGoodsId());
         if (goods == null) {
-            throw new BusinessException("商品不存在");
+            throw GoodsBusinessException.goodsNotFound(stockRequest.getGoodsId());
         }
         
         int result = 0;
@@ -422,7 +423,7 @@ public class GoodsDomainService {
         } else if ("DECREASE".equals(operationType)) {
             // 减少库存
             if (stockRequest.getStock() > goods.getStock()) {
-                throw new BusinessException("库存不足");
+                throw GoodsBusinessException.stockNotEnough(stockRequest.getGoodsId(), stockRequest.getStock(), goods.getStock());
             }
             result = goodsMapper.decreaseStockWithVersion(
                 stockRequest.getGoodsId(), 
@@ -430,11 +431,11 @@ public class GoodsDomainService {
                 goods.getVersion()
             );
         } else {
-            throw new BusinessException("不支持的操作类型：" + operationType);
+            throw GoodsBusinessException.invalidOperationType(operationType);
         }
         
         if (result <= 0) {
-            throw new BusinessException("库存更新失败，可能存在并发冲突，请重试");
+            throw GoodsBusinessException.stockUpdateConflict(stockRequest.getGoodsId());
         }
         
         log.info("商品库存更新成功，商品ID：{}，操作：{}，数量：{}", 
@@ -451,12 +452,12 @@ public class GoodsDomainService {
         log.info("商品上架，商品ID：{}", goodsId);
         
         if (goodsId == null) {
-            throw new BusinessException("商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.GOODS_ID_EMPTY);
         }
         
         Goods goods = getGoodsById(goodsId);
         if (goods == null) {
-            throw new BusinessException("商品不存在");
+            throw GoodsBusinessException.goodsNotFound(goodsId);
         }
         
         if ("ON_SALE".equals(goods.getStatus())) {
@@ -472,7 +473,7 @@ public class GoodsDomainService {
         
         int updated = goodsMapper.updateById(updateGoods);
         if (updated <= 0) {
-            throw new BusinessException("商品上架失败");
+            throw GoodsBusinessException.of(GoodsErrorCode.UPDATE_GOODS_FAILED, "商品上架失败");
         }
         
         // 清除相关缓存（上架商品会影响列表展示）
@@ -491,12 +492,12 @@ public class GoodsDomainService {
         log.info("商品下架，商品ID：{}", goodsId);
         
         if (goodsId == null) {
-            throw new BusinessException("商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.GOODS_ID_EMPTY);
         }
         
         Goods goods = getGoodsById(goodsId);
         if (goods == null) {
-            throw new BusinessException("商品不存在");
+            throw GoodsBusinessException.goodsNotFound(goodsId);
         }
         
         if ("OFF_SALE".equals(goods.getStatus())) {
@@ -512,7 +513,7 @@ public class GoodsDomainService {
         
         int updated = goodsMapper.updateById(updateGoods);
         if (updated <= 0) {
-            throw new BusinessException("商品下架失败");
+            throw GoodsBusinessException.of(GoodsErrorCode.UPDATE_GOODS_FAILED, "商品下架失败");
         }
         
         // 清除相关缓存（下架商品不再在列表中展示）
@@ -531,7 +532,7 @@ public class GoodsDomainService {
         log.info("批量商品上架，商品ID列表：{}", goodsIds);
         
         if (CollectionUtils.isEmpty(goodsIds)) {
-            throw new BusinessException("商品ID列表不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "商品ID列表不能为空");
         }
         
         int updated = goodsMapper.batchUpdateStatus(goodsIds, "ON_SALE");
@@ -554,7 +555,7 @@ public class GoodsDomainService {
         log.info("批量商品下架，商品ID列表：{}", goodsIds);
         
         if (CollectionUtils.isEmpty(goodsIds)) {
-            throw new BusinessException("商品ID列表不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "商品ID列表不能为空");
         }
         
         int updated = goodsMapper.batchUpdateStatus(goodsIds, "OFF_SALE");
@@ -577,18 +578,18 @@ public class GoodsDomainService {
         log.info("删除商品，商品ID：{}", goodsId);
         
         if (goodsId == null) {
-            throw new BusinessException("商品ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.GOODS_ID_EMPTY);
         }
         
         Goods goods = getGoodsById(goodsId);
         if (goods == null) {
-            throw new BusinessException("商品不存在");
+            throw GoodsBusinessException.goodsNotFound(goodsId);
         }
         
         // 执行逻辑删除
         int deleted = goodsMapper.deleteById(goodsId);
         if (deleted <= 0) {
-            throw new BusinessException("删除商品失败");
+            throw GoodsBusinessException.of(GoodsErrorCode.DELETE_GOODS_FAILED);
         }
         
         // 清除相关缓存
@@ -608,7 +609,7 @@ public class GoodsDomainService {
         log.info("增加商品销售数量，商品ID：{}，增加量：{}", goodsId, deltaSold);
         
         if (goodsId == null || deltaSold == null || deltaSold <= 0) {
-            throw new BusinessException("参数错误");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID);
         }
         
         int updated = goodsMapper.increaseSoldCount(goodsId, deltaSold);
@@ -624,29 +625,29 @@ public class GoodsDomainService {
      */
     private void validateCreateRequest(GoodsCreateRequest request) {
         if (request == null) {
-            throw new BusinessException("创建请求不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "创建请求不能为空");
         }
         if (!StringUtils.hasText(request.getName())) {
-            throw new BusinessException("商品名称不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "商品名称不能为空");
         }
         if (!StringUtils.hasText(request.getType())) {
-            throw new BusinessException("商品类型不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "商品类型不能为空");
         }
         if (request.getPrice() == null || request.getPrice().compareTo(java.math.BigDecimal.ZERO) <= 0) {
-            throw new BusinessException("商品价格必须大于0");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "商品价格必须大于0");
         }
         if (request.getCreatorId() == null) {
-            throw new BusinessException("创建者ID不能为空");
+            throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "创建者ID不能为空");
         }
         
         // 根据商品类型校验特定字段
         if ("COIN".equals(request.getType())) {
             if (request.getCoinAmount() == null || request.getCoinAmount() <= 0) {
-                throw new BusinessException("金币类商品的金币数量必须大于0");
+                throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "金币类商品的金币数量必须大于0");
             }
         } else if ("SUBSCRIPTION".equals(request.getType())) {
             if (request.getSubscriptionDays() == null || request.getSubscriptionDays() <= 0) {
-                throw new BusinessException("订阅类商品的订阅天数必须大于0");
+                throw GoodsBusinessException.of(GoodsErrorCode.PARAM_INVALID, "订阅类商品的订阅天数必须大于0");
             }
         }
     }

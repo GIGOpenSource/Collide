@@ -12,8 +12,7 @@ import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.users.domain.entity.User;
-import com.gig.collide.users.domain.entity.UserProfile;
+import com.gig.collide.users.domain.entity.UserUnified;
 import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserDomainService;
 import com.gig.collide.users.infrastructure.exception.UserBusinessException;
@@ -26,6 +25,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 用户控制器
@@ -55,9 +57,8 @@ public class UserController {
     public Result<UserInfo> getCurrentUser() {
         try {
             Long userId = StpUtil.getLoginIdAsLong();
-            User user = userDomainService.getUserById(userId);
-            UserProfile profile = userDomainService.getUserProfile(userId);
-            UserInfo userInfo = convertToUserInfo(user, profile);
+            UserUnified user = userDomainService.getUserById(userId);
+            UserInfo userInfo = convertToUserInfo(user);
             return Result.success(userInfo);
         } catch (UserBusinessException e) {
             log.error("获取当前用户信息失败：{}", e.getMessage());
@@ -76,9 +77,8 @@ public class UserController {
     public Result<UserInfo> getUserById(
             @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
         try {
-            User user = userDomainService.getUserById(userId);
-            UserProfile profile = userDomainService.getUserProfile(userId);
-            UserInfo userInfo = convertToUserInfo(user, profile);
+            UserUnified user = userDomainService.getUserById(userId);
+            UserInfo userInfo = convertToUserInfo(user);
             return Result.success(userInfo);
         } catch (UserBusinessException e) {
             log.error("获取用户信息失败：{}", e.getMessage());
@@ -102,9 +102,8 @@ public class UserController {
             
             UserOperatorResponse response = userFacadeService.modify(request);
             if (response.getSuccess()) {
-                User user = userDomainService.getUserById(userId);
-                UserProfile profile = userDomainService.getUserProfile(userId);
-                UserInfo userInfo = convertToUserInfo(user, profile);
+                UserUnified user = userDomainService.getUserById(userId);
+                UserInfo userInfo = convertToUserInfo(user);
                 return Result.success(userInfo);
             } else {
                 return Result.error(response.getResponseCode(), response.getResponseMessage());
@@ -237,8 +236,36 @@ public class UserController {
     public Result<Object> getUserStatistics(
             @Parameter(description = "用户ID", required = true) @PathVariable Long userId) {
         try {
-            // TODO: 实现用户统计信息获取
-            return Result.success("用户统计信息");
+            // 1. 获取用户基本信息
+            UserUnified user = userDomainService.getUserById(userId);
+            
+            // 2. 构建统计信息
+            Map<String, Object> statistics = new HashMap<>();
+            statistics.put("userId", userId);
+            statistics.put("username", user.getUsername());
+            statistics.put("nickname", user.getNickname());
+            statistics.put("avatar", user.getAvatar());
+            statistics.put("role", user.getRole());
+            statistics.put("status", user.getStatus());
+            statistics.put("bloggerStatus", user.getBloggerStatus());
+            
+            // 统计数据
+            statistics.put("followerCount", user.getFollowerCount());
+            statistics.put("followingCount", user.getFollowingCount());
+            statistics.put("contentCount", user.getContentCount());
+            statistics.put("likeCount", user.getLikeCount());
+            statistics.put("invitedCount", user.getInvitedCount());
+            
+            // 时间信息
+            statistics.put("createTime", user.getCreateTime());
+            statistics.put("lastLoginTime", user.getLastLoginTime());
+            statistics.put("vipExpireTime", user.getVipExpireTime());
+            
+            // 判断是否为VIP和博主
+            statistics.put("isVip", userDomainService.isVipUser(userId));
+            statistics.put("isBlogger", userDomainService.isBloggerUser(userId));
+            
+            return Result.success(statistics);
         } catch (Exception e) {
             log.error("获取用户统计信息异常", e);
             return Result.error("SYSTEM_ERROR", "系统异常，请稍后重试");
@@ -246,23 +273,41 @@ public class UserController {
     }
 
     /**
-     * 转换用户信息
+     * 转换用户信息（统一架构版本）
+     * 从UserUnified实体转换为UserInfo VO
      */
-    private UserInfo convertToUserInfo(User user, UserProfile profile) {
+    private UserInfo convertToUserInfo(UserUnified user) {
         if (user == null) {
             return null;
         }
         
-        UserInfo userInfo = UserConvertor.INSTANCE.mapToVo(user);
-        if (profile != null) {
-            // User实体中已有nickname和avatar，不需要从profile中获取
-            userInfo.setBio(profile.getBio());
-            userInfo.setGender(profile.getGender().name()); // 转换为字符串
-            userInfo.setBirthday(profile.getBirthday());
-            userInfo.setLocation(profile.getLocation());
-            // UserProfile中没有website字段，暂时设为null
-            userInfo.setWebsite(null);
-        }
+        UserInfo userInfo = new UserInfo();
+        userInfo.setUserId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        userInfo.setNickname(user.getNickname());
+        userInfo.setAvatar(user.getAvatar());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setPhone(user.getPhone());
+        userInfo.setRole(user.getRole());
+        userInfo.setStatus(user.getStatus());
+        
+        // 扩展信息（原UserProfile中的字段）
+        userInfo.setBio(user.getBio());
+        userInfo.setGender(user.getGender());
+        userInfo.setBirthday(user.getBirthday());
+        userInfo.setLocation(user.getLocation());
+        userInfo.setWebsite(user.getWebsite());
+        
+        // 统计信息
+        userInfo.setFollowerCount(user.getFollowerCount());
+        userInfo.setFollowingCount(user.getFollowingCount());
+        userInfo.setContentCount(user.getContentCount());
+        userInfo.setLikeCount(user.getLikeCount());
+        
+        // 时间信息
+        userInfo.setCreateTime(user.getCreateTime());
+        userInfo.setUpdateTime(user.getUpdateTime());
+        userInfo.setLastLoginTime(user.getLastLoginTime());
         
         return userInfo;
     }
