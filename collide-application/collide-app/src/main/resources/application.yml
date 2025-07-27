@@ -5,8 +5,6 @@
 spring:
   application:
     name: @application.name@
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
   config:
     # 参考 nft-turbo-app 的多配置文件导入方式
     import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml,classpath:swagger.yml,classpath:seata.yml,classpath:job.yml
@@ -38,10 +36,6 @@ management:
   endpoint:
     health:
       show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: true
 
 # =====================================
 # Swagger API 文档配置
@@ -68,9 +62,6 @@ springdoc:
       display-name: '管理 API'
       paths-to-match: '/actuator/**'
 
-# =====================================
-# Dubbo 配置（参考 nft-turbo-app）
-# =====================================
 dubbo:
   application:
     name: ${spring.application.name}
@@ -92,9 +83,6 @@ dubbo:
     timeout: 3000
     threads: 200
 
-# =====================================
-# 日志配置
-# =====================================
 logging:
   level:
     com.gig.collide: info
@@ -103,9 +91,6 @@ logging:
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
 
-# =====================================
-# 分布式事务配置（参考 nft-turbo-app）
-# =====================================
 seata:
   enabled: true
   application-id: ${spring.application.name}
@@ -113,9 +98,6 @@ seata:
   enable-auto-data-source-proxy: false
   use-jdk-proxy: true
 
-# =====================================
-# 应用特定配置
-# =====================================
 collide:
   business:
     name: "Collide Business Platform"
