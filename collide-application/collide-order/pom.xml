@@ -66,24 +66,6 @@
             <artifactId>collide-mq</artifactId>
         </dependency>
         
-        <!-- 任务调度组件 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-job</artifactId>
-        </dependency>
-        
-        <!-- 分布式事务组件 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-seata</artifactId>
-        </dependency>
-        
-        <!-- TCC事务组件 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-tcc</artifactId>
-        </dependency>
-        
         <!-- 配置组件 -->
         <dependency>
             <groupId>com.gig</groupId>
