@@ -31,16 +31,6 @@
             <artifactId>collide-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-tcc</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-seata</artifactId>
-        </dependency>
-
         <!-- ================================= -->
         <!-- 核心业务模块依赖                  -->
         <!-- ================================= -->
@@ -160,18 +150,6 @@
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-skywalking</artifactId>
-        </dependency>
-
-        <!-- 分布式事务模块 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-seata</artifactId>
-        </dependency>
-
-        <!-- TCC 事务补偿模块 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-tcc</artifactId>
         </dependency>
 
         <!-- 缓存模块 -->
