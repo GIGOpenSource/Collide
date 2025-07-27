@@ -31,6 +31,16 @@
             <artifactId>collide-api</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-tcc</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-seata</artifactId>
+        </dependency>
+
         <!-- ================================= -->
         <!-- 核心业务模块依赖                  -->
         <!-- ================================= -->

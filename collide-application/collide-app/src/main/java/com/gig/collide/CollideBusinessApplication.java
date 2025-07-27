@@ -83,8 +83,6 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.datasource",  // ✅ 数据源组件
     "com.gig.collide.rpc",         // ✅ RPC组件
     "com.gig.collide.web",         // ✅ Web组件
-    "com.gig.collide.seata",       // ✅ 分布式事务组件
-    "com.gig.collide.tcc"          // ✅ TCC事务补偿组件
 })
 @EnableDiscoveryClient
 @EnableDubbo(scanBasePackages = {

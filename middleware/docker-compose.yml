@@ -9,7 +9,7 @@ services:
       TZ: Asia/Shanghai
       SET_CONTAINER_TIMEZONE: true
       CONTAINER_TIMEZONE: Asia/Shanghai
-      MYSQL_DATABASE: test_db
+      MYSQL_DATABASE: nacos-mysql
       MYSQL_USER: test_user
       MYSQL_PASSWORD: test123
     volumes:
@@ -99,8 +99,8 @@ services:
       - ${PWD}/seata-server/resources/application.yml:/seata-server/resources/application.yml
       - ${PWD}/seata-server/logs:/seata-server/logs
     ports:
-      - "7091:7091"
-      - "8091:8091"
+      - "11091:7091"
+      - "12091:8091"
     restart: always
     networks:
       collide-network:
@@ -118,37 +118,37 @@ services:
       collide-network:
         ipv4_address: 172.20.1.60
 
-#  # RocketMQ NameServer
-#  rocketmq-nameserver:
-#    image: apache/rocketmq:5.1.4
-#    container_name: rocketmq-nameserver
-#    ports:
-#      - "9876:9876"
-#    environment:
-#      - JAVA_OPT=-server -Xms256m -Xmx256m
-#    command: ["sh", "mqnamesrv"]
-#    restart: always
-#    networks:
-#      collide-network:
-#        ipv4_address: 172.20.1.70
-#
-#  # RocketMQ Broker
-#  rocketmq-broker:
-#    image: apache/rocketmq:5.1.4
-#    container_name: rocketmq-broker
-#    ports:
-#      - "10909:10909"
-#      - "10911:10911"
-#    environment:
-#      - JAVA_OPT=-server -Xms256m -Xmx256m
-#      - NAMESRV_ADDR=172.20.1.70:9876
-#    command: ["sh", "mqbroker", "-n", "172.20.1.70:9876", "-c", "/home/rocketmq/rocketmq-5.1.4/conf/broker.conf"]
-#    depends_on:
-#      - rocketmq-nameserver
-#    restart: always
-#    networks:
-#      collide-network:
-#        ipv4_address: 172.20.1.71
+  # RocketMQ NameServer
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-nameserver
+    ports:
+      - "9876:9876"
+    environment:
+      - JAVA_OPT=-server -Xms256m -Xmx256m
+    command: ["sh", "mqnamesrv"]
+    restart: always
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.70
+
+  # RocketMQ Broker
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-broker
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    environment:
+      - JAVA_OPT=-server -Xms256m -Xmx256m
+      - NAMESRV_ADDR=172.20.1.70:9876
+    command: ["sh", "mqbroker", "-n", "172.20.1.70:9876", "-c", "/home/rocketmq/rocketmq-5.1.4/conf/broker.conf"]
+    depends_on:
+      - rocketmq-nameserver
+    restart: always
+    networks:
+      collide-network:
+        ipv4_address: 172.20.1.71
 #
 #  # Elasticsearch
 #  elasticsearch:
