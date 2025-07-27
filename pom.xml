@@ -168,21 +168,6 @@
                 <artifactId>collide-limiter</artifactId>
                 <version>${project.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-job</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-tcc</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-seata</artifactId>
-                <version>${project.version}</version>
-            </dependency>
 
             <!-- 监控和运维模块 -->
             <dependency>

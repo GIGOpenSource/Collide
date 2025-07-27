@@ -46,9 +46,6 @@
         <module>collide-sms</module>
         <module>collide-lock</module>
         <module>collide-limiter</module>
-        <module>collide-job</module>
-        <module>collide-tcc</module>
-        <module>collide-seata</module>
 
         <!-- 监控和运维模块 -->
         <module>collide-prometheus</module>
