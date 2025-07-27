@@ -1,4 +1,4 @@
-package com.gig.collide.search.domain.service;
+package com.gig.collide.category.domain.service;
 
 import com.gig.collide.api.category.request.CategoryCreateRequest;
 import com.gig.collide.api.category.request.CategoryQueryRequest;

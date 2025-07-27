@@ -76,10 +76,23 @@
             <artifactId>collide-social</artifactId>
         </dependency>
 
-        <!-- 搜索服务 - 分类、标签、搜索功能 -->
+        <!-- 搜索相关服务 -->
+        <!-- 搜索服务 - 纯搜索功能 -->
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-search</artifactId>
+        </dependency>
+        
+        <!-- 分类服务 - 内容分类管理功能 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-category</artifactId>
+        </dependency>
+        
+        <!-- 标签服务 - 标签管理与用户兴趣功能 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-tag</artifactId>
         </dependency>
 
         <!-- ================================= -->

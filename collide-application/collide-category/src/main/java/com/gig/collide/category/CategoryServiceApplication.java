@@ -1,4 +1,4 @@
-package com.gig.collide.search;
+package com.gig.collide.category;
 
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.mybatis.spring.annotation.MapperScan;
@@ -6,25 +6,25 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * 搜索服务启动类
- * 纯搜索功能服务
+ * 分类服务启动类
+ * 内容分类管理功能
  *
  * @author Collide Team
  * @version 1.0
  * @since 2024-12-19
  */
-@SpringBootApplication(scanBasePackages = {"com.gig.collide.search", "com.gig.collide.cache", "com.gig.collide.base"})
+@SpringBootApplication(scanBasePackages = {"com.gig.collide.category", "com.gig.collide.cache", "com.gig.collide.base"})
 @EnableDubbo
-@MapperScan("com.gig.collide.search.infrastructure.mapper")
-public class SearchServiceApplication {
+@MapperScan("com.gig.collide.category.infrastructure.mapper")
+public class CategoryServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(SearchServiceApplication.class, args);
+        SpringApplication.run(CategoryServiceApplication.class, args);
         System.out.println("""
             ====================================
-            🎉 Collide Search 模块启动成功！
-            🔍 纯搜索服务已就绪
-            🔗 端口: 9504
+            🎉 Collide Category 模块启动成功！
+            📂 分类管理服务已就绪
+            🔗 端口: 9505
             ====================================
             """);
     }

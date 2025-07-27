@@ -1,4 +1,4 @@
-package com.gig.collide.search.facade;
+package com.gig.collide.category.facade;
 
 import com.gig.collide.api.category.CategoryFacadeService;
 import com.gig.collide.api.category.request.CategoryCreateRequest;
@@ -9,7 +9,7 @@ import com.gig.collide.api.category.response.CategoryQueryResponse;
 import com.gig.collide.api.category.response.data.CategoryInfo;
 import com.gig.collide.api.category.response.data.CategoryTree;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.search.domain.service.CategoryDomainService;
+import com.gig.collide.category.domain.service.CategoryDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;

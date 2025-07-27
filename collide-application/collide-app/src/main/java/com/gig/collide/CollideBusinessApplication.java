@@ -18,7 +18,9 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  *   <li>❤️ 点赞服务 (collide-like) - 点赞点踩功能</li>
  *   <li>⭐ 收藏服务 (collide-favorite) - 内容收藏功能</li>
  *   <li>🌐 社交服务 (collide-social) - 社交互动功能</li>
- *   <li>🔍 搜索服务 (collide-search) - 分类、标签、搜索功能</li>
+ *   <li>🔍 搜索服务 (collide-search) - 纯搜索功能</li>
+   <li>📂 分类服务 (collide-category) - 分类管理功能</li>
+   <li>🏷️ 标签服务 (collide-tag) - 标签管理与用户兴趣功能</li>
  *   <li>🛒 商品服务 (collide-goods) - 商品管理功能</li>
  *   <li>📦 订单服务 (collide-order) - 订单处理功能</li>
  *   <li>💰 支付服务 (collide-payment) - 支付处理功能</li>
@@ -63,6 +65,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.favorite",    // ✅ 收藏服务
     "com.gig.collide.social",      // ✅ 社交服务
     "com.gig.collide.search",      // ✅ 搜索服务
+    "com.gig.collide.category",    // ✅ 分类服务
+    "com.gig.collide.tag",         // ✅ 标签服务
     
     // ================================
     // 商业化模块扫描
@@ -95,6 +99,8 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
     "com.gig.collide.favorite.facade",
     "com.gig.collide.social.facade",
     "com.gig.collide.search.facade",
+    "com.gig.collide.category.facade",
+    "com.gig.collide.tag.facade",
     "com.gig.collide.goods.facade",
     "com.gig.collide.order.facade",
     "com.gig.collide.payment.facade"
@@ -166,7 +172,9 @@ public class CollideBusinessApplication {
         System.out.println("   ❤️  Like Service       - 点赞点踩功能");
         System.out.println("   ⭐ Favorite Service   - 内容收藏功能");
         System.out.println("   🌐 Social Service     - 社交互动功能");
-        System.out.println("   🔍 Search Service     - 分类、标签、搜索功能");
+        System.out.println("   🔍 Search Service     - 纯搜索功能");
+        System.out.println("   📂 Category Service   - 分类管理功能");
+        System.out.println("   🏷️ Tag Service        - 标签管理与用户兴趣功能");
         System.out.println("   🛒 Goods Service      - 商品管理功能");
         System.out.println("   📦 Order Service      - 订单处理功能");
         System.out.println("   💰 Payment Service    - 支付处理功能");

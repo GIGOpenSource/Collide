@@ -1,4 +1,4 @@
-package com.gig.collide.search.infrastructure.service;
+package com.gig.collide.category.infrastructure.service;
 
 import com.gig.collide.api.category.request.CategoryCreateRequest;
 import com.gig.collide.api.category.request.CategoryQueryRequest;
@@ -6,7 +6,7 @@ import com.gig.collide.api.category.request.CategoryUpdateRequest;
 import com.gig.collide.api.category.response.data.CategoryInfo;
 import com.gig.collide.api.category.response.data.CategoryTree;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.search.domain.service.CategoryDomainService;
+import com.gig.collide.category.domain.service.CategoryDomainService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

@@ -1,4 +1,4 @@
-package com.gig.collide.search.controller;
+package com.gig.collide.category.controller;
 
 import com.gig.collide.api.category.CategoryFacadeService;
 import com.gig.collide.api.category.request.CategoryCreateRequest;

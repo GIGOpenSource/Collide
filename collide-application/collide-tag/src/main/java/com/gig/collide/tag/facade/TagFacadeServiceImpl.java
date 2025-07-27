@@ -1,4 +1,4 @@
-package com.gig.collide.search.facade;
+package com.gig.collide.tag.facade;
 
 import com.gig.collide.api.tag.TagFacadeService;
 import com.gig.collide.api.tag.request.TagCreateRequest;
@@ -9,7 +9,7 @@ import com.gig.collide.api.tag.response.TagOperatorResponse;
 import com.gig.collide.api.tag.response.TagQueryResponse;
 import com.gig.collide.api.tag.response.data.TagInfo;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.search.domain.service.TagDomainService;
+import com.gig.collide.tag.domain.service.TagDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;

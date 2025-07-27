@@ -1,4 +1,4 @@
-package com.gig.collide.search.domain.service;
+package com.gig.collide.tag.domain.service;
 
 import com.gig.collide.api.tag.request.TagCreateRequest;
 import com.gig.collide.api.tag.request.TagQueryRequest;

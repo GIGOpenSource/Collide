@@ -1,4 +1,4 @@
-package com.gig.collide.search.controller;
+package com.gig.collide.tag.controller;
 
 import com.gig.collide.api.tag.TagFacadeService;
 import com.gig.collide.api.tag.request.TagCreateRequest;
