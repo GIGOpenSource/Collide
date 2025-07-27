@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: @application.name@
-  profiles:
-    active: dev,rpc
   config:
     import: classpath:base.yml,classpath:cache.yml,classpath:rpc.yml,classpath:datasource.yml
 
@@ -43,66 +41,3 @@ collide:
     rate-limit:
       user-like-per-minute: 60               # 用户每分钟最大点赞次数
       user-like-per-hour: 1000               # 用户每小时最大点赞次数
-
----
-# 开发环境配置
-spring:
-  profiles: dev
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/collide_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-    username: root
-    password: 123456
-  
-  # 使用标准化的Redis配置（符合Spring Boot 3.x规范）
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 1
-      timeout: 5000ms
-      lettuce:
-        pool:
-          max-active: 100
-          max-idle: 10
-          min-idle: 5
-
-# Dubbo开发环境配置（使用默认的点对点直连）
-dubbo:
-  application:
-    name: ${spring.application.name}
-  protocol:
-    name: dubbo
-    port: -1
-  registry:
-    address: N/A
-  consumer:
-    check: false
-  provider:
-    timeout: 5000
-
----
-# 生产环境配置
-spring:
-  profiles: prod
-
-# 标准化配置变量（对齐Code项目命名规范）
-collide:
-  turbo:
-    nacos:
-      server:
-        url: ${NACOS_SERVER_URL:nacos-server:8848}
-        username: ${NACOS_USERNAME:nacos}
-        password: ${NACOS_PASSWORD:nacos}
-    mysql:
-      url: ${MYSQL_URL:jdbc:mysql://localhost:3306/collide_db?useUnicode=true&characterEncoding=utf8&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai}
-      username: ${MYSQL_USERNAME:root}
-      password: ${MYSQL_PASSWORD:123456}
-    redis:
-      url: ${REDIS_HOST:localhost}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
-    dubbo:
-      nacos:
-        namespace: ${DUBBO_NAMESPACE:collide-prod}
-        group: ${DUBBO_GROUP:DEFAULT_GROUP} 

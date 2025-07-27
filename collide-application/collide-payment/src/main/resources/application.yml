@@ -1,7 +1,5 @@
 # Collide Payment Service 配置文件 (v2.0.0 去连表设计)
 spring:
-  profiles:
-    active: prod
   application:
     name: @application.name@
   config:
@@ -100,74 +98,3 @@ collide:
       test:
         enabled: true
         auto-success: true
-
----
-# 本地开发环境配置
-spring:
-  config:
-    activate:
-      on-profile: local
-
-server:
-  port: 9503
-
-logging:
-  level:
-    com.gig.collide.payment: DEBUG
-    org.springframework.web: DEBUG
-    com.baomidou.mybatisplus: DEBUG
-
-collide:
-  payment:
-    config:
-      env: local
-    channels:
-      test:
-        enabled: true
-        auto-success: true
-
----
-# Docker 环境配置
-spring:
-  config:
-    activate:
-      on-profile: docker
-
-server:
-  port: 8080
-
-logging:
-  level:
-    root: INFO
-    com.gig.collide.payment: INFO
-
-collide:
-  payment:
-    config:
-      env: docker
-    channels:
-      test:
-        enabled: false
-
----
-# 生产环境配置
-spring:
-  config:
-    activate:
-      on-profile: prod
-
-logging:
-  level:
-    root: WARN
-    com.gig.collide.payment: INFO
-
-collide:
-  payment:
-    config:
-      env: prod
-    risk:
-      max-daily-amount: 100000.00
-      max-single-amount: 50000.00
-    channels:
-      test:
-        enabled: false 

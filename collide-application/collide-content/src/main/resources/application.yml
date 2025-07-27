@@ -1,8 +1,6 @@
 spring:
   application:
     name: collide-content
-  profiles:
-    active: local
   config:
     import:
       - classpath:base.yml

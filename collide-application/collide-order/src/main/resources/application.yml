@@ -4,8 +4,6 @@
 # ========================================================================
 
 spring:
-  profiles:
-    active: dev
   application:
     name: collide-order
 
@@ -70,42 +68,3 @@ logging:
     org.apache.dubbo: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%15.15t] %-5level %-40.40logger{39} : %msg%n"
-
-# ========================================================================
-# 环境配置 - 多环境配置管理
-# ========================================================================
-
----
-# 开发环境
-spring:
-  config:
-    activate:
-      on-profile: dev
-      
-logging:
-  level:
-    com.gig.collide.order: DEBUG
-    com.gig.collide: DEBUG
-    
----
-# 测试环境  
-spring:
-  config:
-    activate:
-      on-profile: test
-      
-logging:
-  level:
-    com.gig.collide.order: INFO
-    
----
-# 生产环境
-spring:
-  config:
-    activate:
-      on-profile: prod
-      
-logging:
-  level:
-    com.gig.collide.order: WARN
-    org.apache.dubbo: ERROR 

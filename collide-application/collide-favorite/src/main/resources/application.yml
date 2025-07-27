@@ -1,6 +1,4 @@
 spring:
-  profiles:
-    active: dev
   application:
     name: collide-favorite
   config:
@@ -80,8 +78,6 @@ mybatis-plus:
       logic-not-delete-value: 0
       # 标准化主键
       id-type: ASSIGN_ID
-    # 标准化填充策略
-    meta-object-handler: com.gig.collide.base.handler.MetaObjectHandler
 
 # ===================== 收藏服务业务配置 =====================
 collide:
@@ -128,20 +124,3 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
   file:
     name: logs/collide-favorite.log
-
-# ===================== 管理端点标准化配置 =====================
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-  info:
-    env:
-      enabled: true 

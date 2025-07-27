@@ -1,8 +1,6 @@
 spring:
   application:
     name: collide-follow
-  profiles:
-    active: local
 
   # 数据库配置导入
   config:
