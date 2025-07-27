@@ -7,7 +7,7 @@ spring:
     name: @application.name@
   config:
     # 参考 nft-turbo-app 的多配置文件导入方式
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml,classpath:swagger.yml,classpath:seata.yml
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
   # 参考 nft-turbo-app 的主配置懒加载优化
   main:
     lazy-initialization: true
