@@ -5,4 +5,38 @@ spring:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
 
 server:
-  port: 9504 
+  port: 9505
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.search.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 搜索模块专用配置
+collide:
+  search:
+    # 搜索结果默认分页大小
+    default-page-size: 20
+    # 搜索结果最大分页大小
+    max-page-size: 100
+    # 搜索历史保留天数
+    search-history-retain-days: 30
+    # 热门关键词统计天数
+    hot-keywords-stat-days: 7
+    # 热门关键词默认数量
+    hot-keywords-default-limit: 50
+    # 搜索建议默认数量
+    search-suggestion-default-limit: 10
+    # 全文搜索最大关键词数量
+    fulltext-search-max-keywords: 10
+    # 搜索索引同步批次大小
+    search-index-sync-batch-size: 1000
+    # 搜索缓存过期时间（分钟）
+    search-cache-expire-minutes: 30
+    # 搜索统计更新间隔（分钟）
+    search-stats-update-interval: 60
+    # 推荐内容默认数量
+    recommend-contents-default-limit: 20 

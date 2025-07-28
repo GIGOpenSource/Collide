@@ -118,7 +118,7 @@ public class SocialPostQueryResponse<T> extends BaseResponse {
     /**
      * 构造失败响应
      */
-    public static <T> SocialPostQueryResponse<T> failure(String message) {
+    public static <T> SocialPostQueryResponse<T> error(String message) {
         SocialPostQueryResponse<T> response = new SocialPostQueryResponse<>();
         response.setSuccess(false);
         response.setResponseMessage(message);

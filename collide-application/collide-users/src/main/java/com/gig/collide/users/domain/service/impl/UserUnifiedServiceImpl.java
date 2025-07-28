@@ -99,25 +99,71 @@ public class UserUnifiedServiceImpl implements UserUnifiedService {
     }
 
     @Override
+    public Boolean validateUsernameAndPassword(String username, String password) {
+        if (username == null || username.trim().isEmpty() || 
+            password == null || password.trim().isEmpty()) {
+            return false;
+        }
+        
+        try {
+            // 查找用户
+            UserUnified user = findByUsername(username);
+            if (user == null) {
+                log.warn("用户不存在，用户名：{}", username);
+                return false;
+            }
+            
+            // 验证密码
+            String inputPasswordHash = hashPassword(password, user.getSalt());
+            boolean isValid = inputPasswordHash.equals(user.getPasswordHash());
+            
+            if (isValid) {
+                log.info("用户密码验证成功，用户名：{}", username);
+                // 更新最后登录时间
+                updateLastLoginTime(user.getId());
+            } else {
+                log.warn("用户密码验证失败，用户名：{}", username);
+            }
+            
+            return isValid;
+        } catch (Exception e) {
+            log.error("验证用户密码时发生异常，用户名：{}", username, e);
+            return false;
+        }
+    }
+
+    @Override
     @Transactional
     public UserUnifiedRegisterResponse register(UserUnifiedRegisterRequest registerRequest) {
         UserUnifiedRegisterResponse response = new UserUnifiedRegisterResponse();
         
         try {
-            // 检查手机号是否已存在
-            if (userUnifiedMapper.findByPhone(registerRequest.getPhone()) != null) {
-                response.setSuccess(false);
-                response.setResponseCode("PHONE_ALREADY_EXISTS");
-                response.setResponseMessage("手机号已存在");
-                return response;
-            }
-            
-            // 检查用户名是否已存在
+            // 检查用户名是否已存在 - 参考 nft-turbo 设计，只检查主要标识字段
             if (userUnifiedMapper.findByUsername(registerRequest.getUsername()) != null) {
                 response.setSuccess(false);
                 response.setResponseCode("USERNAME_ALREADY_EXISTS");
                 response.setResponseMessage("用户名已存在");
                 return response;
+            }
+            
+            // 如果提供了手机号，检查是否已存在（可选检查）
+            if (registerRequest.getPhone() != null && !registerRequest.getPhone().trim().isEmpty()) {
+                if (userUnifiedMapper.findByPhone(registerRequest.getPhone()) != null) {
+                    response.setSuccess(false);
+                    response.setResponseCode("PHONE_ALREADY_EXISTS");
+                    response.setResponseMessage("手机号已存在");
+                    return response;
+                }
+            }
+            
+            // 如果提供了邮箱，检查是否已存在（可选检查）
+            if (registerRequest.getEmail() != null && !registerRequest.getEmail().trim().isEmpty()) {
+                if (userUnifiedMapper.findByEmail(registerRequest.getEmail()) != null) {
+                    response.setSuccess(false);
+                    response.setResponseCode("EMAIL_ALREADY_EXISTS");
+                    response.setResponseMessage("邮箱已存在");
+                    return response;
+                }
             }
             
             UserUnified userUnified = buildUserFromRegisterRequest(registerRequest);
@@ -481,20 +527,56 @@ public class UserUnifiedServiceImpl implements UserUnifiedService {
 
     /**
      * 从注册请求构建用户实体
+     * 参考 nft-turbo 设计，简化用户注册流程
      */
     private UserUnified buildUserFromRegisterRequest(UserUnifiedRegisterRequest request) {
         UserUnified userUnified = new UserUnified();
         
         String salt = generateSalt();
         userUnified.setUsername(request.getUsername());
-        userUnified.setNickname(request.getNickname());
-        userUnified.setEmail(request.getEmail());
-        userUnified.setPhone(request.getPhone());
+        
+        // 如果没有提供昵称，使用用户名作为默认昵称（参考 nft-turbo 设计）
+        String nickname = request.getNickname();
+        if (nickname == null || nickname.trim().isEmpty()) {
+            nickname = request.getUsername();
+        }
+        userUnified.setNickname(nickname);
+        
+        // 可选字段，只有在提供时才设置
+        if (request.getEmail() != null && !request.getEmail().trim().isEmpty()) {
+            userUnified.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null && !request.getPhone().trim().isEmpty()) {
+            userUnified.setPhone(request.getPhone());
+        }
+        if (request.getAvatar() != null && !request.getAvatar().trim().isEmpty()) {
+            userUnified.setAvatar(request.getAvatar());
+        }
+        if (request.getBio() != null && !request.getBio().trim().isEmpty()) {
+            userUnified.setBio(request.getBio());
+        }
+        if (request.getLocation() != null && !request.getLocation().trim().isEmpty()) {
+            userUnified.setLocation(request.getLocation());
+        }
+        if (request.getGender() != null && !request.getGender().trim().isEmpty()) {
+            userUnified.setGender(request.getGender());
+        } else {
+            userUnified.setGender(DEFAULT_GENDER);
+        }
+        
+        // 邀请相关
+        if (request.getInviteCode() != null && !request.getInviteCode().trim().isEmpty()) {
+            // TODO: 这里需要验证邀请码并设置邀请人信息
+            // userUnified.setInviterId(request.getInviterId());
+        }
+        
+        // 密码处理
         userUnified.setSalt(salt);
         userUnified.setPasswordHash(hashPassword(request.getPassword(), salt));
+        
+        // 默认设置
         userUnified.setRole(DEFAULT_ROLE);
         userUnified.setStatus(DEFAULT_STATUS);
-        userUnified.setGender(DEFAULT_GENDER);
         userUnified.setBloggerStatus("none");
         
         // 统计字段初始化

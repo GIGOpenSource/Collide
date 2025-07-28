@@ -243,10 +243,22 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     @Override
     public String generateInviteCode(Long userId) {
         try {
+            log.info("生成用户邀请码，用户ID：{}", userId);
             return userUnifiedService.generateInviteCode(userId);
         } catch (Exception e) {
-            log.error("生成邀请码失败", e);
+            log.error("生成用户邀请码失败，用户ID：{}", userId, e);
             return null;
+        }
+    }
+
+    @Override
+    public Boolean validatePassword(String username, String password) {
+        try {
+            log.info("验证用户密码，用户名：{}", username);
+            return userUnifiedService.validateUsernameAndPassword(username, password);
+        } catch (Exception e) {
+            log.error("验证用户密码失败，用户名：{}", username, e);
+            return false;
         }
     }
 } 

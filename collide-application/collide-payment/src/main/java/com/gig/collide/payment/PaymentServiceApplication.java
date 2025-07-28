@@ -11,9 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Collide
  * @since 2.0.0
  */
-@SpringBootApplication(scanBasePackages = {"com.gig.collide.payment", "com.gig.collide.cache"})
-@EnableDubbo
-@MapperScan("com.gig.collide.payment.infrastructure.mapper")
+@SpringBootApplication
 public class PaymentServiceApplication {
 
     public static void main(String[] args) {

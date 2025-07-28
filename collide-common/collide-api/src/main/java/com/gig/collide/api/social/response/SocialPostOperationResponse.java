@@ -86,7 +86,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     /**
      * 构造操作失败响应
      */
-    public static SocialPostOperationResponse failure(String operationType, String message) {
+    public static SocialPostOperationResponse error(String operationType, String message) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(false);
         response.setResponseMessage(message);

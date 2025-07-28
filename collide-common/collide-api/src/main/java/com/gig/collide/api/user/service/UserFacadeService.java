@@ -111,4 +111,13 @@ public interface UserFacadeService {
      * @return 邀请码
      */
     String generateInviteCode(Long userId);
+
+    /**
+     * 验证用户密码
+     * 
+     * @param username 用户名
+     * @param password 密码
+     * @return 是否验证成功
+     */
+    Boolean validatePassword(String username, String password);
 } 

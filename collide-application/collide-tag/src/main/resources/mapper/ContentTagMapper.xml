@@ -3,7 +3,7 @@
 <mapper namespace="com.gig.collide.tag.infrastructure.mapper.ContentTagMapper">
 
     <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.gig.collide.tag.infrastructure.entity.ContentTagEntity">
+    <resultMap id="BaseResultMap" type="com.gig.collide.tag.domain.entity.ContentTag">
         <id column="id" property="id" jdbcType="BIGINT"/>
         <result column="content_id" property="contentId" jdbcType="BIGINT"/>
         <result column="tag_id" property="tagId" jdbcType="BIGINT"/>
@@ -37,10 +37,10 @@
 
     <!-- 批量插入内容标签关联 -->
     <insert id="batchInsert">
-        INSERT INTO t_content_tag (content_id, tag_id, create_time)
+        INSERT INTO t_content_tag (content_id, tag_id, create_time, version)
         VALUES
-        <foreach collection="entities" item="entity" separator=",">
-            (#{entity.contentId}, #{entity.tagId}, NOW())
+        <foreach collection="list" item="entity" separator=",">
+            (#{entity.contentId}, #{entity.tagId}, NOW(), 1)
         </foreach>
     </insert>
 

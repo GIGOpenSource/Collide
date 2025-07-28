@@ -13,7 +13,7 @@
     <groupId>com.gig</groupId>
     <artifactId>collide-search</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Collide 分类服务模块 - 内容分类管理功能</description>
+    <description>Collide 搜索服务模块 - 全文搜索和智能推荐功能</description>
 
     <properties>
         <application.name>collide-search</application.name>

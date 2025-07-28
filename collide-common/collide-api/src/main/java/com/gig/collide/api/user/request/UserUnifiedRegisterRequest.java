@@ -9,6 +9,7 @@ import lombok.*;
 
 /**
  * 用户统一注册请求
+ * 参考 nft-turbo 设计，简化注册流程
  *
  * @author Collide Team
  * @version 2.0
@@ -30,10 +31,9 @@ public class UserUnifiedRegisterRequest extends BaseRequest {
     private String username;
 
     /**
-     * 昵称（必填）
+     * 昵称（可选，为空时使用用户名作为昵称）
      */
-    @NotBlank(message = "昵称不能为空")
-    @Size(min = 1, max = 50, message = "昵称长度必须在1-50个字符之间")
+    @Size(max = 50, message = "昵称长度不能超过50个字符")
     private String nickname;
 
     /**

@@ -1,6 +1,8 @@
 spring:
   application:
-    name: collide-tag
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:config.yml
   cloud:
     nacos:
       discovery:

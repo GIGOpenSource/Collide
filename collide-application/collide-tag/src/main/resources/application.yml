@@ -5,4 +5,30 @@ spring:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
 
 server:
-  port: 9506 
+  port: 9602
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.tag.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 标签模块专用配置
+collide:
+  tag:
+    # 热门标签默认数量
+    hot-tags-default-limit: 50
+    # 推荐标签默认数量
+    recommend-tags-default-limit: 10
+    # 用户兴趣标签最大数量
+    user-interest-tags-max-count: 100
+    # 标签热度分数更新频率（小时）
+    heat-score-update-interval: 24
+    # 默认兴趣分数
+    default-interest-score: 50.0
+    # 最大兴趣分数
+    max-interest-score: 100.0
+    # 最小兴趣分数
+    min-interest-score: 0.0 

@@ -2,72 +2,33 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:stream.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
 
 server:
-  port: 9602
+  port: 9603
 
-# Dubbo 协议端口 (应用特定)
-dubbo:
-  protocol:
-    port: 20886
-
-# MyBatis Plus 配置 (应用特定)
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.gig.collide.social.domain.entity
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
     map-underscore-to-camel-case: true
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      id-type: auto
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# 社交服务特定配置
+# 社交模块专用配置
 collide:
   social:
-    # 热度分数计算配置
-    hot-score:
-      # 点赞权重
-      like-weight: 1.0
-      # 评论权重
-      comment-weight: 2.0
-      # 转发权重
-      share-weight: 3.0
-      # 收藏权重
-      favorite-weight: 1.5
-      # 时间衰减因子
-      time-decay-factor: 0.1
-      # 热度更新间隔（分钟）
-      update-interval: 30
-    
-    # 内容审核配置
-    content-review:
-      # 是否启用自动审核
-      auto-review-enabled: true
-      # 敏感词检测
-      sensitive-word-check: true
-      # 图片审核
-      image-review: true
-      # 视频审核
-      video-review: false
-    
-    # 推送配置
-    feed:
-      # 时间线缓存时间（分钟）
-      timeline-cache-ttl: 60
-      # 热门动态缓存时间（分钟）  
-      hot-posts-cache-ttl: 30
-      # 附近动态搜索半径上限（公里）
-      max-nearby-radius: 50
-      # 单次查询最大返回数量
-      max-page-size: 100
-
-# 日志配置
-logging:
-  level:
-    com.gig.collide.social: DEBUG
-    org.apache.dubbo: INFO 
+    # 默认分页大小
+    default-page-size: 20
+    # 最大分页大小
+    max-page-size: 100
+    # 帖子最大长度
+    post-max-length: 2000
+    # 互动缓存过期时间（分钟）
+    interaction-cache-expire: 30
+    # 统计信息缓存过期时间（分钟）
+    statistics-cache-expire: 60
+    # 热门帖子默认数量
+    hot-posts-default-limit: 50
+    # 推荐帖子默认数量
+    recommend-posts-default-limit: 20 

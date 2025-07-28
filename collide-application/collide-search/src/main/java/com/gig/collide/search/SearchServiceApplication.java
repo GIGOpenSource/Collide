@@ -7,11 +7,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * 搜索服务启动类
- * 纯搜索功能服务
+ * 全文搜索和智能推荐功能
  *
  * @author Collide Team
  * @version 1.0
- * @since 2024-12-19
+ * @since 2024-01-01
  */
 @SpringBootApplication(scanBasePackages = {"com.gig.collide.search", "com.gig.collide.cache", "com.gig.collide.base"})
 @EnableDubbo
@@ -23,8 +23,8 @@ public class SearchServiceApplication {
         System.out.println("""
             ====================================
             🎉 Collide Search 模块启动成功！
-            🔍 纯搜索服务已就绪
-            🔗 端口: 9504
+            🔍 搜索服务已就绪
+            🔗 端口: 9505
             ====================================
             """);
     }

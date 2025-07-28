@@ -60,6 +60,15 @@ public interface UserUnifiedService {
     UserUnified findByPhoneAndPassword(String phone, String password);
 
     /**
+     * 验证用户名和密码
+     * 
+     * @param username 用户名
+     * @param password 密码
+     * @return 是否验证成功
+     */
+    Boolean validateUsernameAndPassword(String username, String password);
+
+    /**
      * 用户注册
      * 
      * @param registerRequest 注册请求

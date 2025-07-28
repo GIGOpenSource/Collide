@@ -3,12 +3,16 @@ package com.gig.collide.auth.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.SaLoginModel;
 import cn.dev33.satoken.stp.StpUtil;
-import com.gig.collide.api.user.response.UserOperatorResponse;
-import com.gig.collide.api.user.response.UserQueryResponse;
-import com.gig.collide.api.user.response.data.UserInfo;
+import com.gig.collide.api.user.request.UserUnifiedRegisterRequest;
+import com.gig.collide.api.user.request.UserUnifiedQueryRequest;
+import com.gig.collide.api.user.request.condition.UserUsernameQueryCondition;
+import com.gig.collide.api.user.response.UserUnifiedRegisterResponse;
+import com.gig.collide.api.user.response.UserUnifiedQueryResponse;
+import com.gig.collide.api.user.response.data.UserUnifiedInfo;
+import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.exception.BizException;
-import com.gig.collide.base.exception.AuthErrorCode;
 import com.gig.collide.auth.exception.AuthException;
+import com.gig.collide.auth.exception.AuthErrorCode;
 import com.gig.collide.auth.param.LoginParam;
 import com.gig.collide.auth.param.RegisterParam;
 import com.gig.collide.auth.param.LoginOrRegisterParam;
@@ -29,7 +33,7 @@ import java.util.Map;
 
 /**
  * 认证相关接口
- * 基于Code项目设计哲学，实现简化认证系统
+ * 参考 nft-turbo 设计哲学，实现简化认证系统
  *
  * @author Collide Team
  * @version 2.0
@@ -54,33 +58,32 @@ public class AuthController {
 
     /**
      * 用户注册
+     * 参考 nft-turbo 设计，支持单独注册
      */
     @PostMapping("/register")
-    @Operation(summary = "用户注册", description = "简化的用户名密码注册，支持邀请码")
+    @Operation(summary = "用户注册", description = "用户名密码注册，支持邀请码")
     public Result<Object> register(@Valid @RequestBody RegisterParam registerParam) {
         try {
             log.info("用户注册请求，用户名：{}，邀请码：{}", registerParam.getUsername(), registerParam.getInviteCode());
             
             // 构建注册请求
-            UserRegisterRequest userRegisterRequest = new UserRegisterRequest();
+            UserUnifiedRegisterRequest userRegisterRequest = new UserUnifiedRegisterRequest();
             userRegisterRequest.setUsername(registerParam.getUsername());
             userRegisterRequest.setPassword(registerParam.getPassword());
-            userRegisterRequest.setEmail(registerParam.getEmail());
-            userRegisterRequest.setPhone(registerParam.getPhone());
             userRegisterRequest.setInviteCode(registerParam.getInviteCode());
 
             // 执行注册
-            UserOperatorResponse registerResult = userFacadeService.register(userRegisterRequest);
+            UserUnifiedRegisterResponse registerResult = userFacadeService.register(userRegisterRequest);
             
             if (registerResult.getSuccess()) {
                 // 注册成功后自动登录
-                UserQueryRequest queryRequest = new UserQueryRequest();
-                UserUserNameQueryCondition condition = new UserUserNameQueryCondition();
-                condition.setUserName(registerParam.getUsername());
-                queryRequest.setUserUserNameQueryCondition(condition);
+                UserUnifiedQueryRequest queryRequest = new UserUnifiedQueryRequest();
+                UserUsernameQueryCondition condition = new UserUsernameQueryCondition();
+                condition.setUsername(registerParam.getUsername());
+                queryRequest.setUserQueryCondition(condition);
                 
-                UserQueryResponse<UserInfo> userQueryResponse = userFacadeService.query(queryRequest);
-                UserInfo userInfo = userQueryResponse.getData();
+                UserUnifiedQueryResponse<UserUnifiedInfo> userQueryResponse = userFacadeService.queryUser(queryRequest);
+                UserUnifiedInfo userInfo = userQueryResponse.getData();
                 
                 if (userInfo != null) {
                     // 设置登录会话
@@ -113,95 +116,39 @@ public class AuthController {
 
     /**
      * 用户登录
+     * 参考 nft-turbo 设计：如果用户不存在则自动注册
      */
     @PostMapping("/login")
-    @Operation(summary = "用户登录", description = "标准用户名密码登录")
+    @Operation(summary = "用户登录", description = "用户名密码登录，如果用户不存在则自动注册")
     public Result<Object> login(@Valid @RequestBody LoginParam loginParam) {
         try {
             log.info("用户登录请求，用户名：{}", loginParam.getUsername());
             
-            // 查询用户信息
-            UserQueryRequest userQueryRequest = new UserQueryRequest();
-            UserUserNameQueryCondition condition = new UserUserNameQueryCondition();
-            condition.setUserName(loginParam.getUsername());
-            userQueryRequest.setUserUserNameQueryCondition(condition);
-            
-            UserQueryResponse<UserInfo> userQueryResponse = userFacadeService.query(userQueryRequest);
-            UserInfo userInfo = userQueryResponse.getData();
-            
-            if (userInfo == null) {
-                log.warn("用户不存在，用户名：{}", loginParam.getUsername());
-                return Result.error("LOGIN_ERROR", "用户名或密码错误");
-            }
-            
-            // 验证密码（这里需要调用用户服务的密码验证方法）
-            // 临时实现：假设用户服务已经处理了密码验证
-            if (userInfo.getStatus() != null && !"ACTIVE".equals(userInfo.getStatus())) {
-                throw new AuthException(AuthErrorCode.USER_STATUS_IS_NOT_ACTIVE);
-            }
-            
-            // 设置登录会话
-            StpUtil.login(userInfo.getUserId(), new SaLoginModel()
-                .setIsLastingCookie(loginParam.getRememberMe())
-                .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT));
-            StpUtil.getSession().set(userInfo.getUserId().toString(), userInfo);
-            
-            // 构建返回数据
-            Map<String, Object> data = new HashMap<>();
-            data.put("user", buildUserInfo(userInfo));
-            data.put("token", StpUtil.getTokenValue());
-            data.put("message", "登录成功");
-            
-            log.info("用户登录成功，用户ID：{}", userInfo.getUserId());
-            return Result.success(data);
-            
-        } catch (AuthException e) {
-            log.error("用户登录失败，用户名：{}，错误：{}", loginParam.getUsername(), e.getMessage());
-            return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
-        } catch (BizException e) {
-            log.error("用户登录失败，用户名：{}，错误：{}", loginParam.getUsername(), e.getMessage());
-            return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
-        } catch (Exception e) {
-            log.error("用户登录异常，用户名：{}", loginParam.getUsername(), e);
-            return Result.error("LOGIN_ERROR", "登录失败，请稍后重试");
-        }
-    }
-
-    /**
-     * 登录或注册 - 核心功能！
-     * 基于Code项目设计哲学：用户不存在时自动注册
-     */
-    @PostMapping("/login-or-register")
-    @Operation(summary = "登录或注册", description = "如果用户不存在则自动注册，一个接口解决登录和注册需求")
-    public Result<Object> loginOrRegister(@Valid @RequestBody LoginOrRegisterParam param) {
-        try {
-            log.info("用户登录或注册请求，用户名：{}，邀请码：{}", param.getUsername(), param.getInviteCode());
-            
             // 查询用户是否存在
-            UserQueryRequest userQueryRequest = new UserQueryRequest();
-            UserUserNameQueryCondition condition = new UserUserNameQueryCondition();
-            condition.setUserName(param.getUsername());
-            userQueryRequest.setUserUserNameQueryCondition(condition);
+            UserUnifiedQueryRequest userQueryRequest = new UserUnifiedQueryRequest();
+            UserUsernameQueryCondition condition = new UserUsernameQueryCondition();
+            condition.setUsername(loginParam.getUsername());
+            userQueryRequest.setUserQueryCondition(condition);
             
-            UserQueryResponse<UserInfo> userQueryResponse = userFacadeService.query(userQueryRequest);
-            UserInfo userInfo = userQueryResponse.getData();
+            UserUnifiedQueryResponse<UserUnifiedInfo> userQueryResponse = userFacadeService.queryUser(userQueryRequest);
+            UserUnifiedInfo userInfo = userQueryResponse.getData();
             
             boolean isNewUser = false;
             
             if (userInfo == null) {
                 // 用户不存在，自动注册
-                log.info("用户{}不存在，执行自动注册", param.getUsername());
+                log.info("用户{}不存在，执行自动注册", loginParam.getUsername());
                 
-                UserRegisterRequest userRegisterRequest = new UserRegisterRequest();
-                userRegisterRequest.setUsername(param.getUsername());
-                userRegisterRequest.setPassword(param.getPassword());
-                userRegisterRequest.setInviteCode(param.getInviteCode());
+                UserUnifiedRegisterRequest userRegisterRequest = new UserUnifiedRegisterRequest();
+                userRegisterRequest.setUsername(loginParam.getUsername());
+                userRegisterRequest.setPassword(loginParam.getPassword());
+                userRegisterRequest.setInviteCode(loginParam.getInviteCode());
                 
-                UserOperatorResponse registerResult = userFacadeService.register(userRegisterRequest);
+                UserUnifiedRegisterResponse registerResult = userFacadeService.register(userRegisterRequest);
                 
                 if (registerResult.getSuccess()) {
                     // 注册成功，重新查询用户信息
-                    userQueryResponse = userFacadeService.query(userQueryRequest);
+                    userQueryResponse = userFacadeService.queryUser(userQueryRequest);
                     userInfo = userQueryResponse.getData();
                     isNewUser = true;
                     log.info("用户自动注册成功，用户ID：{}", userInfo.getUserId());
@@ -210,17 +157,26 @@ public class AuthController {
                     return Result.error(registerResult.getResponseCode(), registerResult.getResponseMessage());
                 }
             } else {
-                // 用户存在，验证密码（这里需要调用用户服务的密码验证）
-                // 临时实现：假设密码验证通过
-                log.info("用户{}存在，执行登录", param.getUsername());
+                // 用户存在，需要验证密码
+                log.info("用户{}存在，验证密码", loginParam.getUsername());
                 
                 if (userInfo.getStatus() != null && !"ACTIVE".equals(userInfo.getStatus())) {
                     throw new AuthException(AuthErrorCode.USER_STATUS_IS_NOT_ACTIVE);
                 }
+                
+                // 验证密码
+                Boolean isPasswordValid = userFacadeService.validatePassword(loginParam.getUsername(), loginParam.getPassword());
+                if (!isPasswordValid) {
+                    log.warn("用户{}密码验证失败", loginParam.getUsername());
+                    return Result.error("LOGIN_ERROR", "用户名或密码错误");
+                }
+                
+                log.info("用户{}密码验证成功", loginParam.getUsername());
             }
             
             // 设置登录会话
             StpUtil.login(userInfo.getUserId(), new SaLoginModel()
+                .setIsLastingCookie(loginParam.getRememberMe())
                 .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT));
             StpUtil.getSession().set(userInfo.getUserId().toString(), userInfo);
             
@@ -236,14 +192,14 @@ public class AuthController {
             return Result.success(data);
             
         } catch (AuthException e) {
-            log.error("用户登录或注册失败，用户名：{}，错误：{}", param.getUsername(), e.getMessage());
+            log.error("用户登录失败，用户名：{}，错误：{}", loginParam.getUsername(), e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (BizException e) {
-            log.error("用户登录或注册失败，用户名：{}，错误：{}", param.getUsername(), e.getMessage());
+            log.error("用户登录失败，用户名：{}，错误：{}", loginParam.getUsername(), e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {
-            log.error("用户登录或注册异常，用户名：{}", param.getUsername(), e);
-            return Result.error("LOGIN_REGISTER_ERROR", "操作失败，请稍后重试");
+            log.error("用户登录异常，用户名：{}", loginParam.getUsername(), e);
+            return Result.error("LOGIN_ERROR", "登录失败，请稍后重试");
         }
     }
 
@@ -335,16 +291,16 @@ public class AuthController {
     /**
      * 构建用户信息返回对象
      */
-    private Map<String, Object> buildUserInfo(UserInfo userInfo) {
+    private Map<String, Object> buildUserInfo(UserUnifiedInfo userInfo) {
         Map<String, Object> user = new HashMap<>();
         user.put("id", userInfo.getUserId());
         user.put("username", userInfo.getUsername());
         user.put("nickname", userInfo.getNickName());
-        user.put("avatar", userInfo.getProfilePhotoUrl());
         user.put("role", userInfo.getRole());
         user.put("status", userInfo.getStatus());
         user.put("createTime", userInfo.getCreateTime());
-        // TODO: 添加邀请码、邀请统计等字段
+        user.put("inviteCode", userInfo.getInviteCode());
+        user.put("inviterId", userInfo.getInviterId());
         return user;
     }
 
