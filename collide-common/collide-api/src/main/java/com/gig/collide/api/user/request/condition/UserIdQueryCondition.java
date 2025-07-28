@@ -2,6 +2,15 @@ package com.gig.collide.api.user.request.condition;
 
 import lombok.*;
 
+import java.util.List;
+
+/**
+ * 用户ID查询条件
+ *
+ * @author Collide Team
+ * @version 2.0
+ * @since 2024-01-01
+ */
 @Getter
 @Setter
 @ToString
@@ -15,4 +24,9 @@ public class UserIdQueryCondition implements UserQueryCondition {
      * 用户ID
      */
     private Long userId;
-}
+
+    /**
+     * 用户ID列表（支持多用户查询）
+     */
+    private List<Long> userIds;
+} 

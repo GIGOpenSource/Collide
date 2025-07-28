@@ -1,16 +1,7 @@
 package com.gig.collide.social.facade;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gig.collide.api.social.constant.SocialPostStatus;
-import com.gig.collide.api.social.constant.SocialPostType;
-import com.gig.collide.api.social.request.SocialPostCreateRequest;
-import com.gig.collide.api.social.request.SocialPostQueryRequest;
 import com.gig.collide.api.social.response.SocialPostResponse;
-import com.gig.collide.api.social.response.data.SocialPostInfo;
-import com.gig.collide.api.social.service.SocialFacadeService;
-import com.gig.collide.api.user.service.UserFacadeService;
-import com.gig.collide.api.user.request.UserQueryRequest;
-import com.gig.collide.api.user.request.condition.UserIdQueryCondition;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
 import com.gig.collide.base.response.PageResponse;
@@ -27,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;

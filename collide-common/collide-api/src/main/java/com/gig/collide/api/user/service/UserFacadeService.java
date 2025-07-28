@@ -1,66 +1,114 @@
 package com.gig.collide.api.user.service;
 
 import com.gig.collide.api.user.request.*;
-import com.gig.collide.api.user.response.UserOperatorResponse;
-import com.gig.collide.api.user.response.UserQueryResponse;
-import com.gig.collide.api.user.response.data.UserInfo;
+import com.gig.collide.api.user.response.*;
+import com.gig.collide.api.user.response.data.UserUnifiedInfo;
+import com.gig.collide.api.user.response.data.BasicUserUnifiedInfo;
 import com.gig.collide.base.response.PageResponse;
 
 /**
  * 用户门面服务接口
- *
+ * 提供用户核心业务功能
+ * 
  * @author Collide Team
- * @version 1.0
+ * @version 2.0
  * @since 2024-01-01
  */
 public interface UserFacadeService {
 
     /**
-     * 用户信息查询
+     * 用户统一信息查询
+     * 
      * @param userQueryRequest 查询请求
-     * @return 用户信息响应
+     * @return 查询响应
      */
-    UserQueryResponse<UserInfo> query(UserQueryRequest userQueryRequest);
+    UserUnifiedQueryResponse<UserUnifiedInfo> queryUser(UserUnifiedQueryRequest userQueryRequest);
+
+    /**
+     * 基础用户信息查询（不包含敏感信息）
+     * 
+     * @param userQueryRequest 查询请求
+     * @return 基础用户信息响应
+     */
+    UserUnifiedQueryResponse<BasicUserUnifiedInfo> queryBasicUser(UserUnifiedQueryRequest userQueryRequest);
 
     /**
      * 分页查询用户信息
-     * @param userPageQueryRequest 分页查询请求
-     * @return 分页用户信息响应
+     * 
+     * @param userQueryRequest 分页查询请求
+     * @return 分页响应
      */
-    PageResponse<UserInfo> pageQuery(UserPageQueryRequest userPageQueryRequest);
+    PageResponse<UserUnifiedInfo> pageQueryUsers(UserUnifiedQueryRequest userQueryRequest);
 
     /**
      * 用户注册
-     * @param userRegisterRequest 注册请求
-     * @return 操作结果响应
+     * 
+     * @param registerRequest 注册请求
+     * @return 注册响应
      */
-    UserOperatorResponse register(UserRegisterRequest userRegisterRequest);
+    UserUnifiedRegisterResponse register(UserUnifiedRegisterRequest registerRequest);
 
     /**
      * 用户信息修改
-     * @param userModifyRequest 修改请求
-     * @return 操作结果响应
+     * 
+     * @param modifyRequest 修改请求
+     * @return 修改响应
      */
-    UserOperatorResponse modify(UserModifyRequest userModifyRequest);
-
-    /**
-     * 用户实名认证
-     * @param userAuthRequest 认证请求
-     * @return 操作结果响应
-     */
-    UserOperatorResponse auth(UserAuthRequest userAuthRequest);
+    UserUnifiedModifyResponse modify(UserUnifiedModifyRequest modifyRequest);
 
     /**
      * 用户激活
-     * @param userActiveRequest 激活请求
-     * @return 操作结果响应
+     * 
+     * @param activateRequest 激活请求
+     * @return 激活响应
      */
-    UserOperatorResponse active(UserActiveRequest userActiveRequest);
+    UserUnifiedActivateResponse activate(UserUnifiedActivateRequest activateRequest);
 
     /**
-     * 用户状态更新
-     * @param userStatusRequest 状态更新请求
-     * @return 操作结果响应
+     * 申请博主认证
+     * 
+     * @param applyRequest 申请请求
+     * @return 申请响应
      */
-    UserOperatorResponse updateStatus(UserStatusRequest userStatusRequest);
-}
+    UserUnifiedBloggerApplyResponse applyBlogger(UserUnifiedBloggerApplyRequest applyRequest);
+
+    /**
+     * 获取用户详细信息（包含博主信息）
+     * 
+     * @param userId 用户ID
+     * @return 用户详细信息
+     */
+    UserUnifiedQueryResponse<UserUnifiedInfo> getUserWithBloggerInfo(Long userId);
+
+    /**
+     * 检查用户名是否可用
+     * 
+     * @param username 用户名
+     * @return 是否可用
+     */
+    Boolean checkUsernameAvailable(String username);
+
+    /**
+     * 检查邮箱是否可用
+     * 
+     * @param email 邮箱
+     * @return 是否可用
+     */
+    Boolean checkEmailAvailable(String email);
+
+    /**
+     * 检查手机号是否可用
+     * 
+     * @param phone 手机号
+     * @return 是否可用
+     */
+    Boolean checkPhoneAvailable(String phone);
+
+    /**
+     * 生成用户邀请码
+     * 
+     * @param userId 用户ID
+     * @return 邀请码
+     */
+    String generateInviteCode(Long userId);
+} 

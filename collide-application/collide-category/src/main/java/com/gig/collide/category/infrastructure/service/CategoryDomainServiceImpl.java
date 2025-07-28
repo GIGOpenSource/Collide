@@ -13,6 +13,7 @@ import com.gig.collide.category.domain.entity.Category;
 import com.gig.collide.category.domain.repository.CategoryRepository;
 import com.gig.collide.category.domain.service.CategoryDomainService;
 import com.gig.collide.category.infrastructure.cache.CategoryCacheService;
+import com.gig.collide.rpc.facade.Facade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

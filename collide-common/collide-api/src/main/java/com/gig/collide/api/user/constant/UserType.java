@@ -1,5 +1,12 @@
 package com.gig.collide.api.user.constant;
 
+/**
+ * 用户类型枚举
+ * 
+ * @author Collide Team
+ * @version 2.0
+ * @since 2024-01-01
+ */
 public enum UserType {
 
     /**
@@ -8,26 +15,46 @@ public enum UserType {
     CUSTOMER("普通用户"),
 
     /**
-     * 付费用户
+     * 博主用户
      */
-    PRO("付费用户"),
+    BLOGGER("博主用户"),
 
     /**
-     * 平台
+     * 企业用户
      */
-    PLATFORM("平台");
+    ENTERPRISE("企业用户"),
 
-    private String desc;
+    /**
+     * 平台用户
+     */
+    PLATFORM("平台用户"),
 
-    UserType(String desc) {
-        this.desc = desc;
+    /**
+     * 系统用户
+     */
+    SYSTEM("系统用户");
+
+    private final String description;
+
+    UserType(String description) {
+        this.description = description;
     }
 
-    public String getDesc() {
-        return desc;
+    public String getDescription() {
+        return description;
     }
 
-    public void setDesc(String desc) {
-        this.desc = desc;
+    /**
+     * 检查是否为内部用户
+     */
+    public boolean isInternalUser() {
+        return this == PLATFORM || this == SYSTEM;
     }
-}
+
+    /**
+     * 检查是否为内容创作者
+     */
+    public boolean isContentCreator() {
+        return this == BLOGGER || this == ENTERPRISE;
+    }
+} 

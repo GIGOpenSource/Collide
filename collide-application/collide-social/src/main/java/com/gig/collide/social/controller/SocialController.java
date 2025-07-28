@@ -1,11 +1,7 @@
 package com.gig.collide.social.controller;
 
-import com.gig.collide.api.social.request.SocialPostCreateRequest;
-import com.gig.collide.api.social.request.SocialPostQueryRequest;
 import com.gig.collide.api.social.response.SocialPostResponse;
-import com.gig.collide.api.social.response.data.SocialPostInfo;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.api.social.service.SocialFacadeService;
 import com.gig.collide.web.vo.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

@@ -4,8 +4,6 @@ import com.gig.collide.api.user.constant.UserRole;
 import com.gig.collide.api.user.constant.UserStateEnum;
 import com.gig.collide.users.domain.entity.UserUnified;
 import com.gig.collide.users.domain.repository.UserUnifiedRepository;
-import com.gig.collide.api.user.request.UserModifyRequest;
-import com.gig.collide.api.user.request.UserRegisterRequest;
 import com.gig.collide.base.exception.BizException;
 import com.gig.collide.users.infrastructure.exception.UserErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +22,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
-import java.util.Random;
 import java.util.List;
 import java.util.Map;
 

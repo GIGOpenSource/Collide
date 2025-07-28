@@ -2,6 +2,15 @@ package com.gig.collide.api.user.request.condition;
 
 import lombok.*;
 
+import java.util.List;
+
+/**
+ * 手机号查询条件
+ *
+ * @author Collide Team
+ * @version 2.0
+ * @since 2024-01-01
+ */
 @Getter
 @Setter
 @ToString
@@ -12,7 +21,17 @@ public class UserPhoneQueryCondition implements UserQueryCondition {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 用户手机号
+     * 手机号
      */
-    private String telephone;
-}
+    private String phone;
+
+    /**
+     * 手机号列表（支持多手机号查询）
+     */
+    private List<String> phones;
+
+    /**
+     * 手机号模糊匹配
+     */
+    private String phoneLike;
+} 

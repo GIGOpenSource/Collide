@@ -2,20 +2,12 @@ package com.gig.collide.users.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
-import com.gig.collide.api.user.constant.UserRole;
-import com.gig.collide.api.user.constant.UserStateEnum;
-import com.gig.collide.api.user.request.UserActiveRequest;
-import com.gig.collide.api.user.request.UserModifyRequest;
-import com.gig.collide.api.user.request.UserPageQueryRequest;
-import com.gig.collide.api.user.request.UserStatusRequest;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
-import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserUnified;
-import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserDomainService;
-import com.gig.collide.users.infrastructure.exception.UserBusinessException;
+import com.gig.collide.users.infrastructure.exception.UserException;
 import com.gig.collide.web.vo.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,7 +52,7 @@ public class UserController {
             UserUnified user = userDomainService.getUserById(userId);
             UserInfo userInfo = convertToUserInfo(user);
             return Result.success(userInfo);
-        } catch (UserBusinessException e) {
+        } catch (UserException e) {
             log.error("获取当前用户信息失败：{}", e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {
@@ -80,7 +72,7 @@ public class UserController {
             UserUnified user = userDomainService.getUserById(userId);
             UserInfo userInfo = convertToUserInfo(user);
             return Result.success(userInfo);
-        } catch (UserBusinessException e) {
+        } catch (UserException e) {
             log.error("获取用户信息失败：{}", e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {
@@ -108,7 +100,7 @@ public class UserController {
             } else {
                 return Result.error(response.getResponseCode(), response.getResponseMessage());
             }
-        } catch (UserBusinessException e) {
+        } catch (UserException e) {
             log.error("更新用户信息失败：{}", e.getMessage());
             return Result.error(e.getErrorCode().getCode(), e.getErrorCode().getMessage());
         } catch (Exception e) {

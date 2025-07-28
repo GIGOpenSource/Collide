@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserUnifiedMapper">
+    <!-- Generate by Collide Team Date: 2024-01-27 去连表设计 v2.0.0 -->
+
+    <resultMap id="userUnifiedMap" type="com.gig.collide.users.domain.entity.UserUnified">
+        <!-- 基础字段 -->
+        <result property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatar" column="avatar"/>
+        <result property="email" column="email"/>
+        <result property="phone" column="phone"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="salt" column="salt"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+
+        <!-- 扩展信息字段（原UserProfile字段）-->
+        <result property="bio" column="bio"/>
+        <result property="birthday" column="birthday"/>
+        <result property="gender" column="gender"/>
+        <result property="location" column="location"/>
+
+        <!-- 统计字段（冗余设计，避免连表统计）-->
+        <result property="followerCount" column="follower_count"/>
+        <result property="followingCount" column="following_count"/>
+        <result property="contentCount" column="content_count"/>
+        <result property="likeCount" column="like_count"/>
+        <result property="loginCount" column="login_count"/>
+
+        <!-- VIP相关字段 -->
+        <result property="vipExpireTime" column="vip_expire_time"/>
+
+        <!-- 博主认证字段 -->
+        <result property="bloggerStatus" column="blogger_status"/>
+        <result property="bloggerApplyTime" column="blogger_apply_time"/>
+        <result property="bloggerApproveTime" column="blogger_approve_time"/>
+
+        <!-- 登录相关字段 -->
+        <result property="lastLoginTime" column="last_login_time"/>
+
+        <!-- 邀请相关字段 -->
+        <result property="inviteCode" column="invite_code"/>
+        <result property="inviterId" column="inviter_id"/>
+        <result property="invitedCount" column="invited_count"/>
+
+        <!-- 系统字段 -->
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="deleted" column="deleted"/>
+        <result property="version" column="version"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, username, nickname, avatar, email, phone, password_hash, salt, role, status,
+        bio, birthday, gender, location,
+        follower_count, following_count, content_count, like_count, login_count,
+        vip_expire_time, blogger_status, blogger_apply_time, blogger_approve_time,
+        last_login_time, invite_code, inviter_id, invited_count,
+        create_time, update_time, deleted, version
+    </sql>
+
+    <!-- 根据用户名查询用户（利用唯一索引）-->
+    <select id="selectByUsername" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (uk_username)
+        WHERE username = #{username} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据邮箱查询用户（利用唯一索引）-->
+    <select id="selectByEmail" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (uk_email)
+        WHERE email = #{email} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据手机号查询用户（利用唯一索引）-->
+    <select id="selectByPhone" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (uk_phone)
+        WHERE phone = #{phone} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 根据邀请码查询用户（利用唯一索引）-->
+    <select id="selectByInviteCode" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (uk_invite_code)
+        WHERE invite_code = #{inviteCode} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 搜索用户（单表搜索，支持关键词模糊匹配）-->
+    <select id="searchUsers" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>,
+               (CASE 
+                 WHEN username LIKE CONCAT('%', #{keyword}, '%') THEN 10
+                 WHEN nickname LIKE CONCAT('%', #{keyword}, '%') THEN 8
+                 WHEN bio LIKE CONCAT('%', #{keyword}, '%') THEN 5
+                 ELSE 1 END) AS relevance_score
+        FROM t_user_unified 
+        WHERE deleted = 0 AND status = 'active'
+        <if test="keyword != null and keyword != ''">
+          AND (username LIKE CONCAT('%', #{keyword}, '%') 
+               OR nickname LIKE CONCAT('%', #{keyword}, '%') 
+               OR bio LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+        ORDER BY relevance_score DESC, create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计搜索结果数量 -->
+    <select id="countSearchUsers" resultType="long">
+        SELECT COUNT(*) FROM t_user_unified 
+        WHERE deleted = 0 AND status = 'active'
+        <if test="keyword != null and keyword != ''">
+          AND (username LIKE CONCAT('%', #{keyword}, '%') 
+               OR nickname LIKE CONCAT('%', #{keyword}, '%') 
+               OR bio LIKE CONCAT('%', #{keyword}, '%'))
+        </if>
+    </select>
+
+    <!-- 根据博主状态查询用户列表 -->
+    <select id="selectByBloggerStatus" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (idx_blogger_status)
+        WHERE deleted = 0 AND blogger_status = #{bloggerStatus}
+        ORDER BY blogger_apply_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计各种博主状态的用户数量 -->
+    <select id="countByBloggerStatus" resultType="long">
+        SELECT COUNT(*) FROM t_user_unified 
+        WHERE deleted = 0 AND blogger_status = #{bloggerStatus}
+    </select>
+
+    <!-- 根据邀请人ID查询被邀请用户列表（利用索引）-->
+    <select id="selectByInviterId" resultMap="userUnifiedMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_unified USE INDEX (idx_inviter_id)
+        WHERE deleted = 0 AND inviter_id = #{inviterId}
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 获取邀请排行榜（根据邀请人数排序）-->
+    <select id="selectInviteRankingList" resultMap="userUnifiedMap">
+        SELECT id, username, nickname, avatar, role, invited_count,
+               create_time, update_time, deleted, version
+        FROM t_user_unified 
+        WHERE deleted = 0 AND invited_count > 0
+        ORDER BY invited_count DESC, create_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 批量更新用户统计字段（使用存储过程）-->
+    <update id="batchUpdateStatistics">
+        CALL UpdateUserStatistics(#{userId}, #{fieldName}, #{incrementValue})
+    </update>
+
+    <!-- 获取用户关键信息（精简字段，提高查询效率）-->
+    <select id="selectKeyInfoById" resultMap="userUnifiedMap">
+        SELECT id, username, nickname, avatar, role, status, 
+               follower_count, following_count, content_count, like_count,
+               blogger_status, vip_expire_time, last_login_time,
+               create_time, update_time, deleted, version
+        FROM t_user_unified 
+        WHERE id = #{userId} AND deleted = 0
+        LIMIT 1
+    </select>
+
+    <!-- 检查用户名是否存在 -->
+    <select id="existsByUsername" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_unified 
+        WHERE username = #{username} AND deleted = 0
+    </select>
+
+    <!-- 检查邮箱是否存在 -->
+    <select id="existsByEmail" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_unified 
+        WHERE email = #{email} AND deleted = 0
+    </select>
+
+    <!-- 检查手机号是否存在 -->
+    <select id="existsByPhone" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_unified 
+        WHERE phone = #{phone} AND deleted = 0
+    </select>
+
+    <!-- 检查邀请码是否存在 -->
+    <select id="existsByInviteCode" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_unified 
+        WHERE invite_code = #{inviteCode} AND deleted = 0
+    </select>
+
+    <!-- 获取活跃用户统计（最近N天登录的用户）-->
+    <select id="countActiveUsers" resultType="long">
+        SELECT COUNT(*) FROM t_user_unified 
+        WHERE deleted = 0 AND status = 'active'
+        AND last_login_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </select>
+
+    <!-- 获取用户统计信息（全局统计）-->
+    <select id="getUserStatistics" resultType="map">
+        SELECT 
+            COUNT(*) as total_users,
+            COUNT(CASE WHEN status = 'active' THEN 1 END) as active_users,
+            COUNT(CASE WHEN role = 'blogger' THEN 1 END) as blogger_users,
+            COUNT(CASE WHEN role = 'vip' THEN 1 END) as vip_users,
+            COUNT(CASE WHEN blogger_status = 'applying' THEN 1 END) as applying_bloggers
+        FROM t_user_unified 
+        WHERE deleted = 0
+    </select>
+
+    <!-- 幂等性更新用户状态（使用乐观锁）-->
+    <update id="updateStatusIdempotent">
+        UPDATE t_user_unified 
+        SET status = #{newStatus}, version = version + 1, update_time = NOW() 
+        WHERE id = #{userId} AND status = #{expectedStatus} AND version = #{version} AND deleted = 0
+    </update>
+
+    <!-- 幂等性更新用户角色（使用乐观锁）-->
+    <update id="updateRoleIdempotent">
+        UPDATE t_user_unified 
+        SET role = #{newRole}, version = version + 1, update_time = NOW() 
+        WHERE id = #{userId} AND role = #{expectedRole} AND version = #{version} AND deleted = 0
+    </update>
+
+    <!-- 幂等性更新博主状态（使用乐观锁）-->
+    <update id="updateBloggerStatusIdempotent">
+        UPDATE t_user_unified 
+        SET blogger_status = #{newStatus}, 
+            blogger_approve_time = CASE WHEN #{newStatus} = 'approved' THEN NOW() ELSE blogger_approve_time END,
+            version = version + 1, 
+            update_time = NOW() 
+        WHERE id = #{userId} AND blogger_status = #{expectedStatus} AND version = #{version} AND deleted = 0
+    </update>
+
+</mapper> 

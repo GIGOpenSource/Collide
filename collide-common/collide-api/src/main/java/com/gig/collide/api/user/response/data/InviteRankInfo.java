@@ -21,10 +21,5 @@ public class InviteRankInfo {
      * 邀请码
      */
     private String inviteCode;
-
-    /**
-     * 邀请积分
-     */
-    private Integer inviteScore;
 }
 

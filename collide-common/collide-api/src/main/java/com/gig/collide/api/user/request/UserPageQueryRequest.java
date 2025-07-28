@@ -1,44 +1,33 @@
 package com.gig.collide.api.user.request;
 
 import com.gig.collide.base.request.BaseRequest;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 /**
- * 用户分页查询请求
- *
- * @author Collide Team
- * @version 1.0
- * @since 2024-01-01
+ * @author Hollis
  */
 @Setter
 @Getter
 @ToString
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserPageQueryRequest extends BaseRequest {
 
     /**
-     * 页码（从1开始）
+     * 手机号关键字
      */
-    private Integer pageNum = 1;
-
+    private String keyWord;
     /**
-     * 每页大小
+     * 用户状态
      */
-    private Integer pageSize = 10;
-
+    private String state;
     /**
-     * 用户名关键词搜索
+     * 当前页
      */
-    private String usernameKeyword;
-
+    private int currentPage;
     /**
-     * 用户状态过滤
+     * 页面大小
      */
-    private String status;
+    private int pageSize;
 
-    /**
-     * 用户角色过滤
-     */
-    private String role;
 }

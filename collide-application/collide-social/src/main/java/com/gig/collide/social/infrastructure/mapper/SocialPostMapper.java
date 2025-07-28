@@ -3,8 +3,6 @@ package com.gig.collide.social.infrastructure.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gig.collide.api.social.constant.SocialPostStatus;
-import com.gig.collide.api.social.constant.SocialPostType;
 import com.gig.collide.social.domain.entity.SocialPost;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

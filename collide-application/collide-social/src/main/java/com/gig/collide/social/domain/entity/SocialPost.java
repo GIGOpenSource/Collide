@@ -2,8 +2,6 @@ package com.gig.collide.social.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
-import com.gig.collide.api.social.constant.SocialPostType;
-import com.gig.collide.api.social.constant.SocialPostStatus;
 import lombok.Data;
 
 import java.time.LocalDateTime;

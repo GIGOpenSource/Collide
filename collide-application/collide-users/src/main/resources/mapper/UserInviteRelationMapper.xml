@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserInviteRelationMapper">
+    <!-- Generate by Collide Team Date: 2024-01-27 去连表设计 v2.0.0 -->
+
+    <resultMap id="userInviteRelationMap" type="com.gig.collide.users.domain.entity.UserInviteRelation">
+        <result property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="inviterId" column="inviter_id"/>
+        <result property="inviteCode" column="invite_code"/>
+        <result property="inviteLevel" column="invite_level"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, user_id, inviter_id, invite_code, invite_level, create_time
+    </sql>
+
+    <!-- 根据邀请人ID查询被邀请用户关系 -->
+    <select id="selectByInviterId" resultMap="userInviteRelationMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_invite_relation USE INDEX (idx_inviter_id)
+        WHERE inviter_id = #{inviterId}
+        <if test="inviteLevel != null">
+            AND invite_level = #{inviteLevel}
+        </if>
+        ORDER BY create_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据被邀请用户ID查询邀请关系 -->
+    <select id="selectByUserId" resultMap="userInviteRelationMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_invite_relation 
+        WHERE user_id = #{userId}
+        LIMIT 1
+    </select>
+
+    <!-- 统计邀请人的各级邀请数量 -->
+    <select id="countInvitesByLevel" resultType="map">
+        SELECT 
+            invite_level,
+            COUNT(*) as count,
+            COUNT(DISTINCT user_id) as unique_users
+        FROM t_user_invite_relation 
+        WHERE inviter_id = #{inviterId}
+        GROUP BY invite_level
+        ORDER BY invite_level ASC
+    </select>
+
+    <!-- 获取邀请链路（递归查询上级邀请关系）-->
+    <select id="selectInviteChain" resultMap="userInviteRelationMap">
+        WITH RECURSIVE invite_chain AS (
+            -- 基础查询：查找指定用户的直接邀请关系
+            SELECT <include refid="Base_Column_List"/>, 1 as level
+            FROM t_user_invite_relation 
+            WHERE user_id = #{userId}
+            
+            UNION ALL
+            
+            -- 递归查询：查找上级邀请关系
+            SELECT r.<include refid="Base_Column_List"/>, ic.level + 1 as level
+            FROM t_user_invite_relation r
+            INNER JOIN invite_chain ic ON r.user_id = ic.inviter_id
+            WHERE ic.level < #{maxLevel}
+        )
+        SELECT * FROM invite_chain
+        ORDER BY level ASC
+    </select>
+
+    <!-- 获取邀请排行榜 -->
+    <select id="getInviteRanking" resultType="map">
+        SELECT 
+            inviter_id,
+            COUNT(*) as total_invites,
+            COUNT(DISTINCT user_id) as unique_invites,
+            MIN(create_time) as first_invite_time,
+            MAX(create_time) as last_invite_time
+        FROM t_user_invite_relation 
+        WHERE create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="inviteLevel != null">
+            AND invite_level = #{inviteLevel}
+        </if>
+        GROUP BY inviter_id
+        HAVING total_invites > 0
+        ORDER BY total_invites DESC, first_invite_time ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 统计时间段内的邀请数据 -->
+    <select id="getInviteStatistics" resultType="map">
+        SELECT 
+            COUNT(*) as total_invites,
+            COUNT(DISTINCT user_id) as unique_invited_users,
+            COUNT(DISTINCT inviter_id) as unique_inviters,
+            COUNT(CASE WHEN invite_level = 1 THEN 1 END) as direct_invites,
+            COUNT(CASE WHEN invite_level = 2 THEN 1 END) as second_level_invites,
+            COUNT(CASE WHEN invite_level >= 3 THEN 1 END) as third_plus_level_invites,
+            AVG(invite_level) as avg_invite_level
+        FROM t_user_invite_relation 
+        WHERE create_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 检查是否存在邀请关系 -->
+    <select id="existsInviteRelation" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_invite_relation 
+        WHERE user_id = #{userId} AND inviter_id = #{inviterId}
+    </select>
+
+</mapper> 

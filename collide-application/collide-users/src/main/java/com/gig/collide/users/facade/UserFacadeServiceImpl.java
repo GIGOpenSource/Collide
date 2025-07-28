@@ -1,16 +1,11 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.request.*;
-import com.gig.collide.api.user.request.condition.UserIdQueryCondition;
-import com.gig.collide.api.user.request.condition.UserUserNameQueryCondition;
-import com.gig.collide.api.user.request.condition.UserPhoneQueryCondition;
 import com.gig.collide.api.user.response.UserOperatorResponse;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
-import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserUnified;
-import com.gig.collide.users.domain.entity.convertor.UserConvertor;
 import com.gig.collide.users.domain.service.UserDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -51,15 +51,14 @@ public enum UserErrorCode implements ErrorCode {
     PARAMETER_ERROR("SYSTEM_002", "参数错误"),
     DATA_NOT_FOUND("SYSTEM_003", "数据不存在");
 
-    /**
-     * 错误码
-     */
-    private final String code;
+    private String code;
 
-    /**
-     * 错误信息
-     */
-    private final String message;
+    private String message;
+
+    UserErrorCode(String code, String message) {
+        this.code = code;
+        this.message = message;
+    }
 
     @Override
     public String getCode() {

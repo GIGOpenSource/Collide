@@ -1,6 +1,5 @@
 package com.gig.collide.users.infrastructure.repository;
 
-import com.gig.collide.users.domain.entity.UserProfile;
 import com.gig.collide.users.domain.repository.UserProfileRepository;
 import com.gig.collide.users.infrastructure.mapper.UserProfileMapper;
 import lombok.RequiredArgsConstructor;

@@ -1,0 +1,32 @@
+package com.gig.collide.api.user.request.condition;
+
+import lombok.*;
+
+import java.util.List;
+
+/**
+ * 用户邀请关系-被邀请用户ID查询条件
+ *
+ * @author Collide Team
+ * @version 2.0
+ * @since 2024-01-01
+ */
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+public class UserInviteRelationUserIdQueryCondition implements UserQueryCondition {
+
+    private static final long serialVersionUID = 1L;
+
+    /**
+     * 被邀请用户ID
+     */
+    private Long userId;
+
+    /**
+     * 被邀请用户ID列表（支持多用户查询）
+     */
+    private List<Long> userIds;
+} 

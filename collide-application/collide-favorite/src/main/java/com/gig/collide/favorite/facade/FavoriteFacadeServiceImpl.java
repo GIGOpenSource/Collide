@@ -19,14 +19,8 @@ import com.gig.collide.api.content.service.ContentFacadeService;
 import com.gig.collide.api.content.request.ContentQueryRequest;
 import com.gig.collide.api.content.response.ContentQueryResponse;
 import com.gig.collide.api.content.response.data.ContentInfo;
-import com.gig.collide.api.user.service.UserFacadeService;
-import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.response.UserQueryResponse;
 import com.gig.collide.api.user.response.data.UserInfo;
-import com.gig.collide.api.social.service.SocialFacadeService;
-import com.gig.collide.api.social.request.SocialPostQueryRequest;
-import com.gig.collide.api.social.response.SocialPostResponse;
-import com.gig.collide.api.social.response.data.SocialPostInfo;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -42,7 +36,7 @@ import java.util.stream.Collectors;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import com.gig.collide.api.user.request.condition.UserIdQueryCondition;
+
 import com.gig.collide.favorite.domain.entity.FavoriteFolder;
 
 /**

@@ -1,12 +1,10 @@
 package com.gig.collide;
 
 
-import com.gig.collide.api.social.service.SocialFacadeService;
 import com.gig.collide.api.favorite.service.FavoriteFacadeService;
 import com.gig.collide.api.comment.service.CommentFacadeService;
 import com.gig.collide.api.content.service.ContentFacadeService;
 import com.gig.collide.api.follow.service.FollowFacadeService;
-import com.gig.collide.api.user.service.UserFacadeService;
 import com.gig.collide.api.like.service.LikeFacadeService;
 import com.gig.collide.api.auth.service.AuthFacadeService;
 import com.gig.collide.api.category.CategoryFacadeService;

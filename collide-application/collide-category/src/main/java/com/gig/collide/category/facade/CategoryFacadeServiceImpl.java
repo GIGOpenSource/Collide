@@ -13,6 +13,7 @@ import com.gig.collide.category.domain.service.CategoryDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -30,7 +31,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CategoryFacadeServiceImpl implements CategoryFacadeService {
 
-    private final CategoryDomainService categoryDomainService;
+    @Autowired
+    private CategoryDomainService categoryDomainService;
 
     @Override
     public CategoryOperatorResponse createCategory(CategoryCreateRequest request) {
