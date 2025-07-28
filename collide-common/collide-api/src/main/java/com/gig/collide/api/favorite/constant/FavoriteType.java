@@ -1,51 +1,67 @@
 package com.gig.collide.api.favorite.constant;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 收藏类型枚举
- *
+ * 
  * @author Collide Team
  * @version 1.0
  * @since 2024-01-01
  */
-@Getter
-@AllArgsConstructor
 public enum FavoriteType {
 
     /**
-     * 内容收藏 - 收藏视频、图片、文章等内容
+     * 内容收藏
      */
-    CONTENT("CONTENT", "内容收藏"),
+    CONTENT("内容"),
 
     /**
-     * 用户收藏 - 收藏感兴趣的用户/博主
+     * 用户收藏
      */
-    USER("USER", "用户收藏"),
+    USER("用户"),
 
     /**
-     * 评论收藏 - 收藏精彩评论
+     * 动态收藏
      */
-    COMMENT("COMMENT", "评论收藏"),
+    SOCIAL("动态"),
 
     /**
-     * 话题收藏 - 收藏话题标签
+     * 评论收藏
      */
-    TOPIC("TOPIC", "话题收藏"),
+    COMMENT("评论"),
 
     /**
-     * 动态收藏 - 收藏朋友圈动态
+     * 话题收藏
      */
-    SOCIAL("SOCIAL", "动态收藏");
+    TOPIC("话题");
 
-    /**
-     * 类型代码
-     */
-    private final String code;
-
-    /**
-     * 类型描述
-     */
     private final String description;
+
+    FavoriteType(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * 检查是否为内容相关类型
+     */
+    public boolean isContentRelated() {
+        return this == CONTENT || this == SOCIAL || this == COMMENT;
+    }
+
+    /**
+     * 检查是否为用户相关类型
+     */
+    public boolean isUserRelated() {
+        return this == USER;
+    }
+
+    /**
+     * 检查是否为可评论的类型
+     */
+    public boolean isCommentable() {
+        return this == CONTENT || this == SOCIAL;
+    }
 } 

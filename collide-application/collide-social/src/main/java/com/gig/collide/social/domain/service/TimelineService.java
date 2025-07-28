@@ -2,8 +2,6 @@ package com.gig.collide.social.domain.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gig.collide.api.follow.service.FollowFacadeService;
-import com.gig.collide.api.follow.request.FollowQueryRequest;
 import com.gig.collide.api.follow.response.data.FollowInfo;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.social.domain.entity.SocialPost;

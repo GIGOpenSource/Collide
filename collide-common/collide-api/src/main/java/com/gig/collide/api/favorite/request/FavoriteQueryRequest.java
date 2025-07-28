@@ -1,77 +1,76 @@
 package com.gig.collide.api.favorite.request;
 
-import com.gig.collide.api.favorite.constant.FavoriteType;
-import com.gig.collide.api.favorite.constant.FavoriteStatus;
-import com.gig.collide.base.request.PageRequest;
+import com.gig.collide.api.favorite.constant.FavoriteSortType;
+import com.gig.collide.api.favorite.request.condition.FavoriteQueryCondition;
+import com.gig.collide.base.request.BaseRequest;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import lombok.*;
+
+import java.util.List;
 
 /**
  * 收藏查询请求
- *
+ * 
  * @author Collide Team
  * @version 1.0
  * @since 2024-01-01
  */
-@Data
-@EqualsAndHashCode(callSuper = true)
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
 @Schema(description = "收藏查询请求")
-public class FavoriteQueryRequest extends PageRequest {
+public class FavoriteQueryRequest extends BaseRequest {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 收藏ID（查询单个收藏时使用）
+     * 查询条件列表
      */
-    @Schema(description = "收藏ID", example = "123")
-    private Long favoriteId;
+    @Valid
+    @Schema(description = "查询条件列表")
+    private List<FavoriteQueryCondition> conditions;
 
     /**
-     * 收藏类型
+     * 排序字段
      */
-    @Schema(description = "收藏类型", example = "CONTENT")
-    private FavoriteType favoriteType;
+    @Schema(description = "排序字段", example = "FAVORITE_TIME")
+    private FavoriteSortType sortType;
 
     /**
-     * 收藏用户ID
+     * 是否升序排序
      */
-    @Schema(description = "收藏用户ID", example = "456")
-    private Long userId;
+    @Schema(description = "是否升序排序", example = "false")
+    private Boolean ascending = false;
 
     /**
-     * 目标ID（内容ID、用户ID等）
+     * 页码（从1开始）
      */
-    @Schema(description = "目标ID", example = "789")
-    private Long targetId;
+    @Min(value = 1, message = "页码必须大于0")
+    @Schema(description = "页码", example = "1")
+    private Integer pageNum = 1;
 
     /**
-     * 收藏夹ID
+     * 页大小
      */
-    @Schema(description = "收藏夹ID", example = "101112")
-    private Long folderId;
+    @Min(value = 1, message = "页大小必须大于0")
+    @Max(value = 100, message = "页大小不能超过100")
+    @Schema(description = "页大小", example = "20")
+    private Integer pageSize = 20;
 
     /**
-     * 收藏状态
+     * 是否包含已删除数据
      */
-    @Schema(description = "收藏状态", example = "NORMAL")
-    private FavoriteStatus status;
+    @Schema(description = "是否包含已删除数据", example = "false")
+    private Boolean includeDeleted = false;
 
     /**
-     * 查询用户ID（用于权限判断）
+     * 是否只返回统计信息
      */
-    @Schema(description = "查询用户ID", example = "456")
-    private Long currentUserId;
-
-    /**
-     * 排序方式（time: 时间排序）
-     */
-    @Schema(description = "排序方式", example = "time")
-    private String sortBy = "time";
-
-    /**
-     * 排序方向（asc: 升序, desc: 降序）
-     */
-    @Schema(description = "排序方向", example = "desc")
-    private String sortOrder = "desc";
+    @Schema(description = "是否只返回统计信息", example = "false")
+    private Boolean countOnly = false;
 } 

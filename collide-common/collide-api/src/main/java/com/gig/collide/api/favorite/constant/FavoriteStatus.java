@@ -1,46 +1,45 @@
 package com.gig.collide.api.favorite.constant;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-
 /**
  * 收藏状态枚举
- *
+ * 
  * @author Collide Team
  * @version 1.0
  * @since 2024-01-01
  */
-@Getter
-@AllArgsConstructor
 public enum FavoriteStatus {
 
     /**
-     * 正常收藏
+     * 已取消
      */
-    NORMAL("NORMAL", "正常"),
+    CANCELLED("已取消"),
 
     /**
-     * 已取消收藏
+     * 正常
      */
-    CANCELLED("CANCELLED", "已取消"),
+    NORMAL("正常");
 
-    /**
-     * 收藏内容已删除
-     */
-    TARGET_DELETED("TARGET_DELETED", "目标已删除"),
-
-    /**
-     * 收藏内容不可见（私有或屏蔽）
-     */
-    TARGET_INVISIBLE("TARGET_INVISIBLE", "目标不可见");
-
-    /**
-     * 状态代码
-     */
-    private final String code;
-
-    /**
-     * 状态描述
-     */
     private final String description;
+
+    FavoriteStatus(String description) {
+        this.description = description;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    /**
+     * 检查是否为有效状态（可显示）
+     */
+    public boolean isActive() {
+        return this == NORMAL;
+    }
+
+    /**
+     * 检查是否已取消
+     */
+    public boolean isCancelled() {
+        return this == CANCELLED;
+    }
 } 

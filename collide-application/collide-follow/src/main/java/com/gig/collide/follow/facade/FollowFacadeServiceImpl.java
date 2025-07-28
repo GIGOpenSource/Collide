@@ -1,260 +1,305 @@
 package com.gig.collide.follow.facade;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.gig.collide.api.follow.request.FollowRequest;
-import com.gig.collide.api.follow.request.FollowQueryRequest;
-import com.gig.collide.api.follow.request.UnfollowRequest;
-import com.gig.collide.api.follow.response.FollowResponse;
-import com.gig.collide.api.follow.response.FollowQueryResponse;
+import com.gig.collide.api.follow.request.*;
+import com.gig.collide.api.follow.response.*;
+import com.gig.collide.api.follow.response.data.BasicFollowInfo;
 import com.gig.collide.api.follow.response.data.FollowInfo;
-import com.gig.collide.api.follow.response.data.FollowStatistics;
 import com.gig.collide.api.follow.service.FollowFacadeService;
-import com.gig.collide.rpc.facade.Facade;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.follow.domain.entity.Follow;
-import com.gig.collide.follow.domain.entity.convertor.FollowConvertor;
-import com.gig.collide.follow.domain.service.FollowDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
+import org.springframework.stereotype.Service;
 
 /**
- * 关注服务 Facade 实现
- * 对外提供 RPC 服务接口
+ * 关注门面服务实现类
  *
  * @author Collide Team
- * @version 1.0
+ * @version 1.0.0
  * @since 2024-01-01
  */
-@Slf4j
-@Component
+@Service
 @DubboService(version = "1.0.0")
 @RequiredArgsConstructor
+@Slf4j
 public class FollowFacadeServiceImpl implements FollowFacadeService {
 
-    private final FollowDomainService followDomainService;
+    // ===================== 基础查询功能 =====================
 
     @Override
-    @Facade
-    public FollowResponse follow(FollowRequest followRequest) {
-        try {
-            log.info("处理关注请求，关注者: {}, 被关注者: {}", 
-                followRequest.getFollowerUserId(), followRequest.getFollowedUserId());
-
-            Follow follow = followDomainService.followUser(
-                followRequest.getFollowerUserId(),
-                followRequest.getFollowedUserId(),
-                followRequest.getFollowType()
-            );
-
-            // 检查是否相互关注
-            boolean mutualFollow = followDomainService.isMutualFollowing(
-                followRequest.getFollowerUserId(), 
-                followRequest.getFollowedUserId()
-            );
-
-            FollowResponse response = new FollowResponse();
-            response.setSuccess(true);
-            response.setResponseMessage("关注成功");
-            response.setFollowId(follow.getId());
-            response.setNewFollow(follow.getId() != null);
-            response.setMutualFollow(mutualFollow);
-
-            log.info("关注操作完成，关注ID: {}, 相互关注: {}", follow.getId(), mutualFollow);
-            return response;
-
-        } catch (Exception e) {
-            log.error("关注操作失败", e);
-            FollowResponse response = new FollowResponse();
-            response.setSuccess(false);
-            response.setResponseCode("FOLLOW_ERROR");
-            response.setResponseMessage("关注失败: " + e.getMessage());
-            return response;
-        }
-    }
-
-    @Override
-    @Facade
-    public FollowResponse unfollow(UnfollowRequest unfollowRequest) {
-        try {
-            log.info("处理取消关注请求，关注者: {}, 被关注者: {}", 
-                unfollowRequest.getFollowerUserId(), unfollowRequest.getFollowedUserId());
-
-            boolean success = followDomainService.unfollowUser(
-                unfollowRequest.getFollowerUserId(),
-                unfollowRequest.getFollowedUserId()
-            );
-
-            FollowResponse response = new FollowResponse();
-            response.setSuccess(success);
-            response.setResponseMessage(success ? "取消关注成功" : "关注关系不存在");
-
-            log.info("取消关注操作完成，结果: {}", success);
-            return response;
-
-        } catch (Exception e) {
-            log.error("取消关注操作失败", e);
-            FollowResponse response = new FollowResponse();
-            response.setSuccess(false);
-            response.setResponseCode("UNFOLLOW_ERROR");
-            response.setResponseMessage("取消关注失败: " + e.getMessage());
-            return response;
-        }
-    }
-
-    @Override
-    @Facade
     public FollowQueryResponse<FollowInfo> queryFollow(FollowQueryRequest queryRequest) {
-        try {
-            boolean isFollowing = followDomainService.isFollowing(
-                queryRequest.getFollowerUserId(),
-                queryRequest.getFollowedUserId()
-            );
-
-            FollowInfo followInfo = new FollowInfo();
-            followInfo.setFollowerUserId(queryRequest.getFollowerUserId());
-            followInfo.setFollowedUserId(queryRequest.getFollowedUserId());
-            
-            if (queryRequest.getCheckMutualFollow()) {
-                boolean mutualFollow = followDomainService.isMutualFollowing(
-                    queryRequest.getFollowerUserId(),
-                    queryRequest.getFollowedUserId()
-                );
-                followInfo.setMutualFollow(mutualFollow);
-            }
-
-            return FollowQueryResponse.success(isFollowing ? followInfo : null);
-
-        } catch (Exception e) {
-            log.error("查询关注关系失败", e);
-            return FollowQueryResponse.success(null);
-        }
+        log.info("查询关注信息: {}", queryRequest);
+        
+        // TODO: 实现关注信息查询逻辑
+        // 1. 参数验证
+        // 2. 根据查询条件构建查询
+        // 3. 执行查询并返回结果
+        
+        return FollowQueryResponse.failure("方法未实现");
     }
 
     @Override
-    @Facade
-    public PageResponse<FollowInfo> pageQueryFollowing(FollowQueryRequest queryRequest) {
-        try {
-            log.info("查询关注列表，用户: {}, 页码: {}, 每页大小: {}", 
-                queryRequest.getFollowerUserId(), queryRequest.getPageNo(), queryRequest.getPageSize());
-
-            IPage<Follow> page = followDomainService.getFollowingList(
-                queryRequest.getFollowerUserId(),
-                queryRequest.getPageNo(),
-                queryRequest.getPageSize()
-            );
-
-            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(page.getRecords());
-
-            return PageResponse.of(followInfoList, (int) page.getTotal(), (int) page.getSize(), (int) page.getCurrent());
-
-        } catch (Exception e) {
-            log.error("查询关注列表失败", e);
-            return PageResponse.of(List.of(), 0, queryRequest.getPageSize(), queryRequest.getPageNo());
-        }
+    public FollowQueryResponse<BasicFollowInfo> queryBasicFollow(FollowQueryRequest queryRequest) {
+        log.info("查询基础关注信息: {}", queryRequest);
+        
+        // TODO: 实现基础关注信息查询逻辑
+        // 1. 参数验证
+        // 2. 查询完整信息
+        // 3. 转换为基础信息并返回
+        
+        return FollowQueryResponse.failure("方法未实现");
     }
 
     @Override
-    @Facade
-    public PageResponse<FollowInfo> pageQueryFollowers(FollowQueryRequest queryRequest) {
-        try {
-            log.info("查询粉丝列表，用户: {}, 页码: {}, 每页大小: {}", 
-                queryRequest.getFollowedUserId(), queryRequest.getPageNo(), queryRequest.getPageSize());
-
-            IPage<Follow> page = followDomainService.getFollowersList(
-                queryRequest.getFollowedUserId(),
-                queryRequest.getPageNo(),
-                queryRequest.getPageSize()
-            );
-
-            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(page.getRecords());
-
-            return PageResponse.of(followInfoList, (int) page.getTotal(), (int) page.getSize(), (int) page.getCurrent());
-
-        } catch (Exception e) {
-            log.error("查询粉丝列表失败", e);
-            return PageResponse.of(List.of(), 0, queryRequest.getPageSize(), queryRequest.getPageNo());
-        }
+    public PageResponse<FollowInfo> pageQueryFollows(FollowQueryRequest queryRequest) {
+        log.info("分页查询关注信息: {}", queryRequest);
+        
+        // TODO: 实现分页查询逻辑
+        // 1. 参数验证和分页参数处理
+        // 2. 构建分页查询
+        // 3. 执行查询并返回分页结果
+        
+        return PageResponse.error("方法未实现");
     }
 
     @Override
-    @Facade
-    public FollowQueryResponse<FollowStatistics> getFollowStatistics(Long userId) {
-        try {
-            log.info("查询关注统计，用户: {}", userId);
+    public PageResponse<BasicFollowInfo> pageQueryBasicFollows(FollowQueryRequest queryRequest) {
+        log.info("分页查询基础关注信息: {}", queryRequest);
+        
+        // TODO: 实现基础信息分页查询逻辑
+        // 1. 执行分页查询
+        // 2. 转换为基础信息
+        // 3. 返回分页结果
+        
+        return PageResponse.error("方法未实现");
+    }
 
-            com.gig.collide.follow.domain.entity.FollowStatistics statistics = 
-                followDomainService.getFollowStatistics(userId);
+    // ===================== 关注操作功能 =====================
 
-            FollowStatistics followStatistics = FollowConvertor.INSTANCE.toFollowStatistics(statistics);
-
-            return FollowQueryResponse.success(followStatistics);
-
-        } catch (Exception e) {
-            log.error("查询关注统计失败，用户: {}", userId, e);
-            return FollowQueryResponse.success(null);
-        }
+    @Override
+    public FollowCreateResponse createFollow(FollowCreateRequest createRequest) {
+        log.info("创建关注关系: {}", createRequest);
+        
+        // TODO: 实现创建关注逻辑
+        // 1. 参数验证（不能自己关注自己等）
+        // 2. 检查关注关系是否已存在
+        // 3. 创建关注记录
+        // 4. 更新统计信息
+        // 5. 发布关注事件
+        
+        return FollowCreateResponse.error("方法未实现");
     }
 
     @Override
-    @Facade
-    public FollowQueryResponse<List<FollowStatistics>> batchGetFollowStatistics(FollowQueryRequest queryRequest) {
-        try {
-            log.info("批量查询关注统计，用户列表: {}", queryRequest.getUserIds());
-
-            List<com.gig.collide.follow.domain.entity.FollowStatistics> statisticsList = 
-                followDomainService.getFollowStatistics(queryRequest.getUserIds());
-
-            List<FollowStatistics> followStatisticsList = 
-                FollowConvertor.INSTANCE.toFollowStatisticsList(statisticsList);
-
-            return FollowQueryResponse.success(followStatisticsList, (long) followStatisticsList.size());
-
-        } catch (Exception e) {
-            log.error("批量查询关注统计失败", e);
-            return FollowQueryResponse.success(List.of(), 0L);
-        }
+    public FollowUpdateResponse updateFollow(FollowUpdateRequest updateRequest) {
+        log.info("更新关注关系: {}", updateRequest);
+        
+        // TODO: 实现更新关注逻辑
+        // 1. 参数验证
+        // 2. 查询现有关注记录
+        // 3. 检查是否有权限更新
+        // 4. 执行更新操作
+        // 5. 更新统计信息（如有必要）
+        
+        return FollowUpdateResponse.error("方法未实现");
     }
 
     @Override
-    @Facade
-    public FollowQueryResponse<List<FollowInfo>> batchCheckFollowRelations(FollowQueryRequest queryRequest) {
-        try {
-            log.info("批量检查关注关系，关注者: {}, 被关注者列表: {}", 
-                queryRequest.getFollowerUserId(), queryRequest.getUserIds());
+    public FollowDeleteResponse deleteFollow(FollowDeleteRequest deleteRequest) {
+        log.info("删除关注关系: {}", deleteRequest);
+        
+        // TODO: 实现删除关注逻辑
+        // 1. 参数验证
+        // 2. 查询关注记录
+        // 3. 检查删除权限
+        // 4. 执行删除操作（逻辑删除或物理删除）
+        // 5. 更新统计信息
+        // 6. 发布取消关注事件
+        
+        return FollowDeleteResponse.error("方法未实现");
+    }
 
-            List<Follow> followRelations = followDomainService.getFollowRelations(
-                queryRequest.getFollowerUserId(), 
-                queryRequest.getUserIds()
-            );
+    // ===================== 批量操作功能 =====================
 
-            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(followRelations);
+    @Override
+    public FollowBatchOperationResponse batchOperation(FollowBatchOperationRequest batchRequest) {
+        log.info("批量操作关注关系: {}", batchRequest);
+        
+        // TODO: 实现批量操作逻辑
+        // 1. 参数验证和操作类型检查
+        // 2. 根据操作类型分发到具体处理方法
+        // 3. 批量执行操作并记录结果
+        // 4. 批量更新统计信息
+        // 5. 返回操作结果汇总
+        
+        return FollowBatchOperationResponse.error("UNKNOWN", "方法未实现");
+    }
 
-            return FollowQueryResponse.success(followInfoList, (long) followInfoList.size());
+    // ===================== 统计功能 =====================
 
-        } catch (Exception e) {
-            log.error("批量检查关注关系失败", e);
-            return FollowQueryResponse.success(List.of(), 0L);
-        }
+    @Override
+    public FollowStatisticsResponse queryStatistics(FollowStatisticsRequest statisticsRequest) {
+        log.info("查询关注统计信息: {}", statisticsRequest);
+        
+        // TODO: 实现统计查询逻辑
+        // 1. 参数验证
+        // 2. 根据请求类型（单用户/批量）执行不同查询
+        // 3. 如需重新计算，调用统计重算方法
+        // 4. 返回统计结果
+        
+        return FollowStatisticsResponse.error("方法未实现");
+    }
+
+    // ===================== 便捷查询方法 =====================
+
+    @Override
+    public FollowQueryResponse<BasicFollowInfo> queryUserFollowings(Long followerUserId) {
+        log.info("查询用户关注列表: followerUserId={}", followerUserId);
+        
+        // TODO: 实现用户关注列表查询
+        // 1. 参数验证
+        // 2. 构建查询条件
+        // 3. 调用基础查询方法
+        
+        FollowQueryRequest request = FollowQueryRequest.byFollowerUserId(followerUserId);
+        return queryBasicFollow(request);
     }
 
     @Override
-    @Facade
-    public FollowQueryResponse<List<FollowInfo>> getMutualFollows(FollowQueryRequest queryRequest) {
-        try {
-            log.info("查询相互关注列表，用户: {}", queryRequest.getFollowerUserId());
+    public FollowQueryResponse<BasicFollowInfo> queryUserFollowers(Long followedUserId) {
+        log.info("查询用户粉丝列表: followedUserId={}", followedUserId);
+        
+        // TODO: 实现用户粉丝列表查询
+        // 1. 参数验证
+        // 2. 构建查询条件
+        // 3. 调用基础查询方法
+        
+        FollowQueryRequest request = FollowQueryRequest.byFollowedUserId(followedUserId);
+        return queryBasicFollow(request);
+    }
 
-            List<Follow> mutualFollows = followDomainService.getMutualFollows(queryRequest.getFollowerUserId());
-            List<FollowInfo> followInfoList = FollowConvertor.INSTANCE.toFollowInfoList(mutualFollows);
+    @Override
+    public FollowQueryResponse<FollowInfo> queryFollowRelation(Long followerUserId, Long followedUserId) {
+        log.info("查询关注关系: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现关注关系查询
+        // 1. 参数验证
+        // 2. 构建关系查询条件
+        // 3. 调用基础查询方法
+        
+        FollowQueryRequest request = FollowQueryRequest.byRelation(followerUserId, followedUserId);
+        return queryFollow(request);
+    }
 
-            return FollowQueryResponse.success(followInfoList, (long) followInfoList.size());
+    @Override
+    public Boolean checkFollowExists(Long followerUserId, Long followedUserId) {
+        log.info("检查关注关系是否存在: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现关注关系存在性检查
+        // 1. 参数验证
+        // 2. 查询关注关系
+        // 3. 返回是否存在
+        
+        FollowQueryResponse<FollowInfo> response = queryFollowRelation(followerUserId, followedUserId);
+        return response.isSuccess() && !response.isEmpty();
+    }
 
-        } catch (Exception e) {
-            log.error("查询相互关注列表失败", e);
-            return FollowQueryResponse.success(List.of(), 0L);
-        }
+    @Override
+    public FollowStatisticsResponse getUserStatistics(Long userId) {
+        log.info("获取用户关注统计: userId={}", userId);
+        
+        // TODO: 实现用户统计查询
+        // 1. 参数验证
+        // 2. 构建统计查询请求
+        // 3. 调用统计查询方法
+        
+        FollowStatisticsRequest request = FollowStatisticsRequest.forUser(userId);
+        return queryStatistics(request);
+    }
+
+    // ===================== 快捷操作方法 =====================
+
+    @Override
+    public FollowCreateResponse followUser(Long followerUserId, Long followedUserId) {
+        log.info("关注用户: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现普通关注
+        // 1. 构建创建请求
+        // 2. 调用创建方法
+        
+        FollowCreateRequest request = FollowCreateRequest.createNormalFollow(followerUserId, followedUserId);
+        return createFollow(request);
+    }
+
+    @Override
+    public FollowCreateResponse specialFollowUser(Long followerUserId, Long followedUserId) {
+        log.info("特别关注用户: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现特别关注
+        // 1. 构建特别关注请求
+        // 2. 调用创建方法
+        
+        FollowCreateRequest request = FollowCreateRequest.createSpecialFollow(followerUserId, followedUserId);
+        return createFollow(request);
+    }
+
+    @Override
+    public FollowDeleteResponse unfollowUser(Long followerUserId, Long followedUserId) {
+        log.info("取消关注用户: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现取消关注
+        // 1. 构建删除请求
+        // 2. 调用删除方法
+        
+        FollowDeleteRequest request = FollowDeleteRequest.byRelation(followerUserId, followedUserId);
+        return deleteFollow(request);
+    }
+
+    @Override
+    public FollowUpdateResponse blockFollow(Long followerUserId, Long followedUserId) {
+        log.info("屏蔽关注关系: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现屏蔽关注
+        // 1. 查询关注记录
+        // 2. 构建更新请求
+        // 3. 调用更新方法
+        
+        return FollowUpdateResponse.error("方法未实现");
+    }
+
+    @Override
+    public FollowUpdateResponse unblockFollow(Long followerUserId, Long followedUserId) {
+        log.info("恢复关注关系: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现恢复关注
+        // 1. 查询关注记录
+        // 2. 构建更新请求
+        // 3. 调用更新方法
+        
+        return FollowUpdateResponse.error("方法未实现");
+    }
+
+    @Override
+    public FollowUpdateResponse setSpecialFollow(Long followerUserId, Long followedUserId) {
+        log.info("设置特别关注: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现设置特别关注
+        // 1. 查询关注记录
+        // 2. 构建更新请求
+        // 3. 调用更新方法
+        
+        return FollowUpdateResponse.error("方法未实现");
+    }
+
+    @Override
+    public FollowUpdateResponse cancelSpecialFollow(Long followerUserId, Long followedUserId) {
+        log.info("取消特别关注: followerUserId={}, followedUserId={}", followerUserId, followedUserId);
+        
+        // TODO: 实现取消特别关注
+        // 1. 查询关注记录
+        // 2. 构建更新请求
+        // 3. 调用更新方法
+        
+        return FollowUpdateResponse.error("方法未实现");
     }
 } 
