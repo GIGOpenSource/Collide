@@ -2,12 +2,13 @@ package com.gig.collide.api.tag.request;
 
 import lombok.Data;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 /**
  * 标签创建请求 - 简洁版
+ * 基于t_tag表结构
  * 
  * @author GIG Team
  * @version 2.0.0

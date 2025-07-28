@@ -1,70 +1,38 @@
 package com.gig.collide.api.tag.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.io.Serializable;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 
 /**
- * 更新标签请求
- *
+ * 标签更新请求 - 简洁版
+ * 基于t_tag表结构
+ * 
  * @author GIG Team
- * @version 1.0.0
+ * @version 2.0.0
  */
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class TagUpdateRequest implements Serializable {
+public class TagUpdateRequest {
 
-    private static final long serialVersionUID = 1L;
+    @NotNull(message = "标签ID不能为空")
+    private Long id;
 
-    /**
-     * 标签ID
-     */
-    private Long tagId;
-
-    /**
-     * 标签名称
-     */
+    @Size(max = 100, message = "标签名称长度不能超过100字符")
     private String name;
 
-    /**
-     * 标签描述
-     */
+    @Size(max = 500, message = "标签描述长度不能超过500字符")
     private String description;
 
-    /**
-     * 标签颜色
-     */
-    private String color;
+    @Pattern(regexp = "^(content|interest|system)$", message = "标签类型只能是content、interest或system")
+    private String tagType;
 
     /**
-     * 标签图标URL
-     */
-    private String iconUrl;
-
-    /**
-     * 所属分类ID
+     * 所属分类ID（可选）
      */
     private Long categoryId;
 
-    /**
-     * 排序值
-     */
-    private Integer sort;
-
-    /**
-     * 标签状态
-     */
+    @Pattern(regexp = "^(active|inactive)$", message = "状态只能是active或inactive")
     private String status;
-    
-    /**
-     * 获取排序值
-     */
-    public Integer getSort() {
-        return sort;
-    }
 } 

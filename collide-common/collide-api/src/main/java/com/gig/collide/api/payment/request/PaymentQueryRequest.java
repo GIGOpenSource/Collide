@@ -1,67 +1,84 @@
 package com.gig.collide.api.payment.request;
 
-import com.gig.collide.api.payment.request.condition.*;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
+import com.gig.collide.base.request.PageRequest;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /**
- * 支付查询请求
- *
- * @author Collide Team
- * @version 2.0
- * @since 2024-01-01
+ * 支付查询请求 - 简洁版
+ * 
+ * @author GIG Team
+ * @version 2.0.0
  */
-@Setter
-@Getter
-@ToString
-@AllArgsConstructor
-@NoArgsConstructor
-public class PaymentQueryRequest extends BaseRequest {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class PaymentQueryRequest extends PageRequest {
 
     /**
-     * 查询条件
+     * 支付单号
      */
-    private PaymentQueryCondition paymentQueryCondition;
-
-    // ===================== 便捷构造器 =====================
+    private String paymentNo;
 
     /**
-     * 根据订单号查询
+     * 订单ID
      */
-    public PaymentQueryRequest(String orderNo) {
-        PaymentOrderNoQueryCondition condition = new PaymentOrderNoQueryCondition();
-        condition.setOrderNo(orderNo);
-        this.paymentQueryCondition = condition;
-    }
+    private Long orderId;
 
     /**
-     * 根据用户ID查询
+     * 订单号
      */
-    public PaymentQueryRequest(Long userId) {
-        PaymentUserIdQueryCondition condition = new PaymentUserIdQueryCondition();
-        condition.setUserId(userId);
-        this.paymentQueryCondition = condition;
-    }
+    private String orderNo;
 
     /**
-     * 根据内部交易流水号查询
+     * 用户ID
      */
-    public static PaymentQueryRequest byInternalTransactionNo(String internalTransactionNo) {
-        PaymentQueryRequest request = new PaymentQueryRequest();
-        PaymentInternalTransactionNoQueryCondition condition = new PaymentInternalTransactionNoQueryCondition();
-        condition.setInternalTransactionNo(internalTransactionNo);
-        request.setPaymentQueryCondition(condition);
-        return request;
-    }
+    private Long userId;
 
     /**
-     * 根据第三方交易流水号查询
+     * 支付方式：alipay、wechat、balance
      */
-    public static PaymentQueryRequest byTransactionNo(String transactionNo) {
-        PaymentQueryRequest request = new PaymentQueryRequest();
-        PaymentTransactionNoQueryCondition condition = new PaymentTransactionNoQueryCondition();
-        condition.setTransactionNo(transactionNo);
-        request.setPaymentQueryCondition(condition);
-        return request;
-    }
+    private String payMethod;
+
+    /**
+     * 支付状态：pending、success、failed、cancelled
+     */
+    private String status;
+
+    /**
+     * 第三方支付单号
+     */
+    private String thirdPartyNo;
+
+    /**
+     * 最小金额
+     */
+    private BigDecimal minAmount;
+
+    /**
+     * 最大金额
+     */
+    private BigDecimal maxAmount;
+
+    /**
+     * 开始时间
+     */
+    private LocalDateTime startTime;
+
+    /**
+     * 结束时间
+     */
+    private LocalDateTime endTime;
+
+    /**
+     * 排序方式：create_time、amount、pay_time
+     */
+    private String sortBy = "create_time";
+
+    /**
+     * 排序方向：asc、desc
+     */
+    private String sortDirection = "desc";
 } 

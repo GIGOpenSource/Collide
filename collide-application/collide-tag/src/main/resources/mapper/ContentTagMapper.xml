@@ -1,85 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.gig.collide.tag.infrastructure.mapper.ContentTagMapper">
 
-    <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.gig.collide.tag.domain.entity.ContentTag">
-        <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="content_id" property="contentId" jdbcType="BIGINT"/>
-        <result column="tag_id" property="tagId" jdbcType="BIGINT"/>
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="version" property="version" jdbcType="INTEGER"/>
-    </resultMap>
-
-    <!-- 基础字段 -->
-    <sql id="Base_Column_List">
-        id, content_id, tag_id, create_time, version
-    </sql>
-
-    <!-- 根据内容ID获取标签关联列表 -->
-    <select id="selectByContentId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_content_tag
+    <!-- 获取内容的标签列表 -->
+    <select id="selectByContentId" resultType="com.gig.collide.tag.domain.entity.ContentTag">
+        SELECT * FROM t_content_tag 
         WHERE content_id = #{contentId}
-        ORDER BY create_time ASC
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 根据标签ID获取内容关联列表 -->
-    <select id="selectByTagId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_content_tag
+    <!-- 获取标签的内容列表 -->
+    <select id="selectByTagId" resultType="com.gig.collide.tag.domain.entity.ContentTag">
+        SELECT * FROM t_content_tag 
         WHERE tag_id = #{tagId}
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
     </select>
 
-    <!-- 批量插入内容标签关联 -->
-    <insert id="batchInsert">
-        INSERT INTO t_content_tag (content_id, tag_id, create_time, version)
-        VALUES
-        <foreach collection="list" item="entity" separator=",">
-            (#{entity.contentId}, #{entity.tagId}, NOW(), 1)
-        </foreach>
-    </insert>
-
-    <!-- 批量删除内容的标签关联 -->
-    <delete id="batchDeleteByContentIdAndTagIds">
-        DELETE FROM t_content_tag
-        WHERE content_id = #{contentId}
-        AND tag_id IN
-        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-            #{tagId}
-        </foreach>
-    </delete>
-
-    <!-- 删除内容的所有标签关联 -->
-    <delete id="deleteAllByContentId">
-        DELETE FROM t_content_tag WHERE content_id = #{contentId}
-    </delete>
-
-    <!-- 删除标签的所有内容关联 -->
-    <delete id="deleteAllByTagId">
-        DELETE FROM t_content_tag WHERE tag_id = #{tagId}
-    </delete>
-
-    <!-- 查询指定内容和标签的关联记录 -->
-    <select id="selectByContentIdAndTagId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_content_tag
+    <!-- 检查内容是否已有此标签 -->
+    <select id="countByContentIdAndTagId" resultType="int">
+        SELECT COUNT(*) FROM t_content_tag 
         WHERE content_id = #{contentId} AND tag_id = #{tagId}
-        LIMIT 1
-    </select>
-
-    <!-- 统计标签的关联内容数量 -->
-    <select id="countByTagId" resultType="java.lang.Long">
-        SELECT COUNT(1) FROM t_content_tag WHERE tag_id = #{tagId}
-    </select>
-
-    <!-- 统计内容的关联标签数量 -->
-    <select id="countByContentId" resultType="java.lang.Long">
-        SELECT COUNT(1) FROM t_content_tag WHERE content_id = #{contentId}
     </select>
 
 </mapper> 
