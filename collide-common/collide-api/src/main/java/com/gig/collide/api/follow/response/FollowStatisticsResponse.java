@@ -155,7 +155,7 @@ public class FollowStatisticsResponse extends BaseResponse {
         response.setStatisticsInfo(statisticsInfo);
         response.setIsRecalculated(true);
         response.setSuccess(true);
-        response.setMessage("统计信息已重新计算");
+        response.setResponseMessage("统计信息已重新计算");
         return response;
     }
 
@@ -183,7 +183,7 @@ public class FollowStatisticsResponse extends BaseResponse {
     public static FollowStatisticsResponse userNotFound(Long userId) {
         FollowStatisticsResponse response = new FollowStatisticsResponse();
         response.setSuccess(false);
-        response.setMessage("用户 " + userId + " 不存在");
+        response.setResponseMessage("用户 " + userId + " 不存在");
         return response;
     }
 
@@ -196,7 +196,7 @@ public class FollowStatisticsResponse extends BaseResponse {
     public static FollowStatisticsResponse error(String message) {
         FollowStatisticsResponse response = new FollowStatisticsResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 

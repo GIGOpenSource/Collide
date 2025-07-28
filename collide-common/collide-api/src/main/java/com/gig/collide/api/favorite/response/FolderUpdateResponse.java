@@ -59,7 +59,7 @@ public class FolderUpdateResponse extends BaseResponse {
     public static FolderUpdateResponse failure(String message) {
         FolderUpdateResponse response = new FolderUpdateResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

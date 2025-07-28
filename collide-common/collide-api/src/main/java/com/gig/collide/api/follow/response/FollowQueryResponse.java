@@ -120,7 +120,7 @@ public class FollowQueryResponse<T> extends BaseResponse {
     public static <T> FollowQueryResponse<T> failure(String message) {
         FollowQueryResponse<T> response = new FollowQueryResponse<>();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 

@@ -102,7 +102,7 @@ public class FavoriteBatchOperationResponse extends BaseResponse {
         response.setFailedCount(failedIds.size());
         response.setOperationType(operationType);
         response.setSuccess(true);
-        response.setMessage("部分操作成功");
+        response.setResponseMessage("部分操作成功");
         return response;
     }
 
@@ -117,7 +117,7 @@ public class FavoriteBatchOperationResponse extends BaseResponse {
         FavoriteBatchOperationResponse response = new FavoriteBatchOperationResponse();
         response.setOperationType(operationType);
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -129,7 +129,7 @@ public class FavoriteBatchOperationResponse extends BaseResponse {
      * @return true-全部成功，false-有失败
      */
     public boolean isAllSuccess() {
-        return isSuccess() && (failedCount == null || failedCount == 0);
+        return getSuccess() && (failedCount == null || failedCount == 0);
     }
 
     /**
@@ -138,6 +138,6 @@ public class FavoriteBatchOperationResponse extends BaseResponse {
      * @return true-部分成功，false-全部失败或全部成功
      */
     public boolean isPartialSuccess() {
-        return isSuccess() && successCount != null && successCount > 0 && failedCount != null && failedCount > 0;
+        return getSuccess() && successCount != null && successCount > 0 && failedCount != null && failedCount > 0;
     }
 } 

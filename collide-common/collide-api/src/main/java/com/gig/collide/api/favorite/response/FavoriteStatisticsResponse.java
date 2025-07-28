@@ -83,7 +83,7 @@ public class FavoriteStatisticsResponse extends BaseResponse {
     public static FavoriteStatisticsResponse failure(String message) {
         FavoriteStatisticsResponse response = new FavoriteStatisticsResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

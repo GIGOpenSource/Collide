@@ -80,7 +80,7 @@ public class FolderDeleteResponse extends BaseResponse {
     public static FolderDeleteResponse failure(String message) {
         FolderDeleteResponse response = new FolderDeleteResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

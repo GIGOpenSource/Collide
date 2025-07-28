@@ -189,7 +189,7 @@ public class FollowBatchOperationResponse extends BaseResponse {
         response.setFailureCount(0);
         response.setSuccessFollowIds(successFollowIds);
         response.setSuccess(true);
-        response.setMessage("批量操作全部成功");
+        response.setResponseMessage("批量操作全部成功");
         return response;
     }
 
@@ -215,7 +215,7 @@ public class FollowBatchOperationResponse extends BaseResponse {
         response.setFailureFollowIds(failureFollowIds);
         response.setFailureReasons(failureReasons);
         response.setSuccess(true);
-        response.setMessage("批量操作部分成功");
+        response.setResponseMessage("批量操作部分成功");
         return response;
     }
 
@@ -238,7 +238,7 @@ public class FollowBatchOperationResponse extends BaseResponse {
         response.setFailureFollowIds(failureFollowIds);
         response.setFailureReasons(failureReasons);
         response.setSuccess(false);
-        response.setMessage("批量操作全部失败");
+        response.setResponseMessage("批量操作全部失败");
         return response;
     }
 
@@ -264,11 +264,11 @@ public class FollowBatchOperationResponse extends BaseResponse {
         response.setSuccess(failure == 0);
         
         if (failure == 0) {
-            response.setMessage("批量操作全部成功");
+            response.setResponseMessage("批量操作全部成功");
         } else if (success == 0) {
-            response.setMessage("批量操作全部失败");
+            response.setResponseMessage("批量操作全部失败");
         } else {
-            response.setMessage("批量操作部分成功");
+            response.setResponseMessage("批量操作部分成功");
         }
         
         return response;
@@ -285,7 +285,7 @@ public class FollowBatchOperationResponse extends BaseResponse {
         FollowBatchOperationResponse response = new FollowBatchOperationResponse();
         response.setOperationType(operationType);
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 

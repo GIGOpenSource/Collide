@@ -55,7 +55,7 @@ public class SingleResponse<T> {
         return message;
     }
     
-    public void setMessage(String message) {
+    public void setResponseMessage(String message) {
         this.message = message;
     }
     

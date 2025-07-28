@@ -59,7 +59,7 @@ public class FolderQueryResponse<T> extends BaseResponse {
     public static <T> FolderQueryResponse<T> failure(String message) {
         FolderQueryResponse<T> response = new FolderQueryResponse<>();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

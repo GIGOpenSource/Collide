@@ -90,7 +90,7 @@ public class FavoriteDeleteResponse extends BaseResponse {
         response.setFavoriteId(favoriteId);
         response.setHasActualDelete(false);
         response.setSuccess(true);
-        response.setMessage("收藏记录不存在或已删除");
+        response.setResponseMessage("收藏记录不存在或已删除");
         return response;
     }
 
@@ -103,7 +103,7 @@ public class FavoriteDeleteResponse extends BaseResponse {
     public static FavoriteDeleteResponse failure(String message) {
         FavoriteDeleteResponse response = new FavoriteDeleteResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -115,7 +115,7 @@ public class FavoriteDeleteResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isDeleteSuccess() {
-        return isSuccess() && favoriteId != null;
+        return getSuccess() && favoriteId != null;
     }
 
     /**

@@ -92,7 +92,7 @@ public class FavoriteUpdateResponse extends BaseResponse {
         response.setUpdatedFieldCount(0);
         response.setHasActualUpdate(false);
         response.setSuccess(true);
-        response.setMessage("数据未发生变化");
+        response.setResponseMessage("数据未发生变化");
         return response;
     }
 
@@ -106,7 +106,7 @@ public class FavoriteUpdateResponse extends BaseResponse {
         FavoriteUpdateResponse response = new FavoriteUpdateResponse();
         response.setFavoriteId(favoriteId);
         response.setSuccess(false);
-        response.setMessage("收藏记录不存在");
+        response.setResponseMessage("收藏记录不存在");
         return response;
     }
 
@@ -119,7 +119,7 @@ public class FavoriteUpdateResponse extends BaseResponse {
     public static FavoriteUpdateResponse failure(String message) {
         FavoriteUpdateResponse response = new FavoriteUpdateResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -131,7 +131,7 @@ public class FavoriteUpdateResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isUpdateSuccess() {
-        return isSuccess() && favoriteId != null;
+        return getSuccess() && favoriteId != null;
     }
 
     /**

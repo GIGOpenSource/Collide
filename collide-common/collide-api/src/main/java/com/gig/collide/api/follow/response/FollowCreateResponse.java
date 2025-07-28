@@ -85,7 +85,7 @@ public class FollowCreateResponse extends BaseResponse {
         response.setFollowId(followInfo.getId());
         response.setIsNewCreate(false);
         response.setSuccess(true);
-        response.setMessage("关注关系已存在");
+        response.setResponseMessage("关注关系已存在");
         return response;
     }
 
@@ -98,7 +98,7 @@ public class FollowCreateResponse extends BaseResponse {
     public static FollowCreateResponse error(String message) {
         FollowCreateResponse response = new FollowCreateResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -110,7 +110,7 @@ public class FollowCreateResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isCreateSuccess() {
-        return isSuccess() && followId != null;
+        return getSuccess() && followId != null;
     }
 
     /**

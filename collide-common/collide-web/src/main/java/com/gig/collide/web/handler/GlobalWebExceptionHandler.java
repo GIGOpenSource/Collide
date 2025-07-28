@@ -57,7 +57,7 @@ public class GlobalWebExceptionHandler {
         log.error("文件上传大小超限异常", ex);
         Result result = new Result();
         result.setCode("UPLOAD_SIZE_EXCEEDED");
-        result.setMessage("上传文件过大，单个文件最大支持100MB，请压缩后重试");
+        result.setResponseMessage("上传文件过大，单个文件最大支持100MB，请压缩后重试");
         result.setSuccess(false);
         return result;
     }
@@ -76,9 +76,9 @@ public class GlobalWebExceptionHandler {
         Result result = new Result();
         result.setCode(bizException.getErrorCode().getCode());
         if (bizException.getMessage() == null) {
-            result.setMessage(bizException.getErrorCode().getMessage());
+            result.setResponseMessage(bizException.getErrorCode().getMessage());
         } else {
-            result.setMessage(bizException.getMessage());
+            result.setResponseMessage(bizException.getMessage());
         }
         result.setSuccess(false);
         return result;
@@ -98,9 +98,9 @@ public class GlobalWebExceptionHandler {
         Result result = new Result();
         result.setCode(systemException.getErrorCode().getCode());
         if (systemException.getMessage() == null) {
-            result.setMessage(systemException.getErrorCode().getMessage());
+            result.setResponseMessage(systemException.getErrorCode().getMessage());
         } else {
-            result.setMessage(systemException.getMessage());
+            result.setResponseMessage(systemException.getMessage());
         }
         result.setSuccess(false);
         return result;
@@ -119,7 +119,7 @@ public class GlobalWebExceptionHandler {
         log.error("throwable occurred.",throwable);
         Result result = new Result();
         result.setCode(SYSTEM_ERROR.name());
-        result.setMessage("哎呀，当前网络比较拥挤，请您稍后再试~");
+        result.setResponseMessage("哎呀，当前网络比较拥挤，请您稍后再试~");
         result.setSuccess(false);
         return result;
     }

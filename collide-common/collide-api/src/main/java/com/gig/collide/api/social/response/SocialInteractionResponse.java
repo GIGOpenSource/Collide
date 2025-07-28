@@ -79,7 +79,7 @@ public class SocialInteractionResponse extends BaseResponse {
     public static SocialInteractionResponse success(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = new SocialInteractionResponse();
         response.setSuccess(true);
-        response.setMessage("互动成功");
+        response.setResponseMessage("互动成功");
         response.setInteractionInfo(interactionInfo);
         response.setPostStatistics(postStatistics);
         return response;
@@ -90,7 +90,7 @@ public class SocialInteractionResponse extends BaseResponse {
      */
     public static SocialInteractionResponse likeSuccess(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = success(interactionInfo, postStatistics);
-        response.setMessage("点赞成功");
+        response.setResponseMessage("点赞成功");
         return response;
     }
     
@@ -99,7 +99,7 @@ public class SocialInteractionResponse extends BaseResponse {
      */
     public static SocialInteractionResponse unlikeSuccess(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = success(interactionInfo, postStatistics);
-        response.setMessage("取消点赞成功");
+        response.setResponseMessage("取消点赞成功");
         return response;
     }
     
@@ -108,7 +108,7 @@ public class SocialInteractionResponse extends BaseResponse {
      */
     public static SocialInteractionResponse favoriteSuccess(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = success(interactionInfo, postStatistics);
-        response.setMessage("收藏成功");
+        response.setResponseMessage("收藏成功");
         return response;
     }
     
@@ -117,7 +117,7 @@ public class SocialInteractionResponse extends BaseResponse {
      */
     public static SocialInteractionResponse unfavoriteSuccess(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = success(interactionInfo, postStatistics);
-        response.setMessage("取消收藏成功");
+        response.setResponseMessage("取消收藏成功");
         return response;
     }
     
@@ -126,7 +126,7 @@ public class SocialInteractionResponse extends BaseResponse {
      */
     public static SocialInteractionResponse shareSuccess(SocialInteractionInfo interactionInfo, PostStatistics postStatistics) {
         SocialInteractionResponse response = success(interactionInfo, postStatistics);
-        response.setMessage("转发成功");
+        response.setResponseMessage("转发成功");
         return response;
     }
     
@@ -136,7 +136,7 @@ public class SocialInteractionResponse extends BaseResponse {
     public static SocialInteractionResponse viewSuccess(PostStatistics postStatistics) {
         SocialInteractionResponse response = new SocialInteractionResponse();
         response.setSuccess(true);
-        response.setMessage("浏览记录成功");
+        response.setResponseMessage("浏览记录成功");
         response.setPostStatistics(postStatistics);
         return response;
     }
@@ -147,7 +147,7 @@ public class SocialInteractionResponse extends BaseResponse {
     public static SocialInteractionResponse failure(String message) {
         SocialInteractionResponse response = new SocialInteractionResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

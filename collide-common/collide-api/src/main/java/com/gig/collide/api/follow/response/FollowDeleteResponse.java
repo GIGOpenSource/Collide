@@ -90,7 +90,7 @@ public class FollowDeleteResponse extends BaseResponse {
         response.setFollowId(followId);
         response.setHasActualDelete(false);
         response.setSuccess(true);
-        response.setMessage("关注记录不存在或已删除");
+        response.setResponseMessage("关注记录不存在或已删除");
         return response;
     }
 
@@ -105,7 +105,7 @@ public class FollowDeleteResponse extends BaseResponse {
         response.setFollowId(followId);
         response.setHasActualDelete(false);
         response.setSuccess(true);
-        response.setMessage("关注记录已经删除");
+        response.setResponseMessage("关注记录已经删除");
         return response;
     }
 
@@ -118,7 +118,7 @@ public class FollowDeleteResponse extends BaseResponse {
     public static FollowDeleteResponse error(String message) {
         FollowDeleteResponse response = new FollowDeleteResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -132,7 +132,7 @@ public class FollowDeleteResponse extends BaseResponse {
         FollowDeleteResponse response = new FollowDeleteResponse();
         response.setFollowId(followId);
         response.setSuccess(false);
-        response.setMessage("权限不足，无法删除关注记录");
+        response.setResponseMessage("权限不足，无法删除关注记录");
         return response;
     }
 
@@ -144,7 +144,7 @@ public class FollowDeleteResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isDeleteSuccess() {
-        return isSuccess() && followId != null;
+        return getSuccess() && followId != null;
     }
 
     /**

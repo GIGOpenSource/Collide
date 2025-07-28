@@ -92,7 +92,7 @@ public class SocialPostQueryResponse<T> extends BaseResponse {
     public static <T> SocialPostQueryResponse<T> success(T data) {
         SocialPostQueryResponse<T> response = new SocialPostQueryResponse<>();
         response.setSuccess(true);
-        response.setMessage("查询成功");
+        response.setResponseMessage("查询成功");
         response.setData(data);
         return response;
     }
@@ -121,7 +121,7 @@ public class SocialPostQueryResponse<T> extends BaseResponse {
     public static <T> SocialPostQueryResponse<T> failure(String message) {
         SocialPostQueryResponse<T> response = new SocialPostQueryResponse<>();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

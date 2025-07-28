@@ -83,7 +83,7 @@ public class FavoriteCreateResponse extends BaseResponse {
         response.setFavoriteId(favoriteInfo.getFavoriteId());
         response.setIsNewCreate(false);
         response.setSuccess(true);
-        response.setMessage("收藏已存在");
+        response.setResponseMessage("收藏已存在");
         return response;
     }
 
@@ -96,7 +96,7 @@ public class FavoriteCreateResponse extends BaseResponse {
     public static FavoriteCreateResponse failure(String message) {
         FavoriteCreateResponse response = new FavoriteCreateResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -108,7 +108,7 @@ public class FavoriteCreateResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isCreateSuccess() {
-        return isSuccess() && favoriteId != null;
+        return getSuccess() && favoriteId != null;
     }
 
     /**

@@ -39,7 +39,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     public static SocialPostOperationResponse createSuccess(SocialPostInfo postInfo) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(true);
-        response.setMessage("动态创建成功");
+        response.setResponseMessage("动态创建成功");
         response.setPostInfo(postInfo);
         response.setOperationType("CREATE");
         return response;
@@ -51,7 +51,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     public static SocialPostOperationResponse updateSuccess(SocialPostInfo postInfo) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(true);
-        response.setMessage("动态更新成功");
+        response.setResponseMessage("动态更新成功");
         response.setPostInfo(postInfo);
         response.setOperationType("UPDATE");
         return response;
@@ -63,7 +63,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     public static SocialPostOperationResponse deleteSuccess(Long postId) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(true);
-        response.setMessage("动态删除成功");
+        response.setResponseMessage("动态删除成功");
         response.setOperationType("DELETE");
         // 删除操作只返回基本信息
         SocialPostInfo postInfo = SocialPostInfo.builder().id(postId).build();
@@ -77,7 +77,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     public static SocialPostOperationResponse publishSuccess(SocialPostInfo postInfo) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(true);
-        response.setMessage("动态发布成功");
+        response.setResponseMessage("动态发布成功");
         response.setPostInfo(postInfo);
         response.setOperationType("PUBLISH");
         return response;
@@ -89,7 +89,7 @@ public class SocialPostOperationResponse extends BaseResponse {
     public static SocialPostOperationResponse failure(String operationType, String message) {
         SocialPostOperationResponse response = new SocialPostOperationResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         response.setOperationType(operationType);
         return response;
     }

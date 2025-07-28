@@ -92,7 +92,7 @@ public class FollowUpdateResponse extends BaseResponse {
         response.setUpdatedFieldCount(0);
         response.setHasActualUpdate(false);
         response.setSuccess(true);
-        response.setMessage("数据未发生变化");
+        response.setResponseMessage("数据未发生变化");
         return response;
     }
 
@@ -106,7 +106,7 @@ public class FollowUpdateResponse extends BaseResponse {
         FollowUpdateResponse response = new FollowUpdateResponse();
         response.setFollowId(followId);
         response.setSuccess(false);
-        response.setMessage("关注记录不存在");
+        response.setResponseMessage("关注记录不存在");
         return response;
     }
 
@@ -119,7 +119,7 @@ public class FollowUpdateResponse extends BaseResponse {
     public static FollowUpdateResponse error(String message) {
         FollowUpdateResponse response = new FollowUpdateResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 
@@ -131,7 +131,7 @@ public class FollowUpdateResponse extends BaseResponse {
      * @return true-成功，false-失败
      */
     public boolean isUpdateSuccess() {
-        return isSuccess() && followId != null;
+        return getSuccess() && followId != null;
     }
 
     /**

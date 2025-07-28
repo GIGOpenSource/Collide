@@ -34,7 +34,7 @@ public class SocialStatisticsResponse extends BaseResponse {
     public static SocialStatisticsResponse success(SocialStatisticsInfo statisticsInfo) {
         SocialStatisticsResponse response = new SocialStatisticsResponse();
         response.setSuccess(true);
-        response.setMessage("统计查询成功");
+        response.setResponseMessage("统计查询成功");
         response.setStatisticsInfo(statisticsInfo);
         return response;
     }
@@ -45,7 +45,7 @@ public class SocialStatisticsResponse extends BaseResponse {
     public static SocialStatisticsResponse failure(String message) {
         SocialStatisticsResponse response = new SocialStatisticsResponse();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 

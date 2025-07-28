@@ -81,7 +81,7 @@ public class FavoriteQueryResponse<T> extends BaseResponse {
     public static <T> FavoriteQueryResponse<T> failure(String message) {
         FavoriteQueryResponse<T> response = new FavoriteQueryResponse<>();
         response.setSuccess(false);
-        response.setMessage(message);
+        response.setResponseMessage(message);
         return response;
     }
 } 
