@@ -27,6 +27,10 @@
             <artifactId>collide-base</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-web</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
         </dependency>

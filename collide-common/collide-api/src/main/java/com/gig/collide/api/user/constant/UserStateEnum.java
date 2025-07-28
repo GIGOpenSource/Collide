@@ -1,71 +1,31 @@
 package com.gig.collide.api.user.constant;
 
 /**
- * 用户状态枚举
- * 与users模块保持一致
+ * 用户状态枚举 - 简洁版
  * 
- * @author Collide Team  
- * @version 2.0
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0
  */
 public enum UserStateEnum {
+    
+    ACTIVE("active", "正常"),
+    INACTIVE("inactive", "未激活"),
+    SUSPENDED("suspended", "暂停"),
+    BANNED("banned", "封禁");
 
-    /**
-     * 初始创建状态
-     */
-    INIT("初始创建"),
-    
-    /**
-     * 待激活状态
-     */
-    PENDING("待激活"),
-    
-    /**
-     * 正常激活状态
-     */
-    ACTIVE("已激活"),
-    
-    /**
-     * 未激活状态
-     */
-    INACTIVE("未激活"),
-    
-    /**
-     * 已封禁状态
-     */
-    BANNED("已封禁"),
-    
-    /**
-     * 已冻结状态
-     */
-    FROZEN("已冻结"),
-    
-    /**
-     * 已删除状态
-     */
-    DELETED("已删除");
+    private final String code;
+    private final String desc;
 
-    private final String description;
-
-    UserStateEnum(String description) {
-        this.description = description;
+    UserStateEnum(String code, String desc) {
+        this.code = code;
+        this.desc = desc;
     }
 
-    public String getDescription() {
-        return description;
+    public String getCode() {
+        return code;
     }
 
-    /**
-     * 检查用户是否可用
-     */
-    public boolean isAvailable() {
-        return this == ACTIVE;
-    }
-
-    /**
-     * 检查用户是否被限制
-     */
-    public boolean isRestricted() {
-        return this == BANNED || this == FROZEN || this == DELETED;
+    public String getDesc() {
+        return desc;
     }
 }

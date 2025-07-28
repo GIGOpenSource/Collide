@@ -11,7 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0.0
  * @since 2024-12-19
  */
-@SpringBootApplication(scanBasePackages = {"com.gig.collide.social", "com.gig.collide.base", "com.gig.collide.web"})
+@SpringBootApplication
 @EnableDubbo
 public class CollideSocialApplication {
 

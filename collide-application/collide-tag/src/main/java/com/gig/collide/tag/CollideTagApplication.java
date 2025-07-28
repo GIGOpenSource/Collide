@@ -1,7 +1,6 @@
 package com.gig.collide.tag;
 
 import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -13,13 +12,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0
  * @since 2024-12-19
  */
-@SpringBootApplication(scanBasePackages = {"com.gig.collide.tag", "com.gig.collide.cache", "com.gig.collide.base"})
+@SpringBootApplication
 @EnableDubbo
-@MapperScan("com.gig.collide.tag.infrastructure.mapper")
-public class TagServiceApplication {
+public class CollideTagApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TagServiceApplication.class, args);
+        SpringApplication.run(CollideTagApplication.class, args);
         System.out.println("""
             ====================================
             🎉 Collide Tag 模块启动成功！

@@ -1,55 +1,31 @@
 package com.gig.collide.api.user.constant;
 
 /**
- * 用户角色枚举
+ * 用户角色枚举 - 简洁版
  * 
- * @author Collide Team
- * @version 2.0
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0
  */
 public enum UserRole {
+    
+    USER("user", "普通用户"),
+    BLOGGER("blogger", "博主"),
+    ADMIN("admin", "管理员"),
+    VIP("vip", "VIP用户");
 
-    /**
-     * 普通用户
-     */
-    USER("普通用户"),
+    private final String code;
+    private final String desc;
 
-    /**
-     * VIP用户
-     */
-    VIP("VIP用户"),
-
-    /**
-     * 博主
-     */
-    BLOGGER("博主"),
-
-    /**
-     * 管理员
-     */
-    ADMIN("管理员");
-
-    private final String description;
-
-    UserRole(String description) {
-        this.description = description;
+    UserRole(String code, String desc) {
+        this.code = code;
+        this.desc = desc;
     }
 
-    public String getDescription() {
-        return description;
+    public String getCode() {
+        return code;
     }
 
-    /**
-     * 检查是否有发布内容权限
-     */
-    public boolean canPublishContent() {
-        return this == BLOGGER || this == ADMIN;
-    }
-
-    /**
-     * 检查是否为高级用户
-     */
-    public boolean isPremiumUser() {
-        return this == VIP || this == BLOGGER || this == ADMIN;
+    public String getDesc() {
+        return desc;
     }
 }

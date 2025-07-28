@@ -2,122 +2,164 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.tag.infrastructure.mapper.TagMapper">
 
-    <!-- 结果映射 -->
-    <resultMap id="BaseResultMap" type="com.gig.collide.tag.domain.entity.Tag">
-        <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="name" property="name" jdbcType="VARCHAR"/>
-        <result column="description" property="description" jdbcType="LONGVARCHAR"/>
-        <result column="color" property="color" jdbcType="VARCHAR"/>
-        <result column="icon_url" property="iconUrl" jdbcType="VARCHAR"/>
-        <result column="tag_type" property="tagType" jdbcType="VARCHAR"/>
-        <result column="category_id" property="categoryId" jdbcType="BIGINT"/>
-        <result column="usage_count" property="usageCount" jdbcType="BIGINT"/>
-        <result column="heat_score" property="heatScore" jdbcType="DECIMAL"/>
-        <result column="status" property="status" jdbcType="VARCHAR"/>
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <result column="version" property="version" jdbcType="INTEGER"/>
-    </resultMap>
-
-    <!-- 基础字段 -->
-    <sql id="Base_Column_List">
-        id, name, description, color, icon_url, tag_type, category_id, 
-        usage_count, heat_score, status, create_time, update_time, version
+    <!-- 基础字段映射 -->
+    <sql id="baseColumns">
+        id, name, description, tag_type, category_id, usage_count, status, create_time, update_time
     </sql>
 
-    <!-- 根据类型获取标签列表 -->
-    <select id="selectByTagType" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+    <!-- 根据ID查询标签 -->
+    <select id="findById" parameterType="long" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
         FROM t_tag
-        WHERE 1=1
-        <if test="tagType != null and tagType != ''">
-            AND tag_type = #{tagType}
-        </if>
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        ORDER BY usage_count DESC, heat_score DESC, create_time DESC
+        WHERE id = #{id} AND status = 'active'
     </select>
 
-    <!-- 获取热门标签列表 -->
-    <select id="selectHotTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+    <!-- 根据名称和类型查询标签 -->
+    <select id="findByNameAndType" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
         FROM t_tag
-        WHERE status = 'active'
-        <if test="tagType != null and tagType != ''">
-            AND tag_type = #{tagType}
-        </if>
-        ORDER BY heat_score DESC, usage_count DESC
+        WHERE name = #{name} AND tag_type = #{tagType} AND status = 'active'
+    </select>
+
+    <!-- 分页查询标签列表 -->
+    <select id="findTagsByCondition" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
+        FROM t_tag
+        <where>
+            status = 'active'
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="tagType != null and tagType != ''">
+                AND tag_type = #{tagType}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+        </where>
+        ORDER BY usage_count DESC, create_time DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 统计标签数量 -->
+    <select id="countTagsByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_tag
+        <where>
+            status = 'active'
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="tagType != null and tagType != ''">
+                AND tag_type = #{tagType}
+            </if>
+            <if test="categoryId != null">
+                AND category_id = #{categoryId}
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据类型查询标签 -->
+    <select id="findByType" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
+        FROM t_tag
+        WHERE tag_type = #{tagType} AND status = 'active'
+        ORDER BY usage_count DESC
         <if test="limit != null and limit > 0">
             LIMIT #{limit}
         </if>
     </select>
 
     <!-- 搜索标签 -->
-    <select id="searchTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+    <select id="searchTags" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
         FROM t_tag
-        WHERE status = 'active'
-        AND (name LIKE CONCAT('%', #{keyword}, '%') 
-             OR description LIKE CONCAT('%', #{keyword}, '%'))
-        <if test="tagType != null and tagType != ''">
-            AND tag_type = #{tagType}
+        WHERE name LIKE CONCAT('%', #{keyword}, '%') AND status = 'active'
+        ORDER BY usage_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
         </if>
-        ORDER BY 
-            CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
-            heat_score DESC, usage_count DESC
     </select>
 
-    <!-- 分页查询标签 -->
-    <select id="selectTagPage" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
+    <!-- 获取热门标签 -->
+    <select id="findHotTags" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT <include refid="baseColumns" />
         FROM t_tag
-        WHERE 1=1
-        <if test="tagType != null and tagType != ''">
-            AND tag_type = #{tagType}
+        WHERE status = 'active' AND usage_count > 0
+        ORDER BY usage_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
         </if>
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        <if test="keyword != null and keyword != ''">
-            AND (name LIKE CONCAT('%', #{keyword}, '%') 
-                 OR description LIKE CONCAT('%', #{keyword}, '%'))
-        </if>
-        ORDER BY heat_score DESC, usage_count DESC, create_time DESC
     </select>
 
-    <!-- 增加标签使用次数 -->
-    <update id="increaseUsageCount">
-        UPDATE t_tag 
-        SET usage_count = usage_count + #{count},
+    <!-- 插入标签 -->
+    <insert id="insert" parameterType="com.gig.collide.tag.domain.entity.Tag" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_tag (name, description, tag_type, category_id, status)
+        VALUES (#{name}, #{description}, #{tagType}, #{categoryId}, #{status})
+    </insert>
+
+    <!-- 更新标签 -->
+    <update id="updateById" parameterType="com.gig.collide.tag.domain.entity.Tag">
+        UPDATE t_tag
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="description != null">description = #{description},</if>
+            <if test="tagType != null">tag_type = #{tagType},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="status != null">status = #{status},</if>
             update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新标签使用次数 -->
+    <update id="updateUsageCount">
+        UPDATE t_tag
+        SET usage_count = usage_count + #{increment}, update_time = NOW()
         WHERE id = #{tagId}
     </update>
 
-    <!-- 更新标签热度分数 -->
-    <update id="updateHeatScore">
-        UPDATE t_tag 
-        SET heat_score = #{heatScore},
-            update_time = NOW()
+    <!-- 删除标签（逻辑删除） -->
+    <update id="deleteById">
+        UPDATE t_tag
+        SET status = 'inactive', update_time = NOW()
         WHERE id = #{tagId}
     </update>
 
-    <!-- 批量查询标签 -->
-    <select id="selectByIds" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE id IN
-        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-            #{tagId}
-        </foreach>
+    <!-- 用户兴趣标签相关查询 -->
+    <select id="findUserInterestTags" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT t.<include refid="baseColumns" />
+        FROM t_tag t
+        INNER JOIN t_user_interest_tag uit ON t.id = uit.tag_id
+        WHERE uit.user_id = #{userId} AND uit.status = 'active' AND t.status = 'active'
+        ORDER BY uit.interest_score DESC
     </select>
 
-    <!-- 根据名称和类型查询标签 -->
-    <select id="selectByNameAndType" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE name = #{name} AND tag_type = #{tagType}
-        LIMIT 1
-    </select>
+    <!-- 插入用户兴趣标签 -->
+    <insert id="insertUserInterestTag">
+        INSERT INTO t_user_interest_tag (user_id, tag_id, interest_score, status)
+        VALUES (#{userId}, #{tagId}, #{interestScore}, 'active')
+        ON DUPLICATE KEY UPDATE
+        interest_score = #{interestScore}, status = 'active', update_time = NOW()
+    </insert>
+
+    <!-- 删除用户兴趣标签 -->
+    <update id="deleteUserInterestTag">
+        UPDATE t_user_interest_tag
+        SET status = 'inactive', update_time = NOW()
+        WHERE user_id = #{userId} AND tag_id = #{tagId}
+    </update>
+
+    <!-- 内容标签相关查询 -->
+    <insert id="insertContentTag">
+        INSERT INTO t_content_tag (content_id, tag_id)
+        VALUES (#{contentId}, #{tagId})
+        ON DUPLICATE KEY UPDATE create_time = create_time
+    </insert>
+
+    <delete id="deleteContentTag">
+        DELETE FROM t_content_tag
+        WHERE content_id = #{contentId} AND tag_id = #{tagId}
+    </delete>
 
 </mapper> 

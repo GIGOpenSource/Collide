@@ -1,264 +1,181 @@
 package com.gig.collide.users.facade;
 
-import com.gig.collide.api.user.request.*;
-import com.gig.collide.api.user.response.*;
-import com.gig.collide.api.user.response.data.UserUnifiedInfo;
-import com.gig.collide.api.user.response.data.BasicUserUnifiedInfo;
-import com.gig.collide.api.user.request.condition.*;
-import com.gig.collide.api.user.service.UserFacadeService;
-import com.gig.collide.users.domain.service.UserUnifiedService;
-import com.gig.collide.users.domain.entity.UserUnified;
-import com.gig.collide.users.domain.entity.convertor.UserUnifiedConvertor;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.request.UserCreateRequest;
+import com.gig.collide.api.user.request.UserQueryRequest;
+import com.gig.collide.api.user.request.UserUpdateRequest;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
+import com.gig.collide.users.domain.entity.User;
+import com.gig.collide.users.domain.service.UserService;
+import com.gig.collide.web.vo.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
- * 用户门面服务实现
+ * 用户门面服务实现 - 简洁版
+ * 基于简洁版SQL设计和API
  * 
- * @author Collide Team
- * @version 2.0
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0
  */
 @Slf4j
-@DubboService(version = "1.0.0")
+@DubboService(version = "2.0.0")
 public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Autowired
-    private UserUnifiedService userUnifiedService;
+    private UserService userService;
 
     @Override
-    public UserUnifiedQueryResponse<UserUnifiedInfo> queryUser(UserUnifiedQueryRequest userQueryRequest) {
-        UserUnifiedQueryResponse<UserUnifiedInfo> response = new UserUnifiedQueryResponse<>();
-        
+    public Result<UserResponse> createUser(UserCreateRequest request) {
         try {
-            UserQueryCondition condition = userQueryRequest.getUserQueryCondition();
-            UserUnified user = null;
+            User user = new User();
+            BeanUtils.copyProperties(request, user);
+            user.setStatus("active");
             
-            if (condition instanceof UserIdQueryCondition) {
-                UserIdQueryCondition idCondition = (UserIdQueryCondition) condition;
-                user = userUnifiedService.findById(idCondition.getUserId());
-            } else if (condition instanceof UserUsernameQueryCondition) {
-                UserUsernameQueryCondition usernameCondition = (UserUsernameQueryCondition) condition;
-                user = userUnifiedService.findByUsername(usernameCondition.getUsername());
-            } else if (condition instanceof UserEmailQueryCondition) {
-                UserEmailQueryCondition emailCondition = (UserEmailQueryCondition) condition;
-                user = userUnifiedService.findByEmail(emailCondition.getEmail());
-            } else if (condition instanceof UserPhoneQueryCondition) {
-                UserPhoneQueryCondition phoneCondition = (UserPhoneQueryCondition) condition;
-                user = userUnifiedService.findByPhone(phoneCondition.getPhone());
+            User savedUser = userService.createUser(user);
+            UserResponse response = convertToResponse(savedUser);
+            
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("创建用户失败", e);
+            return Result.error("USER_CREATE_ERROR", "创建用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<UserResponse> updateUser(UserUpdateRequest request) {
+        try {
+            User user = userService.getUserById(request.getId());
+            if (user == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
-            if (user != null) {
-                response.setSuccess(true);
-                response.setResponseCode("SUCCESS");
-                response.setResponseMessage("查询成功");
-                response.setData(UserUnifiedConvertor.INSTANCE.toUserUnifiedInfo(user));
-            } else {
-                response.setSuccess(false);
-                response.setResponseCode("USER_NOT_FOUND");
-                response.setResponseMessage("用户不存在");
+            BeanUtils.copyProperties(request, user);
+            User updatedUser = userService.updateUser(user);
+            UserResponse response = convertToResponse(updatedUser);
+            
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("更新用户失败", e);
+            return Result.error("USER_UPDATE_ERROR", "更新用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<UserResponse> getUserById(Long userId) {
+        try {
+            User user = userService.getUserById(userId);
+            if (user == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
+            UserResponse response = convertToResponse(user);
+            return Result.success(response);
         } catch (Exception e) {
             log.error("查询用户失败", e);
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
+            return Result.error("USER_NOT_FOUND","查询用户失败: " + e.getMessage());
         }
-        
-        return response;
     }
 
     @Override
-    public UserUnifiedQueryResponse<BasicUserUnifiedInfo> queryBasicUser(UserUnifiedQueryRequest userQueryRequest) {
-        UserUnifiedQueryResponse<BasicUserUnifiedInfo> response = new UserUnifiedQueryResponse<>();
-        
+    public Result<UserResponse> getUserByUsername(String username) {
         try {
-            UserQueryCondition condition = userQueryRequest.getUserQueryCondition();
-            UserUnified user = null;
-            
-            if (condition instanceof UserIdQueryCondition) {
-                UserIdQueryCondition idCondition = (UserIdQueryCondition) condition;
-                user = userUnifiedService.findById(idCondition.getUserId());
-            } else if (condition instanceof UserUsernameQueryCondition) {
-                UserUsernameQueryCondition usernameCondition = (UserUsernameQueryCondition) condition;
-                user = userUnifiedService.findByUsername(usernameCondition.getUsername());
-            } else if (condition instanceof UserEmailQueryCondition) {
-                UserEmailQueryCondition emailCondition = (UserEmailQueryCondition) condition;
-                user = userUnifiedService.findByEmail(emailCondition.getEmail());
-            } else if (condition instanceof UserPhoneQueryCondition) {
-                UserPhoneQueryCondition phoneCondition = (UserPhoneQueryCondition) condition;
-                user = userUnifiedService.findByPhone(phoneCondition.getPhone());
+            User user = userService.getUserByUsername(username);
+            if (user == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
-            if (user != null) {
-                response.setSuccess(true);
-                response.setResponseCode("SUCCESS");
-                response.setResponseMessage("查询成功");
-                response.setData(UserUnifiedConvertor.INSTANCE.toBasicUserUnifiedInfo(user));
-            } else {
-                response.setSuccess(false);
-                response.setResponseCode("USER_NOT_FOUND");
-                response.setResponseMessage("用户不存在");
+            UserResponse response = convertToResponse(user);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("查询用户失败", e);
+            return Result.error("USER_NOT_FOUND","查询用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<UserResponse>> queryUsers(UserQueryRequest request) {
+        try {
+            PageResponse<User> pageResult = userService.queryUsers(request);
+            
+            List<UserResponse> responses = pageResult.getDatas().stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            
+            PageResponse<UserResponse> result = new PageResponse<>();
+            result.setDatas(responses);
+            result.setCurrentPage(pageResult.getCurrentPage());
+            result.setPageSize(pageResult.getPageSize());
+            result.setTotal(pageResult.getTotal());
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("查询用户列表失败", e);
+            return Result.error("USER_LIST_QUERY_ERROR", "查询用户列表失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<UserResponse> login(String username, String password) {
+        try {
+            User user = userService.login(username, password);
+            if (user == null) {
+                return Result.error("LOGIN_FAILED", "用户名或密码错误");
             }
             
+            UserResponse response = convertToResponse(user);
+            return Result.success(response);
         } catch (Exception e) {
-            log.error("查询基础用户信息失败", e);
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
+            log.error("用户登录失败", e);
+            return Result.error("USER_LOGIN_ERROR", "登录失败: " + e.getMessage());
         }
-        
+    }
+
+    @Override
+    public Result<Void> updateUserStatus(Long userId, String status) {
+        try {
+            userService.updateUserStatus(userId, status);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("更新用户状态失败", e);
+            return Result.error("USER_STATUS_UPDATE_ERROR", "更新用户状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> deleteUser(Long userId) {
+        try {
+            userService.deleteUser(userId);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("删除用户失败", e);
+            return Result.error("USER_DELETE_ERROR", "删除用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> updateUserStats(Long userId, String statsType, Integer increment) {
+        try {
+            userService.updateUserStats(userId, statsType, increment);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("更新用户统计失败", e);
+            return Result.error("USER_STATS_UPDATE_ERROR", "更新用户统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 转换为响应对象
+     */
+    private UserResponse convertToResponse(User user) {
+        UserResponse response = new UserResponse();
+        BeanUtils.copyProperties(user, response);
         return response;
-    }
-
-    @Override
-    public PageResponse<UserUnifiedInfo> pageQueryUsers(UserUnifiedQueryRequest userQueryRequest) {
-        try {
-            return userUnifiedService.pageQuery(userQueryRequest);
-        } catch (Exception e) {
-            log.error("分页查询用户失败", e);
-            PageResponse<UserUnifiedInfo> response = new PageResponse<>();
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-            return response;
-        }
-    }
-
-    @Override
-    public UserUnifiedRegisterResponse register(UserUnifiedRegisterRequest registerRequest) {
-        try {
-            return userUnifiedService.register(registerRequest);
-        } catch (Exception e) {
-            log.error("用户注册失败", e);
-            UserUnifiedRegisterResponse response = new UserUnifiedRegisterResponse();
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-            return response;
-        }
-    }
-
-    @Override
-    public UserUnifiedModifyResponse modify(UserUnifiedModifyRequest modifyRequest) {
-        try {
-            return userUnifiedService.modify(modifyRequest);
-        } catch (Exception e) {
-            log.error("用户信息修改失败", e);
-            UserUnifiedModifyResponse response = new UserUnifiedModifyResponse();
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-            return response;
-        }
-    }
-
-    @Override
-    public UserUnifiedActivateResponse activate(UserUnifiedActivateRequest activateRequest) {
-        try {
-            return userUnifiedService.activate(activateRequest);
-        } catch (Exception e) {
-            log.error("用户激活失败", e);
-            UserUnifiedActivateResponse response = new UserUnifiedActivateResponse();
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-            return response;
-        }
-    }
-
-    @Override
-    public UserUnifiedBloggerApplyResponse applyBlogger(UserUnifiedBloggerApplyRequest applyRequest) {
-        try {
-            return userUnifiedService.applyBlogger(applyRequest);
-        } catch (Exception e) {
-            log.error("博主申请失败", e);
-            UserUnifiedBloggerApplyResponse response = new UserUnifiedBloggerApplyResponse();
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-            return response;
-        }
-    }
-
-    @Override
-    public UserUnifiedQueryResponse<UserUnifiedInfo> getUserWithBloggerInfo(Long userId) {
-        UserUnifiedQueryResponse<UserUnifiedInfo> response = new UserUnifiedQueryResponse<>();
-        
-        try {
-            UserUnified user = userUnifiedService.findById(userId);
-            if (user != null) {
-                response.setSuccess(true);
-                response.setResponseCode("SUCCESS");
-                response.setResponseMessage("查询成功");
-                response.setData(UserUnifiedConvertor.INSTANCE.toUserUnifiedInfo(user));
-            } else {
-                response.setSuccess(false);
-                response.setResponseCode("USER_NOT_FOUND");
-                response.setResponseMessage("用户不存在");
-            }
-        } catch (Exception e) {
-            log.error("获取用户博主信息失败", e);
-            response.setSuccess(false);
-            response.setResponseCode("SYSTEM_ERROR");
-            response.setResponseMessage("系统异常");
-        }
-        
-        return response;
-    }
-
-    @Override
-    public Boolean checkUsernameAvailable(String username) {
-        try {
-            return userUnifiedService.checkUsernameAvailable(username);
-        } catch (Exception e) {
-            log.error("检查用户名可用性失败", e);
-            return false;
-        }
-    }
-
-    @Override
-    public Boolean checkEmailAvailable(String email) {
-        try {
-            return userUnifiedService.checkEmailAvailable(email);
-        } catch (Exception e) {
-            log.error("检查邮箱可用性失败", e);
-            return false;
-        }
-    }
-
-    @Override
-    public Boolean checkPhoneAvailable(String phone) {
-        try {
-            return userUnifiedService.checkPhoneAvailable(phone);
-        } catch (Exception e) {
-            log.error("检查手机号可用性失败", e);
-            return false;
-        }
-    }
-
-    @Override
-    public String generateInviteCode(Long userId) {
-        try {
-            log.info("生成用户邀请码，用户ID：{}", userId);
-            return userUnifiedService.generateInviteCode(userId);
-        } catch (Exception e) {
-            log.error("生成用户邀请码失败，用户ID：{}", userId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public Boolean validatePassword(String username, String password) {
-        try {
-            log.info("验证用户密码，用户名：{}", username);
-            return userUnifiedService.validateUsernameAndPassword(username, password);
-        } catch (Exception e) {
-            log.error("验证用户密码失败，用户名：{}", username, e);
-            return false;
-        }
     }
 } 

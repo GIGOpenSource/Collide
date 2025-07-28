@@ -11,25 +11,3 @@ spring:
     # 参考 nft-turbo-app 的配置导入方式
     # 这里爆红可以直接忽略，没有任何影响
     import: classpath:base.yml,classpath:config.yml
-  cloud:
-    nacos:
-      discovery:
-        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: ${NACOS_NAMESPACE:public}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        cluster-name: ${NACOS_CLUSTER:DEFAULT}
-        metadata:
-          version: 2.0.0
-          zone: ${ZONE:default}
-      config:
-        server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
-        namespace: ${NACOS_NAMESPACE:public}
-        group: ${NACOS_GROUP:DEFAULT_GROUP}
-        file-extension: yml
-        shared-configs:
-          - data-id: collide-common.yml
-            group: COMMON_GROUP
-            refresh: true
-          - data-id: collide-datasource.yml
-            group: COMMON_GROUP
-            refresh: true
