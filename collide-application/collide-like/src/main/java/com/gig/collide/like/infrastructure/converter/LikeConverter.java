@@ -1,7 +1,5 @@
 package com.gig.collide.like.infrastructure.converter;
 
-import com.gig.collide.api.like.constant.LikeStatus;
-import com.gig.collide.api.like.constant.LikeType;
 import com.gig.collide.api.like.response.data.LikeInfo;
 import com.gig.collide.like.domain.entity.Like;
 import org.mapstruct.Mapper;

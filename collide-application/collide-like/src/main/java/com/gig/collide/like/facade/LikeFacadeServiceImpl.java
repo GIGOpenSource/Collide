@@ -1,13 +1,9 @@
 package com.gig.collide.like.facade;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.gig.collide.api.like.constant.LikeType;
-import com.gig.collide.api.like.request.LikeQueryRequest;
-import com.gig.collide.api.like.request.LikeRequest;
 import com.gig.collide.api.like.response.LikeQueryResponse;
 import com.gig.collide.api.like.response.LikeResponse;
 import com.gig.collide.api.like.response.data.LikeInfo;
-import com.gig.collide.api.like.service.LikeFacadeService;
 import com.gig.collide.like.domain.entity.Like;
 import com.gig.collide.like.domain.service.LikeDomainService;
 import com.gig.collide.like.infrastructure.converter.LikeConverter;
@@ -17,9 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**

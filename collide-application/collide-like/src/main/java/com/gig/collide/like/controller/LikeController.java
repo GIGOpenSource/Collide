@@ -1,12 +1,7 @@
 package com.gig.collide.like.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.gig.collide.api.like.request.LikeQueryRequest;
-import com.gig.collide.api.like.request.LikeRequest;
-import com.gig.collide.api.like.constant.LikeType;
-import com.gig.collide.base.response.BaseResponse;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.base.response.SingleResponse;
 import com.gig.collide.like.domain.entity.Like;
 import com.gig.collide.like.domain.service.LikeDomainService;
 import com.gig.collide.like.infrastructure.converter.LikeConverter;

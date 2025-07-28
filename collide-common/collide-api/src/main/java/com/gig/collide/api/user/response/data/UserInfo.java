@@ -115,7 +115,7 @@ public class UserInfo extends BasicUserInfo {
      * @return true if user is blogger
      */
     public boolean isBlogger() {
-        return UserRole.blogger.equals(this.role);
+        return UserRole.BLOGGER.equals(this.role);
     }
 
     /**
@@ -124,7 +124,7 @@ public class UserInfo extends BasicUserInfo {
      * @return true if user is admin
      */
     public boolean isAdmin() {
-        return UserRole.admin.equals(this.role);
+        return UserRole.ADMIN.equals(this.role);
     }
 
     /**
