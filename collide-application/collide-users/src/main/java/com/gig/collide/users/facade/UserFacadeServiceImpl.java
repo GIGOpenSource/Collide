@@ -36,6 +36,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
         try {
             User user = new User();
             BeanUtils.copyProperties(request, user);
+            
+            // 手动映射特殊字段
+            user.setPasswordHash(request.getPassword()); // password -> passwordHash
             user.setStatus("active");
             
             User savedUser = userService.createUser(user);

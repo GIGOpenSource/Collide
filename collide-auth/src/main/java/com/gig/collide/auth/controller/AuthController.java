@@ -68,9 +68,10 @@ public class AuthController {
             // 构建注册请求
             UserCreateRequest userCreateRequest = new UserCreateRequest();
             userCreateRequest.setUsername(registerParam.getUsername());
-            userCreateRequest.setPasswordHash(registerParam.getPassword()); // 密码将在UserService中加密
+            userCreateRequest.setPassword(registerParam.getPassword()); // 密码将在UserService中加密
+            userCreateRequest.setNickname(registerParam.getUsername()); // 默认昵称为用户名
+            userCreateRequest.setRole("user"); // 默认角色
             userCreateRequest.setInviteCode(registerParam.getInviteCode());
-            userCreateRequest.setRole("user");
 
             // 执行注册
             Result<UserResponse> registerResult = userFacadeService.createUser(userCreateRequest);
@@ -84,6 +85,15 @@ public class AuthController {
                         .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
                         .setToken(null);
                 StpUtil.login(userInfo.getId(), loginModel);
+                
+                // 存储用户信息到Session供网关鉴权使用
+                StpUtil.getSession().set("userInfo", java.util.Map.of(
+                    "id", userInfo.getId(),
+                    "username", userInfo.getUsername(),
+                    "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                    "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                ));
+                
                 String token = StpUtil.getTokenValue();
                 
                 log.info("用户注册并登录成功，用户ID：{}，Token：{}", userInfo.getId(), token);
@@ -125,6 +135,15 @@ public class AuthController {
                         .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
                         .setToken(null);
                 StpUtil.login(userInfo.getId(), loginModel);
+                
+                // 存储用户信息到Session供网关鉴权使用
+                StpUtil.getSession().set("userInfo", java.util.Map.of(
+                    "id", userInfo.getId(),
+                    "username", userInfo.getUsername(),
+                    "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                    "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                ));
+                
                 String token = StpUtil.getTokenValue();
                 
                 log.info("用户登录成功，用户ID：{}，Token：{}", userInfo.getId(), token);
@@ -166,6 +185,15 @@ public class AuthController {
                         .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
                         .setToken(null);
                 StpUtil.login(userInfo.getId(), loginModel);
+                
+                // 存储用户信息到Session供网关鉴权使用
+                StpUtil.getSession().set("userInfo", java.util.Map.of(
+                    "id", userInfo.getId(),
+                    "username", userInfo.getUsername(),
+                    "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                    "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                ));
+                
                 String token = StpUtil.getTokenValue();
                 
                 log.info("用户登录成功，用户ID：{}，Token：{}", userInfo.getId(), token);
@@ -187,9 +215,10 @@ public class AuthController {
                     
                     UserCreateRequest userCreateRequest = new UserCreateRequest();
                     userCreateRequest.setUsername(loginParam.getUsername());
-                    userCreateRequest.setPasswordHash(loginParam.getPassword());
+                    userCreateRequest.setPassword(loginParam.getPassword());
+                    userCreateRequest.setNickname(loginParam.getUsername()); // 默认昵称为用户名
+                    userCreateRequest.setRole("user"); // 默认角色
                     userCreateRequest.setInviteCode(loginParam.getInviteCode());
-                    userCreateRequest.setRole("user");
                     
                     Result<UserResponse> registerResult = userFacadeService.createUser(userCreateRequest);
                     
@@ -202,6 +231,15 @@ public class AuthController {
                                 .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
                                 .setToken(null);
                         StpUtil.login(userInfo.getId(), loginModel);
+                        
+                        // 存储用户信息到Session供网关鉴权使用
+                        StpUtil.getSession().set("userInfo", java.util.Map.of(
+                            "id", userInfo.getId(),
+                            "username", userInfo.getUsername(),
+                            "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                            "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                        ));
+                        
                         String token = StpUtil.getTokenValue();
                         
                         log.info("用户自动注册并登录成功，用户ID：{}", userInfo.getId());
