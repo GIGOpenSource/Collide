@@ -1,10 +1,7 @@
 package com.gig.collide.search.controller;
 
-import com.gig.collide.api.search.request.SearchRequest;
-import com.gig.collide.api.search.request.SearchSuggestionRequest;
 import com.gig.collide.api.search.response.SearchResponse;
 import com.gig.collide.api.search.response.SearchSuggestionResponse;
-import com.gig.collide.api.search.service.SearchFacadeService;
 import com.gig.collide.base.response.SingleResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;

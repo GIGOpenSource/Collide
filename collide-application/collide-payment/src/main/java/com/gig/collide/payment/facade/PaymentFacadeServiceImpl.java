@@ -1,8 +1,5 @@
 package com.gig.collide.payment.facade;
 
-import com.gig.collide.api.payment.request.CreatePaymentRequest;
-import com.gig.collide.api.payment.request.PaymentCallbackRequest;
-import com.gig.collide.api.payment.service.PaymentFacadeService;
 import com.gig.collide.base.response.SingleResponse;
 import com.gig.collide.payment.domain.service.PaymentDomainService;
 import com.gig.collide.payment.infrastructure.entity.PaymentRecord;
