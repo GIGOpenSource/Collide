@@ -12,3 +12,21 @@ spring:
 
 server:
   port: 9601
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.users.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 用户模块专用配置
+collide:
+  users:
+    # 默认头像
+    default-avatar: "https://example.com/default-avatar.png"
+    # 邀请码长度
+    invite-code-length: 8
+    # 密码加密盐值长度
+    password-salt-length: 16

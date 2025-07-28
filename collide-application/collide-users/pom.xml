@@ -41,6 +41,11 @@
 
         <dependency>
             <groupId>com.gig</groupId>
+            <artifactId>collide-cache</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
             <artifactId>collide-file</artifactId>
         </dependency>
 
