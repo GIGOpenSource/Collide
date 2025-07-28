@@ -1,9 +1,7 @@
 package com.gig.collide.admin.service.impl;
 
 import com.gig.collide.admin.service.AdminGoodsService;
-import com.gig.collide.api.goods.request.*;
 import com.gig.collide.api.goods.response.data.GoodsInfo;
-import com.gig.collide.api.goods.service.GoodsFacadeService;
 import com.gig.collide.base.response.PageResponse;
 
 import lombok.RequiredArgsConstructor;
