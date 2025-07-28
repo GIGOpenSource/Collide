@@ -2,6 +2,7 @@ package com.gig.collide.api.search.service;
 
 import com.gig.collide.api.search.request.*;
 import com.gig.collide.api.search.response.*;
+import com.gig.collide.api.search.response.data.SearchHistoryInfo;
 import com.gig.collide.base.response.BaseResponse;
 import com.gig.collide.base.response.PageResponse;
 

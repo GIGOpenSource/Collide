@@ -2,6 +2,7 @@ package com.gig.collide.api.search.service;
 
 import com.gig.collide.api.search.request.*;
 import com.gig.collide.api.search.response.*;
+import com.gig.collide.api.search.response.data.SearchResultInfo;
 import com.gig.collide.base.response.BaseResponse;
 import com.gig.collide.base.response.PageResponse;
 
@@ -98,7 +99,7 @@ public interface SearchFacadeService {
      * @param limit 返回数量限制
      * @return 搜索历史响应
      */
-    SearchHistoryResponse getUserSearchHistory(Long userId, Integer limit);
+    SearchHistoryQueryResponse getUserSearchHistory(Long userId, Integer limit);
 
     /**
      * 清空搜索历史

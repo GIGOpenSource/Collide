@@ -1,6 +1,5 @@
 package com.gig.collide.admin.service;
 
-import com.gig.collide.api.order.response.data.OrderInfo;
 import com.gig.collide.base.response.PageResponse;
 
 import java.util.List;
