@@ -44,8 +44,8 @@ public class SmsSendResponse {
         SmsSendResponse response = new SmsSendResponse();
         response.setSuccess(true);
         response.setPhoneNumber(phoneNumber);
-        response.setResponseMessageId(messageId);
-        response.setResponseMessage("短信发送成功");
+        response.setMessageId(messageId);
+        response.setMessage("短信发送成功");
         return response;
     }
 
@@ -57,7 +57,7 @@ public class SmsSendResponse {
         response.setSuccess(false);
         response.setPhoneNumber(phoneNumber);
         response.setErrorCode(errorCode);
-        response.setResponseMessage(message);
+        response.setMessage(message);
         return response;
     }
 } 
