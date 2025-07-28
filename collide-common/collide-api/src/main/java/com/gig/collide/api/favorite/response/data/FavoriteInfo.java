@@ -1,21 +1,26 @@
 package com.gig.collide.api.favorite.response.data;
 
-import com.gig.collide.api.favorite.constant.FavoriteType;
 import com.gig.collide.api.favorite.constant.FavoriteStatus;
+import com.gig.collide.api.favorite.constant.FavoriteType;
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Data;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 收藏信息
- *
+ * 收藏信息数据传输对象
+ * 
  * @author Collide Team
  * @version 1.0
  * @since 2024-01-01
  */
-@Data
+@Getter
+@Setter
+@ToString
+@NoArgsConstructor
+@AllArgsConstructor
+@EqualsAndHashCode(callSuper = false)
 @Schema(description = "收藏信息")
 public class FavoriteInfo implements Serializable {
 
@@ -52,12 +57,6 @@ public class FavoriteInfo implements Serializable {
     private Long folderId;
 
     /**
-     * 收藏夹名称
-     */
-    @Schema(description = "收藏夹名称")
-    private String folderName;
-
-    /**
      * 收藏状态
      */
     @Schema(description = "收藏状态")
@@ -75,39 +74,73 @@ public class FavoriteInfo implements Serializable {
     @Schema(description = "收藏时间")
     private LocalDateTime favoriteTime;
 
+    // === 目标信息冗余字段（去连表化设计） ===
+
     /**
-     * 目标标题（如果是内容收藏）
+     * 目标标题
      */
     @Schema(description = "目标标题")
     private String targetTitle;
 
     /**
-     * 目标封面（如果是内容收藏）
+     * 目标封面/头像
      */
-    @Schema(description = "目标封面")
+    @Schema(description = "目标封面/头像")
     private String targetCover;
 
     /**
-     * 目标作者（如果是内容收藏）
+     * 目标摘要/描述
      */
-    @Schema(description = "目标作者")
-    private String targetAuthor;
+    @Schema(description = "目标摘要/描述")
+    private String targetSummary;
 
     /**
-     * 目标作者头像（如果是内容收藏）
+     * 目标作者ID
+     */
+    @Schema(description = "目标作者ID")
+    private Long targetAuthorId;
+
+    /**
+     * 目标作者名称
+     */
+    @Schema(description = "目标作者名称")
+    private String targetAuthorName;
+
+    /**
+     * 目标作者头像
      */
     @Schema(description = "目标作者头像")
     private String targetAuthorAvatar;
 
     /**
-     * 是否可以取消收藏
+     * 目标发布时间
      */
-    @Schema(description = "是否可以取消收藏")
-    private Boolean canUnfavorite;
+    @Schema(description = "目标发布时间")
+    private LocalDateTime targetPublishTime;
+
+    // === 审计字段 ===
 
     /**
-     * 是否可以移动到其他收藏夹
+     * 创建时间
      */
-    @Schema(description = "是否可以移动到其他收藏夹")
-    private Boolean canMove;
+    @Schema(description = "创建时间")
+    private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    @Schema(description = "更新时间")
+    private LocalDateTime updateTime;
+
+    /**
+     * 是否删除
+     */
+    @Schema(description = "是否删除")
+    private Boolean deleted;
+
+    /**
+     * 版本号
+     */
+    @Schema(description = "版本号")
+    private Integer version;
 } 
