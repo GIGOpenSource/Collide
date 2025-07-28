@@ -18,9 +18,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 1.0
  * @since 2024-01-01
  */
-@SpringBootApplication(scanBasePackages = "com.gig.collide.comment")
-@EnableDubbo
-@MapperScan("com.gig.collide.comment.infrastructure.mapper")
+@SpringBootApplication
 public class CollideCommentApplication {
 
     public static void main(String[] args) {

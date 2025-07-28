@@ -28,38 +28,6 @@ spring:
 server:
   port: 9605
 
-# ===================== Dubbo 标准化配置 =====================
-dubbo:
-  application:
-    name: ${spring.application.name}
-    version: 1.0.0
-    # 标准化参数
-    parameters:
-      service: favorite
-      module: collide-application
-  protocol:
-    name: dubbo
-    port: 20888
-    # 标准化性能配置
-    threads: 200
-    accepts: 1000
-  registry:
-    address: nacos://${collide.turbo.nacos.server.url}
-    timeout: 10000
-  provider:
-    # 标准化超时配置
-    timeout: 10000
-    retries: 0
-    # 标准化负载均衡
-    loadbalance: roundrobin
-    # 标准化集群容错
-    cluster: failfast
-  consumer:
-    # 标准化消费者配置
-    timeout: 10000
-    retries: 2
-    loadbalance: roundrobin
-
 # ===================== MyBatis Plus 标准化配置 =====================
 mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
@@ -79,34 +47,6 @@ mybatis-plus:
       # 标准化主键
       id-type: ASSIGN_ID
 
-# ===================== 收藏服务业务配置 =====================
-collide:
-  favorite:
-    # 默认收藏夹配置
-    default-folder:
-      auto-create: true
-      name: "默认收藏夹"
-      description: "系统自动创建的默认收藏夹"
-    # 收藏数量限制
-    limit:
-      max-folders-per-user: 20
-      max-items-per-folder: 1000
-    # 缓存配置
-    cache:
-      # 用户收藏缓存TTL(秒)
-      user-favorites-ttl: 1800
-      # 收藏夹信息缓存TTL(秒)
-      folder-info-ttl: 3600
-      # 热门收藏缓存TTL(秒)
-      hot-favorites-ttl: 600
-    # 性能配置
-    performance:
-      # 批量操作大小限制
-      batch-size-limit: 100
-      # 异步任务线程池大小
-      async-pool-size: 10
-
-# ===================== 日志标准化配置 =====================
 logging:
   level:
     # 业务日志

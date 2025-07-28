@@ -1,11 +1,9 @@
 package com.gig.collide.like;
 
-import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
-import org.mybatis.spring.annotation.MapperScan;
+
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
+
 
 /**
  * 点赞服务启动类 - 标准化设计
@@ -20,18 +18,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @author Collide Team
  * @since 2.0.0
  */
-@SpringBootApplication(scanBasePackages = {
-    "com.gig.collide.like",
-    "com.gig.collide.base",
-    "com.gig.collide.cache",
-    "com.gig.collide.datasource",
-    "com.gig.collide.rpc",
-    "com.gig.collide.web"
-})
-@EnableDiscoveryClient
-@EnableDubbo
-@EnableTransactionManagement
-@MapperScan("com.gig.collide.like.infrastructure.mapper")
+@SpringBootApplication
 public class LikeApplication {
     
     public static void main(String[] args) {
