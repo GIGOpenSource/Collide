@@ -15,7 +15,7 @@ services:
     environment:
       - SERVER_PORT=9501
       - SPRING_PROFILES_ACTIVE=docker
-      - JAVA_OPTS=-Xms256m -Xmx512m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
       - DUBBO_REGISTRY_ADDRESS=nacos://nacos:8848
       - DUBBO_PROTOCOL_PORT=20881
     restart: unless-stopped
@@ -36,7 +36,7 @@ services:
     container_name: collide-auth
     environment:
       - SPRING_PROFILES_ACTIVE=docker
-      - JAVA_OPTS=-Xms256m -Xmx512m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
       - DUBBO_REGISTRY_ADDRESS=nacos://nacos:8848
       - DUBBO_PROTOCOL_PORT=20882
     restart: unless-stopped
@@ -58,7 +58,7 @@ services:
     image: collide/content:latest
     container_name: collide-content
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -76,7 +76,7 @@ services:
     image: collide/users:latest
     container_name: collide-users
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -94,7 +94,7 @@ services:
     image: collide/category:latest
     container_name: collide-category
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -112,7 +112,7 @@ services:
     image: collide/comment:latest
     container_name: collide-comment
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -130,7 +130,7 @@ services:
     image: collide/social:latest
     container_name: collide-social
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -148,7 +148,7 @@ services:
     image: collide/tag:latest
     container_name: collide-tag
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -168,7 +168,7 @@ services:
     image: collide/like:latest
     container_name: collide-like
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -186,7 +186,7 @@ services:
     image: collide/favorite:latest
     container_name: collide-favorite
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -204,7 +204,7 @@ services:
     image: collide/follow:latest
     container_name: collide-follow
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -224,7 +224,7 @@ services:
     image: collide/goods:latest
     container_name: collide-goods
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -242,7 +242,7 @@ services:
     image: collide/order:latest
     container_name: collide-order
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -260,7 +260,7 @@ services:
     image: collide/payment:latest
     container_name: collide-payment
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
@@ -280,7 +280,7 @@ services:
     image: collide/search:latest
     container_name: collide-search
     environment:
-      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
     networks:
       collide-network:
