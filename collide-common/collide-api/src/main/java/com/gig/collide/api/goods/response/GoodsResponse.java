@@ -1,5 +1,6 @@
 package com.gig.collide.api.goods.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -120,6 +121,7 @@ public class GoodsResponse {
     /**
      * 是否有折扣
      */
+    @JsonIgnore
     public boolean hasDiscount() {
         return originalPrice != null && price != null && 
                originalPrice.compareTo(price) > 0;
@@ -128,6 +130,7 @@ public class GoodsResponse {
     /**
      * 折扣金额
      */
+    @JsonIgnore
     public BigDecimal getDiscountAmount() {
         if (hasDiscount()) {
             return originalPrice.subtract(price);
@@ -138,6 +141,7 @@ public class GoodsResponse {
     /**
      * 是否有库存
      */
+    @JsonIgnore
     public boolean hasStock() {
         return stock != null && stock > 0;
     }
@@ -145,6 +149,7 @@ public class GoodsResponse {
     /**
      * 是否为活跃状态
      */
+    @JsonIgnore
     public boolean isActive() {
         return "active".equals(status);
     }
@@ -152,6 +157,7 @@ public class GoodsResponse {
     /**
      * 是否售罄
      */
+    @JsonIgnore
     public boolean isSoldOut() {
         return "sold_out".equals(status) || (stock != null && stock <= 0);
     }

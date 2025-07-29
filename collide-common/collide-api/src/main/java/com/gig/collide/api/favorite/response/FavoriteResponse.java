@@ -1,5 +1,6 @@
 package com.gig.collide.api.favorite.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -89,6 +90,7 @@ public class FavoriteResponse {
     /**
      * 是否为活跃收藏
      */
+    @JsonIgnore
     public boolean isActive() {
         return "active".equals(status);
     }
@@ -96,6 +98,7 @@ public class FavoriteResponse {
     /**
      * 是否已取消收藏
      */
+    @JsonIgnore
     public boolean isCancelled() {
         return "cancelled".equals(status);
     }
@@ -103,6 +106,7 @@ public class FavoriteResponse {
     /**
      * 获取收藏天数
      */
+    @JsonIgnore
     public long getFavoriteDays() {
         if (createTime == null) {
             return 0;
@@ -113,6 +117,7 @@ public class FavoriteResponse {
     /**
      * 是否为内容类型收藏
      */
+    @JsonIgnore
     public boolean isContentFavorite() {
         return "CONTENT".equals(favoriteType);
     }
@@ -120,6 +125,7 @@ public class FavoriteResponse {
     /**
      * 是否为商品类型收藏
      */
+    @JsonIgnore
     public boolean isGoodsFavorite() {
         return "GOODS".equals(favoriteType);
     }

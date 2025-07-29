@@ -1,5 +1,6 @@
 package com.gig.collide.api.comment.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -135,6 +136,7 @@ public class CommentResponse {
     /**
      * 是否为正常状态
      */
+    @JsonIgnore
     public boolean isNormal() {
         return "NORMAL".equals(status);
     }
@@ -142,6 +144,7 @@ public class CommentResponse {
     /**
      * 是否已隐藏
      */
+    @JsonIgnore
     public boolean isHidden() {
         return "HIDDEN".equals(status);
     }
@@ -149,6 +152,7 @@ public class CommentResponse {
     /**
      * 是否已删除
      */
+    @JsonIgnore
     public boolean isDeleted() {
         return "DELETED".equals(status);
     }
@@ -156,6 +160,7 @@ public class CommentResponse {
     /**
      * 是否为根评论
      */
+    @JsonIgnore
     public boolean isRootComment() {
         return parentCommentId == null || parentCommentId == 0;
     }
@@ -163,6 +168,7 @@ public class CommentResponse {
     /**
      * 是否为回复评论
      */
+    @JsonIgnore
     public boolean isReplyComment() {
         return !isRootComment();
     }
@@ -170,6 +176,7 @@ public class CommentResponse {
     /**
      * 是否为内容评论
      */
+    @JsonIgnore
     public boolean isContentComment() {
         return "CONTENT".equals(commentType);
     }
@@ -177,6 +184,7 @@ public class CommentResponse {
     /**
      * 是否为动态评论
      */
+    @JsonIgnore
     public boolean isDynamicComment() {
         return "DYNAMIC".equals(commentType);
     }
@@ -184,6 +192,7 @@ public class CommentResponse {
     /**
      * 是否有回复
      */
+    @JsonIgnore
     public boolean hasReplies() {
         return replyCount != null && replyCount > 0;
     }
@@ -191,6 +200,7 @@ public class CommentResponse {
     /**
      * 是否有点赞
      */
+    @JsonIgnore
     public boolean hasLikes() {
         return likeCount != null && likeCount > 0;
     }
@@ -198,6 +208,7 @@ public class CommentResponse {
     /**
      * 获取评论创建天数
      */
+    @JsonIgnore
     public long getCreateDays() {
         if (createTime == null) {
             return 0;
@@ -208,6 +219,7 @@ public class CommentResponse {
     /**
      * 获取评论摘要（前50个字符）
      */
+    @JsonIgnore
     public String getSummary() {
         if (content == null || content.trim().isEmpty()) {
             return "";
@@ -219,6 +231,7 @@ public class CommentResponse {
     /**
      * 获取评论字数
      */
+    @JsonIgnore
     public int getContentLength() {
         return content != null ? content.length() : 0;
     }
@@ -226,6 +239,7 @@ public class CommentResponse {
     /**
      * 是否为长评论（超过100字符）
      */
+    @JsonIgnore
     public boolean isLongComment() {
         return getContentLength() > 100;
     }
@@ -233,6 +247,7 @@ public class CommentResponse {
     /**
      * 获取评论热度（点赞数权重）
      */
+    @JsonIgnore
     public double getHotScore() {
         double likeScore = likeCount != null ? likeCount * 1.0 : 0.0;
         double replyScore = replyCount != null ? replyCount * 0.5 : 0.0;
@@ -244,6 +259,7 @@ public class CommentResponse {
     /**
      * 初始化子评论列表
      */
+    @JsonIgnore
     public void initChildren() {
         if (this.children == null) {
             this.children = new java.util.ArrayList<>();
@@ -253,6 +269,7 @@ public class CommentResponse {
     /**
      * 添加子评论
      */
+    @JsonIgnore
     public void addChild(CommentResponse child) {
         initChildren();
         if (child != null) {
@@ -264,6 +281,7 @@ public class CommentResponse {
     /**
      * 是否有子评论
      */
+    @JsonIgnore
     public boolean hasChildren() {
         return children != null && !children.isEmpty();
     }
@@ -271,6 +289,7 @@ public class CommentResponse {
     /**
      * 获取子评论数量
      */
+    @JsonIgnore
     public int getChildrenCount() {
         return children != null ? children.size() : 0;
     }

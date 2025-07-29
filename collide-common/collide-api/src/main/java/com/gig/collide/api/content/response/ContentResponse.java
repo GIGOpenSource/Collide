@@ -1,5 +1,6 @@
 package com.gig.collide.api.content.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -153,6 +154,7 @@ public class ContentResponse {
     /**
      * 是否为草稿状态
      */
+    @JsonIgnore
     public boolean isDraft() {
         return "DRAFT".equals(status);
     }
@@ -160,6 +162,7 @@ public class ContentResponse {
     /**
      * 是否已发布
      */
+    @JsonIgnore
     public boolean isPublished() {
         return "PUBLISHED".equals(status);
     }
@@ -167,6 +170,7 @@ public class ContentResponse {
     /**
      * 是否已下线
      */
+    @JsonIgnore
     public boolean isOffline() {
         return "OFFLINE".equals(status);
     }
@@ -174,6 +178,7 @@ public class ContentResponse {
     /**
      * 是否待审核
      */
+    @JsonIgnore
     public boolean isPendingReview() {
         return "PENDING".equals(reviewStatus);
     }
@@ -181,6 +186,7 @@ public class ContentResponse {
     /**
      * 是否审核通过
      */
+    @JsonIgnore
     public boolean isApproved() {
         return "APPROVED".equals(reviewStatus);
     }
@@ -188,6 +194,7 @@ public class ContentResponse {
     /**
      * 是否审核被拒
      */
+    @JsonIgnore
     public boolean isRejected() {
         return "REJECTED".equals(reviewStatus);
     }
@@ -195,6 +202,7 @@ public class ContentResponse {
     /**
      * 获取平均评分
      */
+    @JsonIgnore
     public Double getAverageScore() {
         if (scoreCount == null || scoreCount == 0 || scoreTotal == null) {
             return 0.0;
@@ -205,6 +213,7 @@ public class ContentResponse {
     /**
      * 获取评分显示（保留1位小数）
      */
+    @JsonIgnore
     public String getScoreDisplay() {
         return String.format("%.1f", getAverageScore());
     }
@@ -212,6 +221,7 @@ public class ContentResponse {
     /**
      * 是否为小说类型
      */
+    @JsonIgnore
     public boolean isNovel() {
         return "NOVEL".equals(contentType);
     }
@@ -219,6 +229,7 @@ public class ContentResponse {
     /**
      * 是否为漫画类型
      */
+    @JsonIgnore
     public boolean isComic() {
         return "COMIC".equals(contentType);
     }
@@ -226,6 +237,7 @@ public class ContentResponse {
     /**
      * 是否为视频类型
      */
+    @JsonIgnore
     public boolean isVideo() {
         return "VIDEO".equals(contentType);
     }
@@ -233,6 +245,7 @@ public class ContentResponse {
     /**
      * 是否为文章类型
      */
+    @JsonIgnore
     public boolean isArticle() {
         return "ARTICLE".equals(contentType);
     }
@@ -240,6 +253,7 @@ public class ContentResponse {
     /**
      * 是否为音频类型
      */
+    @JsonIgnore
     public boolean isAudio() {
         return "AUDIO".equals(contentType);
     }
@@ -247,6 +261,7 @@ public class ContentResponse {
     /**
      * 是否需要章节管理
      */
+    @JsonIgnore
     public boolean needsChapterManagement() {
         return isNovel() || isComic();
     }
@@ -254,6 +269,7 @@ public class ContentResponse {
     /**
      * 获取内容创建天数
      */
+    @JsonIgnore
     public long getCreateDays() {
         if (createTime == null) {
             return 0;
@@ -264,6 +280,7 @@ public class ContentResponse {
     /**
      * 获取发布天数
      */
+    @JsonIgnore
     public long getPublishDays() {
         if (publishTime == null) {
             return 0;

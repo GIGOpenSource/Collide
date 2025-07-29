@@ -1,5 +1,6 @@
 package com.gig.collide.api.content.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -73,6 +74,7 @@ public class ChapterResponse {
     /**
      * 是否为草稿状态
      */
+    @JsonIgnore
     public boolean isDraft() {
         return "DRAFT".equals(status);
     }
@@ -80,6 +82,7 @@ public class ChapterResponse {
     /**
      * 是否已发布
      */
+    @JsonIgnore
     public boolean isPublished() {
         return "PUBLISHED".equals(status);
     }
@@ -87,6 +90,7 @@ public class ChapterResponse {
     /**
      * 获取章节创建天数
      */
+    @JsonIgnore
     public long getCreateDays() {
         if (createTime == null) {
             return 0;
@@ -97,6 +101,7 @@ public class ChapterResponse {
     /**
      * 获取阅读时长估算（按300字/分钟计算）
      */
+    @JsonIgnore
     public Integer getEstimateReadMinutes() {
         if (wordCount == null || wordCount <= 0) {
             return 0;

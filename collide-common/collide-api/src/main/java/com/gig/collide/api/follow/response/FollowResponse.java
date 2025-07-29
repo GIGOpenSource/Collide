@@ -1,5 +1,6 @@
 package com.gig.collide.api.follow.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -84,6 +85,7 @@ public class FollowResponse {
     /**
      * 是否为活跃关注
      */
+    @JsonIgnore
     public boolean isActive() {
         return "active".equals(status);
     }
@@ -91,6 +93,7 @@ public class FollowResponse {
     /**
      * 是否已取消关注
      */
+    @JsonIgnore
     public boolean isCancelled() {
         return "cancelled".equals(status);
     }
@@ -98,6 +101,7 @@ public class FollowResponse {
     /**
      * 获取关注天数
      */
+    @JsonIgnore
     public long getFollowDays() {
         if (createTime == null) {
             return 0;
