@@ -39,21 +39,6 @@
             <artifactId>collide-api</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-limiter</artifactId>
-            <exclusions>
-                <!--  排除spring-web，gateway应用中不能包含spring mvc组件-->
-                <exclusion>
-                    <groupId> org.springframework</groupId>
-                    <artifactId>spring-web</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId> org.springframework</groupId>
-                    <artifactId>spring-webmvc</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
         <!-- SkyWalking 链路追踪 -->
         <dependency>
             <groupId>com.gig</groupId>
@@ -74,6 +59,16 @@
         </dependency>
 
         <!-- Sa-Token 整合 Redis （使用 jackson 序列化方式） -->
+        <dependency>
+            <groupId>cn.dev33</groupId>
+            <artifactId>sa-token-redis-jackson</artifactId>
+            <version>1.37.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-jackson</artifactId>
@@ -109,9 +104,9 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
+            <groupId>com.github.houbb</groupId>
+            <artifactId>sensitive-logback</artifactId>
+            <version>1.7.0</version>
         </dependency>
 
     </dependencies>
@@ -123,7 +118,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <!--                    <skip>true</skip>-->
-                    <mainClass>com.gig.collide.gateway.CollideGatewayApplication</mainClass>
+                    <mainClass>cn.hollis.nft.turbo.gateway.NfTurboGatewayApplication</mainClass>
                 </configuration>
 
                 <executions>
