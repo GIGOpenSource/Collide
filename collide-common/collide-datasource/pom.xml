@@ -58,10 +58,13 @@
         </dependency>
 
         <!--shardingsphere-->
+        <!-- TODO: 暂时注释，需要验证正确的artifact名称
         <dependency>
             <groupId>org.apache.shardingsphere</groupId>
             <artifactId>shardingsphere-jdbc-core-spring-boot-starter</artifactId>
+            <version>5.3.2</version>
         </dependency>
+        -->
 
         <!--    shardingsphere和2.2不兼容，需要使用1.33，但是1.33和springboot 3.2.2 不兼容，所以自定义了 TagInspector和 UnTrustedTagInspector  -->
         <dependency>
