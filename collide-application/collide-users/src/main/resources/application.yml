@@ -6,7 +6,7 @@ spring:
   oss:
     enabled: true
     bucket: mds
-    endPoint: http://192.168.1.107:9000
+    endPoint: http://172.20.1.20:9000
     accessKey: minioadmin
     accessSecret: minioadmin
 

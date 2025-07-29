@@ -2,7 +2,7 @@ collide:
   turbo:
     nacos:
       server:
-        url: 192.168.1.107:8848
+        url: 172.20.1.30:8848
         username: nacos
         password: nacos
         # 增加超时配置
@@ -12,29 +12,29 @@ collide:
         config-long-poll-timeout: 60000 # 长轮询超时60秒
 
     mysql:
-      url: jdbc:mysql://192.168.1.107:3306/collide
+      url: jdbc:mysql://172.20.1.10:3306/collide
       username: root
       password: '123456'
     redis:
-      url: 192.168.1.107
+      url: 172.20.1.40
       port: 6379
       password: 123456
       database: 0
     elasticsearch:
       enable: false
-      url: 192.168.1.107:9200
+      url: 172.20.1.80:9200
       username: elastic
       password: 123456
     sentinel:
-      url: 192.168.1.107
+      url: 172.20.1.50
       port: 8888
       nacos:
         data-id: ${spring.application.name}-sentinel
     rocketmq:
-      url: 192.168.1.107:9876
+      url: 172.20.1.70:9876
     dubbo:
       nacos:
-        namespace: 5d02cdf0-69f6-40a9-aca8-2006ac430045
+        namespace: c608ea7d-832d-4622-99ad-081907a2e41c
         group: dubbo
     seata:
       nacos:
