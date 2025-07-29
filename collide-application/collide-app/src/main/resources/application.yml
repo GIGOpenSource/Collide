@@ -13,21 +13,11 @@ spring:
     lazy-initialization: true
     allow-bean-definition-overriding: true
 
-# =====================================
-# 服务器配置
-# =====================================
+
 server:
   port: 9503
-  servlet:
-    context-path: /
-  compression:
-    enabled: true
-    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
-    min-response-size: 1024
 
-# =====================================
-# 管理端点配置（参考 nft-turbo-app）
-# =====================================
+
 management:
   endpoints:
     web:
@@ -65,22 +55,3 @@ logging:
     com.alibaba.nacos: warn
   pattern:
     console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
-
-collide:
-  features:
-    # 启用的业务功能模块
-    users: true
-    follow: true
-    content: true
-    comment: true
-    like: true
-    favorite: true
-    social: true
-    goods: true
-    order: true
-    payment: true
-  infrastructure:
-    # 基础设施功能开关
-    prometheus-enabled: true
-    skywalking-enabled: true
-    cache-enabled: true
