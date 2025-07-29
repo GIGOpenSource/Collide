@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.search.infrastructure.mapper.HotSearchMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, keyword, search_count, trend_score, status, create_time, update_time
+    </sql>
+
+    <!-- =================== 基础查询 =================== -->
+
+    <!-- 获取热门搜索关键词（按搜索次数排序） -->
+    <select id="selectHotKeywords" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE status = 'active'
+        ORDER BY search_count DESC, trend_score DESC, update_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据搜索类型获取热门关键词 -->
+    <select id="selectHotKeywordsByType" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT hs.<include refid="Base_Column_List"/>
+        FROM t_hot_search hs
+        INNER JOIN (
+            SELECT keyword, COUNT(*) as type_count
+            FROM t_search_history
+            WHERE search_type = #{searchType}
+            GROUP BY keyword
+        ) sh ON hs.keyword = sh.keyword
+        WHERE hs.status = 'active'
+        ORDER BY (hs.search_count * 0.7 + sh.type_count * 0.3) DESC, hs.trend_score DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据关键词查询 -->
+    <select id="selectByKeyword" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE keyword = #{keyword}
+    </select>
+
+    <!-- 获取活跃的热搜关键词 -->
+    <select id="selectActiveHotKeywords" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE status = 'active'
+        AND search_count > 0
+        AND trend_score > 0
+        ORDER BY 
+            (search_count * 0.6 + trend_score * 0.4) DESC,
+            update_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 更新操作 =================== -->
+
+    <!-- 增加搜索次数 -->
+    <update id="increaseSearchCount">
+        UPDATE t_hot_search
+        SET search_count = search_count + 1,
+            update_time = NOW()
+        WHERE keyword = #{keyword}
+    </update>
+
+    <!-- 更新趋势分数 -->
+    <update id="updateTrendScore">
+        UPDATE t_hot_search
+        SET trend_score = #{trendScore},
+            update_time = NOW()
+        WHERE keyword = #{keyword}
+    </update>
+
+    <!-- 批量插入或更新热搜数据 -->
+    <insert id="insertOrUpdateHotSearch">
+        INSERT INTO t_hot_search (keyword, search_count, trend_score, status, create_time, update_time)
+        VALUES (#{keyword}, #{searchCount}, 0, 'active', NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+            search_count = search_count + #{searchCount},
+            update_time = NOW()
+    </insert>
+
+    <!-- =================== 高级查询（扩展功能） =================== -->
+
+    <!-- 获取趋势上升的关键词 -->
+    <select id="selectTrendingKeywords" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE status = 'active'
+        AND trend_score > 1.0
+        ORDER BY trend_score DESC, search_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取搜索量突增的关键词 -->
+    <select id="selectSurgeKeywords" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT hs.<include refid="Base_Column_List"/>
+        FROM t_hot_search hs
+        INNER JOIN (
+            SELECT keyword, COUNT(*) as recent_count
+            FROM t_search_history
+            WHERE create_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+            GROUP BY keyword
+            HAVING COUNT(*) >= #{minSurgeCount}
+        ) recent ON hs.keyword = recent.keyword
+        WHERE hs.status = 'active'
+        ORDER BY recent.recent_count DESC, hs.search_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 搜索关键词建议 -->
+    <select id="selectKeywordSuggestions" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE status = 'active'
+        AND keyword LIKE CONCAT(#{prefix}, '%')
+        ORDER BY search_count DESC, trend_score DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计热搜关键词数量 -->
+    <select id="countActiveHotKeywords" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_hot_search
+        WHERE status = 'active'
+        <if test="minSearchCount != null">
+            AND search_count >= #{minSearchCount}
+        </if>
+    </select>
+
+    <!-- 获取关键词搜索统计 -->
+    <select id="selectKeywordStatistics" resultType="java.util.Map">
+        SELECT 
+            keyword,
+            search_count,
+            trend_score,
+            DATEDIFF(NOW(), create_time) as create_days,
+            DATEDIFF(NOW(), update_time) as last_update_days
+        FROM t_hot_search
+        WHERE keyword = #{keyword}
+    </select>
+
+    <!-- =================== 数据维护 =================== -->
+
+    <!-- 批量更新关键词状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_hot_search
+        SET status = #{status},
+            update_time = NOW()
+        WHERE keyword IN
+        <foreach collection="keywords" item="keyword" open="(" close=")" separator=",">
+            #{keyword}
+        </foreach>
+    </update>
+
+    <!-- 清理低热度关键词 -->
+    <update id="cleanLowHeatKeywords">
+        UPDATE t_hot_search
+        SET status = 'inactive',
+            update_time = NOW()
+        WHERE status = 'active'
+        AND search_count &lt; #{minSearchCount}
+        AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </update>
+
+    <!-- 重新计算趋势分数 -->
+    <update id="recalculateTrendScore">
+        UPDATE t_hot_search hs
+        INNER JOIN (
+            SELECT 
+                keyword,
+                COUNT(*) as recent_count,
+                CASE 
+                    WHEN COUNT(*) > 100 THEN 3.0
+                    WHEN COUNT(*) > 50 THEN 2.0
+                    WHEN COUNT(*) > 10 THEN 1.5
+                    ELSE 1.0
+                END as new_trend_score
+            FROM t_search_history
+            WHERE create_time >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+            GROUP BY keyword
+        ) trend ON hs.keyword = trend.keyword
+        SET hs.trend_score = trend.new_trend_score,
+            hs.update_time = NOW()
+        WHERE hs.status = 'active'
+    </update>
+
+    <!-- 归档历史热搜数据 -->
+    <select id="selectHistoryHotSearchForArchive" resultType="com.gig.collide.search.domain.entity.HotSearch">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_hot_search
+        WHERE status = 'inactive'
+        AND update_time &lt; #{beforeTime}
+        ORDER BY update_time ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

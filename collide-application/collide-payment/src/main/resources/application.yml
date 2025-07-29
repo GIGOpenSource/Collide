@@ -3,10 +3,16 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
-  port: 9503
+  port: 9610
   servlet:
     context-path: /payment
 
@@ -17,16 +23,15 @@ mybatis-plus:
     cache-enabled: true
     lazy-loading-enabled: true
     multiple-result-sets-enabled: true
-  mapper-locations: classpath*:mapper/*_sqlmap.xml
-  type-aliases-package: com.gig.collide.payment.infrastructure.entity
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.payment.domain.entity
   global-config:
     db-config:
       id-type: auto
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
-      insert-strategy: not_null
-      update-strategy: not_null
 
 # Collide Payment 业务配置 (v2.0.0)
 collide:
@@ -74,12 +79,22 @@ collide:
       alipay:
         enabled: true
         timeout: 30000
+        app-id: "your-alipay-app-id"
       wechat:
         enabled: true
         timeout: 30000
+        app-id: "your-wechat-app-id"
       unionpay:
         enabled: false
         timeout: 30000
       test:
         enabled: true
         auto-success: true
+    # 支付单号前缀
+    payment-no-prefix: "PAY"
+    # 支付超时时间（分钟）
+    timeout-minutes: 15
+    # 支付回调重试次数
+    callback-retry-times: 3
+    # 大额支付阈值（用于风控）
+    large-amount-threshold: 10000

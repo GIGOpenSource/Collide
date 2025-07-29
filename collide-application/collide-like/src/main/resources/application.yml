@@ -1,43 +1,36 @@
-server:
-  port: 9603
-
 spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:cache.yml,classpath:rpc.yml,classpath:datasource.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
+
+server:
+  port: 9608
 
 # MyBatis Plus配置
 mybatis-plus:
-  configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-    map-underscore-to-camel-case: true
-  mapper-locations: classpath:mapper/*_sqlmap.xml
+  mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.gig.collide.like.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# 日志配置
-logging:
-  level:
-    com.gig.collide.like: DEBUG
-    org.springframework.web: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-
-# 点赞服务业务配置
+# 点赞模块专用配置
 collide:
   like:
-    # 统计重置配置
-    statistics:
-      reset-today-cron: "0 0 0 * * ?"        # 每天0点重置今日统计
-      reset-week-cron: "0 0 0 ? * MON"       # 每周一0点重置本周统计
-      reset-month-cron: "0 0 0 1 * ?"        # 每月1号0点重置本月统计
-    
-    # 缓存配置
-    cache:
-      statistics-ttl: 300                     # 统计信息缓存时间（秒）
-      user-like-status-ttl: 600              # 用户点赞状态缓存时间（秒）
-    
-    # 限流配置
-    rate-limit:
-      user-like-per-minute: 60               # 用户每分钟最大点赞次数
-      user-like-per-hour: 1000               # 用户每小时最大点赞次数
+    # 防重复点赞时间窗口（秒）
+    duplicate-window: 5
+    # 批量检查最大数量
+    batch-check-max-size: 100
+    # 点赞统计同步间隔（分钟）
+    stats-sync-interval: 10
+    # 热门内容阈值
+    hot-threshold: 100
+    # 数据清理天数
+    cleanup-days: 90

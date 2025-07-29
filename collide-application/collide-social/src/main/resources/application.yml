@@ -3,9 +3,15 @@ spring:
     name: @application.name@
   config:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
-  port: 9603
+  port: 9612
 
 # MyBatis Plus配置
 mybatis-plus:
@@ -18,17 +24,15 @@ mybatis-plus:
 # 社交模块专用配置
 collide:
   social:
-    # 默认分页大小
-    default-page-size: 20
-    # 最大分页大小
-    max-page-size: 100
-    # 帖子最大长度
-    post-max-length: 2000
-    # 互动缓存过期时间（分钟）
-    interaction-cache-expire: 30
-    # 统计信息缓存过期时间（分钟）
-    statistics-cache-expire: 60
-    # 热门帖子默认数量
-    hot-posts-default-limit: 50
-    # 推荐帖子默认数量
-    recommend-posts-default-limit: 20 
+    # 动态内容最大长度
+    max-content-length: 2000
+    # 图片最大数量
+    max-images: 9
+    # 视频文件最大大小（MB）
+    max-video-size: 100
+    # 热门动态阈值
+    hot-threshold: 100
+    # 动态流分页大小
+    feed-page-size: 20
+    # 敏感内容过滤开关
+    content-filter-enabled: true 

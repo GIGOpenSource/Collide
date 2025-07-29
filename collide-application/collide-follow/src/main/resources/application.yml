@@ -1,30 +1,39 @@
 spring:
   application:
-    name: collide-follow
-
-  # 数据库配置导入
+    name: @application.name@
   config:
-    import:
-      - classpath:base.yml
-      - classpath:config.yml
-      - classpath:datasource.yml
-      - classpath:rpc.yml
-      - classpath:cache.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
-  port: 9604
+  port: 9606
 
-# MyBatis Plus 配置
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.follow.domain.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+
+# 关注模块专用配置
+collide:
+  follow:
+    # 最大关注数量
+    max-following: 1000
+    # 最大粉丝数量（用于限制推荐）
+    max-followers: 100000
+    # 互相关注检测开关
+    mutual-check-enabled: true
+    # 关注推荐开关
+    recommendation-enabled: true
+    # 数据清理天数
+    cleanup-days: 180
 
 # 日志配置
 logging:

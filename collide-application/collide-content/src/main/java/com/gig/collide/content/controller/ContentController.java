@@ -14,6 +14,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -35,7 +37,8 @@ import java.util.Map;
 @Tag(name = "内容管理", description = "内容管理相关接口 - 简洁版")
 public class ContentController {
 
-    private final ContentFacadeService contentFacadeService;
+    @Autowired
+    private ContentFacadeService contentFacadeService;
 
     // =================== 内容管理 ===================
 

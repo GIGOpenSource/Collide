@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.payment.infrastructure.mapper.PaymentMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, payment_no, order_id, order_no, user_id, user_nickname, amount, 
+        pay_method, pay_channel, third_party_no, status, pay_time, notify_time, 
+        create_time, update_time
+    </sql>
+
+    <!-- =================== 基础查询 =================== -->
+
+    <!-- 根据支付单号查询 -->
+    <select id="selectByPaymentNo" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE payment_no = #{paymentNo}
+    </select>
+
+    <!-- 根据第三方支付单号查询 -->
+    <select id="selectByThirdPartyNo" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE third_party_no = #{thirdPartyNo}
+        AND third_party_no IS NOT NULL
+        AND third_party_no != ''
+    </select>
+
+    <!-- 根据订单ID查询支付记录 -->
+    <select id="selectByOrderId" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE order_id = #{orderId}
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取用户支付记录 -->
+    <select id="selectByUserId" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE user_id = #{userId}
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据用户ID和状态查询 -->
+    <select id="selectByUserIdAndStatus" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE user_id = #{userId}
+        AND status = #{status}
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据状态和时间范围查询 -->
+    <select id="selectByStatusAndTimeRange" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE 1=1
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据支付方式和时间范围查询 -->
+    <select id="selectByPayMethodAndTimeRange" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE pay_method = #{payMethod}
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- =================== 统计查询 =================== -->
+
+    <!-- 统计用户支付金额 -->
+    <select id="sumAmountByUserId" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(amount), 0)
+        FROM t_payment
+        WHERE user_id = #{userId}
+        AND status = 'success'
+    </select>
+
+    <!-- 统计用户支付次数 -->
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*)
+        FROM t_payment
+        WHERE user_id = #{userId}
+        AND status = 'success'
+    </select>
+
+    <!-- =================== 更新操作 =================== -->
+
+    <!-- 更新支付状态 -->
+    <update id="updatePaymentStatus">
+        UPDATE t_payment
+        SET status = #{status},
+            <if test="thirdPartyNo != null and thirdPartyNo != ''">
+                third_party_no = #{thirdPartyNo},
+            </if>
+            <if test="payTime != null">
+                pay_time = #{payTime},
+            </if>
+            <if test="notifyTime != null">
+                notify_time = #{notifyTime},
+            </if>
+            update_time = NOW()
+        WHERE payment_no = #{paymentNo}
+    </update>
+
+    <!-- 批量更新过期支付状态 -->
+    <update id="updateExpiredPayments">
+        UPDATE t_payment
+        SET status = 'cancelled',
+            update_time = NOW()
+        WHERE status = 'pending'
+        AND create_time &lt; #{expireTime}
+    </update>
+
+    <!-- =================== 高级查询（扩展功能） =================== -->
+
+    <!-- 统计支付方式分布 -->
+    <select id="selectPayMethodStatistics" resultType="java.util.Map">
+        SELECT 
+            pay_method,
+            COUNT(*) as payment_count,
+            SUM(amount) as total_amount,
+            AVG(amount) as avg_amount
+        FROM t_payment
+        WHERE status = 'success'
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY pay_method
+        ORDER BY payment_count DESC
+    </select>
+
+    <!-- 统计每日支付数据 -->
+    <select id="selectDailyPaymentStatistics" resultType="java.util.Map">
+        SELECT 
+            DATE(create_time) as payment_date,
+            COUNT(*) as payment_count,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_count,
+            SUM(CASE WHEN status = 'success' THEN amount ELSE 0 END) as success_amount
+        FROM t_payment
+        WHERE 1=1
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY payment_date DESC
+    </select>
+
+    <!-- 查询用户支付统计 -->
+    <select id="selectUserPaymentStatistics" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            user_nickname,
+            COUNT(*) as total_payments,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_payments,
+            SUM(CASE WHEN status = 'success' THEN amount ELSE 0 END) as total_amount,
+            MAX(create_time) as last_payment_time
+        FROM t_payment
+        WHERE 1=1
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY user_id, user_nickname
+        HAVING total_payments > 0
+        ORDER BY total_amount DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询大额支付记录 -->
+    <select id="selectLargeAmountPayments" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE amount >= #{minAmount}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY amount DESC, create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询失败支付记录 -->
+    <select id="selectFailedPayments" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE status IN ('failed', 'cancelled')
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="payMethod != null and payMethod != ''">
+            AND pay_method = #{payMethod}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询待处理支付 -->
+    <select id="selectPendingPayments" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE status = 'pending'
+        <if test="expireMinutes != null">
+            AND create_time &lt; DATE_SUB(NOW(), INTERVAL #{expireMinutes} MINUTE)
+        </if>
+        ORDER BY create_time ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询重复支付风险 -->
+    <select id="selectDuplicatePaymentRisk" resultType="java.util.Map">
+        SELECT 
+            order_id,
+            order_no,
+            user_id,
+            user_nickname,
+            COUNT(*) as payment_count,
+            SUM(amount) as total_amount,
+            GROUP_CONCAT(payment_no) as payment_nos,
+            GROUP_CONCAT(status) as payment_statuses
+        FROM t_payment
+        WHERE 1=1
+        <if test="timeRange != null">
+            AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} HOUR)
+        </if>
+        GROUP BY order_id, user_id
+        HAVING COUNT(*) > 1
+        ORDER BY payment_count DESC, total_amount DESC
+    </select>
+
+    <!-- 统计支付成功率 -->
+    <select id="selectPaymentSuccessRate" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_payments,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_payments,
+            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_payments,
+            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pending_payments,
+            SUM(CASE WHEN status = 'cancelled' THEN 1 ELSE 0 END) as cancelled_payments,
+            ROUND(SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as success_rate,
+            SUM(CASE WHEN status = 'success' THEN amount ELSE 0 END) as success_amount
+        FROM t_payment
+        WHERE 1=1
+        <if test="payMethod != null and payMethod != ''">
+            AND pay_method = #{payMethod}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- =================== 数据清理 =================== -->
+
+    <!-- 清理过期的待支付记录 -->
+    <delete id="cleanExpiredPendingPayments">
+        DELETE FROM t_payment
+        WHERE status = 'pending'
+        AND create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </delete>
+
+    <!-- 归档历史支付记录 -->
+    <select id="selectHistoryPaymentsForArchive" resultType="com.gig.collide.payment.domain.entity.Payment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_payment
+        WHERE create_time &lt; #{beforeTime}
+        AND status IN ('success', 'failed', 'cancelled')
+        ORDER BY create_time ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

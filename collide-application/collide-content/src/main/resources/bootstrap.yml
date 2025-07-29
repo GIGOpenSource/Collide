@@ -1,7 +1,5 @@
 spring:
   application:
-    name: collide-content
+    name: @application.name@
   config:
-    import:
-      - classpath:base.yml
-      - classpath:config.yml 
+    import: classpath:base.yml,classpath:config.yml 

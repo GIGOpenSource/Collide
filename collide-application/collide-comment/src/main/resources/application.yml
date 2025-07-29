@@ -2,14 +2,21 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml,classpath:stream.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
-  port: 9607
+  port: 9603
 
-# MyBatis配置
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.comment.domain.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -27,11 +34,16 @@ logging:
     org.springframework: INFO
     com.baomidou.mybatisplus: DEBUG
 
-# 业务配置
-comment:
-  # 评论相关配置
-  config:
-    max-content-length: 2000  # 评论内容最大长度
-    max-tree-depth: 10        # 评论树最大深度
-    page-size-limit: 100      # 分页查询最大页面大小
-    cache-ttl: 300           # 缓存过期时间（秒） 
+# 评论模块专用配置
+collide:
+  comment:
+    # 最大评论层级深度
+    max-depth: 10
+    # 评论内容最大长度
+    max-content-length: 1000
+    # 热门评论阈值（点赞数）
+    hot-threshold: 50
+    # 敏感词过滤开关
+    sensitive-word-filter: true
+    # 评论审核开关
+    review-enabled: false 

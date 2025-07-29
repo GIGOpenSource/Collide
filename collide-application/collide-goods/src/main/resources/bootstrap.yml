@@ -2,9 +2,4 @@ spring:
   application:
     name: @application.name@
   config:
-    import: 
-      - classpath:base.yml
-      - classpath:datasource.yml  
-      - classpath:cache.yml
-      - classpath:rpc.yml
-      - classpath:config.yml 
+    import: classpath:base.yml,classpath:config.yml 

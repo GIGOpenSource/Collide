@@ -1,13 +1,38 @@
 spring:
   application:
     name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
-# 服务端口配置
 server:
-  port: 9503
-  servlet:
-    context-path: /goods
-  tomcat:
-    threads:
-      max: 200
-      min-spare: 10
+  port: 9607
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.goods.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 商品模块专用配置
+collide:
+  goods:
+    # 默认商品封面
+    default-cover: "https://example.com/default-goods-cover.jpg"
+    # 库存预警阈值
+    stock-warning-threshold: 10
+    # 自动下架库存为0的商品
+    auto-offline-when-stock-zero: true
+    # 热门商品阈值
+    popular-threshold: 100
+    # 商品图片最大数量
+    max-images: 10
+    # 价格精度（小数位数）
+    price-precision: 2

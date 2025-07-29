@@ -1,35 +1,38 @@
 spring:
   application:
-    name: collide-content
+    name: @application.name@
   config:
-    import:
-      - classpath:base.yml
-      - classpath:config.yml
-      - classpath:datasource.yml
-      - classpath:rpc.yml
-      - classpath:cache.yml
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
-# 服务端口配置
 server:
-  port: 9606
+  port: 9604
 
-# MyBatis Plus 配置
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*_sqlmap.xml
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.content.domain.entity
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
 
-# 日志配置
-logging:
-  pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n'
-  level:
-    com.gig.collide: debug
-    org.apache.dubbo: info
-    org.springframework.web: info 
+# 内容模块专用配置
+collide:
+  content:
+    # 内容封面默认图片
+    default-cover: "https://example.com/default-content-cover.jpg"
+    # 自动保存草稿间隔（秒）
+    auto-save-interval: 30
+    # 内容评分最小值
+    min-score: 1
+    # 内容评分最大值  
+    max-score: 5
+    # 字数统计开关
+    word-count-enabled: true
+    # 章节最大数量
+    max-chapters: 1000 

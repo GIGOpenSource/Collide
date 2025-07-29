@@ -9,6 +9,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.constraints.NotNull;
@@ -32,7 +34,8 @@ import java.util.Map;
 @Tag(name = "点赞管理", description = "点赞相关的API接口")
 public class LikeController {
 
-    private final LikeService likeService;
+    @Autowired
+    private LikeService likeService;
 
     @PostMapping("/add")
     @Operation(summary = "添加点赞", description = "用户对内容、评论或动态进行点赞")

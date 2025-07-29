@@ -3,9 +3,15 @@ spring:
     name: @application.name@
   config:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
 server:
-  port: 9602
+  port: 9613
 
 # MyBatis Plus配置
 mybatis-plus:
@@ -18,17 +24,15 @@ mybatis-plus:
 # 标签模块专用配置
 collide:
   tag:
-    # 热门标签默认数量
-    hot-tags-default-limit: 50
-    # 推荐标签默认数量
-    recommend-tags-default-limit: 10
+    # 标签名称最大长度
+    max-name-length: 20
+    # 标签描述最大长度
+    max-description-length: 200
+    # 热门标签阈值
+    hot-threshold: 100
     # 用户兴趣标签最大数量
-    user-interest-tags-max-count: 100
-    # 标签热度分数更新频率（小时）
-    heat-score-update-interval: 24
-    # 默认兴趣分数
-    default-interest-score: 50.0
-    # 最大兴趣分数
-    max-interest-score: 100.0
-    # 最小兴趣分数
-    min-interest-score: 0.0 
+    max-interest-tags: 50
+    # 内容标签最大数量
+    max-content-tags: 10
+    # 标签推荐开关
+    recommendation-enabled: true 

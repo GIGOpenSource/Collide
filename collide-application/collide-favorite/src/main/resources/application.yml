@@ -1,66 +1,36 @@
 spring:
   application:
-    name: collide-favorite
+    name: @application.name@
   config:
-    # ===================== Collide 标准化组件配置导入 =====================
-    import: 
-      # 基础架构配置
-      - classpath:base.yml          # 基础组件配置
-      - classpath:config.yml        # 配置管理
-      - classpath:web.yml           # Web组件配置
-      
-      # 数据访问配置  
-      - classpath:datasource.yml    # 数据源配置
-      - classpath:cache.yml         # 缓存配置
-      
-      # 微服务通信配置
-      - classpath:rpc.yml           # RPC(Dubbo)配置
-      
-      # 功能增强配置
-      - classpath:lock.yml          # 分布式锁配置
-      - classpath:limiter.yml       # 限流配置
-      
-      # 监控运维配置
-      - classpath:prometheus.yml    # 监控指标配置
-      - classpath:skywalking.yml    # 链路追踪配置
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
-# ===================== 服务器配置 =====================
 server:
   port: 9605
 
-# ===================== MyBatis Plus 标准化配置 =====================
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
+  mapper-locations: classpath*:mapper/*.xml
   type-aliases-package: com.gig.collide.favorite.domain.entity
   configuration:
-    # 标准化配置
     map-underscore-to-camel-case: true
-    cache-enabled: true
-    call-setters-on-nulls: true
-    jdbc-type-for-null: 'null'
-  global-config:
-    db-config:
-      # 标准化逻辑删除
-      logic-delete-field: is_deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-      # 标准化主键
-      id-type: ASSIGN_ID
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-logging:
-  level:
-    # 业务日志
-    com.gig.collide.favorite: DEBUG
-    # 标准化组件日志
-    com.gig.collide.base: INFO
-    com.gig.collide.cache: INFO
-    com.gig.collide.rpc: INFO
-    # 框架日志
-    org.apache.dubbo: WARN
-    org.springframework.cloud: WARN
-    com.alibaba.nacos: WARN
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%logger{50}] - %msg%n"
-  file:
-    name: logs/collide-favorite.log
+# 收藏模块专用配置
+collide:
+  favorite:
+    # 默认收藏封面
+    default-cover: "https://example.com/default-favorite-cover.jpg"
+    # 热门收藏阈值
+    popular-threshold: 100
+    # 收藏数据清理天数
+    cleanup-days: 365
+    # 批量操作最大数量
+    batch-max-size: 100
+    # 收藏推荐开关
+    recommendation-enabled: true

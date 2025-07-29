@@ -1,16 +1,5 @@
 spring:
   application:
-    name: collide-like
-  cloud:
-    nacos:
-      config:
-        enabled: false  # 开发环境禁用Nacos配置中心
-        server-addr: nacos-server:8848
-        file-extension: yml
-        namespace: collide
-        group: DEFAULT_GROUP
-      discovery:
-        enabled: false  # 开发环境禁用Nacos服务发现
-        server-addr: nacos-server:8848
-        namespace: collide
-        group: DEFAULT_GROUP 
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:config.yml 
