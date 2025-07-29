@@ -1,5 +1,6 @@
 package com.gig.collide.base.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.List;
 
 /**
@@ -64,6 +65,7 @@ public class PageResponse<T> extends MultiResponse<T> {
      * 获取记录列表（兼容方法）
      * @return 记录列表
      */
+    @JsonIgnore
     public List<T> getRecords() {
         return getDatas();
     }
@@ -72,6 +74,7 @@ public class PageResponse<T> extends MultiResponse<T> {
      * 设置记录列表（兼容方法）
      * @param records 记录列表
      */
+    @JsonIgnore
     public void setRecords(List<T> records) {
         setDatas(records);
     }
@@ -83,7 +86,7 @@ public class PageResponse<T> extends MultiResponse<T> {
         pageResponse.setTotal(total);
         pageResponse.setPageSize(pageSize);
         pageResponse.setCurrentPage(currentPage);
-        pageResponse.setTotalPage((int) ((pageSize + total - 1) / pageSize));
+        pageResponse.setTotalPage((int) ((total + pageSize - 1) / pageSize));
         return pageResponse;
     }
 

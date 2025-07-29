@@ -13,7 +13,6 @@
     <artifactId>collide-favorite</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>collide-favorite</name>
-    <description>Collide 收藏服务 - 基于标准化架构的微服务模块</description>
     
     <properties>
         <application.name>collide-favorite</application.name>
