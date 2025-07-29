@@ -1,173 +1,515 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
 <mapper namespace="com.gig.collide.category.infrastructure.mapper.CategoryMapper">
 
-    <!-- 结果映射 - 严格去连表化，所有字段对齐 -->
-    <resultMap id="CategoryResultMap" type="com.gig.collide.category.domain.entity.Category">
-        <id column="id" property="id"/>
-        <result column="parent_id" property="parentId"/>
-        <result column="name" property="name"/>
-        <result column="description" property="description"/>
-        <result column="icon_url" property="iconUrl"/>
-        <result column="cover_url" property="coverUrl"/>
-        <result column="sort_order" property="sortOrder"/>
-        <result column="level" property="level"/>
-        <result column="path" property="path"/>
-        <result column="content_count" property="contentCount"/>
-        <result column="status" property="status"/>
-        <result column="version" property="version"/>
-        <result column="creator_id" property="creatorId"/>
-        <result column="creator_name" property="creatorName"/>
-        <result column="last_modifier_id" property="lastModifierId"/>
-        <result column="last_modifier_name" property="lastModifierName"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
-    </resultMap>
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
+    </sql>
 
-    <!-- 根据父分类ID查询子分类列表 -->
-    <select id="selectByParentId" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
+    <!-- =================== 基础查询 =================== -->
+
+    <!-- 根据父分类ID获取子分类列表 -->
+    <select id="selectChildCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
         WHERE parent_id = #{parentId}
-          AND status = 'ACTIVE'
-        ORDER BY sort_order ASC, create_time DESC
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
     </select>
 
-    <!-- 根据分类名称搜索分类 -->
-    <select id="searchByName" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
-        WHERE status = 'ACTIVE'
-          AND name LIKE CONCAT('%', #{keyword}, '%')
-        ORDER BY content_count DESC, sort_order ASC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
+    <!-- 分页获取分类列表 -->
+    <select id="selectCategoriesPage" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据名称搜索分类 -->
+    <select id="searchCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND name LIKE CONCAT('%', #{keyword}, '%')
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- =================== 层级查询 =================== -->
+
+    <!-- 获取分类路径 -->
+    <select id="selectCategoryPath" resultType="com.gig.collide.category.domain.entity.Category">
+        WITH RECURSIVE category_path AS (
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_category
+            WHERE id = #{categoryId}
+            
+            UNION ALL
+            
+            SELECT c.<include refid="Base_Column_List"/>, cp.level + 1
+            FROM t_category c
+            INNER JOIN category_path cp ON c.id = cp.parent_id
+            WHERE c.parent_id != 0
+        )
+        SELECT <include refid="Base_Column_List"/>
+        FROM category_path
+        ORDER BY level DESC
+    </select>
+
+    <!-- 获取分类的所有祖先 -->
+    <select id="selectCategoryAncestors" resultType="com.gig.collide.category.domain.entity.Category">
+        WITH RECURSIVE category_ancestors AS (
+            SELECT parent_id
+            FROM t_category
+            WHERE id = #{categoryId} AND parent_id != 0
+            
+            UNION ALL
+            
+            SELECT c.parent_id
+            FROM t_category c
+            INNER JOIN category_ancestors ca ON c.id = ca.parent_id
+            WHERE c.parent_id != 0
+        )
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category c
+        INNER JOIN category_ancestors ca ON c.id = ca.parent_id
+        <if test="includeInactive != null and !includeInactive">
+            WHERE c.status = 'active'
+        </if>
+        ORDER BY c.sort ASC
+    </select>
+
+    <!-- 获取分类的所有后代 -->
+    <select id="selectCategoryDescendants" resultType="com.gig.collide.category.domain.entity.Category">
+        WITH RECURSIVE category_descendants AS (
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_category
+            WHERE parent_id = #{categoryId}
+            
+            UNION ALL
+            
+            SELECT c.<include refid="Base_Column_List"/>, cd.level + 1
+            FROM t_category c
+            INNER JOIN category_descendants cd ON c.parent_id = cd.id
+            <if test="maxDepth != null">
+                WHERE cd.level &lt; #{maxDepth}
+            </if>
+        )
+        SELECT <include refid="Base_Column_List"/>
+        FROM category_descendants
+        <if test="includeInactive != null and !includeInactive">
+            WHERE status = 'active'
+        </if>
+        ORDER BY sort ASC
+    </select>
+
+    <!-- 获取分类树形结构数据 -->
+    <select id="selectCategoryTree" resultType="com.gig.collide.category.domain.entity.Category">
+        WITH RECURSIVE category_tree AS (
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_category
+            WHERE 1=1
+            <choose>
+                <when test="rootId != null">
+                    AND (id = #{rootId} OR parent_id = #{rootId})
+                </when>
+                <otherwise>
+                    AND parent_id = 0
+                </otherwise>
+            </choose>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+            
+            UNION ALL
+            
+            SELECT c.<include refid="Base_Column_List"/>, ct.level + 1
+            FROM t_category c
+            INNER JOIN category_tree ct ON c.parent_id = ct.id
+            <if test="maxDepth != null">
+                WHERE ct.level &lt; #{maxDepth}
+            </if>
+            <if test="status != null and status != ''">
+                AND c.status = #{status}
+            </if>
+        )
+        SELECT <include refid="Base_Column_List"/>
+        FROM category_tree
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- =================== 统计查询 =================== -->
+
+    <!-- 统计分类数量 -->
+    <select id="countCategories" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_category
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
         </if>
     </select>
 
-    <!-- 获取热门分类（按内容数量排序） -->
-    <select id="selectHotCategories" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
-        WHERE status = 'ACTIVE'
-          AND content_count > 0
-        ORDER BY content_count DESC, sort_order ASC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
+    <!-- 统计子分类数量 -->
+    <select id="countChildCategories" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_category
+        WHERE parent_id = #{parentId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
         </if>
     </select>
+
+    <!-- 获取分类统计信息 -->
+    <select id="selectCategoryStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_count,
+            SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active_count,
+            SUM(CASE WHEN status = 'inactive' THEN 1 ELSE 0 END) as inactive_count,
+            SUM(content_count) as total_content_count,
+            AVG(content_count) as avg_content_count,
+            MAX(content_count) as max_content_count,
+            MIN(content_count) as min_content_count
+        FROM t_category
+        WHERE 1=1
+        <if test="categoryId != null">
+            AND (id = #{categoryId} OR parent_id = #{categoryId})
+        </if>
+    </select>
+
+    <!-- =================== 更新操作 =================== -->
 
     <!-- 更新分类内容数量 -->
     <update id="updateContentCount">
         UPDATE t_category
-        SET content_count = content_count + #{delta},
+        SET content_count = GREATEST(0, content_count + #{increment}),
             update_time = NOW()
         WHERE id = #{categoryId}
     </update>
 
     <!-- 批量更新分类状态 -->
-    <update id="updateStatusBatch">
+    <update id="batchUpdateStatus">
         UPDATE t_category
         SET status = #{status},
             update_time = NOW()
         WHERE id IN
-        <foreach collection="categoryIds" item="categoryId" open="(" separator="," close=")">
-            #{categoryId}
+        <foreach collection="categoryIds" item="id" open="(" close=")" separator=",">
+            #{id}
         </foreach>
     </update>
 
-    <!-- 根据层级查询分类 -->
-    <select id="selectByLevel" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
-        WHERE level = #{level}
-          AND status = 'ACTIVE'
-        ORDER BY sort_order ASC, create_time DESC
-    </select>
-
-    <!-- 查询分类及其所有子分类的路径 -->
-    <select id="selectByPathPrefix" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
-        WHERE path LIKE CONCAT(#{pathPrefix}, '%')
-          AND status = 'ACTIVE'
-        ORDER BY level ASC, sort_order ASC
-    </select>
-
-    <!-- 幂等性更新分类信息 - 严格去连表化 -->
-    <update id="updateCategoryIdempotent">
-        UPDATE t_category
-        SET name = COALESCE(#{name}, name),
-            description = COALESCE(#{description}, description),
-            icon_url = COALESCE(#{iconUrl}, icon_url),
-            cover_url = COALESCE(#{coverUrl}, cover_url),
-            sort_order = COALESCE(#{sortOrder}, sort_order),
-            last_modifier_id = COALESCE(#{lastModifierId}, last_modifier_id),
-            last_modifier_name = COALESCE(#{lastModifierName}, last_modifier_name),
-            version = version + 1,
-            update_time = NOW()
-        WHERE id = #{categoryId}
-          AND version = #{expectedVersion}
+    <!-- 批量更新排序值 -->
+    <update id="batchUpdateSort">
+        <foreach collection="sortMappings" index="categoryId" item="sortValue" separator=";">
+            UPDATE t_category
+            SET sort = #{sortValue},
+                update_time = NOW()
+            WHERE id = #{categoryId}
+        </foreach>
     </update>
 
-    <!-- 幂等性更新分类状态 -->
-    <update id="updateStatusIdempotent">
+    <!-- 更新分类的父分类 -->
+    <update id="updateParentCategory">
         UPDATE t_category
-        SET status = #{newStatus},
-            version = version + 1,
+        SET parent_id = #{newParentId},
             update_time = NOW()
         WHERE id = #{categoryId}
-          AND status = #{expectedStatus}
-          AND version = #{expectedVersion}
     </update>
+
+    <!-- =================== 高级查询 =================== -->
 
     <!-- 检查分类名称是否存在 -->
-    <select id="checkNameExists" resultType="int">
-        SELECT COUNT(1) FROM t_category
-        WHERE parent_id = #{parentId}
-          AND name = #{name}
-          AND status = 'ACTIVE'
+    <select id="existsCategoryName" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM t_category
+        WHERE name = #{name}
+        AND parent_id = #{parentId}
         <if test="excludeId != null">
             AND id != #{excludeId}
         </if>
     </select>
 
-    <!-- 获取分类的完整路径 -->
-    <select id="selectCategoryPath" resultType="string">
-        SELECT path FROM t_category
-        WHERE id = #{categoryId}
+    <!-- 获取热门分类 -->
+    <select id="selectPopularCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY content_count DESC, sort ASC
     </select>
 
-    <!-- 获取所有根分类 -->
-    <select id="selectRootCategories" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
+    <!-- 获取叶子分类 -->
+    <select id="selectLeafCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT c.<include refid="Base_Column_List"/>
+        FROM t_category c
+        LEFT JOIN t_category child ON c.id = child.parent_id
+        WHERE child.id IS NULL
+        <if test="parentId != null">
+            AND c.parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND c.status = #{status}
+        </if>
+        ORDER BY c.sort ASC
+    </select>
+
+    <!-- 获取分类建议 -->
+    <select id="selectCategorySuggestions" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY 
+            CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
+            content_count DESC,
+            sort ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取根分类列表 -->
+    <select id="selectRootCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
         WHERE parent_id = 0
-          AND status = 'ACTIVE'
-        ORDER BY sort_order ASC, create_time DESC
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
     </select>
 
-    <!-- 递归查询所有子分类ID - 严格去连表化，使用应用层递归 -->
-    <select id="selectAllChildrenIds" resultType="long">
-        <!-- 注意：此方法应该在应用层实现递归，避免数据库层JOIN -->
-        <!-- 这里只返回直接子分类，递归逻辑在Service层实现 -->
-        SELECT id FROM t_category 
-        WHERE parent_id = #{parentId}
-          AND status = 'ACTIVE'
+    <!-- =================== 数据同步 =================== -->
+
+    <!-- 重新计算分类内容数量 -->
+    <update id="recalculateContentCount">
+        <choose>
+            <when test="categoryId != null">
+                <!-- 重新计算指定分类的内容数量 -->
+                UPDATE t_category
+                SET content_count = (
+                    SELECT COALESCE(COUNT(*), 0)
+                    FROM t_content
+                    WHERE category_id = #{categoryId}
+                    AND status = 'PUBLISHED'
+                ),
+                update_time = NOW()
+                WHERE id = #{categoryId}
+            </when>
+            <otherwise>
+                <!-- 重新计算所有分类的内容数量 -->
+                UPDATE t_category c
+                SET content_count = (
+                    SELECT COALESCE(COUNT(*), 0)
+                    FROM t_content ct
+                    WHERE ct.category_id = c.id
+                    AND ct.status = 'PUBLISHED'
+                ),
+                update_time = NOW()
+            </otherwise>
+        </choose>
+    </update>
+
+    <!-- 同步分类层级关系 -->
+    <update id="syncCategoryHierarchy">
+        <!-- 检查并修复循环引用 -->
+        UPDATE t_category
+        SET parent_id = 0,
+            update_time = NOW()
+        WHERE id IN (
+            WITH RECURSIVE cycle_check AS (
+                SELECT id, parent_id, ARRAY[id] as path
+                FROM t_category
+                WHERE parent_id != 0
+                
+                UNION ALL
+                
+                SELECT c.id, c.parent_id, cc.path || c.id
+                FROM t_category c
+                INNER JOIN cycle_check cc ON c.parent_id = cc.id
+                WHERE c.id != ALL(cc.path)
+            )
+            SELECT DISTINCT id
+            FROM cycle_check
+            WHERE id = ANY(path[1:array_length(path,1)-1])
+        )
+    </update>
+
+    <!-- =================== 范围查询 =================== -->
+
+    <!-- 根据内容数量范围查询分类 -->
+    <select id="selectCategoriesByContentCountRange" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="minContentCount != null">
+            AND content_count >= #{minContentCount}
+        </if>
+        <if test="maxContentCount != null">
+            AND content_count &lt;= #{maxContentCount}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
     </select>
 
-    <!-- 统计分类总数 -->
-    <select id="countCategories" resultType="long">
-        SELECT COUNT(1) FROM t_category
-        <where>
-            <if test="status != null and status != ''">
-                AND status = #{status}
-            </if>
-        </where>
-    </select>
-
-    <!-- 根据创建者ID查询分类 -->
-    <select id="selectByCreatorId" resultMap="CategoryResultMap">
-        SELECT * FROM t_category
-        WHERE creator_id = #{creatorId}
-          AND status = 'ACTIVE'
-        ORDER BY create_time DESC
-        LIMIT #{offset}, #{limit}
+    <!-- 根据排序值范围查询分类 -->
+    <select id="selectCategoriesBySortRange" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="minSort != null">
+            AND sort >= #{minSort}
+        </if>
+        <if test="maxSort != null">
+            AND sort &lt;= #{maxSort}
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
     </select>
 
 </mapper> 
