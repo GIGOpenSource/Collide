@@ -37,7 +37,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/goods")
+@RequestMapping("/api/v1/goods")
 @RequiredArgsConstructor
 @Tag(name = "商品管理", description = "商品相关的API接口")
 public class GoodsController {

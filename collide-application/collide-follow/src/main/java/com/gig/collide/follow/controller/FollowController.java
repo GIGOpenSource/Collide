@@ -36,7 +36,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/follow")
+@RequestMapping("/api/v1/follow")
 @RequiredArgsConstructor
 @Tag(name = "关注管理", description = "关注相关的API接口")
 public class FollowController {

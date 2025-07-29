@@ -32,7 +32,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/content")
+@RequestMapping("/api/v1/content")
 @RequiredArgsConstructor
 @Tag(name = "内容管理", description = "内容管理相关接口 - 简洁版")
 public class ContentController {

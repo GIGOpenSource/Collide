@@ -43,7 +43,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/favorite")
+@RequestMapping("/api/v1/favorite")
 @RequiredArgsConstructor
 @Tag(name = "收藏管理", description = "收藏相关的API接口")
 public class FavoriteController {

@@ -29,7 +29,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/like")
+@RequestMapping("/api/v1/like")
 @RequiredArgsConstructor
 @Tag(name = "点赞管理", description = "点赞相关的API接口")
 public class LikeController {
