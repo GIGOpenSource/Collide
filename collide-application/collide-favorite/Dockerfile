@@ -18,7 +18,7 @@ RUN cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && \
     echo "Asia/Shanghai" > /etc/timezone
 
 # 从构建目录复制JAR文件（聚合应用JAR）
-COPY collide-application/collide-app/target/collide-social-1.0.0-SNAPSHOT.jar app.jar
+COPY collide-application/collide-app/target/collide-favorite-1.0.0-SNAPSHOT.jar app.jar
 
 # 创建日志目录
 RUN mkdir -p /app/logs
@@ -30,7 +30,7 @@ RUN chown -R collide:collide /app
 USER collide
 
 # 暴露端口（业务应用端口）
-EXPOSE 9603
+EXPOSE 9610
 
 # 设置JVM参数和启动命令
 ENTRYPOINT ["java", \

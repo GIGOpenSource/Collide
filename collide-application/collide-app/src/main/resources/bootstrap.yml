@@ -4,9 +4,7 @@
 # =====================================
 spring:
   application:
-    name: collide-business
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE:dev}
+    name: @application.name@
   config:
     # 参考 nft-turbo-app 的配置导入方式
     # 这里爆红可以直接忽略，没有任何影响

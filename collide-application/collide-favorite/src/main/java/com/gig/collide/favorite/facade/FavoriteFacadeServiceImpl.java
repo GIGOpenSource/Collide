@@ -27,8 +27,7 @@ import java.util.stream.Collectors;
  * @since 2024-01-01
  */
 @Slf4j
-@Service
-@DubboService
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
 

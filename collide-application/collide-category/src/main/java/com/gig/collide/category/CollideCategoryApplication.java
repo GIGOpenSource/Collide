@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
  * @since 2024-01-01
  */
 @Slf4j
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.gig.collide.category")
 @EnableDubbo
 @EnableTransactionManagement
 @MapperScan("com.gig.collide.category.infrastructure.mapper")

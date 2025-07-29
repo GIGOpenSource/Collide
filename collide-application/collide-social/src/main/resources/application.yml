@@ -11,7 +11,7 @@ spring:
     accessSecret: minioadmin
 
 server:
-  port: 9612
+  port: 9603
 
 # MyBatis Plus配置
 mybatis-plus:

@@ -1,7 +1,6 @@
 dubbo:
   consumer:
     timeout: 3000
-    retries: 2
     check: false
   protocol:
     name: dubbo

@@ -12,7 +12,7 @@ spring:
     accessSecret: minioadmin
 
 server:
-  port: 9610
+  port: 9605
   servlet:
     context-path: /payment
 
@@ -32,69 +32,3 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
-
-# Collide Payment 业务配置 (v2.0.0)
-collide:
-  payment:
-    # 支付基础配置
-    config:
-      enabled: true
-      version: "2.0.0"
-      env: ${spring.profiles.active}
-      
-    # 幂等配置
-    idempotent:
-      enabled: true
-      expire-seconds: 3600
-      key-prefix: "payment:idempotent:"
-      
-    # 缓存配置
-    cache:
-      enabled: true
-      ttl: 300
-      prefix: "payment:cache:"
-      
-    # 风控配置
-    risk:
-      enabled: true
-      max-daily-amount: 50000.00
-      max-single-amount: 10000.00
-      max-retry-count: 3
-      
-    # 回调配置
-    callback:
-      enabled: true
-      timeout: 30000
-      max-retry: 5
-      retry-interval: 60000
-      
-    # 统计配置
-    statistics:
-      enabled: true
-      batch-size: 100
-      flush-interval: 60
-      
-    # 支付方式配置
-    channels:
-      alipay:
-        enabled: true
-        timeout: 30000
-        app-id: "your-alipay-app-id"
-      wechat:
-        enabled: true
-        timeout: 30000
-        app-id: "your-wechat-app-id"
-      unionpay:
-        enabled: false
-        timeout: 30000
-      test:
-        enabled: true
-        auto-success: true
-    # 支付单号前缀
-    payment-no-prefix: "PAY"
-    # 支付超时时间（分钟）
-    timeout-minutes: 15
-    # 支付回调重试次数
-    callback-retry-times: 3
-    # 大额支付阈值（用于风控）
-    large-amount-threshold: 10000

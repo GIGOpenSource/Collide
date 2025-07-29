@@ -2,17 +2,21 @@ package com.gig.collide.api.user.response;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
  * 用户响应 - 简洁版
+ * 支持Dubbo序列化传输
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (支持Dubbo序列化)
  */
 @Data
-public class UserResponse {
+public class UserResponse implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     private Long id;
 

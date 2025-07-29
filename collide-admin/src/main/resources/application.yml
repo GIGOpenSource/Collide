@@ -7,9 +7,6 @@ spring:
   application:
     name: collide-admin
   
-  profiles:
-    active: dev
-  
   # 数据源配置（如果需要直接数据库操作）
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver

@@ -16,13 +16,29 @@
     <description>Collide</description>
 
     <properties>
-        <application.name>collide-business</application.name>
+        <application.name>collide-app</application.name>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencies>
+        <!-- API接口定义 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-users</artifactId>
+        </dependency>
+        <!-- 监控模块 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-prometheus</artifactId>
+        </dependency>
+
         <!-- Spring Cloud Bootstrap -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

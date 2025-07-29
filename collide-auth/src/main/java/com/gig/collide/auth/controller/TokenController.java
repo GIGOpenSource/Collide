@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "Token服务", description = "Token验证和用户信息获取")
 public class TokenController {
 
-    @DubboReference(version = "2.0.0")
+    @DubboReference(version = "1.0.0")
     private UserFacadeService userFacadeService;
 
     /**

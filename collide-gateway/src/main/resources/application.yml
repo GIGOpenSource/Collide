@@ -17,47 +17,105 @@ spring:
             allowCredentials: true
             maxAge: 3600
       routes:
+        # =================== 核心服务路由 ===================
+        
         # 认证服务路由
         - id: collide-auth
           uri: lb://collide-auth
           predicates:
             - Path=/api/v1/auth/**,/api/v1/token/**
 
-        # 业务服务路由 - 完整模块覆盖
-        - id: collide-application
-          uri: lb://collide-application
+        # =================== 业务服务路由 ===================
+        
+        # 用户服务路由
+        - id: collide-users
+          uri: lb://collide-users
           predicates:
-            - Path=/api/v1/users/**,/api/v1/follow/**,/api/v1/comments/**,/api/v1/content/**,/api/v1/social/**,/api/v1/favorite/**,/api/v1/like/**,/api/v1/files/**,/api/v1/search/**,/api/v1/categories/**,/api/v1/tags/**
+            - Path=/api/v1/users/**
+            
+        # 内容服务路由
+        - id: collide-content
+          uri: lb://collide-content
+          predicates:
+            - Path=/api/v1/content/**
+            
+        # 分类服务路由
+        - id: collide-category
+          uri: lb://collide-category
+          predicates:
+            - Path=/api/v1/categories/**
+            
+        # 评论服务路由
+        - id: collide-comment
+          uri: lb://collide-comment
+          predicates:
+            - Path=/api/v1/comments/**
+            
+        # 社交服务路由
+        - id: collide-social
+          uri: lb://collide-social
+          predicates:
+            - Path=/api/v1/social/**
+            
+        # 标签服务路由
+        - id: collide-tag
+          uri: lb://collide-tag
+          predicates:
+            - Path=/api/v1/tags/**
 
-#        # API文档导航页面
-#        - id: api-docs-home
-#          uri: lb://collide-application
-#          predicates:
-#            - Path=/swagger-ui.html,/docs,/api-docs
-#          filters:
-#            - SetPath=/swagger-ui.html
-#
-#        # Swagger UI 路由 - 认证服务
-#        - id: collide-auth-swagger
-#          uri: lb://collide-auth
-#          predicates:
-#            - Path=/auth/swagger-ui/**,/auth/v3/api-docs/**
-#          filters:
-#            - StripPrefix=1
-#
-#        # Swagger UI 路由 - 业务服务
-#        - id: collide-application-swagger
-#          uri: lb://collide-application
-#          predicates:
-#            - Path=/app/swagger-ui/**,/app/v3/api-docs/**
-#          filters:
-#            - StripPrefix=1
-#
-#        # 网关本身的监控端点
-#        - id: gateway-actuator
-#          uri: lb://collide-gateway
-#          predicates:
-#            - Path=/actuator/**
+        # =================== 交互服务路由 ===================
+        
+        # 点赞服务路由
+        - id: collide-like
+          uri: lb://collide-like
+          predicates:
+            - Path=/api/v1/like/**
+            
+        # 收藏服务路由
+        - id: collide-favorite
+          uri: lb://collide-favorite
+          predicates:
+            - Path=/api/v1/favorite/**
+            
+        # 关注服务路由
+        - id: collide-follow
+          uri: lb://collide-follow
+          predicates:
+            - Path=/api/v1/follow/**
+
+        # =================== 电商服务路由 ===================
+        
+        # 商品服务路由
+        - id: collide-goods
+          uri: lb://collide-goods
+          predicates:
+            - Path=/api/v1/goods/**
+            
+        # 订单服务路由
+        - id: collide-order
+          uri: lb://collide-order
+          predicates:
+            - Path=/api/v1/orders/**
+            
+        # 支付服务路由
+        - id: collide-payment
+          uri: lb://collide-payment
+          predicates:
+            - Path=/api/v1/payments/**
+
+        # =================== 工具服务路由 ===================
+        
+        # 搜索服务路由
+        - id: collide-search
+          uri: lb://collide-search
+          predicates:
+            - Path=/api/v1/search/**
+            
+        # 文件服务路由 (如果有独立文件服务)
+        - id: collide-files
+          uri: lb://collide-files
+          predicates:
+            - Path=/api/v1/files/**
 
 server:
   port: 9501

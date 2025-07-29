@@ -10,8 +10,8 @@ import com.gig.collide.like.domain.service.LikeService;
 import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  * @version 2.0.0 (本地聚合服务)
  */
 @Slf4j
-@Service
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class LikeFacadeServiceImpl implements LikeFacadeService {
 

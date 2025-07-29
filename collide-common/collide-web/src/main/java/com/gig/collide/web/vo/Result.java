@@ -4,16 +4,25 @@ import com.gig.collide.base.response.SingleResponse;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
+
 import static com.gig.collide.base.response.ResponseCode.SUCCESS;
 
 /**
+ * 通用响应结果封装类
+ * 用于Dubbo微服务间的数据传输，支持序列化
+ * 
  * @author GIGTeam
+ * @version 1.0.0 (支持Dubbo序列化)
  */
 @Getter
 @Setter
-public class Result<T> {
+public class Result<T> implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
+    
     /**
-     * 状态吗
+     * 状态码
      */
     private String code;
 

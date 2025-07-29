@@ -6,16 +6,19 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-
+import java.io.Serializable;
 
 /**
  * 用户创建请求 - 简洁版
+ * 支持Dubbo序列化传输
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (支持Dubbo序列化)
  */
 @Data
-public class UserCreateRequest {
+public class UserCreateRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
 
     @NotBlank(message = "用户名不能为空")
     @Size(min = 3, max = 50, message = "用户名长度必须在3-50字符之间")

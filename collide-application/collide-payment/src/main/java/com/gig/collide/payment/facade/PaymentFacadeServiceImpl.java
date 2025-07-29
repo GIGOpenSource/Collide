@@ -14,18 +14,20 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 支付门面服务实现类 - 简洁版
+ * 支付门面服务实现 - 简洁版
+ * 基于简洁版SQL设计和API（本地服务，优先调用）
  *
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (本地服务版)
  */
 @Slf4j
-@DubboService(version = "2.0.0")
+@DubboService(version = "1.0.0")
 public class PaymentFacadeServiceImpl implements PaymentFacadeService {
 
     @Autowired

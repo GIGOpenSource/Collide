@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  * @version 2.0.0
  */
 @Slf4j
-@DubboService(version = "2.0.0")
+@DubboService(version = "1.0.0")
 public class SearchFacadeServiceImpl implements SearchFacadeService {
 
     @Autowired

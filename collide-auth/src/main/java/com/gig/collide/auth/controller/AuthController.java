@@ -39,7 +39,7 @@ import java.util.Map;
 @Tag(name = "认证服务", description = "简化的用户认证接口，支持用户名密码登录注册和邀请码功能")
 public class AuthController {
 
-    @DubboReference(version = "2.0.0")
+    @DubboReference(version = "1.0.0")
     private UserFacadeService userFacadeService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();

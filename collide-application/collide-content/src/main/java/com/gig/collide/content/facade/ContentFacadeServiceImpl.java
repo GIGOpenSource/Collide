@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
  * @since 2024-01-01
  */
 @Slf4j
-@DubboService
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class ContentFacadeServiceImpl implements ContentFacadeService {
 

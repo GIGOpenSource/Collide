@@ -1,12 +1,12 @@
 package com.gig.collide.comment;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.spring.context.annotation.EnableDubbo;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.env.Environment;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -20,8 +20,8 @@ import java.net.UnknownHostException;
  * @since 2024-01-01
  */
 @Slf4j
-@SpringBootApplication
-@EnableTransactionManagement
+@SpringBootApplication(scanBasePackages = "com.gig.collide.comment")
+@EnableDubbo
 @MapperScan("com.gig.collide.comment.infrastructure.mapper")
 public class CollideCommentApplication {
 
