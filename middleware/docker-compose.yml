@@ -38,7 +38,7 @@ services:
       - ${PWD}/nacos/env/nacos-standlone-mysql.env
     volumes:
       - ${PWD}/nacos/logs/:/home/nacos/logs
-      - /www/Collide/middleware/nacos/conf/application.properties:/home/nacos/conf/application.properties
+      - ${PWD}/nacos/conf/application.properties:/home/nacos/conf/application.properties
     ports:
       - "8848:8848"
       - "9848:9848"
