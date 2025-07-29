@@ -32,8 +32,6 @@ services:
   nacos:
     image: nacos/nacos-server:v2.3.2
     container_name: nacos
-    environment:
-      NACOS_STANDALONE: "false"
     env_file:
       - ${PWD}/nacos/env/nacos-standlone-mysql.env
     volumes:
