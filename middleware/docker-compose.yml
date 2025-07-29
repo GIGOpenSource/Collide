@@ -33,6 +33,7 @@ services:
     container_name: nacos
     env_file:
       - ${PWD}/nacos/env/nacos-standlone-mysql.env
+      - ${PWD}/nacos/conf/application.properties:/home/nacos/conf/application.properties
     volumes:
       - ${PWD}/nacos/logs/:/home/nacos/logs
     ports:
