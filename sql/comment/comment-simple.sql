@@ -22,6 +22,7 @@ CREATE TABLE `t_comment` (
   -- 回复相关
   `reply_to_user_id`      BIGINT                               COMMENT '回复目标用户ID',
   `reply_to_user_nickname` VARCHAR(100)                        COMMENT '回复目标用户昵称（冗余）',
+  `reply_to_user_avatar`   VARCHAR(500)                         COMMENT '回复目标用户头像（冗余）',
   
   -- 状态和统计
   `status`                VARCHAR(20)  NOT NULL DEFAULT 'NORMAL' COMMENT '状态：NORMAL、HIDDEN、DELETED',

@@ -1,76 +1,88 @@
 package com.gig.collide.api.favorite.request;
 
-import com.gig.collide.api.favorite.constant.FavoriteSortType;
-import com.gig.collide.api.favorite.request.condition.FavoriteQueryCondition;
-import com.gig.collide.base.request.BaseRequest;
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import lombok.*;
-
-import java.util.List;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * 收藏查询请求
+ * 收藏查询请求 - 简洁版
+ * 基于favorite-simple.sql的字段，支持常用查询条件
  * 
- * @author Collide Team
- * @version 1.0
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "收藏查询请求")
-public class FavoriteQueryRequest extends BaseRequest {
-
-    private static final long serialVersionUID = 1L;
+@ToString
+public class FavoriteQueryRequest {
 
     /**
-     * 查询条件列表
+     * 收藏类型：CONTENT、GOODS
      */
-    @Valid
-    @Schema(description = "查询条件列表")
-    private List<FavoriteQueryCondition> conditions;
+    private String favoriteType;
 
     /**
-     * 排序字段
+     * 收藏目标ID
      */
-    @Schema(description = "排序字段", example = "FAVORITE_TIME")
-    private FavoriteSortType sortType;
+    private Long targetId;
 
     /**
-     * 是否升序排序
+     * 收藏用户ID
      */
-    @Schema(description = "是否升序排序", example = "false")
-    private Boolean ascending = false;
+    private Long userId;
 
     /**
-     * 页码（从1开始）
+     * 收藏对象标题关键词
+     */
+    private String targetTitle;
+
+    /**
+     * 收藏对象作者ID
+     */
+    private Long targetAuthorId;
+
+    /**
+     * 用户昵称关键词
+     */
+    private String userNickname;
+
+    /**
+     * 状态：active、cancelled
+     */
+    private String status;
+
+    /**
+     * 查询类型：user（用户收藏的）、target（被收藏的）、popular（热门）
+     */
+    private String queryType;
+
+    // =================== 分页参数 ===================
+
+    /**
+     * 页码，从1开始
      */
     @Min(value = 1, message = "页码必须大于0")
-    @Schema(description = "页码", example = "1")
     private Integer pageNum = 1;
 
     /**
-     * 页大小
+     * 页面大小
      */
-    @Min(value = 1, message = "页大小必须大于0")
-    @Max(value = 100, message = "页大小不能超过100")
-    @Schema(description = "页大小", example = "20")
+    @Min(value = 1, message = "页面大小必须大于0")
     private Integer pageSize = 20;
 
     /**
-     * 是否包含已删除数据
+     * 排序字段：create_time、update_time
      */
-    @Schema(description = "是否包含已删除数据", example = "false")
-    private Boolean includeDeleted = false;
+    private String orderBy = "create_time";
 
     /**
-     * 是否只返回统计信息
+     * 排序方向：ASC、DESC
      */
-    @Schema(description = "是否只返回统计信息", example = "false")
-    private Boolean countOnly = false;
+    private String orderDirection = "DESC";
 } 

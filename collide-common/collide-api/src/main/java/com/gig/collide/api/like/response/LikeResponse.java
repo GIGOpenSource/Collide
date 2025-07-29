@@ -1,93 +1,86 @@
 package com.gig.collide.api.like.response;
 
-import com.gig.collide.base.response.BaseResponse;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
-import io.swagger.v3.oas.annotations.media.Schema;
+
+import java.time.LocalDateTime;
 
 /**
- * 通用点赞响应
- *
- * @author Collide Team
- * @version 1.0
+ * 点赞统一响应对象 - 简洁版
+ * 基于like-simple.sql的字段结构，包含所有冗余信息
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @ToString
-@Schema(description = "通用点赞响应")
-public class LikeResponse extends BaseResponse {
-
-    private static final long serialVersionUID = 1L;
+public class LikeResponse {
 
     /**
-     * 操作是否成功
+     * 点赞ID
      */
-    @Schema(description = "操作是否成功")
-    private Boolean success;
+    private Long id;
 
     /**
-     * 当前点赞数
+     * 点赞类型：CONTENT、COMMENT、DYNAMIC
      */
-    @Schema(description = "当前点赞数")
-    private Long likeCount;
+    private String likeType;
 
     /**
-     * 当前点踩数
+     * 目标对象ID
      */
-    @Schema(description = "当前点踩数")
-    private Long dislikeCount;
+    private Long targetId;
 
     /**
-     * 用户当前对该对象的点赞状态
+     * 点赞用户ID
      */
-    @Schema(description = "用户当前对该对象的点赞状态：LIKED/DISLIKED/UNLIKED")
-    private String userLikeStatus;
+    private Long userId;
+
+    // =================== 目标对象信息（冗余字段） ===================
+    
+    /**
+     * 目标对象标题（冗余）
+     */
+    private String targetTitle;
 
     /**
-     * 点赞率
+     * 目标对象作者ID（冗余）
      */
-    @Schema(description = "点赞率")
-    private Double likeRate;
+    private Long targetAuthorId;
+
+    // =================== 用户信息（冗余字段） ===================
+    
+    /**
+     * 用户昵称（冗余）
+     */
+    private String userNickname;
 
     /**
-     * 操作消息
+     * 用户头像（冗余）
      */
-    @Schema(description = "操作消息")
-    private String operationMessage;
+    private String userAvatar;
+
+    // =================== 状态和时间信息 ===================
+    
+    /**
+     * 状态：active、cancelled
+     */
+    private String status;
 
     /**
-     * 创建成功响应
+     * 创建时间
      */
-    public static LikeResponse success(Long likeCount, Long dislikeCount, String userLikeStatus) {
-        LikeResponse response = new LikeResponse();
-        response.setSuccess(true);
-        response.setLikeCount(likeCount);
-        response.setDislikeCount(dislikeCount);
-        response.setUserLikeStatus(userLikeStatus);
-        response.setResponseCode("SUCCESS");
-        response.setResponseMessage("操作成功");
-        
-        // 计算点赞率
-        long total = likeCount + dislikeCount;
-        if (total > 0) {
-            response.setLikeRate((double) likeCount / total * 100);
-        } else {
-            response.setLikeRate(0.0);
-        }
-        
-        return response;
-    }
+    private LocalDateTime createTime;
 
     /**
-     * 创建失败响应
+     * 更新时间
      */
-    public static LikeResponse error(String errorCode, String errorMessage) {
-        LikeResponse response = new LikeResponse();
-        response.setSuccess(false);
-        response.setResponseCode(errorCode);
-        response.setResponseMessage(errorMessage);
-        return response;
-    }
+    private LocalDateTime updateTime;
 } 

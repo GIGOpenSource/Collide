@@ -1,123 +1,100 @@
 package com.gig.collide.api.order.request;
 
-import com.gig.collide.api.order.request.condition.*;
-import com.gig.collide.base.request.BaseRequest;
+import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
+
 /**
- * 订单查询请求
+ * 订单查询请求 - 简洁版
+ * 基于order-simple.sql的字段，支持常用查询条件
  * 
- * @author Collide Team
- * @version 2.0
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(callSuper = true)
-public class OrderQueryRequest extends BaseRequest {
+@ToString
+public class OrderQueryRequest {
 
     /**
-     * 查询条件
+     * 用户ID - 查询某用户的订单
      */
-    private OrderQueryCondition orderQueryCondition;
+    private Long userId;
 
     /**
-     * 分页页码
+     * 订单号 - 精确查询
      */
-    private Integer pageNo = 1;
+    private String orderNo;
 
     /**
-     * 分页大小
+     * 商品ID - 查询某商品的订单
      */
-    private Integer pageSize = 10;
+    private Long goodsId;
 
     /**
-     * 排序字段
+     * 订单状态：pending、paid、shipped、completed、cancelled
      */
-    private String sortField = "createTime";
+    private String status;
 
     /**
-     * 排序方向: ASC-升序, DESC-降序
+     * 支付状态：unpaid、paid、refunded
      */
-    private String sortOrder = "DESC";
+    private String payStatus;
 
     /**
-     * 根据订单号查询
+     * 支付方式：alipay、wechat、balance
      */
-    public OrderQueryRequest(String orderNo) {
-        OrderNoQueryCondition condition = new OrderNoQueryCondition();
-        condition.setOrderNo(orderNo);
-        this.orderQueryCondition = condition;
-    }
+    private String payMethod;
 
     /**
-     * 根据用户ID查询
+     * 创建时间开始
      */
-    public OrderQueryRequest(Long userId) {
-        OrderUserIdQueryCondition condition = new OrderUserIdQueryCondition();
-        condition.setUserId(userId);
-        this.orderQueryCondition = condition;
-    }
+    private LocalDateTime createTimeStart;
 
     /**
-     * 根据订单状态查询
+     * 创建时间结束
      */
-    public static OrderQueryRequest byStatus(String status) {
-        OrderQueryRequest request = new OrderQueryRequest();
-        OrderStatusQueryCondition condition = new OrderStatusQueryCondition();
-        condition.setStatus(status);
-        request.setOrderQueryCondition(condition);
-        return request;
-    }
+    private LocalDateTime createTimeEnd;
 
     /**
-     * 根据订单类型查询
+     * 支付时间开始
      */
-    public static OrderQueryRequest byType(String orderType) {
-        OrderQueryRequest request = new OrderQueryRequest();
-        OrderTypeQueryCondition condition = new OrderTypeQueryCondition();
-        condition.setOrderType(orderType);
-        request.setOrderQueryCondition(condition);
-        return request;
-    }
+    private LocalDateTime payTimeStart;
 
     /**
-     * 根据时间范围查询
+     * 支付时间结束
      */
-    public static OrderQueryRequest byTimeRange(Long startTime, Long endTime) {
-        OrderQueryRequest request = new OrderQueryRequest();
-        OrderTimeRangeQueryCondition condition = new OrderTimeRangeQueryCondition();
-        condition.setStartTime(startTime);
-        condition.setEndTime(endTime);
-        request.setOrderQueryCondition(condition);
-        return request;
-    }
+    private LocalDateTime payTimeEnd;
+
+    // =================== 分页参数 ===================
+    
+    /**
+     * 页码，从1开始
+     */
+    @Min(value = 1, message = "页码必须大于0")
+    private Integer pageNum = 1;
 
     /**
-     * 根据商品ID查询
+     * 页面大小
      */
-    public static OrderQueryRequest byGoodsId(Long goodsId) {
-        OrderQueryRequest request = new OrderQueryRequest();
-        OrderGoodsIdQueryCondition condition = new OrderGoodsIdQueryCondition();
-        condition.setGoodsId(goodsId);
-        request.setOrderQueryCondition(condition);
-        return request;
-    }
+    @Min(value = 1, message = "页面大小必须大于0")
+    private Integer pageSize = 20;
 
     /**
-     * 根据内容ID查询
+     * 排序字段：create_time、update_time、pay_time
      */
-    public static OrderQueryRequest byContentId(Long contentId) {
-        OrderQueryRequest request = new OrderQueryRequest();
-        OrderContentIdQueryCondition condition = new OrderContentIdQueryCondition();
-        condition.setContentId(contentId);
-        request.setOrderQueryCondition(condition);
-        return request;
-    }
+    private String orderBy = "create_time";
+
+    /**
+     * 排序方向：ASC、DESC
+     */
+    private String orderDirection = "DESC";
 } 

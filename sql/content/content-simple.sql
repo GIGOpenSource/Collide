@@ -34,6 +34,8 @@ CREATE TABLE `t_content` (
     `like_count`      BIGINT       NOT NULL DEFAULT 0     COMMENT '点赞数',
     `comment_count`   BIGINT       NOT NULL DEFAULT 0     COMMENT '评论数',
     `favorite_count`  BIGINT       NOT NULL DEFAULT 0     COMMENT '收藏数',
+    `score_count`     BIGINT       NOT NULL DEFAULT 0     COMMENT '评分数',
+    `score_total`     BIGINT       NOT NULL DEFAULT 0     COMMENT '总评分',
     
     -- 时间字段
     `publish_time`    DATETIME                             COMMENT '发布时间',

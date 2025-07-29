@@ -27,21 +27,6 @@ mybatis-plus:
       logic-not-delete-value: 0
       insert-strategy: not_null
       update-strategy: not_null
-      select-strategy: not_null
-
-# 监控配置 (修复 Prometheus 配置)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: always
-  prometheus:
-    metrics:
-      export:
-        enabled: true
 
 # Collide Payment 业务配置 (v2.0.0)
 collide:

@@ -13,7 +13,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @version 2.0.0
  * @since 2024-12-19
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.gig.collide.payment")
 @EnableDubbo
 public class CollidePaymentApplication {
 

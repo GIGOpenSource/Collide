@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.content.infrastructure.mapper.ContentMapper">
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, title, description, content_type, content_data, cover_url, tags,
+        author_id, author_nickname, author_avatar,
+        category_id, category_name,
+        status, review_status,
+        view_count, like_count, comment_count, favorite_count, score_count, score_total,
+        publish_time, create_time, update_time
+    </sql>
+
+    <!-- 根据作者ID查询内容 -->
+    <select id="findByAuthor" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE author_id = #{authorId}
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据分类查询内容 -->
+    <select id="findByCategory" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE category_id = #{categoryId}
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 搜索内容 -->
+    <select id="searchContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE (title LIKE CONCAT('%', #{keyword}, '%')
+           OR description LIKE CONCAT('%', #{keyword}, '%')
+           OR tags LIKE CONCAT('%', #{keyword}, '%'))
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY view_count DESC, like_count DESC, create_time DESC
+    </select>
+
+    <!-- 获取热门内容 -->
+    <select id="findPopularContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="timeRange != null and timeRange > 0">
+            AND publish_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+        </if>
+        <if test="minViewCount != null and minViewCount > 0">
+            AND view_count >= #{minViewCount}
+        </if>
+        <if test="minLikeCount != null and minLikeCount > 0">
+            AND like_count >= #{minLikeCount}
+        </if>
+        ORDER BY (view_count * 0.4 + like_count * 0.3 + favorite_count * 0.2 + comment_count * 0.1) DESC,
+                 publish_time DESC
+    </select>
+
+    <!-- 获取最新内容 -->
+    <select id="findLatestContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE 1=1
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY publish_time DESC, create_time DESC
+    </select>
+
+    <!-- 根据评分查询内容 -->
+    <select id="findByScore" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+          AND score_count > 0
+          AND (score_total / score_count) >= #{minScore}
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        ORDER BY (score_total / score_count) DESC, score_count DESC
+    </select>
+
+    <!-- 增加浏览量 -->
+    <update id="increaseViewCount">
+        UPDATE t_content
+        SET view_count = view_count + #{increment}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="increaseLikeCount">
+        UPDATE t_content
+        SET like_count = like_count + #{increment}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加评论数 -->
+    <update id="increaseCommentCount">
+        UPDATE t_content
+        SET comment_count = comment_count + #{increment}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加收藏数 -->
+    <update id="increaseFavoriteCount">
+        UPDATE t_content
+        SET favorite_count = favorite_count + #{increment}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新评分统计 -->
+    <update id="updateScoreStats">
+        UPDATE t_content
+        SET score_count = #{scoreCount},
+            score_total = #{scoreTotal}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 添加单个评分 -->
+    <update id="addScore">
+        UPDATE t_content
+        SET score_count = score_count + 1,
+            score_total = score_total + #{score}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 发布内容 -->
+    <update id="publishContent">
+        UPDATE t_content
+        SET status = 'PUBLISHED',
+            publish_time = #{publishTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 下线内容 -->
+    <update id="offlineContent">
+        UPDATE t_content
+        SET status = 'OFFLINE'
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新审核状态 -->
+    <update id="updateReviewStatus">
+        UPDATE t_content
+        SET review_status = #{reviewStatus}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新作者信息 -->
+    <update id="updateAuthorInfo">
+        UPDATE t_content
+        SET author_nickname = #{nickname},
+            author_avatar = #{avatar}
+        WHERE author_id = #{authorId}
+    </update>
+
+    <!-- 更新分类信息 -->
+    <update id="updateCategoryInfo">
+        UPDATE t_content
+        SET category_name = #{categoryName}
+        WHERE category_id = #{categoryId}
+    </update>
+
+    <!-- 获取内容统计信息 -->
+    <select id="getContentStatistics" resultType="map">
+        SELECT 
+            view_count,
+            like_count,
+            comment_count,
+            favorite_count,
+            score_count,
+            score_total,
+            CASE WHEN score_count > 0 THEN ROUND(score_total / score_count, 1) ELSE 0 END as average_score
+        FROM t_content
+        WHERE id = #{id}
+    </select>
+
+    <!-- 获取作者内容数量 -->
+    <select id="countByAuthor" resultType="long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE author_id = #{authorId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 获取分类内容数量 -->
+    <select id="countByCategory" resultType="long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE category_id = #{categoryId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 获取内容类型统计 -->
+    <select id="getContentTypeStats" resultType="map">
+        SELECT 
+            content_type,
+            COUNT(*) as count,
+            SUM(view_count) as total_views,
+            SUM(like_count) as total_likes
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+        GROUP BY content_type
+        ORDER BY count DESC
+    </select>
+
+    <!-- 获取今日发布数量 -->
+    <select id="getTodayPublishCount" resultType="long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+          AND DATE(publish_time) = CURDATE()
+    </select>
+
+    <!-- 获取待审核内容数量 -->
+    <select id="getPendingReviewCount" resultType="long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE review_status = 'PENDING'
+    </select>
+
+    <!-- 多条件查询内容 -->
+    <select id="findWithConditions" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE 1=1
+        <if test="title != null and title != ''">
+            AND title LIKE CONCAT('%', #{title}, '%')
+        </if>
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="authorId != null">
+            AND author_id = #{authorId}
+        </if>
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="reviewStatus != null and reviewStatus != ''">
+            AND review_status = #{reviewStatus}
+        </if>
+        <if test="minViewCount != null and minViewCount > 0">
+            AND view_count >= #{minViewCount}
+        </if>
+        <if test="minLikeCount != null and minLikeCount > 0">
+            AND like_count >= #{minLikeCount}
+        </if>
+        <if test="minScore != null and minScore > 0">
+            AND score_count > 0 AND (score_total / score_count) >= #{minScore}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        <choose>
+            <when test="orderBy == 'publish_time'">
+                ORDER BY publish_time ${orderDirection}
+            </when>
+            <when test="orderBy == 'view_count'">
+                ORDER BY view_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'like_count'">
+                ORDER BY like_count ${orderDirection}
+            </when>
+            <when test="orderBy == 'score'">
+                ORDER BY (score_total / NULLIF(score_count, 0)) ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY create_time ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查找需要章节管理的内容 -->
+    <select id="findNeedsChapterManagement" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE author_id = #{authorId}
+          AND content_type IN ('NOVEL', 'COMIC')
+          AND status IN ('DRAFT', 'PUBLISHED')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取推荐内容 -->
+    <select id="findRecommendedContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+          AND review_status = 'APPROVED'
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="excludeAuthorId != null">
+            AND author_id != #{excludeAuthorId}
+        </if>
+        ORDER BY (view_count * 0.3 + like_count * 0.25 + favorite_count * 0.25 + 
+                 COALESCE(score_total / NULLIF(score_count, 0), 0) * 0.2) DESC,
+                 publish_time DESC
+    </select>
+
+    <!-- 获取相似内容 -->
+    <select id="findSimilarContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE status = 'PUBLISHED'
+          AND category_id = #{categoryId}
+          AND content_type = #{contentType}
+          AND id != #{excludeId}
+        ORDER BY view_count DESC, like_count DESC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

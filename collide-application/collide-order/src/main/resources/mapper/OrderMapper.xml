@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.order.infrastructure.mapper.OrderMapper">
+
+    <!-- 基础字段列表 -->
+    <sql id="baseColumns">
+        id, order_no, user_id, user_nickname,
+        goods_id, goods_name, goods_price, goods_cover,
+        quantity, total_amount, discount_amount, final_amount,
+        status, pay_status, pay_method, pay_time,
+        create_time, update_time
+    </sql>
+
+    <!-- 根据订单号查询订单 -->
+    <select id="findByOrderNo" parameterType="string" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE order_no = #{orderNo}
+          AND status != 'deleted'
+    </select>
+
+    <!-- 分页查询用户订单 -->
+    <select id="findUserOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE user_id = #{userId}
+          AND status != 'deleted'
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+          <if test="payStatus != null and payStatus != ''">
+              AND pay_status = #{payStatus}
+          </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据商品ID查询订单列表 -->
+    <select id="findByGoodsId" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE goods_id = #{goodsId}
+          AND status != 'deleted'
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 查询指定时间范围内的订单 -->
+    <select id="findByTimeRange" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE create_time BETWEEN #{startTime} AND #{endTime}
+          AND status != 'deleted'
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 更新订单状态 -->
+    <update id="updateOrderStatus">
+        UPDATE t_order
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id = #{orderId}
+          AND status != 'deleted'
+    </update>
+
+    <!-- 更新订单支付信息 -->
+    <update id="updatePayInfo">
+        UPDATE t_order
+        SET pay_status = #{payStatus},
+            pay_method = #{payMethod},
+            pay_time = #{payTime},
+            status = CASE 
+                WHEN #{payStatus} = 'paid' THEN 'paid'
+                ELSE status
+            END,
+            update_time = NOW()
+        WHERE id = #{orderId}
+          AND status != 'deleted'
+    </update>
+
+    <!-- 统计用户订单数量 -->
+    <select id="countUserOrders" resultType="long">
+        SELECT COUNT(*)
+        FROM t_order
+        WHERE user_id = #{userId}
+          AND status != 'deleted'
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+    </select>
+
+    <!-- 统计商品销量 -->
+    <select id="countGoodsSales" resultType="long">
+        SELECT COALESCE(SUM(quantity), 0)
+        FROM t_order
+        WHERE goods_id = #{goodsId}
+          AND pay_status = 'paid'
+          AND status != 'deleted'
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+    </select>
+
+</mapper>

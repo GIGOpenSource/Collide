@@ -5,7 +5,9 @@
 
 spring:
   application:
-    name: collide-order
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
 
 # 服务端口配置
 server:
@@ -35,11 +37,8 @@ collide:
     # 幂等性缓存过期时间（小时）
     idempotency-cache-hours: 24
 
-# ========================================================================
-# MyBatis-Plus 配置 - 对齐Code项目标准化思想
-# ========================================================================
 mybatis-plus:
-  # Mapper XML文件路径（使用标准化命名：*_sqlmap.xml）
+  # Mapper XML文件路径（使用标准化命名：*.xml）
   mapper-locations: classpath:mapper/*_sqlmap.xml
   # 类型别名包路径
   type-aliases-package: com.gig.collide.order.domain.entity
@@ -59,9 +58,6 @@ mybatis-plus:
       # 主键策略
       id-type: assign_id
 
-# ========================================================================
-# 日志配置 - 标准化日志输出
-# ========================================================================
 logging:
   level:
     com.gig.collide.order: INFO

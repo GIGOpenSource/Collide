@@ -1,57 +1,48 @@
 package com.gig.collide.api.like.request;
 
-import com.gig.collide.api.like.constant.TargetTypeEnum;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
-
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * 取消点赞请求
- *
- * @author Collide Team
- * @version 1.0
+ * 取消点赞请求 - 简洁版
+ * 将点赞状态更新为cancelled
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
-@ToString
-@AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "取消点赞请求")
-public class LikeCancelRequest extends BaseRequest {
+@AllArgsConstructor
+@ToString
+public class LikeCancelRequest {
 
     /**
-     * 用户ID
+     * 点赞类型：CONTENT、COMMENT、DYNAMIC
      */
-    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "用户ID不能为空")
-    private Long userId;
+    @NotBlank(message = "点赞类型不能为空")
+    private String likeType;
 
     /**
      * 目标对象ID
      */
-    @Schema(description = "目标对象ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "目标对象ID不能为空")
     private Long targetId;
 
     /**
-     * 目标类型
+     * 点赞用户ID
      */
-    @Schema(description = "目标类型", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "目标类型不能为空")
-    private TargetTypeEnum targetType;
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
 
     /**
-     * IP地址
+     * 取消原因
      */
-    @Schema(description = "IP地址")
-    private String ipAddress;
-
-    /**
-     * 设备信息
-     */
-    @Schema(description = "设备信息")
-    private String deviceInfo;
+    private String cancelReason;
 } 

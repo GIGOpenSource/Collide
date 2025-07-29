@@ -1,92 +1,105 @@
 package com.gig.collide.api.goods.request;
 
-import com.gig.collide.api.goods.request.condition.*;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
+import jakarta.validation.constraints.Min;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+
+import java.math.BigDecimal;
 
 /**
- * 商品查询请求
- *
- * @author Collide Team
- * @version 1.0
+ * 商品查询请求 - 简洁版
+ * 基于goods-simple.sql的字段，支持常用查询条件
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
-@Setter
 @Getter
-@ToString
-@AllArgsConstructor
+@Setter
 @NoArgsConstructor
-public class GoodsQueryRequest extends BaseRequest {
+@AllArgsConstructor
+@ToString
+public class GoodsQueryRequest {
 
     /**
-     * 查询条件
+     * 商品名称关键词
      */
-    private GoodsQueryCondition goodsQueryCondition;
-
-    // ===================== 便捷构造器 =====================
+    private String nameKeyword;
 
     /**
-     * 根据商品ID查询
+     * 分类ID
      */
-    public GoodsQueryRequest(Long goodsId) {
-        GoodsIdQueryCondition condition = new GoodsIdQueryCondition();
-        condition.setGoodsId(goodsId);
-        this.goodsQueryCondition = condition;
-    }
+    private Long categoryId;
 
     /**
-     * 根据商品名称查询
+     * 分类名称
      */
-    public GoodsQueryRequest(String name) {
-        GoodsNameQueryCondition condition = new GoodsNameQueryCondition();
-        condition.setName(name);
-        this.goodsQueryCondition = condition;
-    }
+    private String categoryName;
 
     /**
-     * 根据商品ID列表查询
+     * 商家ID
      */
-    public static GoodsQueryRequest byIds(java.util.List<Long> goodsIds) {
-        GoodsQueryRequest request = new GoodsQueryRequest();
-        GoodsListQueryCondition condition = new GoodsListQueryCondition();
-        condition.setGoodsIds(goodsIds);
-        request.setGoodsQueryCondition(condition);
-        return request;
-    }
+    private Long sellerId;
 
     /**
-     * 查询推荐商品
+     * 商家名称
      */
-    public static GoodsQueryRequest recommended() {
-        GoodsQueryRequest request = new GoodsQueryRequest();
-        request.setGoodsQueryCondition(GoodsListQueryCondition.recommended());
-        return request;
-    }
+    private String sellerName;
 
     /**
-     * 查询热门商品
+     * 状态：active、inactive、sold_out
      */
-    public static GoodsQueryRequest hot() {
-        GoodsQueryRequest request = new GoodsQueryRequest();
-        request.setGoodsQueryCondition(GoodsListQueryCondition.hot());
-        return request;
-    }
+    private String status;
 
     /**
-     * 查询可购买商品
+     * 最小价格
      */
-    public static GoodsQueryRequest purchasable() {
-        GoodsQueryRequest request = new GoodsQueryRequest();
-        request.setGoodsQueryCondition(GoodsListQueryCondition.purchasable());
-        return request;
-    }
+    private BigDecimal minPrice;
 
     /**
-     * 通用列表查询
+     * 最大价格
      */
-    public static GoodsQueryRequest list() {
-        GoodsQueryRequest request = new GoodsQueryRequest();
-        request.setGoodsQueryCondition(new GoodsListQueryCondition());
-        return request;
-    }
+    private BigDecimal maxPrice;
+
+    /**
+     * 是否有库存（true=库存>0，false=库存=0）
+     */
+    private Boolean hasStock;
+
+    /**
+     * 最小销量
+     */
+    private Long minSalesCount;
+
+    /**
+     * 最大销量
+     */
+    private Long maxSalesCount;
+
+    // =================== 分页参数 ===================
+
+    /**
+     * 页码，从1开始
+     */
+    @Min(value = 1, message = "页码必须大于0")
+    private Integer pageNum = 1;
+
+    /**
+     * 页面大小
+     */
+    @Min(value = 1, message = "页面大小必须大于0")
+    private Integer pageSize = 20;
+
+    /**
+     * 排序字段：create_time、update_time、price、sales_count、view_count
+     */
+    private String orderBy = "create_time";
+
+    /**
+     * 排序方向：ASC、DESC
+     */
+    private String orderDirection = "DESC";
 }

@@ -1,57 +1,67 @@
 package com.gig.collide.api.like.request;
 
-import com.gig.collide.api.like.constant.TargetTypeEnum;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
-
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * 切换点赞状态请求（如果已点赞则取消，如果未点赞则点赞）
- *
- * @author Collide Team
- * @version 1.0
+ * 切换点赞状态请求 - 简洁版
+ * 如果已点赞则取消，如果未点赞则添加
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
-@ToString
-@AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "切换点赞状态请求")
-public class LikeToggleRequest extends BaseRequest {
+@AllArgsConstructor
+@ToString
+public class LikeToggleRequest {
 
     /**
-     * 用户ID
+     * 点赞类型：CONTENT、COMMENT、DYNAMIC
      */
-    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "用户ID不能为空")
-    private Long userId;
+    @NotBlank(message = "点赞类型不能为空")
+    private String likeType;
 
     /**
      * 目标对象ID
      */
-    @Schema(description = "目标对象ID", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotNull(message = "目标对象ID不能为空")
     private Long targetId;
 
     /**
-     * 目标类型
+     * 点赞用户ID
      */
-    @Schema(description = "目标类型", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "目标类型不能为空")
-    private TargetTypeEnum targetType;
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
+
+    // =================== 目标对象信息（冗余字段） ===================
+    
+    /**
+     * 目标对象标题（冗余）
+     */
+    private String targetTitle;
 
     /**
-     * IP地址
+     * 目标对象作者ID（冗余）
      */
-    @Schema(description = "IP地址")
-    private String ipAddress;
+    private Long targetAuthorId;
+
+    // =================== 用户信息（冗余字段） ===================
+    
+    /**
+     * 用户昵称（冗余）
+     */
+    private String userNickname;
 
     /**
-     * 设备信息
+     * 用户头像（冗余）
      */
-    @Schema(description = "设备信息")
-    private String deviceInfo;
+    private String userAvatar;
 } 

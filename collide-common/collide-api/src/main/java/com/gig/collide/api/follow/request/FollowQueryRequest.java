@@ -1,81 +1,78 @@
 package com.gig.collide.api.follow.request;
 
-import com.gig.collide.api.follow.request.condition.*;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
+import jakarta.validation.constraints.Min;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 /**
- * 关注查询请求
- *
- * @author Collide Team
- * @version 1.0
+ * 关注查询请求 - 简洁版
+ * 基于follow-simple.sql的字段，支持常用查询条件
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
-@ToString
 @NoArgsConstructor
 @AllArgsConstructor
-public class FollowQueryRequest extends BaseRequest {
-
-    private static final long serialVersionUID = 1L;
-
-    /**
-     * 查询条件
-     */
-    private FollowQueryCondition followQueryCondition;
-
-    // ===================== 便捷构造器 =====================
+@ToString
+public class FollowQueryRequest {
 
     /**
-     * 根据关注ID查询
-     *
-     * @param followId 关注ID
+     * 关注者用户ID
      */
-    public FollowQueryRequest(Long followId) {
-        FollowIdQueryCondition condition = new FollowIdQueryCondition();
-        condition.setFollowId(followId);
-        this.followQueryCondition = condition;
-    }
+    private Long followerId;
 
     /**
-     * 查询某个用户关注了哪些人
-     *
-     * @param followerUserId 关注者用户ID
+     * 被关注者用户ID
      */
-    public static FollowQueryRequest byFollowerUserId(Long followerUserId) {
-        FollowQueryRequest request = new FollowQueryRequest();
-        FollowUserIdQueryCondition condition = new FollowUserIdQueryCondition();
-        condition.setFollowerUserId(followerUserId);
-        request.setFollowQueryCondition(condition);
-        return request;
-    }
+    private Long followeeId;
 
     /**
-     * 查询哪些人关注了某个用户（粉丝列表）
-     *
-     * @param followedUserId 被关注者用户ID
+     * 关注者昵称关键词
      */
-    public static FollowQueryRequest byFollowedUserId(Long followedUserId) {
-        FollowQueryRequest request = new FollowQueryRequest();
-        FollowedUserIdQueryCondition condition = new FollowedUserIdQueryCondition();
-        condition.setFollowedUserId(followedUserId);
-        request.setFollowQueryCondition(condition);
-        return request;
-    }
+    private String followerNickname;
 
     /**
-     * 查询两个用户之间的关注关系
-     *
-     * @param followerUserId 关注者用户ID
-     * @param followedUserId 被关注者用户ID
+     * 被关注者昵称关键词
      */
-    public static FollowQueryRequest byRelation(Long followerUserId, Long followedUserId) {
-        FollowQueryRequest request = new FollowQueryRequest();
-        FollowRelationQueryCondition condition = new FollowRelationQueryCondition();
-        condition.setFollowerUserId(followerUserId);
-        condition.setFollowedUserId(followedUserId);
-        request.setFollowQueryCondition(condition);
-        return request;
-    }
+    private String followeeNickname;
+
+    /**
+     * 状态：active、cancelled
+     */
+    private String status;
+
+    /**
+     * 查询类型：following（我关注的）、followers（我的粉丝）、mutual（互关）
+     */
+    private String queryType;
+
+    // =================== 分页参数 ===================
+
+    /**
+     * 页码，从1开始
+     */
+    @Min(value = 1, message = "页码必须大于0")
+    private Integer pageNum = 1;
+
+    /**
+     * 页面大小
+     */
+    @Min(value = 1, message = "页面大小必须大于0")
+    private Integer pageSize = 20;
+
+    /**
+     * 排序字段：create_time、update_time
+     */
+    private String orderBy = "create_time";
+
+    /**
+     * 排序方向：ASC、DESC
+     */
+    private String orderDirection = "DESC";
 } 

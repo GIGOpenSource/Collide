@@ -1,6 +1,5 @@
 package com.gig.collide.api.order.request;
 
-import com.gig.collide.base.request.BaseRequest;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -14,109 +13,90 @@ import lombok.ToString;
 import java.math.BigDecimal;
 
 /**
- * 创建订单请求
+ * 创建订单请求 - 简洁版
+ * 基于order-simple.sql的无连表设计，包含商品信息冗余
  * 
- * @author Collide Team
- * @version 2.0
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(callSuper = true)
-public class OrderCreateRequest extends BaseRequest {
+@ToString
+public class OrderCreateRequest {
 
     /**
-     * 用户ID
+     * 用户ID - 必填
      */
     @NotNull(message = "用户ID不能为空")
     private Long userId;
 
     /**
-     * 订单类型: GOODS-商品购买, CONTENT-内容直购
+     * 用户昵称 - 冗余字段，避免连表查询
      */
-    @NotBlank(message = "订单类型不能为空")
-    private String orderType;
+    private String userNickname;
 
+    // =================== 商品信息（冗余字段） ===================
+    
     /**
-     * 商品ID（商品购买时必填）
+     * 商品ID - 必填
      */
+    @NotNull(message = "商品ID不能为空")
     private Long goodsId;
 
     /**
-     * 商品名称
+     * 商品名称 - 冗余字段
      */
+    @NotBlank(message = "商品名称不能为空")
     private String goodsName;
 
     /**
-     * 商品类型: COIN-金币类, SUBSCRIPTION-订阅类
+     * 商品单价 - 冗余字段
      */
-    private String goodsType;
-
-    /**
-     * 商品价格
-     */
-    @DecimalMin(value = "0.00", message = "商品价格不能小于0")
+    @NotNull(message = "商品单价不能为空")
+    @DecimalMin(value = "0.01", message = "商品单价必须大于0")
     private BigDecimal goodsPrice;
 
     /**
-     * 内容ID（内容直购时必填）
+     * 商品封面 - 冗余字段
      */
-    private Long contentId;
+    private String goodsCover;
 
-    /**
-     * 内容标题
-     */
-    private String contentTitle;
-
-    /**
-     * 内容类型: VIDEO-视频, ARTICLE-文章, LIVE-直播, COURSE-课程
-     */
-    private String contentType;
-
-    /**
-     * 内容价格
-     */
-    @DecimalMin(value = "0.00", message = "内容价格不能小于0")
-    private BigDecimal contentPrice;
-
+    // =================== 订单金额信息 ===================
+    
     /**
      * 购买数量
      */
     @NotNull(message = "购买数量不能为空")
-    @Min(value = 1, message = "购买数量不能小于1")
+    @Min(value = 1, message = "购买数量必须大于0")
     private Integer quantity;
 
     /**
-     * 订单总金额
+     * 订单总金额 = 商品单价 * 数量
      */
     @NotNull(message = "订单总金额不能为空")
-    @DecimalMin(value = "0.01", message = "订单总金额不能小于0.01")
+    @DecimalMin(value = "0.01", message = "订单总金额必须大于0")
     private BigDecimal totalAmount;
 
     /**
-     * 支付方式: ALIPAY-支付宝, WECHAT-微信, TEST-测试支付
+     * 优惠金额 - 可选，默认0
      */
-    private String payType;
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
     /**
-     * 订单过期时间（分钟）
+     * 实付金额 = 总金额 - 优惠金额
      */
-    private Integer expireMinutes;
+    @NotNull(message = "实付金额不能为空")
+    @DecimalMin(value = "0.01", message = "实付金额必须大于0")
+    private BigDecimal finalAmount;
 
+    // =================== 可选字段 ===================
+    
     /**
-     * 订单备注
+     * 支付方式：alipay、wechat、balance
+     * 创建时可预设，支付时确认
      */
-    private String remark;
-
-    /**
-     * 客户端IP地址
-     */
-    private String clientIp;
-
-    /**
-     * 设备信息
-     */
-    private String deviceInfo;
+    private String payMethod;
 } 

@@ -16,7 +16,7 @@ server:
 
 # MyBatis Plus 配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*_sqlmap.xml
+  mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

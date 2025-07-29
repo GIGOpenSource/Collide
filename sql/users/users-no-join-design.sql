@@ -68,38 +68,6 @@ CREATE TABLE `t_user_unified` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户统一信息表（去连表设计）';
 
--- 2. 数据迁移脚本（从分离的User和UserProfile表迁移到统一表）
-INSERT INTO `t_user_unified` (
-    `id`, `username`, `nickname`, `avatar`, `email`, `phone`, 
-    `password_hash`, `salt`, `role`, `status`, `last_login_time`,
-    `bio`, `birthday`, `gender`, `location`, 
-    `follower_count`, `following_count`, `content_count`, `like_count`,
-    `vip_expire_time`, `blogger_status`, `blogger_apply_time`, `blogger_approve_time`,
-    `create_time`, `update_time`, `deleted`, `version`
-)
-SELECT 
-    u.id, u.username, u.nickname, u.avatar, u.email, u.phone,
-    u.password_hash, u.salt, u.role, u.status, u.last_login_time,
-    COALESCE(p.bio, '') as bio,
-    p.birthday,
-    COALESCE(p.gender, 'unknown') as gender,
-    p.location,
-    COALESCE(p.follower_count, 0) as follower_count,
-    COALESCE(p.following_count, 0) as following_count,
-    COALESCE(p.content_count, 0) as content_count,
-    COALESCE(p.like_count, 0) as like_count,
-    p.vip_expire_time,
-    COALESCE(p.blogger_status, 'none') as blogger_status,
-    p.blogger_apply_time,
-    p.blogger_approve_time,
-    u.create_time,
-    GREATEST(u.update_time, COALESCE(p.update_time, u.update_time)) as update_time,
-    u.deleted,
-    0 as version
-FROM t_user u
-LEFT JOIN t_user_profile p ON u.id = p.user_id
-WHERE u.deleted = 0;
-
 -- 3. 创建用户操作流水表（记录用户行为）
 DROP TABLE IF EXISTS `t_user_operate_log`;
 CREATE TABLE `t_user_operate_log` (

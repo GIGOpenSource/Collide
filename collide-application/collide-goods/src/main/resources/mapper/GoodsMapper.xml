@@ -1,129 +1,241 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.gig.collide.goods.infrastructure.mapper.GoodsMapper">
 
-    <!-- 基础结果映射 -->
-    <resultMap id="BaseResultMap" type="com.gig.collide.goods.domain.entity.Goods">
-        <id column="id" property="id" jdbcType="BIGINT"/>
-        <result column="name" property="name" jdbcType="VARCHAR"/>
-        <result column="description" property="description" jdbcType="VARCHAR"/>
-        <result column="type" property="type" jdbcType="VARCHAR"/>
-        <result column="status" property="status" jdbcType="VARCHAR"/>
-        <result column="price" property="price" jdbcType="DECIMAL"/>
-        <result column="image_url" property="imageUrl" jdbcType="VARCHAR"/>
-        <result column="stock" property="stock" jdbcType="INTEGER"/>
-        <result column="sold_count" property="soldCount" jdbcType="INTEGER"/>
-        <result column="subscription_days" property="subscriptionDays" jdbcType="INTEGER"/>
-        <result column="coin_amount" property="coinAmount" jdbcType="INTEGER"/>
-        <result column="recommended" property="recommended" jdbcType="BOOLEAN"/>
-        <result column="hot" property="hot" jdbcType="BOOLEAN"/>
-        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
-        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
-        <result column="creator_id" property="creatorId" jdbcType="BIGINT"/>
-        <result column="deleted" property="deleted" jdbcType="BOOLEAN"/>
-        <result column="version" property="version" jdbcType="INTEGER"/>
-    </resultMap>
-
-    <!-- 基础查询字段 -->
-    <sql id="Base_Column_List">
-        id, name, description, type, status, price, image_url, stock, sold_count,
-        subscription_days, coin_amount, recommended, hot, create_time, update_time,
-        creator_id, deleted, version
+    <!-- 基础字段列表 -->
+    <sql id="baseColumns">
+        id, name, description, category_id, category_name,
+        price, original_price, stock, cover_url, images,
+        seller_id, seller_name,
+        status, sales_count, view_count,
+        create_time, update_time
     </sql>
 
-    <!-- 分页查询商品（基础查询） -->
-    <select id="pageQuery" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        <if test="type != null and type != ''">
-            AND type = #{type}
-        </if>
-        <if test="keyword != null and keyword != ''">
-            AND (name LIKE CONCAT('%', #{keyword}, '%') 
-                 OR description LIKE CONCAT('%', #{keyword}, '%'))
-        </if>
-        ORDER BY recommended DESC, hot DESC, sort_weight DESC, create_time DESC
+    <!-- 根据分类ID查询商品 -->
+    <select id="findByCategory" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE category_id = #{categoryId}
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 分页查询推荐商品 -->
-    <select id="pageQueryRecommended" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-          AND recommended = 1
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        ORDER BY sort_weight DESC, create_time DESC
+    <!-- 根据商家ID查询商品 -->
+    <select id="findBySeller" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE seller_id = #{sellerId}
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 分页查询热门商品 -->
-    <select id="pageQueryHot" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-          AND hot = 1
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        ORDER BY sold_count DESC, sort_weight DESC, create_time DESC
+    <!-- 根据名称关键词搜索商品 -->
+    <select id="searchByName" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE name LIKE CONCAT('%', #{keyword}, '%')
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY sales_count DESC, create_time DESC
     </select>
 
-    <!-- 获取推荐商品列表 -->
-    <select id="selectRecommendedGoods" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-          AND recommended = 1
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        ORDER BY sort_weight DESC, create_time DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
+    <!-- 根据价格区间查询商品 -->
+    <select id="findByPriceRange" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE 1=1
+          <if test="minPrice != null">
+              AND price >= #{minPrice}
+          </if>
+          <if test="maxPrice != null">
+              AND price &lt;= #{maxPrice}
+          </if>
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY price ASC
     </select>
 
-    <!-- 获取热门商品列表 -->
-    <select id="selectHotGoods" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-          AND hot = 1
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
-        ORDER BY sold_count DESC, sort_weight DESC, create_time DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
+    <!-- 查询有库存的商品 -->
+    <select id="findInStock" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE stock > 0
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY stock DESC
     </select>
+
+    <!-- 查询库存不足的商品 -->
+    <select id="findLowStock" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE stock &lt;= #{threshold}
+        ORDER BY stock ASC
+    </select>
+
+    <!-- 更新商品库存 -->
+    <update id="updateStock">
+        UPDATE t_goods
+        SET stock = stock + #{stockChange},
+            update_time = NOW()
+        WHERE id = #{goodsId}
+    </update>
+
+    <!-- 更新商品销量 -->
+    <update id="updateSalesCount">
+        UPDATE t_goods
+        SET sales_count = sales_count + #{salesChange},
+            update_time = NOW()
+        WHERE id = #{goodsId}
+    </update>
+
+    <!-- 增加商品浏览量 -->
+    <update id="increaseViewCount">
+        UPDATE t_goods
+        SET view_count = view_count + 1,
+            update_time = NOW()
+        WHERE id = #{goodsId}
+    </update>
 
     <!-- 批量更新商品状态 -->
     <update id="batchUpdateStatus">
-        UPDATE goods
-        SET status = #{status}, update_time = NOW()
+        UPDATE t_goods
+        SET status = #{status},
+            update_time = NOW()
         WHERE id IN
         <foreach collection="goodsIds" item="goodsId" open="(" separator="," close=")">
             #{goodsId}
         </foreach>
-        AND deleted = 0
     </update>
 
-    <!-- 根据创建者ID查询商品 -->
-    <select id="selectByCreatorId" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM goods
-        WHERE deleted = 0
-          AND creator_id = #{creatorId}
-        <if test="status != null and status != ''">
-            AND status = #{status}
-        </if>
+    <!-- 获取商品统计信息 -->
+    <select id="getGoodsStatistics" resultType="map">
+        SELECT 
+            id,
+            name,
+            stock,
+            sales_count,
+            view_count,
+            status,
+            price,
+            category_name,
+            seller_name,
+            create_time
+        FROM t_goods
+        WHERE id = #{goodsId}
+    </select>
+
+    <!-- 统计商家的商品数量 -->
+    <select id="countBySeller" resultType="long">
+        SELECT COUNT(*)
+        FROM t_goods
+        WHERE seller_id = #{sellerId}
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+    </select>
+
+    <!-- 统计分类的商品数量 -->
+    <select id="countByCategory" resultType="long">
+        SELECT COUNT(*)
+        FROM t_goods
+        WHERE category_id = #{categoryId}
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+    </select>
+
+    <!-- 查询热销商品 -->
+    <select id="findHotGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE sales_count >= #{minSalesCount}
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        ORDER BY sales_count DESC, view_count DESC
+    </select>
+
+    <!-- 查询最新商品 -->
+    <select id="findLatestGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
         ORDER BY create_time DESC
+    </select>
+
+    <!-- 复合条件查询商品 -->
+    <select id="findWithConditions" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE 1=1
+          <if test="categoryId != null">
+              AND category_id = #{categoryId}
+          </if>
+          <if test="sellerId != null">
+              AND seller_id = #{sellerId}
+          </if>
+          <if test="nameKeyword != null and nameKeyword != ''">
+              AND name LIKE CONCAT('%', #{nameKeyword}, '%')
+          </if>
+          <if test="minPrice != null">
+              AND price >= #{minPrice}
+          </if>
+          <if test="maxPrice != null">
+              AND price &lt;= #{maxPrice}
+          </if>
+          <if test="hasStock != null">
+              <if test="hasStock == true">
+                  AND stock > 0
+              </if>
+              <if test="hasStock == false">
+                  AND stock = 0
+              </if>
+          </if>
+          <if test="status != null and status != ''">
+              AND status = #{status}
+          </if>
+        <choose>
+            <when test="orderBy == 'price' and orderDirection == 'ASC'">
+                ORDER BY price ASC
+            </when>
+            <when test="orderBy == 'price' and orderDirection == 'DESC'">
+                ORDER BY price DESC
+            </when>
+            <when test="orderBy == 'sales_count' and orderDirection == 'ASC'">
+                ORDER BY sales_count ASC
+            </when>
+            <when test="orderBy == 'sales_count' and orderDirection == 'DESC'">
+                ORDER BY sales_count DESC
+            </when>
+            <when test="orderBy == 'view_count' and orderDirection == 'ASC'">
+                ORDER BY view_count ASC
+            </when>
+            <when test="orderBy == 'view_count' and orderDirection == 'DESC'">
+                ORDER BY view_count DESC
+            </when>
+            <when test="orderBy == 'update_time' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'update_time' and orderDirection == 'DESC'">
+                ORDER BY update_time DESC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
     </select>
 
 </mapper> 

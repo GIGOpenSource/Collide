@@ -1,143 +1,109 @@
 package com.gig.collide.api.goods.request;
 
-import com.gig.collide.api.goods.constant.GoodsType;
-import com.gig.collide.base.request.BaseRequest;
-import lombok.*;
-import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
-import jakarta.validation.constraints.*;
 import java.math.BigDecimal;
 
 /**
- * 商品创建请求
- *
- * @author Collide Team
- * @version 1.0
+ * 商品创建请求 - 简洁版
+ * 基于goods-simple.sql的无连表设计，包含分类和商家信息冗余
+ * 
+ * @author Collide
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
 @Getter
 @Setter
-@ToString
-@AllArgsConstructor
 @NoArgsConstructor
-@Schema(description = "商品创建请求")
-public class GoodsCreateRequest extends BaseRequest {
+@AllArgsConstructor
+@ToString
+public class GoodsCreateRequest {
 
     /**
      * 商品名称
      */
-    @Schema(description = "商品名称", requiredMode = Schema.RequiredMode.REQUIRED)
     @NotBlank(message = "商品名称不能为空")
-    @Size(max = 100, message = "商品名称长度不能超过100个字符")
     private String name;
 
     /**
      * 商品描述
      */
-    @Schema(description = "商品描述")
-    @Size(max = 2000, message = "商品描述长度不能超过2000个字符")
     private String description;
 
     /**
-     * 商品类型
+     * 分类ID
      */
-    @Schema(description = "商品类型", requiredMode = Schema.RequiredMode.REQUIRED)
-    @NotNull(message = "商品类型不能为空")
-    private GoodsType type;
+    private Long categoryId;
 
     /**
-     * 商品价格（元）
+     * 分类名称（冗余）
      */
-    @Schema(description = "商品价格（元）", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String categoryName;
+
+    /**
+     * 商品价格
+     */
     @NotNull(message = "商品价格不能为空")
-    @DecimalMin(value = "0.01", message = "商品价格必须大于0")
-    @Digits(integer = 8, fraction = 2, message = "价格格式不正确，最多8位整数2位小数")
+    @DecimalMin(value = "0.0", inclusive = false, message = "商品价格必须大于0")
     private BigDecimal price;
 
     /**
-     * 商品图片URL
+     * 原价
      */
-    @Schema(description = "商品图片URL")
-    @Size(max = 500, message = "图片URL长度不能超过500个字符")
-    private String imageUrl;
+    private BigDecimal originalPrice;
 
     /**
-     * 库存数量（-1表示无限库存）
+     * 库存数量
      */
-    @Schema(description = "库存数量（-1表示无限库存）")
-    @Min(value = -1, message = "库存数量不能小于-1")
-    private Integer stock = -1;
+    @NotNull(message = "库存数量不能为空")
+    @Min(value = 0, message = "库存数量不能小于0")
+    private Integer stock;
 
     /**
-     * 订阅周期天数（订阅类商品必填）
+     * 商品封面图
      */
-    @Schema(description = "订阅周期天数（订阅类商品必填）")
-    @Min(value = 1, message = "订阅天数必须大于0")
-    private Integer subscriptionDays;
+    private String coverUrl;
 
     /**
-     * 金币数量（金币类商品必填）
+     * 商品图片，JSON数组格式
      */
-    @Schema(description = "金币数量（金币类商品必填）")
-    @Min(value = 1, message = "金币数量必须大于0")
-    private Integer coinAmount;
+    private String images;
+
+    // =================== 商家信息（冗余字段） ===================
 
     /**
-     * 是否推荐
+     * 商家ID
      */
-    @Schema(description = "是否推荐")
-    private Boolean recommended = false;
+    @NotNull(message = "商家ID不能为空")
+    private Long sellerId;
 
     /**
-     * 是否热门
+     * 商家名称（冗余）
      */
-    @Schema(description = "是否热门")
-    private Boolean hot = false;
+    private String sellerName;
+
+    // =================== 状态和统计 ===================
 
     /**
-     * 创建者ID
+     * 状态：active、inactive、sold_out
      */
-    @Schema(description = "创建者ID")
-    private Long creatorId;
-
-    // ===================== 便捷构造器 =====================
+    private String status = "active";
 
     /**
-     * 创建金币类商品
+     * 销量（初始为0）
      */
-    public static GoodsCreateRequest coin(String name, BigDecimal price, Integer coinAmount) {
-        GoodsCreateRequest request = new GoodsCreateRequest();
-        request.setName(name);
-        request.setType(GoodsType.COIN);
-        request.setPrice(price);
-        request.setCoinAmount(coinAmount);
-        return request;
-    }
+    private Long salesCount = 0L;
 
     /**
-     * 创建订阅类商品
+     * 浏览量（初始为0）
      */
-    public static GoodsCreateRequest subscription(String name, BigDecimal price, Integer subscriptionDays) {
-        GoodsCreateRequest request = new GoodsCreateRequest();
-        request.setName(name);
-        request.setType(GoodsType.SUBSCRIPTION);
-        request.setPrice(price);
-        request.setSubscriptionDays(subscriptionDays);
-        return request;
-    }
-
-    // ===================== 数据验证 =====================
-
-    /**
-     * 验证商品类型相关字段
-     */
-    public boolean isValid() {
-        if (type == GoodsType.COIN && coinAmount == null) {
-            return false;
-        }
-        if (type == GoodsType.SUBSCRIPTION && subscriptionDays == null) {
-            return false;
-        }
-        return true;
-    }
+    private Long viewCount = 0L;
 } 

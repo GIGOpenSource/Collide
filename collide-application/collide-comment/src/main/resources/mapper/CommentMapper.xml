@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.comment.infrastructure.mapper.CommentMapper">
+
+    <!-- 基础查询 - 根据目标对象获取评论列表 -->
+    <select id="selectTargetComments" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 分页获取目标对象的评论 -->
+    <select id="selectTargetCommentsPage" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取用户评论列表 -->
+    <select id="selectUserCommentsPage" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE user_id = #{userId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取用户收到的回复 -->
+    <select id="selectUserRepliesPage" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE reply_to_user_id = #{replyToUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 统计目标对象的评论数 -->
+    <select id="countTargetComments" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 统计用户评论数 -->
+    <select id="countUserComments" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_comment
+        WHERE user_id = #{userId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 统计评论的回复数 -->
+    <select id="countCommentReplies" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_comment
+        WHERE parent_comment_id = #{parentCommentId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 获取评论统计信息 -->
+    <select id="selectCommentStatistics" resultType="java.util.Map">
+        SELECT 
+            id,
+            like_count,
+            reply_count,
+            (SELECT COUNT(*) FROM t_comment WHERE parent_comment_id = #{commentId} AND status != 'DELETED') as actual_reply_count,
+            DATEDIFF(NOW(), create_time) as create_days,
+            status
+        FROM t_comment 
+        WHERE id = #{commentId}
+    </select>
+
+    <!-- 增加评论点赞数 -->
+    <update id="increaseLikeCount">
+        UPDATE t_comment 
+        SET like_count = like_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+    </update>
+
+    <!-- 增加回复数 -->
+    <update id="increaseReplyCount">
+        UPDATE t_comment 
+        SET reply_count = reply_count + #{increment},
+            update_time = NOW()
+        WHERE id = #{commentId}
+    </update>
+
+    <!-- 批量更新评论状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_comment 
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="commentIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量删除目标对象的评论 -->
+    <update id="batchDeleteTargetComments">
+        UPDATE t_comment 
+        SET status = #{status},
+            update_time = NOW()
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+    </update>
+
+    <!-- 更新用户信息（冗余字段同步） -->
+    <update id="updateUserInfo">
+        UPDATE t_comment 
+        SET user_nickname = #{nickname},
+            user_avatar = #{avatar},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新回复目标用户信息（冗余字段同步） -->
+    <update id="updateReplyToUserInfo">
+        UPDATE t_comment 
+        SET reply_to_user_nickname = #{nickname},
+            reply_to_user_avatar = #{avatar},
+            update_time = NOW()
+        WHERE reply_to_user_id = #{replyToUserId}
+    </update>
+
+    <!-- 搜索评论 -->
+    <select id="searchComments" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE content LIKE CONCAT('%', #{keyword}, '%')
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取热门评论 -->
+    <select id="selectPopularComments" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE 1=1
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="timeRange != null and timeRange > 0">
+            AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+        </if>
+        <if test="minLikeCount != null and minLikeCount > 0">
+            AND like_count >= #{minLikeCount}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY (like_count * 1.0 + reply_count * 0.5) DESC, create_time DESC
+    </select>
+
+    <!-- 获取最新评论 -->
+    <select id="selectLatestComments" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE 1=1
+        <if test="targetId != null">
+            AND target_id = #{targetId}
+        </if>
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取评论树形结构数据 -->
+    <select id="selectCommentTree" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY parent_comment_id ASC,
+        <choose>
+            <when test="orderBy == 'like_count'">like_count</when>
+            <when test="orderBy == 'reply_count'">reply_count</when>
+            <when test="orderBy == 'update_time'">update_time</when>
+            <otherwise>create_time</otherwise>
+        </choose>
+        <choose>
+            <when test="orderDirection == 'ASC'">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取指定时间范围内的评论数据 -->
+    <select id="selectCommentsByTimeRange" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT * FROM t_comment
+        WHERE create_time BETWEEN #{startTime} AND #{endTime}
+        <if test="commentType != null and commentType != ''">
+            AND comment_type = #{commentType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 清理已删除的评论（物理删除） -->
+    <delete id="cleanDeletedComments">
+        DELETE FROM t_comment 
+        WHERE status = 'DELETED' 
+        AND update_time &lt; #{beforeTime}
+    </delete>
+
+</mapper>
