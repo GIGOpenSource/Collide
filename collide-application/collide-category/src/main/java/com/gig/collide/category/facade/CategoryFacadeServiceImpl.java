@@ -12,7 +12,7 @@ import com.gig.collide.web.vo.Result;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
+import org.springframework.stereotype.Service;
 import org.springframework.beans.BeanUtils;
 
 import java.util.List;
@@ -21,14 +21,13 @@ import java.util.stream.Collectors;
 
 /**
  * 分类门面服务实现 - 简洁版
- * Dubbo服务实现，处理DTO转换和错误处理
+ * 基于简洁版SQL设计和API
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0 (本地聚合服务)
  */
 @Slf4j
-@DubboService(version = "2.0.0")
+@Service
 @RequiredArgsConstructor
 public class CategoryFacadeServiceImpl implements CategoryFacadeService {
 

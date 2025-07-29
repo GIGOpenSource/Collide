@@ -10,7 +10,6 @@ import com.gig.collide.goods.domain.service.GoodsService;
 import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -19,16 +18,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 商品门面服务实现类 - 简洁版
- * 基于Dubbo RPC，提供商品相关的远程服务调用
+ * 商品门面服务实现 - 简洁版
+ * 基于简洁版SQL设计和API
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * @author GIG Team  
+ * @version 2.0.0 (本地聚合服务)
  */
 @Slf4j
 @Service
-@DubboService
 @RequiredArgsConstructor
 public class GoodsFacadeServiceImpl implements GoodsFacadeService {
 

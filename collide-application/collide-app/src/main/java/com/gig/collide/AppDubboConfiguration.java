@@ -2,6 +2,8 @@ package com.gig.collide;
 
 // =================== 只导入真正需要远程调用的服务接口 ===================
 import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.order.OrderFacadeService;
+import com.gig.collide.api.payment.PaymentFacadeService;
 // 注意：其他服务都是本地模块，不需要远程调用
 
 // =================== Spring框架注解导入 ===================
@@ -29,8 +31,6 @@ import org.springframework.context.annotation.Configuration;
  *   <li>✅ 关注服务 - 用户关注、粉丝管理（本地）</li>
  *   <li>✅ 商品服务 - 商品管理、库存控制（本地）</li>
  *   <li>✅ 点赞服务 - 点赞统计、热度计算（本地）</li>
- *   <li>✅ 订单服务 - 订单处理、状态管理（本地）</li>
- *   <li>✅ 支付服务 - 支付处理、回调管理（本地）</li>
  *   <li>✅ 搜索服务 - 搜索引擎、热搜管理（本地）</li>
  *   <li>✅ 社交服务 - 动态发布、社交互动（本地）</li>
  *   <li>✅ 标签服务 - 标签管理、兴趣推荐（本地）</li>
@@ -39,10 +39,12 @@ import org.springframework.context.annotation.Configuration;
  * <p>独立微服务：</p>
  * <ul>
  *   <li>🔗 用户服务 - 用户管理、认证授权（远程调用）</li>
+ *   <li>🔗 订单服务 - 订单处理、状态管理（远程调用）</li>
+ *   <li>🔗 支付服务 - 支付处理、回调管理（远程调用）</li>
  * </ul>
  * 
  * @author Collide Team
- * @version 2.0.0 (混合架构版本)
+ * @version 2.0.0 (NFT-Turbo混合架构版本)
  * @since 2024-01-01
  */
 @Configuration
@@ -56,6 +58,20 @@ public class AppDubboConfiguration {
      */
     @DubboReference(version = "2.0.0")
     private UserFacadeService userFacadeService;
+
+    /**
+     * 订单管理服务引用 - 独立微服务，远程调用
+     * 订单服务作为业务核心独立部署，支持独立扩展和性能优化
+     */
+    @DubboReference(version = "2.0.0")
+    private OrderFacadeService orderFacadeService;
+
+    /**
+     * 支付管理服务引用 - 独立微服务，远程调用
+     * 支付服务独立部署，确保金融安全和独立审计
+     */
+    @DubboReference(version = "2.0.0")
+    private PaymentFacadeService paymentFacadeService;
 
     // =================== Spring Bean注册方法 ===================
     
@@ -71,7 +87,31 @@ public class AppDubboConfiguration {
         return userFacadeService;
     }
     
-    // 注意：其他服务（category, comment, content, favorite, follow, goods, like, order, payment, search, social, tag）
+    /**
+     * 注册订单管理服务Bean
+     * 提供订单创建、查询、状态管理功能
+     * 
+     * @return OrderFacadeService 订单服务实例（远程调用）
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "orderFacadeService")
+    public OrderFacadeService orderFacadeService() {
+        return orderFacadeService;
+    }
+    
+    /**
+     * 注册支付管理服务Bean
+     * 提供支付处理、回调、风控功能
+     * 
+     * @return PaymentFacadeService 支付服务实例（远程调用）
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "paymentFacadeService")
+    public PaymentFacadeService paymentFacadeService() {
+        return paymentFacadeService;
+    }
+    
+    // 注意：其他服务（category, comment, content, favorite, follow, goods, like, search, social, tag）
     // 都是通过Maven依赖引入的本地模块，Spring会自动发现并注册它们的@Service Bean
     // 不需要在这里通过@DubboReference进行远程调用配置
 }

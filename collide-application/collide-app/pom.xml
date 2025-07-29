@@ -94,17 +94,8 @@
             <artifactId>collide-goods</artifactId>
         </dependency>
 
-        <!-- 订单服务 - 订单处理功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-order</artifactId>
-        </dependency>
-
-        <!-- 支付服务 - 支付处理功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-payment</artifactId>
-        </dependency>
+        <!-- 注意：订单和支付服务已改为独立微服务，通过@DubboReference远程调用 -->
+        <!-- 不再通过Maven依赖引入，避免本地和远程调用冲突 -->
 
         <!-- Spring Cloud Bootstrap -->
         <dependency>
