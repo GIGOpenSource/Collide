@@ -57,8 +57,6 @@ services:
     ports:
       - "9510:9510"
     environment:
-      - SERVER_PORT=9510
-      - SPRING_PROFILES_ACTIVE=docker
       - JAVA_OPTS=-Xms512m -Xmx1024m -server
     restart: unless-stopped
     networks:
@@ -325,23 +323,3 @@ services:
     labels:
       - "com.collide.service=search"
       - "com.collide.category=utility"
-
-# =================== Networks ===================
-networks:
-  collide-network:
-    name: collide-network
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-          gateway: 172.20.0.1
-    labels:
-      - "com.collide.network=main"
-      - "com.collide.environment=docker"
-
-# =================== Volumes (if needed) ===================
-volumes:
-  collide-data:
-    name: collide-data
-    labels:
-      - "com.collide.volume=shared-data"
