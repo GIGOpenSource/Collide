@@ -198,7 +198,8 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
     public Result<List<CategoryResponse>> getCategoryTree(Long rootId, Integer maxDepth, Boolean includeInactive) {
         try {
             List<Category> tree = categoryService.getCategoryTree(rootId, maxDepth, includeInactive);
-            List<CategoryResponse> response = convertToResponseList(tree);
+            // 分类树需要包含子分类结构
+            List<CategoryResponse> response = convertToResponseList(tree, true);
             return Result.success(response);
             
         } catch (Exception e) {
@@ -423,6 +424,13 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
      * 转换实体为响应
      */
     private CategoryResponse convertToResponse(Category category) {
+        return convertToResponse(category, false);
+    }
+    
+    /**
+     * 转换实体为响应（支持是否包含子分类）
+     */
+    private CategoryResponse convertToResponse(Category category, boolean includeChildren) {
         if (category == null) {
             return null;
         }
@@ -430,9 +438,9 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
         CategoryResponse response = new CategoryResponse();
         BeanUtils.copyProperties(category, response);
         
-        // 转换子分类
-        if (category.getChildren() != null) {
-            response.setChildren(convertToResponseList(category.getChildren()));
+        // 只有明确要求时才转换子分类，避免无限递归
+        if (includeChildren && category.getChildren() != null) {
+            response.setChildren(convertToResponseList(category.getChildren(), true));
         }
         
         return response;
@@ -442,12 +450,19 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
      * 转换实体列表为响应列表
      */
     private List<CategoryResponse> convertToResponseList(List<Category> categories) {
+        return convertToResponseList(categories, false);
+    }
+    
+    /**
+     * 转换实体列表为响应列表（支持是否包含子分类）
+     */
+    private List<CategoryResponse> convertToResponseList(List<Category> categories, boolean includeChildren) {
         if (categories == null) {
             return null;
         }
         
         return categories.stream()
-                .map(this::convertToResponse)
+                .map(category -> convertToResponse(category, includeChildren))
                 .collect(Collectors.toList());
     }
 
