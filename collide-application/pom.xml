@@ -24,15 +24,9 @@
     </properties>
 
     <modules>
-        <!-- 聚合启动模块 -->
-        <module>collide-app</module>
-        
-        <!-- 搜索相关服务模块 -->
         <module>collide-search</module>
         <module>collide-category</module>
         <module>collide-tag</module>
-        
-        <!-- 业务服务模块 -->
         <module>collide-users</module>
         <module>collide-follow</module>
         <module>collide-content</module>
@@ -43,6 +37,7 @@
         <module>collide-goods</module>
         <module>collide-order</module>
         <module>collide-payment</module>
+        <module>collide-app</module>
     </modules>
 
 </project>

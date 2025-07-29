@@ -23,80 +23,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-users</artifactId>
-        </dependency>
-
-        <!-- 关注服务 - 用户关注关系管理 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-follow</artifactId>
-        </dependency>
-
-        <!-- 内容服务 - 内容创作与管理 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-content</artifactId>
-        </dependency>
-
-        <!-- 评论服务 - 评论互动功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-comment</artifactId>
-        </dependency>
-
-        <!-- 点赞服务 - 点赞点踩功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-like</artifactId>
-        </dependency>
-
-        <!-- 收藏服务 - 内容收藏功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-favorite</artifactId>
-        </dependency>
-
-        <!-- 社交服务 - 社交互动功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-social</artifactId>
-        </dependency>
-
-        <!-- 搜索相关服务 -->
-        <!-- 搜索服务 - 纯搜索功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-search</artifactId>
-        </dependency>
-        
-        <!-- 分类服务 - 内容分类管理功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-category</artifactId>
-        </dependency>
-        
-        <!-- 标签服务 - 标签管理与用户兴趣功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-tag</artifactId>
-        </dependency>
-
-        <!-- 商品服务 - 商品管理功能 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-goods</artifactId>
-        </dependency>
-
-        <!-- 注意：订单和支付服务已改为独立微服务，通过@DubboReference远程调用 -->
-        <!-- 不再通过Maven依赖引入，避免本地和远程调用冲突 -->
-
         <!-- Spring Cloud Bootstrap -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -107,12 +33,6 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
-        </dependency>
-
-        <!-- 监控模块 -->
-        <dependency>
-            <groupId>com.gig</groupId>
-            <artifactId>collide-prometheus</artifactId>
         </dependency>
 
         <!-- 链路跟踪模块 -->

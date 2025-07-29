@@ -10,4 +10,4 @@ public class CollideBusinessApplication {
         SpringApplication.run(CollideBusinessApplication.class, args);
     }
 
-} 
+}
