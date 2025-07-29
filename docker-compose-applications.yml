@@ -1,0 +1,347 @@
+version: '3.8'
+
+services:
+  # =================== Core Services ===================
+  
+  # Gateway 网关服务
+  collide-gateway:
+    build:
+      context: .
+      dockerfile: collide-gateway/Dockerfile
+    image: collide/gateway:latest
+    container_name: collide-gateway
+    ports:
+      - "9501:9501"
+    environment:
+      - SERVER_PORT=9501
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.2.10
+    labels:
+      - "com.collide.service=gateway"
+      - "com.collide.category=core"
+
+  # Auth 认证服务
+  collide-auth:
+    build:
+      context: .
+      dockerfile: collide-auth/Dockerfile
+    image: collide/auth:latest
+    container_name: collide-auth
+    ports:
+      - "9502:9502"
+    environment:
+      - SERVER_PORT=9502
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.2.20
+    labels:
+      - "com.collide.service=auth"
+      - "com.collide.category=core"
+
+  # =================== Business Application Services ===================
+
+  # Content 内容服务
+  collide-content:
+    build:
+      context: .
+      dockerfile: collide-application/collide-content/Dockerfile
+    image: collide/content:latest
+    container_name: collide-content
+    ports:
+      - "9510:9510"
+    environment:
+      - SERVER_PORT=9510
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.10
+    labels:
+      - "com.collide.service=content"
+      - "com.collide.category=business"
+
+  # Users 用户服务  
+  collide-users:
+    build:
+      context: .
+      dockerfile: collide-application/collide-users/Dockerfile
+    image: collide/users:latest
+    container_name: collide-users
+    ports:
+      - "9511:9511"
+    environment:
+      - SERVER_PORT=9511
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.11
+    labels:
+      - "com.collide.service=users"
+      - "com.collide.category=business"
+
+  # Category 分类服务
+  collide-category:
+    build:
+      context: .
+      dockerfile: collide-application/collide-category/Dockerfile
+    image: collide/category:latest
+    container_name: collide-category
+    ports:
+      - "9512:9512"
+    environment:
+      - SERVER_PORT=9512
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.12
+    labels:
+      - "com.collide.service=category"
+      - "com.collide.category=business"
+
+  # Comment 评论服务
+  collide-comment:
+    build:
+      context: .
+      dockerfile: collide-application/collide-comment/Dockerfile
+    image: collide/comment:latest
+    container_name: collide-comment
+    ports:
+      - "9513:9513"
+    environment:
+      - SERVER_PORT=9513
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.13
+    labels:
+      - "com.collide.service=comment"
+      - "com.collide.category=business"
+
+  # Social 社交服务
+  collide-social:
+    build:
+      context: .
+      dockerfile: collide-application/collide-social/Dockerfile
+    image: collide/social:latest
+    container_name: collide-social
+    ports:
+      - "9514:9514"
+    environment:
+      - SERVER_PORT=9514
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.14
+    labels:
+      - "com.collide.service=social"
+      - "com.collide.category=business"
+
+  # Tag 标签服务
+  collide-tag:
+    build:
+      context: .
+      dockerfile: collide-application/collide-tag/Dockerfile
+    image: collide/tag:latest
+    container_name: collide-tag
+    ports:
+      - "9515:9515"
+    environment:
+      - SERVER_PORT=9515
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.3.15
+    labels:
+      - "com.collide.service=tag"
+      - "com.collide.category=business"
+
+  # =================== Interactive Services ===================
+
+  # Like 点赞服务
+  collide-like:
+    build:
+      context: .
+      dockerfile: collide-application/collide-like/Dockerfile
+    image: collide/like:latest
+    container_name: collide-like
+    ports:
+      - "9520:9520"
+    environment:
+      - SERVER_PORT=9520
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.4.20
+    labels:
+      - "com.collide.service=like"
+      - "com.collide.category=interactive"
+
+  # Favorite 收藏服务
+  collide-favorite:
+    build:
+      context: .
+      dockerfile: collide-application/collide-favorite/Dockerfile
+    image: collide/favorite:latest
+    container_name: collide-favorite
+    ports:
+      - "9521:9521"
+    environment:
+      - SERVER_PORT=9521
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.4.21
+    labels:
+      - "com.collide.service=favorite"
+      - "com.collide.category=interactive"
+
+  # Follow 关注服务
+  collide-follow:
+    build:
+      context: .
+      dockerfile: collide-application/collide-follow/Dockerfile
+    image: collide/follow:latest
+    container_name: collide-follow
+    ports:
+      - "9522:9522"
+    environment:
+      - SERVER_PORT=9522
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms256m -Xmx512m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.4.22
+    labels:
+      - "com.collide.service=follow"
+      - "com.collide.category=interactive"
+
+  # =================== E-commerce Services ===================
+
+  # Goods 商品服务
+  collide-goods:
+    build:
+      context: .
+      dockerfile: collide-application/collide-goods/Dockerfile
+    image: collide/goods:latest
+    container_name: collide-goods
+    ports:
+      - "9530:9530"
+    environment:
+      - SERVER_PORT=9530
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.30
+    labels:
+      - "com.collide.service=goods"
+      - "com.collide.category=ecommerce"
+
+  # Order 订单服务
+  collide-order:
+    build:
+      context: .
+      dockerfile: collide-application/collide-order/Dockerfile
+    image: collide/order:latest
+    container_name: collide-order
+    ports:
+      - "9531:9531"
+    environment:
+      - SERVER_PORT=9531
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.31
+    labels:
+      - "com.collide.service=order"
+      - "com.collide.category=ecommerce"
+
+  # Payment 支付服务
+  collide-payment:
+    build:
+      context: .
+      dockerfile: collide-application/collide-payment/Dockerfile
+    image: collide/payment:latest
+    container_name: collide-payment
+    ports:
+      - "9532:9532"
+    environment:
+      - SERVER_PORT=9532
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.32
+    labels:
+      - "com.collide.service=payment"
+      - "com.collide.category=ecommerce"
+
+  # =================== Utility Services ===================
+
+  # Search 搜索服务
+  collide-search:
+    build:
+      context: .
+      dockerfile: collide-application/collide-search/Dockerfile
+    image: collide/search:latest
+    container_name: collide-search
+    ports:
+      - "9540:9540"
+    environment:
+      - SERVER_PORT=9540
+      - SPRING_PROFILES_ACTIVE=docker
+      - JAVA_OPTS=-Xms512m -Xmx1024m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.6.40
+    labels:
+      - "com.collide.service=search"
+      - "com.collide.category=utility"
+
+# =================== Networks ===================
+networks:
+  collide-network:
+    name: collide-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+          gateway: 172.20.0.1
+    labels:
+      - "com.collide.network=main"
+      - "com.collide.environment=docker"
+
+# =================== Volumes (if needed) ===================
+volumes:
+  collide-data:
+    name: collide-data
+    labels:
+      - "com.collide.volume=shared-data"
