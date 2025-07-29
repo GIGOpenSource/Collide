@@ -8,33 +8,17 @@
     <version>1.0.0-SNAPSHOT</version>
     <name>Collide</name>
     <packaging>pom</packaging>
-    <description>Collide - 现代化微服务架构的内容社交平台</description>
+    <description>Collid</description>
 
     <properties>
-        <!-- Java和编码配置 -->
         <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-
-        <!-- Spring 生态版本 -->
+        <java.version>21</java.version>
         <spring-boot.version>3.2.2</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.2</spring-cloud-alibaba.version>
-
-        <!-- 微服务框架版本 -->
         <dubbo.version>3.2.10</dubbo.version>
-
-        <!-- Collide业务特色技术栈版本 -->
-        <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
-        <mysql.version>8.0.33</mysql.version>
-        <sa-token.version>1.37.0</sa-token.version>
-        <mapstruct.version>1.5.5.Final</mapstruct.version>
-        <rocketmq.version>5.3.0</rocketmq.version>
-
-        <!-- 工具库版本 -->
-        <lombok.version>1.18.34</lombok.version>
-        <fastjson2.version>2.0.42</fastjson2.version>
-        <guava.version>32.1.3-jre</guava.version>
     </properties>
 
     <parent>
@@ -48,7 +32,7 @@
         <module>collide-common</module>
         <module>collide-gateway</module>
         <module>collide-auth</module>
-        <module>collide-admin</module>
+<!--        <module>collide-admin</module>-->
         <module>collide-application</module>
     </modules>
 
@@ -61,7 +45,7 @@
                 <version>5.3.0</version>
             </dependency>
 
-            <!-- ===================== Spring Cloud 生态 ===================== -->
+            <!-- ===================== Spring Cloud 生�?===================== -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -78,6 +62,18 @@
                 <scope>import</scope>
             </dependency>
 
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>6.1.3</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>1.18.30</version>
+            </dependency>
+
             <!-- ===================== Collide 公共模块 ===================== -->
             <!-- 基础架构模块 -->
             <dependency>
@@ -92,12 +88,31 @@
             </dependency>
             <dependency>
                 <groupId>com.gig</groupId>
+                <artifactId>collide-auth</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-gateway</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- Web 和配置模块 -->
+            <dependency>
+                <groupId>com.gig</groupId>
                 <artifactId>collide-web</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-config</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- 中间件模块 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-cache</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -110,25 +125,6 @@
                 <artifactId>collide-mq</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 数据访问模块 -->
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-datasource</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-cache</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-es</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- 微服务通信模块 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-rpc</artifactId>
@@ -136,18 +132,14 @@
             </dependency>
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-mq</artifactId>
+                <artifactId>collide-datasource</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 安全和权限模块 -->
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-sa-token</artifactId>
+                <artifactId>collide-lock</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 功能增强模块 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-file</artifactId>
@@ -160,128 +152,80 @@
             </dependency>
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-lock</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-limiter</artifactId>
+                <artifactId>collide-sa-token</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- 监控和运维模块 -->
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-prometheus</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-skywalking</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- ===================== Collide 服务模块 ===================== -->
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-gateway</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-auth</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-admin</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- ===================== Collide 业务模块 ===================== -->
-            <!-- 用户相关 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-users</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- 关注相关 -->
+            <!-- ===================== 业务模块 ===================== -->
+            <!-- 社交功能 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-follow</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 内容相关 -->
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-content</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- 评论相关 -->
-            <dependency>
-                <groupId>com.gig</groupId>
-                <artifactId>collide-comment</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- 点赞相关 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-like</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 收藏相关 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-favorite</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
-            <!-- 收藏相关 -->
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-social</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 内容管理 -->
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-goods</artifactId>
+                <artifactId>collide-content</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-order</artifactId>
+                <artifactId>collide-comment</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-payment</artifactId>
+                <artifactId>collide-category</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-tag</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.gig</groupId>
                 <artifactId>collide-search</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- 电商功能 -->
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-category</artifactId>
+                <artifactId>collide-goods</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>com.gig</groupId>
-                <artifactId>collide-tag</artifactId>
+                <artifactId>collide-order</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-payment</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -293,6 +237,18 @@
             </dependency>
 
             <!-- ===================== 第三方依赖 ===================== -->
+            <!-- 监控和链路追踪 -->
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-prometheus</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig</groupId>
+                <artifactId>collide-skywalking</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Dubbo 微服务框架 -->
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
@@ -305,69 +261,22 @@
                 <version>${dubbo.version}</version>
             </dependency>
 
-            <!-- RocketMQ 消息队列 -->
-            <dependency>
-                <groupId>org.apache.rocketmq</groupId>
-                <artifactId>rocketmq-client</artifactId>
-                <version>${rocketmq.version}</version>
-            </dependency>
-
-            <!-- 数据库相关 -->
-            <dependency>
-                <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <version>${mybatis-plus.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql.version}</version>
-            </dependency>
-
-            <!-- 安全框架 -->
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-spring-boot3-starter</artifactId>
-                <version>${sa-token.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.dev33</groupId>
-                <artifactId>sa-token-redis-jackson</artifactId>
-                <version>${sa-token.version}</version>
-            </dependency>
-
-            <!-- 工具库 -->
-            <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-web</artifactId>
-                <version>6.1.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok</artifactId>
-                <version>${lombok.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.alibaba.fastjson2</groupId>
                 <artifactId>fastjson2</artifactId>
-                <version>${fastjson2.version}</version>
+                <version>2.0.42</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>${guava.version}</version>
+                <version>32.1.3-jre</version>
             </dependency>
 
             <!-- 对象映射框架 -->
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct</artifactId>
-                <version>${mapstruct.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct-processor</artifactId>
-                <version>${mapstruct.version}</version>
+                <version>1.6.0.Beta1</version>
             </dependency>
 
         </dependencies>

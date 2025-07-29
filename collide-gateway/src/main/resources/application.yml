@@ -3,10 +3,7 @@ spring:
   application:
     name: @application.name@
   config:
-    import:
-      - classpath:base.yml
-      - classpath:cache.yml
-      - classpath:config.yml
+    import: classpath:base.yml,classpath:cache.yml,classpath:config.yml
   cloud:
     gateway:
       default-filters:
@@ -32,35 +29,35 @@ spring:
           predicates:
             - Path=/api/v1/users/**,/api/v1/follow/**,/api/v1/comments/**,/api/v1/content/**,/api/v1/social/**,/api/v1/favorite/**,/api/v1/like/**,/api/v1/files/**,/api/v1/search/**,/api/v1/categories/**,/api/v1/tags/**
 
-        # API文档导航页面
-        - id: api-docs-home
-          uri: lb://collide-application
-          predicates:
-            - Path=/swagger-ui.html,/docs,/api-docs
-          filters:
-            - SetPath=/swagger-ui.html
-
-        # Swagger UI 路由 - 认证服务
-        - id: collide-auth-swagger
-          uri: lb://collide-auth
-          predicates:
-            - Path=/auth/swagger-ui/**,/auth/v3/api-docs/**
-          filters:
-            - StripPrefix=1
-
-        # Swagger UI 路由 - 业务服务
-        - id: collide-application-swagger
-          uri: lb://collide-application
-          predicates:
-            - Path=/app/swagger-ui/**,/app/v3/api-docs/**
-          filters:
-            - StripPrefix=1
-
-        # 网关本身的监控端点
-        - id: gateway-actuator
-          uri: lb://collide-gateway
-          predicates:
-            - Path=/actuator/**
+#        # API文档导航页面
+#        - id: api-docs-home
+#          uri: lb://collide-application
+#          predicates:
+#            - Path=/swagger-ui.html,/docs,/api-docs
+#          filters:
+#            - SetPath=/swagger-ui.html
+#
+#        # Swagger UI 路由 - 认证服务
+#        - id: collide-auth-swagger
+#          uri: lb://collide-auth
+#          predicates:
+#            - Path=/auth/swagger-ui/**,/auth/v3/api-docs/**
+#          filters:
+#            - StripPrefix=1
+#
+#        # Swagger UI 路由 - 业务服务
+#        - id: collide-application-swagger
+#          uri: lb://collide-application
+#          predicates:
+#            - Path=/app/swagger-ui/**,/app/v3/api-docs/**
+#          filters:
+#            - StripPrefix=1
+#
+#        # 网关本身的监控端点
+#        - id: gateway-actuator
+#          uri: lb://collide-gateway
+#          predicates:
+#            - Path=/actuator/**
 
 server:
   port: 9501

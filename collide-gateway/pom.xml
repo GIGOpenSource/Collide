@@ -29,6 +29,27 @@
 
         <!-- 限流功能暂时移除，简化网关配置 -->
 
+        <!-- 限流组件 - 学习 NFTurbo 最佳实践 -->
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-limiter</artifactId>
+            <exclusions>
+                <!-- 排除 Spring Web MVC - Gateway 应用中不能包含 Spring MVC 组件 -->
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-webmvc</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-config</artifactId>
@@ -37,6 +58,31 @@
         <dependency>
             <groupId>com.gig</groupId>
             <artifactId>collide-api</artifactId>
+            <exclusions>
+                <!-- 排除 Web MVC 相关组件 - Gateway 应用基于 WebFlux，不能包含 Spring MVC 组件 -->
+                <exclusion>
+                    <groupId>com.gig</groupId>
+                    <artifactId>collide-web</artifactId>
+                </exclusion>
+                <!-- 排除 Spring Web MVC 核心组件 -->
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-web</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring-webmvc</artifactId>
+                </exclusion>
+                <!-- 排除 OpenAPI WebMVC 组件 -->
+                <exclusion>
+                    <groupId>org.springdoc</groupId>
+                    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- SkyWalking 链路追踪 -->
@@ -59,16 +105,6 @@
         </dependency>
 
         <!-- Sa-Token 整合 Redis （使用 jackson 序列化方式） -->
-        <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-jackson</artifactId>
-            <version>1.37.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-pool2</artifactId>
-        </dependency>
-
         <dependency>
             <groupId>cn.dev33</groupId>
             <artifactId>sa-token-redis-jackson</artifactId>
