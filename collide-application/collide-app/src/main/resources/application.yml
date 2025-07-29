@@ -7,7 +7,7 @@ spring:
     name: @application.name@
   config:
     # 参考 nft-turbo-app 的多配置文件导入方式
-    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml,classpath:prometheus.yml
+    import: classpath:base.yml,classpath:config.yml,classpath:datasource.yml,classpath:rpc.yml,classpath:cache.yml
   # 参考 nft-turbo-app 的主配置懒加载优化
   main:
     lazy-initialization: true
@@ -29,24 +29,7 @@ management:
 
 dubbo:
   application:
-    name: ${spring.application.name}
     qos-port: 33334
-    qos-enable: true
-  registry:
-    address: nacos://localhost:8848
-    group: DEFAULT_GROUP
-    timeout: 3000
-  protocol:
-    name: dubbo
-    port: -1
-    threads: 200
-  consumer:
-    timeout: 3000
-    retries: 0
-    check: false
-  provider:
-    timeout: 3000
-    threads: 200
 
 logging:
   level:
