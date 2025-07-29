@@ -50,6 +50,11 @@ public class GoodsQueryRequest {
     private String sellerName;
 
     /**
+     * 商品类型：PHYSICAL、VIRTUAL、SERVICE、SUBSCRIPTION
+     */
+    private String goodsType;
+
+    /**
      * 状态：active、inactive、sold_out
      */
     private String status;

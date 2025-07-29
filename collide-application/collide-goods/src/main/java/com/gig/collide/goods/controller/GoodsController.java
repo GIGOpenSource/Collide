@@ -168,9 +168,9 @@ public class GoodsController {
             request.setCategoryId(categoryId);
             request.setGoodsType(goodsType);
             request.setStatus(status);
-            request.setKeyword(keyword);
-            request.setPage(page);
-            request.setSize(size);
+            request.setNameKeyword(keyword);
+            request.setPageNum(page);
+            request.setPageSize(size);
             
             return goodsFacadeService.queryGoods(request);
         } catch (Exception e) {
