@@ -178,23 +178,23 @@ services:
       - "com.collide.category=interactive"
       - "com.collide.type=dubbo-provider"
 
-  # Favorite 收藏服务
-  collide-favorite:
-    build:
-      context: .
-      dockerfile: collide-application/collide-favorite/Dockerfile
-    image: collide/favorite:latest
-    container_name: collide-favorite
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.4.21
-    labels:
-      - "com.collide.service=favorite"
-      - "com.collide.category=interactive"
-      - "com.collide.type=dubbo-provider"
+#  # Favorite 收藏服务
+#  collide-favorite:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-favorite/Dockerfile
+#    image: collide/favorite:latest
+#    container_name: collide-favorite
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.4.21
+#    labels:
+#      - "com.collide.service=favorite"
+#      - "com.collide.category=interactive"
+#      - "com.collide.type=dubbo-provider"
 
   # Follow 关注服务
   collide-follow:
@@ -216,79 +216,79 @@ services:
 
   # =================== E-commerce Services ===================
 
-  # Goods 商品服务
-  collide-goods:
-    build:
-      context: .
-      dockerfile: collide-application/collide-goods/Dockerfile
-    image: collide/goods:latest
-    container_name: collide-goods
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.30
-    labels:
-      - "com.collide.service=goods"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
-
-  # Order 订单服务
-  collide-order:
-    build:
-      context: .
-      dockerfile: collide-application/collide-order/Dockerfile
-    image: collide/order:latest
-    container_name: collide-order
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.31
-    labels:
-      - "com.collide.service=order"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
-
-  # Payment 支付服务
-  collide-payment:
-    build:
-      context: .
-      dockerfile: collide-application/collide-payment/Dockerfile
-    image: collide/payment:latest
-    container_name: collide-payment
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.32
-    labels:
-      - "com.collide.service=payment"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
-
-  # =================== Utility Services ===================
-
-  # Search 搜索服务
-  collide-search:
-    build:
-      context: .
-      dockerfile: collide-application/collide-search/Dockerfile
-    image: collide/search:latest
-    container_name: collide-search
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.6.40
-    labels:
-      - "com.collide.service=search"
-      - "com.collide.category=utility"
-      - "com.collide.type=dubbo-provider"
+#  # Goods 商品服务
+#  collide-goods:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-goods/Dockerfile
+#    image: collide/goods:latest
+#    container_name: collide-goods
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.30
+#    labels:
+#      - "com.collide.service=goods"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Order 订单服务
+#  collide-order:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-order/Dockerfile
+#    image: collide/order:latest
+#    container_name: collide-order
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.31
+#    labels:
+#      - "com.collide.service=order"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Payment 支付服务
+#  collide-payment:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-payment/Dockerfile
+#    image: collide/payment:latest
+#    container_name: collide-payment
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.32
+#    labels:
+#      - "com.collide.service=payment"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # =================== Utility Services ===================
+#
+#  # Search 搜索服务
+#  collide-search:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-search/Dockerfile
+#    image: collide/search:latest
+#    container_name: collide-search
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.6.40
+#    labels:
+#      - "com.collide.service=search"
+#      - "com.collide.category=utility"
+#      - "com.collide.type=dubbo-provider"
 
 networks:
   collide-network:
