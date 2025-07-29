@@ -108,6 +108,11 @@
             <artifactId>sensitive-logback</artifactId>
             <version>1.7.0</version>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 
@@ -118,7 +123,7 @@
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
                     <!--                    <skip>true</skip>-->
-                    <mainClass>cn.hollis.nft.turbo.gateway.NfTurboGatewayApplication</mainClass>
+                    <mainClass>com.gig.collide.gateway.CollideGatewayApplication</mainClass>
                 </configuration>
 
                 <executions>
