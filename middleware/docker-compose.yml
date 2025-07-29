@@ -9,7 +9,7 @@ services:
       TZ: Asia/Shanghai
       SET_CONTAINER_TIMEZONE: true
       CONTAINER_TIMEZONE: Asia/Shanghai
-      MYSQL_DATABASE: nacos-mysql
+      MYSQL_DATABASE: nacos_devtest
       MYSQL_USER: test_user
       MYSQL_PASSWORD: test123
     volumes:
