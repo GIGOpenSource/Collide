@@ -1,5 +1,6 @@
 package com.gig.collide.api.category.response;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -101,6 +102,7 @@ public class CategoryResponse {
     /**
      * 是否为激活状态
      */
+    @JsonIgnore
     public boolean isActive() {
         return "active".equals(status);
     }
@@ -108,6 +110,7 @@ public class CategoryResponse {
     /**
      * 是否已停用
      */
+    @JsonIgnore
     public boolean isInactive() {
         return "inactive".equals(status);
     }
@@ -115,6 +118,7 @@ public class CategoryResponse {
     /**
      * 是否为根分类
      */
+    @JsonIgnore
     public boolean isRootCategory() {
         return parentId == null || parentId == 0;
     }
@@ -122,6 +126,7 @@ public class CategoryResponse {
     /**
      * 是否为子分类
      */
+    @JsonIgnore
     public boolean isChildCategory() {
         return !isRootCategory();
     }
@@ -129,6 +134,7 @@ public class CategoryResponse {
     /**
      * 是否有内容
      */
+    @JsonIgnore
     public boolean hasContent() {
         return contentCount != null && contentCount > 0;
     }
@@ -136,6 +142,7 @@ public class CategoryResponse {
     /**
      * 是否有子分类
      */
+    @JsonIgnore
     public boolean hasChildren() {
         return children != null && !children.isEmpty();
     }
@@ -143,6 +150,7 @@ public class CategoryResponse {
     /**
      * 是否为叶子分类（没有子分类）
      */
+    @JsonIgnore
     public boolean isLeafCategory() {
         return !hasChildren();
     }
@@ -150,6 +158,7 @@ public class CategoryResponse {
     /**
      * 获取子分类数量
      */
+    @JsonIgnore
     public int getChildrenCount() {
         return children != null ? children.size() : 0;
     }
@@ -157,6 +166,7 @@ public class CategoryResponse {
     /**
      * 获取内容数量（安全方法）
      */
+    @JsonIgnore
     public long getSafeContentCount() {
         return contentCount != null ? contentCount : 0L;
     }
@@ -165,6 +175,7 @@ public class CategoryResponse {
      * 获取分类热度评分
      * 基于内容数量和子分类数量
      */
+    @JsonIgnore
     public double getPopularityScore() {
         double contentScore = getSafeContentCount() * 1.0;
         double childrenScore = getChildrenCount() * 0.5;
@@ -175,6 +186,7 @@ public class CategoryResponse {
     /**
      * 获取分类创建天数
      */
+    @JsonIgnore
     public long getCreateDays() {
         if (createTime == null) {
             return 0;
@@ -185,6 +197,7 @@ public class CategoryResponse {
     /**
      * 获取分类名称长度
      */
+    @JsonIgnore
     public int getNameLength() {
         return name != null ? name.length() : 0;
     }
@@ -192,6 +205,7 @@ public class CategoryResponse {
     /**
      * 是否为长名称（超过10个字符）
      */
+    @JsonIgnore
     public boolean isLongName() {
         return getNameLength() > 10;
     }
@@ -199,6 +213,7 @@ public class CategoryResponse {
     /**
      * 获取描述摘要（前50个字符）
      */
+    @JsonIgnore
     public String getDescriptionSummary() {
         if (description == null || description.trim().isEmpty()) {
             return "";
@@ -210,6 +225,7 @@ public class CategoryResponse {
     /**
      * 是否有描述
      */
+    @JsonIgnore
     public boolean hasDescription() {
         return description != null && !description.trim().isEmpty();
     }
@@ -217,6 +233,7 @@ public class CategoryResponse {
     /**
      * 是否有图标
      */
+    @JsonIgnore
     public boolean hasIcon() {
         return iconUrl != null && !iconUrl.trim().isEmpty();
     }
@@ -294,6 +311,7 @@ public class CategoryResponse {
     /**
      * 递归查找分类
      */
+    @JsonIgnore
     public CategoryResponse findDescendant(Long categoryId) {
         if (categoryId == null) {
             return null;
@@ -318,6 +336,7 @@ public class CategoryResponse {
     /**
      * 获取所有叶子分类
      */
+    @JsonIgnore
     public List<CategoryResponse> getLeafCategories() {
         List<CategoryResponse> leaves = new java.util.ArrayList<>();
         collectLeafCategories(leaves);
@@ -327,6 +346,7 @@ public class CategoryResponse {
     /**
      * 收集叶子分类（递归）
      */
+    @JsonIgnore
     private void collectLeafCategories(List<CategoryResponse> leaves) {
         if (isLeafCategory()) {
             leaves.add(this);
@@ -340,6 +360,7 @@ public class CategoryResponse {
     /**
      * 统计总内容数量（包含子分类）
      */
+    @JsonIgnore
     public long getTotalContentCount() {
         long total = getSafeContentCount();
         
