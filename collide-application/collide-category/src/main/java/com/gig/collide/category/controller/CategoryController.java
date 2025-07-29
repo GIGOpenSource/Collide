@@ -75,7 +75,7 @@ public class CategoryController {
     /**
      * 分页查询分类（GET方式，支持基本查询参数）
      */
-    @PostMapping("/query")
+    @GetMapping("/query")
     public Result<PageResponse<CategoryResponse>> queryCategoriesGet(
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
