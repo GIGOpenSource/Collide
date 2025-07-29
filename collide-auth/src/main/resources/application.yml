@@ -4,7 +4,7 @@ spring:
   application:
     name: @application.name@
   config:
-    import: classpath:base.yml,classpath:rpc.yml,classpath:cache.yml,classpath:swagger.yml
+    import: classpath:base.yml,classpath:rpc.yml,classpath:cache.yml
 
 # Sa-Token 认证框架配置
 # 支持简化认证：用户名密码登录、邀请码、自动注册
