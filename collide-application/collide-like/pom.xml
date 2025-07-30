@@ -58,6 +58,11 @@
             <groupId>com.gig</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-config</artifactId>
+        </dependency>
         
         <!-- Collide Web 模块 -->
         <dependency>
