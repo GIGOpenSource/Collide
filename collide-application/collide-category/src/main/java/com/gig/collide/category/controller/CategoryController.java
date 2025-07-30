@@ -67,16 +67,17 @@ public class CategoryController {
      * 分页查询分类（POST方式，支持复杂查询条件）
      */
     @PostMapping("/query")
-    public Result<PageResponse<CategoryResponse>> queryCategories(@RequestBody CategoryQueryRequest request) {
+    public PageResponse<CategoryResponse> queryCategories(@RequestBody CategoryQueryRequest request) {
         log.info("REST - 查询分类：{}", request);
-        return categoryFacadeService.queryCategories(request);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
+        return result.getData();
     }
 
     /**
      * 分页查询分类（GET方式，支持基本查询参数）
      */
     @GetMapping("/query")
-    public Result<PageResponse<CategoryResponse>> queryCategoriesGet(
+    public PageResponse<CategoryResponse> queryCategoriesGet(
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
@@ -96,7 +97,8 @@ public class CategoryController {
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
         
-        return categoryFacadeService.queryCategories(request);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
+        return result.getData();
     }
 
     /**
@@ -113,7 +115,7 @@ public class CategoryController {
      * 获取分类列表（默认接口，支持分页）
      */
     @GetMapping
-    public Result<PageResponse<CategoryResponse>> getCategories(
+    public PageResponse<CategoryResponse> getCategories(
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
@@ -134,7 +136,8 @@ public class CategoryController {
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
         
-        return categoryFacadeService.queryCategories(request);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
+        return result.getData();
     }
 
     // =================== 层级分类 ===================
@@ -143,21 +146,22 @@ public class CategoryController {
      * 获取根分类列表
      */
     @GetMapping("/root")
-    public Result<PageResponse<CategoryResponse>> getRootCategories(
+    public PageResponse<CategoryResponse> getRootCategories(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
         log.info("REST - 获取根分类列表");
-        return categoryFacadeService.getRootCategories(pageNum, pageSize, orderBy, orderDirection);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getRootCategories(pageNum, pageSize, orderBy, orderDirection);
+        return result.getData();
     }
 
     /**
      * 获取子分类列表
      */
     @GetMapping("/{parentId}/children")
-    public Result<PageResponse<CategoryResponse>> getChildCategories(
+    public PageResponse<CategoryResponse> getChildCategories(
             @PathVariable Long parentId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize,
@@ -165,7 +169,8 @@ public class CategoryController {
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
         log.info("REST - 获取子分类列表，父分类ID：{}", parentId);
-        return categoryFacadeService.getChildCategories(parentId, pageNum, pageSize, orderBy, orderDirection);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getChildCategories(parentId, pageNum, pageSize, orderBy, orderDirection);
+        return result.getData();
     }
 
     /**
@@ -300,13 +305,14 @@ public class CategoryController {
      * 获取热门分类
      */
     @GetMapping("/popular")
-    public Result<PageResponse<CategoryResponse>> getPopularCategories(
+    public PageResponse<CategoryResponse> getPopularCategories(
             @RequestParam(required = false) Long parentId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
         log.info("REST - 获取热门分类，父分类：{}", parentId);
-        return categoryFacadeService.getPopularCategories(parentId, pageNum, pageSize);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getPopularCategories(parentId, pageNum, pageSize);
+        return result.getData();
     }
 
     // =================== 搜索功能 ===================
@@ -315,14 +321,15 @@ public class CategoryController {
      * 搜索分类
      */
     @GetMapping("/search")
-    public Result<PageResponse<CategoryResponse>> searchCategories(
+    public PageResponse<CategoryResponse> searchCategories(
             @RequestParam String keyword,
             @RequestParam(required = false) Long parentId,
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
         log.info("REST - 搜索分类，关键词：{}", keyword);
-        return categoryFacadeService.searchCategories(keyword, parentId, pageNum, pageSize);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, pageNum, pageSize);
+        return result.getData();
     }
 
     /**

@@ -62,6 +62,14 @@ spring:
           uri: lb://collide-tag
           predicates:
             - Path=/api/v1/tags/**
+            
+        # 标签服务兼容路由（支持文档中的/api/tags路径）
+        - id: collide-tag-compat
+          uri: lb://collide-tag
+          predicates:
+            - Path=/api/tags/**
+          filters:
+            - RewritePath=/api/tags/(?<segment>.*), /api/v1/tags/$\{segment}
 
         # =================== 交互服务路由 ===================
         

@@ -471,9 +471,11 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
      */
     private PageResponse<CategoryResponse> convertToPageResponse(IPage<Category> page) {
         PageResponse<CategoryResponse> response = new PageResponse<>();
+        response.setSuccess(true);  // 设置成功状态
         response.setDatas(convertToResponseList(page.getRecords()));
         response.setTotalPage((int) page.getPages());
         response.setCurrentPage((int) page.getCurrent());
+        response.setPageSize((int) page.getSize());  // 修复：设置pageSize
         response.setTotal(page.getTotal());
         return response;
     }

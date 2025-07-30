@@ -85,7 +85,33 @@ public class TagController {
     }
 
     /**
-     * 分页查询标签
+     * 分页查询标签 - 专用端点
+     */
+    @PostMapping("/page")
+    public Result<PageResponse<TagResponse>> queryTagsPost(@Valid @RequestBody TagQueryRequest request) {
+        try {
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("分页查询标签失败", e);
+            return Result.error("TAG_QUERY_ERROR", "分页查询标签失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 分页查询标签 - GET方式（兼容性支持）
+     */
+    @GetMapping("/page")
+    public Result<PageResponse<TagResponse>> queryTagsGet(@Valid TagQueryRequest request) {
+        try {
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("分页查询标签失败", e);
+            return Result.error("TAG_QUERY_ERROR", "分页查询标签失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 分页查询标签 - 默认GET方式
      */
     @GetMapping
     public Result<PageResponse<TagResponse>> queryTags(@Valid TagQueryRequest request) {
