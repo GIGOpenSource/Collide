@@ -161,7 +161,7 @@ public class ContentController {
         return contentFacadeService.increaseCommentCount(contentId, increment);
     }
 
-    @PostMapping("/{id}/favorite")
+    @PostMapping("/{id}/favorite-count")
     @Operation(summary = "增加收藏数", description = "增加内容的收藏数统计")
     public Result<Long> increaseFavoriteCount(@PathVariable("id") Long contentId,
                                              @Parameter(description = "增加数量") @RequestParam(defaultValue = "1") Integer increment) {
