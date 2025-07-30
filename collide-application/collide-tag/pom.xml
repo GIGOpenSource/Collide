@@ -54,7 +54,7 @@
         </dependency>
         <dependency>
             <groupId>com.gig</groupId>
-            <artifactId>collide-mq</artifactId>
+            <artifactId>collide-config</artifactId>
         </dependency>
 
         <!-- Spring Boot -->
