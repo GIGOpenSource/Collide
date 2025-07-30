@@ -47,6 +47,10 @@
             <groupId>com.gig</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.gig</groupId>
+            <artifactId>collide-config</artifactId>
+        </dependency>
 
         <!-- JSON处理 -->
         <dependency>
