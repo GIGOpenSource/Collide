@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 标签查询请求 - 简洁版
  * 基于tag-simple.sql的字段，支持多种查询条件
@@ -19,7 +21,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class TagQueryRequest {
+public class TagQueryRequest implements Serializable {
 
     /**
      * 标签名称（模糊搜索）

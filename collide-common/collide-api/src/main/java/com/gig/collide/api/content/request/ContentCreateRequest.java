@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 内容创建请求 - 简洁版
  * 基于content-simple.sql的无连表设计，包含作者和分类信息冗余
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ContentCreateRequest {
+public class ContentCreateRequest implements Serializable {
 
     /**
      * 内容标题

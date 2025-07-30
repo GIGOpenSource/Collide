@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 取消点赞请求 - 简洁版
  * 将点赞状态更新为cancelled
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class LikeCancelRequest {
+public class LikeCancelRequest implements Serializable {
 
     /**
      * 点赞类型：CONTENT、COMMENT、DYNAMIC

@@ -4,6 +4,8 @@ import com.gig.collide.base.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 /**
  * 社交动态查询请求 - 简洁版
  * 
@@ -12,7 +14,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SocialDynamicQueryRequest extends PageRequest {
+public class SocialDynamicQueryRequest extends PageRequest implements Serializable {
 
     /**
      * 用户ID

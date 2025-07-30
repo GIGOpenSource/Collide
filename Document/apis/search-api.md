@@ -2,12 +2,28 @@
 
 ## 概述
 
-Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用户搜索、商品搜索、智能推荐、搜索历史管理等核心功能。基于Elasticsearch构建，提供高性能、高相关性的搜索体验。
+Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用户搜索、商品搜索、智能推荐、搜索历史管理、Tag混合搜索等核心功能。基于Elasticsearch构建，提供高性能、高相关性的搜索体验。
 
-**服务版本**: v1.0.0  
+**服务版本**: v2.0.0 (缓存增强版)  
 **基础路径**: `/api/v1/search`  
-**Dubbo服务**: `collide-search`  
+**Dubbo服务**: `collide-search` (version: 1.0.0)  
 **设计理念**: 智能搜索引擎，提供精准匹配和个性化推荐，优化用户发现体验
+
+## 🎯 核心特性
+
+- **🚀 高性能缓存**: 基于JetCache的分布式缓存，显著提升搜索响应速度
+- **🔍 智能搜索**: 支持全文搜索、模糊匹配、智能推荐
+- **🏷️ Tag混合搜索**: 支持按标签同时搜索用户和内容，提供聚合结果
+- **📈 搜索分析**: 完整的搜索统计和用户行为分析
+- **⚡ 实时建议**: 智能搜索建议和热门关键词推荐
+- **🔄 跨模块集成**: 通过Dubbo与用户、内容模块深度集成
+
+## 🆕 v2.0.0 新增功能
+
+- **Tag混合搜索**: 支持按标签同时搜索用户和内容的聚合接口
+- **JetCache缓存**: 全面的缓存策略，提升搜索性能
+- **API设计优化**: 统一使用 `currentPage` 参数，对齐系统设计风格
+- **Swagger文档**: 完整的OpenAPI 3.0文档支持
 
 ---
 
@@ -23,7 +39,7 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
   "keyword": "Java编程",                   // 必填，搜索关键词
   "searchType": "all",                    // 可选，搜索类型：all/content/user/goods/tag
   "userId": 12345,                        // 可选，用户ID（用于个性化搜索）
-  "pageNum": 1,                          // 可选，页码，默认1
+  "currentPage": 1,                      // 可选，页码，默认1
   "pageSize": 20,                        // 可选，页面大小，默认20
   "sortBy": "relevance",                 // 可选，排序方式：relevance/time/popularity/rating
   "timeRange": 365,                      // 可选，时间范围（天），默认不限制
@@ -51,7 +67,7 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
     "totalCount": 156,
     "searchTime": 45,                    // 搜索耗时（毫秒）
     "hasMore": true,
-    "pageNum": 1,
+    "currentPage": 1,
     "pageSize": 20,
     "results": [
       {
@@ -203,7 +219,7 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
   "minScore": 4.0,                      // 可选，最低评分
   "hasChapters": true,                  // 可选，是否有章节
   "sortBy": "relevance",                // 可选，排序方式
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20
 }
 ```
@@ -241,7 +257,7 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
   "tags": ["编程", "Java"],              // 可选，标签筛选
   "sortBy": "sales",                    // 可选，排序：relevance/price/sales/rating/time
   "sortOrder": "desc",                  // 可选，排序方向
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20
 }
 ```
@@ -276,7 +292,7 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
   "hasAvatar": true,                    // 可选，是否有头像
   "minFollowers": 100,                  // 可选，最少粉丝数
   "sortBy": "followers",                // 可选，排序：relevance/followers/activity/join_time
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20
 }
 ```
@@ -291,6 +307,138 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
 - **userId** (query): 当前用户ID，必填
 - **type** (query): 推荐类型：similar/hot/new，可选
 - **limit** (query): 推荐数量，可选，默认10
+
+---
+
+## Tag混合搜索 API
+
+### 1. Tag混合搜索
+**接口路径**: `GET /api/v1/search/tag/{tag}/mixed`  
+**接口描述**: 根据标签同时搜索用户和内容，返回聚合结果
+
+#### 请求参数
+- **tag** (path): 标签名称，必填
+- **currentPage** (query): 当前页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
+
+#### 响应示例
+```json
+{
+  "success": true,
+  "datas": [
+    {
+      "type": "user",
+      "id": 12345,
+      "name": "技术达人",
+      "avatar": "https://example.com/avatar.jpg",
+      "bio": "专注Java技术分享",
+      "followers": 1250,
+      "isVerified": true,
+      "tags": ["Java", "编程", "技术"]
+    },
+    {
+      "type": "content",
+      "id": 98765,
+      "title": "Java编程实战教程",
+      "description": "从零基础到高级开发的完整Java教程",
+      "author": "技术达人",
+      "viewCount": 15680,
+      "likeCount": 892,
+      "tags": ["Java", "编程", "教程"]
+    }
+  ],
+  "total": 156,
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 8
+}
+```
+
+**特性说明**:
+- ⚡ **20分钟缓存**: 提升响应速度
+- 🔄 **智能聚合**: 自动平衡用户和内容结果
+- 🏷️ **精准匹配**: 基于标签的精确搜索
+
+---
+
+### 2. Tag搜索用户
+**接口路径**: `GET /api/v1/search/tag/{tag}/users`  
+**接口描述**: 根据标签搜索相关用户
+
+#### 请求参数
+- **tag** (path): 标签名称，必填
+- **currentPage** (query): 当前页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
+
+#### 响应示例
+```json
+{
+  "success": true,
+  "datas": [
+    {
+      "id": 12345,
+      "name": "技术达人",
+      "avatar": "https://example.com/avatar.jpg",
+      "bio": "专注Java技术分享",
+      "followers": 1250,
+      "following": 89,
+      "isVerified": true,
+      "tags": ["Java", "编程", "技术"],
+      "joinTime": "2023-01-15T10:30:00"
+    }
+  ],
+  "total": 45,
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 3
+}
+```
+
+**特性说明**:
+- ⚡ **20分钟缓存**: 用户搜索结果缓存
+- 🎯 **个性化排序**: 根据用户活跃度和影响力排序
+
+---
+
+### 3. Tag搜索内容
+**接口路径**: `GET /api/v1/search/tag/{tag}/contents`  
+**接口描述**: 根据标签搜索相关内容
+
+#### 请求参数
+- **tag** (path): 标签名称，必填
+- **currentPage** (query): 当前页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
+
+#### 响应示例
+```json
+{
+  "success": true,
+  "datas": [
+    {
+      "id": 98765,
+      "title": "Java编程实战教程",
+      "description": "从零基础到高级开发的完整Java教程",
+      "contentType": "ARTICLE",
+      "author": "技术达人",
+      "authorId": 12345,
+      "viewCount": 15680,
+      "likeCount": 892,
+      "commentCount": 156,
+      "publishTime": "2024-01-15T10:30:00",
+      "tags": ["Java", "编程", "教程"],
+      "status": "published"
+    }
+  ],
+  "total": 89,
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 5
+}
+```
+
+**特性说明**:
+- ⚡ **20分钟缓存**: 内容搜索结果缓存
+- 📈 **智能排序**: 根据热度、时间、相关性综合排序
 
 ---
 
@@ -319,19 +467,20 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
 ---
 
 ### 2. 获取搜索历史
-**接口路径**: `GET /api/v1/search/history/{userId}`  
-**接口描述**: 获取用户搜索历史
+**接口路径**: `GET /api/v1/search/history`  
+**接口描述**: 分页获取用户搜索历史记录
 
 #### 请求参数
-- **userId** (path): 用户ID，必填
+- **userId** (query): 用户ID，必填
 - **searchType** (query): 搜索类型，可选
-- **limit** (query): 返回数量，可选，默认20
+- **currentPage** (query): 当前页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
 
 #### 响应示例
 ```json
 {
   "success": true,
-  "data": [
+  "datas": [
     {
       "id": 1001,
       "keyword": "Java编程",
@@ -346,9 +495,17 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
       "searchTime": "2024-01-15T15:20:00",
       "resultCount": 89
     }
-  ]
+  ],
+  "total": 25,
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 2
 }
 ```
+
+**特性说明**:
+- ⚡ **60分钟缓存**: 搜索历史结果缓存
+- 🔄 **自动清理**: 缓存失效时自动清理相关数据
 
 ---
 
@@ -472,6 +629,29 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
 
 ---
 
+## 🚀 缓存性能特性
+
+### 缓存策略
+- **搜索结果缓存**: 30分钟，提升常用搜索的响应速度
+- **搜索历史缓存**: 60分钟，优化用户历史查询性能
+- **热门搜索缓存**: 15分钟，快速响应热搜需求
+- **搜索建议缓存**: 120分钟，长期缓存提升输入体验
+- **Tag混合搜索缓存**: 20分钟，平衡实时性和性能
+
+### 缓存优化
+- **分布式缓存**: 基于JetCache的分布式缓存架构
+- **智能失效**: 删除和更新操作自动清理相关缓存
+- **缓存预热**: 系统自动预热热门搜索数据
+- **性能监控**: 实时监控缓存命中率和响应时间
+
+### 性能指标
+- **搜索响应时间**: < 100ms (缓存命中)
+- **缓存命中率**: > 85%
+- **并发支持**: 10,000+ 并发搜索请求
+- **数据同步**: 缓存数据与数据库实时同步
+
+---
+
 ## 错误码说明
 
 | 错误码 | 说明 |
@@ -486,8 +666,37 @@ Collide 搜索服务提供强大的全文搜索功能，包括内容搜索、用
 | SEARCH_QUOTA_EXCEEDED | 搜索配额超限 |
 | SEARCH_FILTER_INVALID | 搜索过滤条件无效 |
 | SEARCH_SORT_INVALID | 搜索排序参数无效 |
+| TAG_SEARCH_ERROR | Tag搜索失败 |
+| MIXED_SEARCH_ERROR | 混合搜索失败 |
+| CACHE_ERROR | 缓存系统错误 |
+| USER_NOT_FOUND | 用户不存在 |
+| CONTENT_NOT_FOUND | 内容不存在 |
+| SEARCH_HISTORY_ERROR | 搜索历史操作失败 |
+| HOT_SEARCH_ERROR | 热门搜索获取失败 |
+| SUGGESTION_ERROR | 搜索建议获取失败 |
+| PREFERENCE_ERROR | 用户偏好获取失败 |
+
+---
+
+## 🔄 API设计原则
+
+### 统一响应格式
+- **查询操作**: 直接返回 `PageResponse<Data>` 格式
+- **创建/删除操作**: 返回 `Result<Void>` 格式（仅状态码）
+- **更新操作**: 返回 `Result<Data>` 格式（包含更新后数据）
+
+### 分页参数规范
+- **currentPage**: 当前页码，从1开始
+- **pageSize**: 每页大小，默认20，最大100
+- **total**: 总记录数
+- **totalPage**: 总页数
+
+### 缓存键命名规范
+- **格式**: `模块:功能:参数`
+- **示例**: `search:result:keyword:Java:type:content:page:1`
+- **过期策略**: 根据数据更新频率设置合理的过期时间
 
 ---
 
 **最后更新**: 2024-01-16  
-**文档版本**: v1.0.0
+**文档版本**: v2.0.0

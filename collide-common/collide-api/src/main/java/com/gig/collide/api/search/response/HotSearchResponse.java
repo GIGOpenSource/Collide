@@ -2,6 +2,7 @@ package com.gig.collide.api.search.response;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
  * @version 2.0.0
  */
 @Data
-public class HotSearchResponse {
+public class HotSearchResponse implements Serializable {
 
     private Long id;
 

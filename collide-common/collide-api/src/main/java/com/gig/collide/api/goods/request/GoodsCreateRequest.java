@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -25,7 +26,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GoodsCreateRequest {
+public class GoodsCreateRequest implements Serializable {
 
     /**
      * 商品名称

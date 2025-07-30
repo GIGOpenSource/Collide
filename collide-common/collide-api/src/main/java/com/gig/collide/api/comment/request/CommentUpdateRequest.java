@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 评论更新请求 - 简洁版
  * 支持评论内容、状态和统计数据更新
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CommentUpdateRequest {
+public class CommentUpdateRequest implements Serializable {
 
     /**
      * 评论ID

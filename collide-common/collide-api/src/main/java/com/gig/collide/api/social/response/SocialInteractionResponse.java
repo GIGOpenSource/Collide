@@ -2,6 +2,7 @@ package com.gig.collide.api.social.response;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -13,7 +14,7 @@ import java.time.LocalDateTime;
  * @since 2024-01-16
  */
 @Data
-public class SocialInteractionResponse {
+public class SocialInteractionResponse implements Serializable {
 
     /**
      * 互动ID

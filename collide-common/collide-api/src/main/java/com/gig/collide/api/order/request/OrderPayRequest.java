@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -23,7 +24,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class OrderPayRequest {
+public class OrderPayRequest implements Serializable {
 
     /**
      * 订单ID - 必填

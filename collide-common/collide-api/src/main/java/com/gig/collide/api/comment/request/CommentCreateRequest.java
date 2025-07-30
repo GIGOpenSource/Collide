@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 评论创建请求 - 简洁版
  * 基于comment-simple.sql的设计，支持多级评论和回复功能
@@ -22,7 +24,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CommentCreateRequest {
+public class CommentCreateRequest implements Serializable {
 
     /**
      * 评论类型：CONTENT、DYNAMIC

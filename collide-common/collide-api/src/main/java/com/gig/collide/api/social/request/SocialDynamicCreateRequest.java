@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serializable;
+
 /**
  * 社交动态创建请求 - 简洁版
  * 基于t_social_dynamic表结构
@@ -15,7 +17,7 @@ import jakarta.validation.constraints.Size;
  * @version 2.0.0
  */
 @Data
-public class SocialDynamicCreateRequest {
+public class SocialDynamicCreateRequest implements Serializable {
 
     @NotBlank(message = "动态内容不能为空")
     @Size(max = 5000, message = "动态内容长度不能超过5000字符")

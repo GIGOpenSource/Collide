@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 订单取消请求 - 简洁版
  * 取消订单，更新订单状态为cancelled
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class OrderCancelRequest {
+public class OrderCancelRequest implements Serializable {
 
     /**
      * 订单ID - 必填

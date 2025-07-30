@@ -4,6 +4,8 @@ import com.gig.collide.base.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 /**
  * 搜索历史查询请求 - 简洁版
  * 
@@ -12,7 +14,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class SearchHistoryQueryRequest extends PageRequest {
+public class SearchHistoryQueryRequest extends PageRequest implements Serializable {
 
     /**
      * 用户ID

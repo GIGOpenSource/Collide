@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 点赞请求 - 简洁版
  * 基于like-simple.sql的无连表设计，包含目标对象和用户信息冗余
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class LikeRequest {
+public class LikeRequest implements Serializable {
 
     /**
      * 点赞类型：CONTENT、COMMENT、DYNAMIC

@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 取消关注请求 - 简洁版
  * 逻辑删除，将状态更新为cancelled
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FollowDeleteRequest {
+public class FollowDeleteRequest implements Serializable {
 
     /**
      * 关注者用户ID

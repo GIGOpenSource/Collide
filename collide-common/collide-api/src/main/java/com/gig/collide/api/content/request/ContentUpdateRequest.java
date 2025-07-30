@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 内容更新请求 - 简洁版
  * 支持内容信息、状态、统计数据等更新
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ContentUpdateRequest {
+public class ContentUpdateRequest implements Serializable {
 
     /**
      * 内容ID

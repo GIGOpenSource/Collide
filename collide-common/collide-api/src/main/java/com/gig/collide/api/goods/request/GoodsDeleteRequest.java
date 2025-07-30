@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 商品删除请求 - 简洁版
  * 逻辑删除，将状态更新为inactive
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class GoodsDeleteRequest {
+public class GoodsDeleteRequest implements Serializable {
 
     /**
      * 商品ID

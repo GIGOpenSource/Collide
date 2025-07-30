@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 收藏查询请求 - 简洁版
  * 基于favorite-simple.sql的字段，支持常用查询条件
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FavoriteQueryRequest {
+public class FavoriteQueryRequest implements Serializable {
 
     /**
      * 收藏类型：CONTENT、GOODS

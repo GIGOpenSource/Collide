@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 切换点赞状态请求 - 简洁版
  * 如果已点赞则取消，如果未点赞则添加
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class LikeToggleRequest {
+public class LikeToggleRequest implements Serializable {
 
     /**
      * 点赞类型：CONTENT、COMMENT、DYNAMIC

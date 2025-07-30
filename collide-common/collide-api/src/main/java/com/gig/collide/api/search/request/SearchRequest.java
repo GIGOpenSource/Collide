@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serializable;
+
 /**
  * 搜索请求 - 简洁版
  * 基于t_search_history表结构
@@ -15,7 +17,7 @@ import jakarta.validation.constraints.Size;
  * @version 2.0.0
  */
 @Data
-public class SearchRequest {
+public class SearchRequest implements Serializable {
 
     @NotBlank(message = "搜索关键词不能为空")
     @Size(max = 200, message = "搜索关键词长度不能超过200字符")

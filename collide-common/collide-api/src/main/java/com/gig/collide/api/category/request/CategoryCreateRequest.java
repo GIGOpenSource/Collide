@@ -11,6 +11,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 分类创建请求 - 简洁版
  * 基于category-simple.sql的设计，支持层级分类
@@ -24,7 +26,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CategoryCreateRequest {
+public class CategoryCreateRequest implements Serializable {
 
     /**
      * 分类名称（必填）

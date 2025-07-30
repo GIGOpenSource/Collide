@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 收藏创建请求 - 简洁版
  * 基于favorite-simple.sql的无连表设计，包含收藏对象和用户信息冗余
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FavoriteCreateRequest {
+public class FavoriteCreateRequest implements Serializable {
 
     /**
      * 收藏类型：CONTENT、GOODS

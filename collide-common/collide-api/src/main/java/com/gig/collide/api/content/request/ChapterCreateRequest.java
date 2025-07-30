@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 章节创建请求 - 简洁版
  * 基于content-simple.sql的t_content_chapter表结构
@@ -21,7 +23,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class ChapterCreateRequest {
+public class ChapterCreateRequest implements Serializable {
 
     /**
      * 内容ID

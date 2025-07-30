@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serializable;
+
 /**
  * 标签更新请求 - 简洁版
  * 基于t_tag表结构
@@ -14,7 +16,7 @@ import jakarta.validation.constraints.Size;
  * @version 2.0.0
  */
 @Data
-public class TagUpdateRequest {
+public class TagUpdateRequest implements Serializable {
 
     @NotNull(message = "标签ID不能为空")
     private Long id;

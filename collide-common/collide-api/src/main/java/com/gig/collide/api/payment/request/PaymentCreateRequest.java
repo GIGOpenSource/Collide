@@ -6,6 +6,8 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+
+import java.io.Serializable;
 import java.math.BigDecimal;
 
 /**
@@ -16,7 +18,7 @@ import java.math.BigDecimal;
  * @version 2.0.0
  */
 @Data
-public class PaymentCreateRequest {
+public class PaymentCreateRequest implements Serializable {
 
     @NotNull(message = "订单ID不能为空")
     private Long orderId;

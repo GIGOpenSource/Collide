@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serializable;
+
 /**
  * 标签创建请求 - 简洁版
  * 基于t_tag表结构
@@ -14,7 +16,7 @@ import jakarta.validation.constraints.Size;
  * @version 2.0.0
  */
 @Data
-public class TagCreateRequest {
+public class TagCreateRequest implements Serializable {
 
     @NotBlank(message = "标签名称不能为空")
     @Size(max = 100, message = "标签名称长度不能超过100字符")

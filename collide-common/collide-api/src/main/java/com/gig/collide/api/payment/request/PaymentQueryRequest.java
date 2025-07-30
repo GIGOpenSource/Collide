@@ -4,6 +4,7 @@ import com.gig.collide.base.request.PageRequest;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class PaymentQueryRequest extends PageRequest {
+public class PaymentQueryRequest extends PageRequest implements Serializable {
 
     /**
      * 支付单号

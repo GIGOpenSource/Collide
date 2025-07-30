@@ -10,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 分类更新请求 - 简洁版
  * 支持分类信息、状态和统计数据更新
@@ -23,7 +25,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class CategoryUpdateRequest {
+public class CategoryUpdateRequest implements Serializable {
 
     /**
      * 分类ID（必填）

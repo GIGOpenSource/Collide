@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.io.Serializable;
+
 /**
  * 关注创建请求 - 简洁版
  * 基于follow-simple.sql的无连表设计，包含关注者和被关注者信息冗余
@@ -20,7 +22,7 @@ import lombok.ToString;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class FollowCreateRequest {
+public class FollowCreateRequest implements Serializable {
 
     /**
      * 关注者用户ID

@@ -3,6 +3,8 @@ package com.gig.collide.api.payment.request;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotBlank;
+
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -13,7 +15,7 @@ import java.util.Map;
  * @version 2.0.0
  */
 @Data
-public class PaymentCallbackRequest {
+public class PaymentCallbackRequest implements Serializable {
 
     @NotBlank(message = "支付单号不能为空")
     private String paymentNo;

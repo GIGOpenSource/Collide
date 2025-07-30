@@ -63,4 +63,21 @@ public interface SearchFacadeService {
      * 更新热搜关键词趋势分数
      */
     Result<Void> updateHotSearchTrend(String keyword, Double trendScore);
+
+    // =================== 混合搜索功能 ===================
+
+    /**
+     * Tag混合搜索 - 同时搜索用户和内容
+     */
+    PageResponse<Object> searchByTagMixed(String tag, Integer currentPage, Integer pageSize);
+
+    /**
+     * 根据Tag搜索用户
+     */
+    PageResponse<Object> searchUsersByTag(String tag, Integer currentPage, Integer pageSize);
+
+    /**
+     * 根据Tag搜索内容
+     */
+    PageResponse<Object> searchContentsByTag(String tag, Integer currentPage, Integer pageSize);
 } 
