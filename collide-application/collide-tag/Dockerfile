@@ -35,8 +35,8 @@ EXPOSE 9602
 # 设置JVM参数和启动命令
 ENTRYPOINT ["java", \
     "-server", \
-    "-Xmx1024m", \
-    "-Xms512m", \
+    "-Xmx256m", \
+    "-Xms128m", \
     "-XX:+UseG1GC", \
     "-XX:MaxGCPauseMillis=200", \
     "-XX:+UseContainerSupport", \
