@@ -74,36 +74,46 @@ public class AuthController {
             userCreateRequest.setInviteCode(registerParam.getInviteCode());
 
             // 执行注册
-            Result<UserResponse> registerResult = userFacadeService.createUser(userCreateRequest);
+            Result<Void> registerResult = userFacadeService.createUser(userCreateRequest);
             
-            if (registerResult.getSuccess() && registerResult.getData() != null) {
-                UserResponse userInfo = registerResult.getData();
+            if (registerResult.getSuccess()) {
+                log.info("用户注册成功，用户名：{}", registerParam.getUsername());
                 
-                // 注册成功后自动登录
-                SaLoginModel loginModel = new SaLoginModel()
-                        .setDevice("web")
-                        .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
-                        .setToken(null);
-                StpUtil.login(userInfo.getId(), loginModel);
+                // 注册成功后获取用户信息进行自动登录
+                Result<UserResponse> userResult = userFacadeService.getUserByUsername(registerParam.getUsername());
                 
-                // 存储用户信息到Session供网关鉴权使用
-                StpUtil.getSession().set("userInfo", java.util.Map.of(
-                    "id", userInfo.getId(),
-                    "username", userInfo.getUsername(),
-                    "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
-                    "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
-                ));
-                
-                String token = StpUtil.getTokenValue();
-                
-                log.info("用户注册并登录成功，用户ID：{}，Token：{}", userInfo.getId(), token);
-                
-                Map<String, Object> response = new HashMap<>();
-                response.put("user", userInfo);
-                response.put("token", token);
-                response.put("message", "注册成功");
-                
-                return Result.success(response);
+                if (userResult.getSuccess() && userResult.getData() != null) {
+                    UserResponse userInfo = userResult.getData();
+                    
+                    // 注册成功后自动登录
+                    SaLoginModel loginModel = new SaLoginModel()
+                            .setDevice("web")
+                            .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
+                            .setToken(null);
+                    StpUtil.login(userInfo.getId(), loginModel);
+                    
+                    // 存储用户信息到Session供网关鉴权使用
+                    StpUtil.getSession().set("userInfo", java.util.Map.of(
+                        "id", userInfo.getId(),
+                        "username", userInfo.getUsername(),
+                        "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                        "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                    ));
+                    
+                    String token = StpUtil.getTokenValue();
+                    
+                    log.info("用户注册并登录成功，用户ID：{}，Token：{}", userInfo.getId(), token);
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("user", userInfo);
+                    response.put("token", token);
+                    response.put("message", "注册成功");
+                    
+                    return Result.success(response);
+                } else {
+                    log.error("注册成功但获取用户信息失败：{}", userResult.getMessage());
+                    return Result.error("USER_INFO_ERROR", "注册成功但获取用户信息失败");
+                }
             } else {
                 log.error("用户注册失败：{}", registerResult.getMessage());
                 return Result.error("USER_REGISTER_FAILED", registerResult.getMessage());
@@ -220,37 +230,47 @@ public class AuthController {
                     userCreateRequest.setRole("user"); // 默认角色
                     userCreateRequest.setInviteCode(loginParam.getInviteCode());
                     
-                    Result<UserResponse> registerResult = userFacadeService.createUser(userCreateRequest);
+                    Result<Void> registerResult = userFacadeService.createUser(userCreateRequest);
                     
-                    if (registerResult.getSuccess() && registerResult.getData() != null) {
-                        // 注册成功，自动登录
-                        UserResponse userInfo = registerResult.getData();
+                    if (registerResult.getSuccess()) {
+                        log.info("用户自动注册成功，用户名：{}", loginParam.getUsername());
                         
-                        SaLoginModel loginModel = new SaLoginModel()
-                                .setDevice("web")
-                                .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
-                                .setToken(null);
-                        StpUtil.login(userInfo.getId(), loginModel);
+                        // 注册成功后获取用户信息进行自动登录
+                        Result<UserResponse> userResult = userFacadeService.getUserByUsername(loginParam.getUsername());
                         
-                        // 存储用户信息到Session供网关鉴权使用
-                        StpUtil.getSession().set("userInfo", java.util.Map.of(
-                            "id", userInfo.getId(),
-                            "username", userInfo.getUsername(),
-                            "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
-                            "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
-                        ));
-                        
-                        String token = StpUtil.getTokenValue();
-                        
-                        log.info("用户自动注册并登录成功，用户ID：{}", userInfo.getId());
-                        
-                        Map<String, Object> response = new HashMap<>();
-                        response.put("user", userInfo);
-                        response.put("token", token);
-                        response.put("message", "注册并登录成功");
-                        response.put("isNewUser", true);
-                        
-                        return Result.success(response);
+                        if (userResult.getSuccess() && userResult.getData() != null) {
+                            // 注册成功，自动登录
+                            UserResponse userInfo = userResult.getData();
+                            
+                            SaLoginModel loginModel = new SaLoginModel()
+                                    .setDevice("web")
+                                    .setTimeout(DEFAULT_LOGIN_SESSION_TIMEOUT)
+                                    .setToken(null);
+                            StpUtil.login(userInfo.getId(), loginModel);
+                            
+                            // 存储用户信息到Session供网关鉴权使用
+                            StpUtil.getSession().set("userInfo", java.util.Map.of(
+                                "id", userInfo.getId(),
+                                "username", userInfo.getUsername(),
+                                "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                                "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
+                            ));
+                            
+                            String token = StpUtil.getTokenValue();
+                            
+                            log.info("用户自动注册并登录成功，用户ID：{}", userInfo.getId());
+                            
+                            Map<String, Object> response = new HashMap<>();
+                            response.put("user", userInfo);
+                            response.put("token", token);
+                            response.put("message", "注册并登录成功");
+                            response.put("isNewUser", true);
+                            
+                            return Result.success(response);
+                        } else {
+                            log.error("注册成功但获取用户信息失败：{}", userResult.getMessage());
+                            return Result.error("USER_INFO_ERROR", "注册成功但获取用户信息失败");
+                        }
                     } else {
                         log.error("用户自动注册失败：{}", registerResult.getMessage());
                         return Result.error("AUTO_REGISTER_FAILED", registerResult.getMessage());
