@@ -18,6 +18,7 @@ import com.gig.collide.base.response.PageResponse;
  * @version 2.0.0 (简洁版)
  * @since 2024-01-01
  */
+
 public interface ContentFacadeService {
     
     // =================== 内容管理 ===================
