@@ -18,28 +18,29 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 商品管理控制器
- * 提供商品相关的HTTP REST API接口
+ * 商品管理控制器 - 缓存增强版
+ * 对齐like模块设计风格，通过门面服务提供HTTP接口
+ * 包含缓存功能、统一响应格式、错误处理
  * 
  * 主要功能：
- * - 商品CRUD操作（创建、查询、更新、删除）
- * - 商品分类查询
- * - 商品库存管理
- * - 商品搜索与筛选
- * - 商品统计信息
+ * - 商品CRUD操作（创建、查询、更新、删除）💡 缓存优化
+ * - 商品分类查询 💡 缓存优化
+ * - 商品库存管理 💡 缓存优化
+ * - 商品搜索与筛选 💡 缓存优化
+ * - 商品统计信息 💡 缓存优化
  * 
  * 注意：控制器层主要负责HTTP请求处理和参数验证，
- * 具体的业务逻辑由GoodsFacadeService处理
+ * 具体的业务逻辑由GoodsFacadeService处理，包含分布式缓存
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0 (缓存增强版)
+ * @since 2024-01-16
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/goods")
 @RequiredArgsConstructor
-@Tag(name = "商品管理", description = "商品相关的API接口")
+@Tag(name = "商品管理", description = "商品相关的API接口 - 缓存增强版")
 public class GoodsController {
 
     @Autowired
@@ -54,7 +55,7 @@ public class GoodsController {
      * @return 创建结果，包含商品详细信息
      */
     @PostMapping("/create")
-    @Operation(summary = "创建商品", description = "创建新商品，支持多种商品类型和状态")
+    @Operation(summary = "创建商品 💡 缓存优化", description = "创建新商品，支持多种商品类型和状态")
     public Result<GoodsResponse> createGoods(@Validated @RequestBody GoodsCreateRequest request) {
         try {
             log.info("HTTP创建商品: name={}, sellerId={}", 
@@ -75,7 +76,7 @@ public class GoodsController {
      * @return 更新结果，包含更新后的商品信息
      */
     @PutMapping("/update")
-    @Operation(summary = "更新商品", description = "更新商品信息，支持部分字段更新")
+    @Operation(summary = "更新商品 💡 缓存优化", description = "更新商品信息，支持部分字段更新")
     public Result<GoodsResponse> updateGoods(@Validated @RequestBody GoodsUpdateRequest request) {
         try {
             log.info("HTTP更新商品: goodsId={}", request.getId());
@@ -96,7 +97,7 @@ public class GoodsController {
      * @return 删除操作结果
      */
     @DeleteMapping("/{goodsId}")
-    @Operation(summary = "删除商品", description = "逻辑删除商品，设置状态为inactive")
+    @Operation(summary = "删除商品 💡 缓存优化", description = "逻辑删除商品，设置状态为inactive")
     public Result<Void> deleteGoods(
             @PathVariable Long goodsId,
             @Parameter(description = "操作人ID") @RequestParam Long operatorId) {
@@ -122,7 +123,7 @@ public class GoodsController {
      * @return 商品详细信息
      */
     @GetMapping("/{goodsId}")
-    @Operation(summary = "获取商品详情", description = "根据商品ID获取商品的详细信息")
+    @Operation(summary = "获取商品详情 💡 缓存优化", description = "根据商品ID获取商品的详细信息")
     public Result<GoodsResponse> getGoodsById(@PathVariable Long goodsId) {
         try {
             log.debug("HTTP获取商品详情: goodsId={}", goodsId);
