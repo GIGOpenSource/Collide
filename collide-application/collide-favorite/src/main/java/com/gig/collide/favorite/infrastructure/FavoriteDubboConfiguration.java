@@ -1,41 +1,36 @@
-package com.gig.collide.follow.infrastructure;
+package com.gig.collide.favorite.infrastructure;
 
-import com.gig.collide.api.user.UserFacadeService;
 import com.gig.collide.api.content.ContentFacadeService;
-import com.gig.collide.api.like.LikeFacadeService;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.goods.GoodsFacadeService;
+import com.gig.collide.api.comment.CommentFacadeService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * 关注模块Dubbo配置类 - 缓存增强版
- * 对齐goods模块设计风格，提供跨模块服务引用配置
- *
+ * 收藏模块Dubbo服务配置 - 缓存增强版
+ * 对齐follow模块设计风格，提供必要的外部服务依赖
+ * 
  * @author GIG Team
  * @version 2.0.0 (缓存增强版)
  * @since 2024-01-16
  */
 @Configuration
-public class FollowDubboConfiguration {
+public class FavoriteDubboConfiguration {
 
-    /**
-     * 用户服务引用
-     */
     @DubboReference(version = "1.0.0", check = false, timeout = 3000)
     private UserFacadeService userFacadeService;
 
-    /**
-     * 内容服务引用
-     */
     @DubboReference(version = "1.0.0", check = false, timeout = 3000)
     private ContentFacadeService contentFacadeService;
 
-    /**
-     * 点赞服务引用
-     */
     @DubboReference(version = "1.0.0", check = false, timeout = 3000)
-    private LikeFacadeService likeFacadeService;
+    private GoodsFacadeService goodsFacadeService;
+
+    @DubboReference(version = "1.0.0", check = false, timeout = 3000)
+    private CommentFacadeService commentFacadeService;
 
     @Bean
     @ConditionalOnMissingBean(name = "userFacadeService")
@@ -50,8 +45,14 @@ public class FollowDubboConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "likeFacadeService")
-    public LikeFacadeService likeFacadeService() {
-        return likeFacadeService;
+    @ConditionalOnMissingBean(name = "goodsFacadeService")
+    public GoodsFacadeService goodsFacadeService() {
+        return goodsFacadeService;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(name = "commentFacadeService")
+    public CommentFacadeService commentFacadeService() {
+        return commentFacadeService;
     }
 }
