@@ -3,20 +3,3 @@ spring:
     name: @application.name@
   config:
     import: classpath:base.yml,classpath:config.yml
-
-# 环境配置
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-# 日志配置
-logging:
-  level:
-    com.gig.collide.social: INFO
-    org.springframework.cloud: INFO
-    com.alibaba.nacos: INFO 
