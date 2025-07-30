@@ -134,7 +134,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
                 request.getCommentType(),
                 request.getActualParentCommentId(),
                 request.getStatus(),
-                request.getPageNum(),
+                request.getCurrentPage(),
                 request.getPageSize(),
                 request.getOrderBy(),
                 request.getOrderDirection()

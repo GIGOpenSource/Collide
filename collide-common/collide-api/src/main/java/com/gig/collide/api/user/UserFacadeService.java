@@ -21,7 +21,7 @@ public interface UserFacadeService {
     /**
      * 创建用户（注册）
      */
-    Result<UserResponse> createUser(UserCreateRequest request);
+    Result<Void> createUser(UserCreateRequest request);
 
     /**
      * 更新用户信息
@@ -37,6 +37,12 @@ public interface UserFacadeService {
      * 根据用户名查询用户
      */
     Result<UserResponse> getUserByUsername(String username);
+
+    /**
+     * 获取个人用户信息
+     * 包含详细信息、统计数据和钱包信息
+     */
+    Result<UserResponse> getUserProfile(Long userId);
 
     /**
      * 分页查询用户列表

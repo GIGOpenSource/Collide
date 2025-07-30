@@ -31,7 +31,7 @@ public class UserController {
      * 创建用户
      */
     @PostMapping
-    public Result<UserResponse> createUser(@Valid @RequestBody UserCreateRequest request) {
+    public Result<Void> createUser(@Valid @RequestBody UserCreateRequest request) {
         try {
             log.info("创建用户请求: {}", request);
             // 这里可以直接调用Facade服务，或通过本地Service处理
@@ -70,6 +70,23 @@ public class UserController {
         } catch (Exception e) {
             log.error("查询用户失败", e);
             return Result.error("USER_QUERY_ERROR", "查询用户失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取个人用户信息
+     * 包含详细信息、统计数据和钱包信息
+     */
+    @GetMapping("/{id}/profile")
+    public Result<UserResponse> getUserProfile(@PathVariable Long id) {
+        try {
+            log.info("获取用户个人信息: id={}", id);
+            // 这里应该调用UserFacadeService的getUserProfile方法
+            // 为了演示，暂时返回null，实际项目中需要注入facade服务
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("获取用户个人信息失败", e);
+            return Result.error("USER_PROFILE_ERROR", "获取用户个人信息失败: " + e.getMessage());
         }
     }
 

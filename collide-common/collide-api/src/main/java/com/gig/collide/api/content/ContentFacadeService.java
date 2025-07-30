@@ -27,9 +27,9 @@ public interface ContentFacadeService {
      * 支持作者和分类信息冗余存储
      * 
      * @param request 创建请求
-     * @return 创建的内容
+     * @return 创建结果（成功/失败状态）
      */
-    Result<ContentResponse> createContent(ContentCreateRequest request);
+    Result<Void> createContent(ContentCreateRequest request);
     
     /**
      * 更新内容
@@ -95,9 +95,9 @@ public interface ContentFacadeService {
      * 用于小说、漫画等多章节内容
      * 
      * @param request 章节创建请求
-     * @return 创建的章节
+     * @return 创建结果（成功/失败状态）
      */
-    Result<ChapterResponse> createChapter(ChapterCreateRequest request);
+    Result<Void> createChapter(ChapterCreateRequest request);
     
     /**
      * 获取内容的章节列表

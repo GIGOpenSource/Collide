@@ -21,7 +21,7 @@ public interface TagFacadeService {
     /**
      * 创建标签
      */
-    Result<TagResponse> createTag(TagCreateRequest request);
+    Result<Void> createTag(TagCreateRequest request);
 
     /**
      * 更新标签

@@ -3,6 +3,7 @@ package com.gig.collide.api.user.response;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -73,6 +74,15 @@ public class UserResponse implements Serializable {
     private Long inviterId;
 
     private Long invitedCount;
+
+    /**
+     * 钱包信息
+     */
+    private BigDecimal walletBalance;
+
+    private BigDecimal walletFrozen;
+
+    private String walletStatus;
 
     /**
      * 时间信息

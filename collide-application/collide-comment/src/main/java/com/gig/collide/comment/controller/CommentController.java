@@ -89,37 +89,40 @@ public class CommentController {
      * 获取目标对象的评论列表
      */
     @GetMapping("/target/{targetId}")
-    public Result<PageResponse<CommentResponse>> getTargetComments(@PathVariable Long targetId,
-                                                                 @RequestParam(required = false) String commentType,
-                                                                 @RequestParam(defaultValue = "0") Long parentCommentId,
-                                                                 @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                 @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取目标评论，目标：{}，类型：{}", targetId, commentType);
-        return commentFacadeService.getTargetComments(targetId, commentType, parentCommentId, pageNum, pageSize);
+    public PageResponse<CommentResponse> getTargetComments(@PathVariable Long targetId,
+                                                         @RequestParam(required = false) String commentType,
+                                                         @RequestParam(defaultValue = "0") Long parentCommentId,
+                                                         @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                         @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取目标评论，目标：{}，类型：{}，页码：{}", targetId, commentType, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getTargetComments(targetId, commentType, parentCommentId, currentPage, pageSize);
+        return result.getData();
     }
 
     /**
      * 获取评论回复列表
      */
     @GetMapping("/{commentId}/replies")
-    public Result<PageResponse<CommentResponse>> getCommentReplies(@PathVariable Long commentId,
-                                                                 @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                 @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取评论回复，评论：{}", commentId);
-        return commentFacadeService.getCommentReplies(commentId, pageNum, pageSize);
+    public PageResponse<CommentResponse> getCommentReplies(@PathVariable Long commentId,
+                                                         @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                         @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取评论回复，评论：{}，页码：{}", commentId, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getCommentReplies(commentId, currentPage, pageSize);
+        return result.getData();
     }
 
     /**
      * 获取评论树形结构
      */
     @GetMapping("/tree/{targetId}")
-    public Result<PageResponse<CommentResponse>> getCommentTree(@PathVariable Long targetId,
-                                                              @RequestParam(required = false) String commentType,
-                                                              @RequestParam(defaultValue = "3") Integer maxDepth,
-                                                              @RequestParam(defaultValue = "1") Integer pageNum,
-                                                              @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取评论树，目标：{}，深度：{}", targetId, maxDepth);
-        return commentFacadeService.getCommentTree(targetId, commentType, maxDepth, pageNum, pageSize);
+    public PageResponse<CommentResponse> getCommentTree(@PathVariable Long targetId,
+                                                      @RequestParam(required = false) String commentType,
+                                                      @RequestParam(defaultValue = "3") Integer maxDepth,
+                                                      @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                      @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取评论树，目标：{}，深度：{}，页码：{}", targetId, maxDepth, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getCommentTree(targetId, commentType, maxDepth, currentPage, pageSize);
+        return result.getData();
     }
 
     // =================== 用户评论 ===================
@@ -128,24 +131,26 @@ public class CommentController {
      * 获取用户评论列表
      */
     @GetMapping("/user/{userId}")
-    public Result<PageResponse<CommentResponse>> getUserComments(@PathVariable Long userId,
-                                                               @RequestParam(required = false) String commentType,
-                                                               @RequestParam(defaultValue = "NORMAL") String status,
-                                                               @RequestParam(defaultValue = "1") Integer pageNum,
-                                                               @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取用户评论，用户：{}", userId);
-        return commentFacadeService.getUserComments(userId, commentType, status, pageNum, pageSize);
+    public PageResponse<CommentResponse> getUserComments(@PathVariable Long userId,
+                                                       @RequestParam(required = false) String commentType,
+                                                       @RequestParam(defaultValue = "NORMAL") String status,
+                                                       @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                       @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取用户评论，用户：{}，页码：{}", userId, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getUserComments(userId, commentType, status, currentPage, pageSize);
+        return result.getData();
     }
 
     /**
      * 获取用户收到的回复
      */
     @GetMapping("/user/{userId}/replies")
-    public Result<PageResponse<CommentResponse>> getUserReplies(@PathVariable Long userId,
-                                                              @RequestParam(defaultValue = "1") Integer pageNum,
-                                                              @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取用户回复，用户：{}", userId);
-        return commentFacadeService.getUserReplies(userId, pageNum, pageSize);
+    public PageResponse<CommentResponse> getUserReplies(@PathVariable Long userId,
+                                                      @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                      @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取用户回复，用户：{}，页码：{}", userId, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getUserReplies(userId, currentPage, pageSize);
+        return result.getData();
     }
 
     // =================== 状态管理 ===================
@@ -251,38 +256,41 @@ public class CommentController {
      * 搜索评论
      */
     @GetMapping("/search")
-    public Result<PageResponse<CommentResponse>> searchComments(@RequestParam String keyword,
-                                                              @RequestParam(required = false) String commentType,
-                                                              @RequestParam(required = false) Long targetId,
-                                                              @RequestParam(defaultValue = "1") Integer pageNum,
-                                                              @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 搜索评论，关键词：{}", keyword);
-        return commentFacadeService.searchComments(keyword, commentType, targetId, pageNum, pageSize);
+    public PageResponse<CommentResponse> searchComments(@RequestParam String keyword,
+                                                      @RequestParam(required = false) String commentType,
+                                                      @RequestParam(required = false) Long targetId,
+                                                      @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                      @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 搜索评论，关键词：{}，页码：{}", keyword, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.searchComments(keyword, commentType, targetId, currentPage, pageSize);
+        return result.getData();
     }
 
     /**
      * 获取热门评论
      */
     @GetMapping("/popular")
-    public Result<PageResponse<CommentResponse>> getPopularComments(@RequestParam(required = false) Long targetId,
-                                                                  @RequestParam(required = false) String commentType,
-                                                                  @RequestParam(defaultValue = "7") Integer timeRange,
-                                                                  @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                  @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取热门评论，时间范围：{}天", timeRange);
-        return commentFacadeService.getPopularComments(targetId, commentType, timeRange, pageNum, pageSize);
+    public PageResponse<CommentResponse> getPopularComments(@RequestParam(required = false) Long targetId,
+                                                          @RequestParam(required = false) String commentType,
+                                                          @RequestParam(defaultValue = "7") Integer timeRange,
+                                                          @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                          @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取热门评论，时间范围：{}天，页码：{}", timeRange, currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getPopularComments(targetId, commentType, timeRange, currentPage, pageSize);
+        return result.getData();
     }
 
     /**
      * 获取最新评论
      */
     @GetMapping("/latest")
-    public Result<PageResponse<CommentResponse>> getLatestComments(@RequestParam(required = false) Long targetId,
-                                                                 @RequestParam(required = false) String commentType,
-                                                                 @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                 @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.info("REST请求 - 获取最新评论");
-        return commentFacadeService.getLatestComments(targetId, commentType, pageNum, pageSize);
+    public PageResponse<CommentResponse> getLatestComments(@RequestParam(required = false) Long targetId,
+                                                         @RequestParam(required = false) String commentType,
+                                                         @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                         @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 获取最新评论，页码：{}", currentPage);
+        Result<PageResponse<CommentResponse>> result = commentFacadeService.getLatestComments(targetId, commentType, currentPage, pageSize);
+        return result.getData();
     }
 
     // =================== 管理功能 ===================

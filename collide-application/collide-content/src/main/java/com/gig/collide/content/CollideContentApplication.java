@@ -6,6 +6,8 @@ import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
+import com.alicp.jetcache.anno.config.EnableCreateCacheAnnotation;
+import com.alicp.jetcache.anno.config.EnableMethodCache;
 
 /**
  * 内容模块启动类 - 简洁版
@@ -20,6 +22,8 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringBootApplication(scanBasePackages = "com.gig.collide.content")
 @EnableDubbo
 @EnableTransactionManagement
+@EnableMethodCache(basePackages = "com.gig.collide.content")
+@EnableCreateCacheAnnotation
 @MapperScan("com.gig.collide.content.infrastructure.mapper")
 public class CollideContentApplication {
 

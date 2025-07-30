@@ -9,17 +9,19 @@ import com.gig.collide.api.content.response.ContentResponse;
 import com.gig.collide.api.content.response.ChapterResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
+import com.gig.collide.api.like.LikeFacadeService;
+import com.gig.collide.api.favorite.FavoriteFacadeService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * 内容管理控制器 - 简洁版
@@ -39,12 +41,18 @@ public class ContentController {
 
     @Autowired
     private ContentFacadeService contentFacadeService;
+    
+    @Autowired
+    private LikeFacadeService likeFacadeService;
+    
+    @Autowired
+    private FavoriteFacadeService favoriteFacadeService;
 
     // =================== 内容管理 ===================
 
     @PostMapping("/create")
     @Operation(summary = "创建内容", description = "创建新内容，支持多种类型：NOVEL、COMIC、VIDEO、ARTICLE、AUDIO")
-    public Result<ContentResponse> createContent(@Validated @RequestBody ContentCreateRequest request) {
+    public Result<Void> createContent(@Validated @RequestBody ContentCreateRequest request) {
         log.info("REST创建内容: {}", request.getTitle());
         return contentFacadeService.createContent(request);
     }
@@ -99,19 +107,20 @@ public class ContentController {
 
     @PostMapping("/chapter/create")
     @Operation(summary = "创建章节", description = "为小说、漫画等多章节内容创建新章节")
-    public Result<ChapterResponse> createChapter(@Validated @RequestBody ChapterCreateRequest request) {
+    public Result<Void> createChapter(@Validated @RequestBody ChapterCreateRequest request) {
         log.info("REST创建章节: 内容ID={}, 章节号={}", request.getContentId(), request.getChapterNum());
         return contentFacadeService.createChapter(request);
     }
 
     @GetMapping("/{contentId}/chapters")
     @Operation(summary = "获取内容章节列表", description = "分页获取指定内容的章节列表")
-    public Result<PageResponse<ChapterResponse>> getContentChapters(@PathVariable("contentId") Long contentId,
-                                                                   @Parameter(description = "章节状态") @RequestParam(required = false) String status,
-                                                                   @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                   @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST获取内容章节: 内容ID={}", contentId);
-        return contentFacadeService.getContentChapters(contentId, status, pageNum, pageSize);
+    public PageResponse<ChapterResponse> getContentChapters(@PathVariable("contentId") Long contentId,
+                                                           @Parameter(description = "章节状态") @RequestParam(required = false) String status,
+                                                           @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                           @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST获取内容章节: 内容ID={}，页码：{}", contentId, currentPage);
+        Result<PageResponse<ChapterResponse>> result = contentFacadeService.getContentChapters(contentId, status, currentPage, pageSize);
+        return result.getData();
     }
 
     @GetMapping("/chapter/{id}")
@@ -178,52 +187,57 @@ public class ContentController {
 
     @GetMapping("/author/{authorId}")
     @Operation(summary = "根据作者查询内容", description = "分页查询指定作者的内容列表")
-    public Result<PageResponse<ContentResponse>> getContentsByAuthor(@PathVariable("authorId") Long authorId,
-                                                                   @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
-                                                                   @Parameter(description = "状态") @RequestParam(required = false) String status,
-                                                                   @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                   @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST根据作者查询内容: 作者ID={}", authorId);
-        return contentFacadeService.getContentsByAuthor(authorId, contentType, status, pageNum, pageSize);
+    public PageResponse<ContentResponse> getContentsByAuthor(@PathVariable("authorId") Long authorId,
+                                                           @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
+                                                           @Parameter(description = "状态") @RequestParam(required = false) String status,
+                                                           @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                           @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST根据作者查询内容: 作者ID={}，页码：{}", authorId, currentPage);
+        Result<PageResponse<ContentResponse>> result = contentFacadeService.getContentsByAuthor(authorId, contentType, status, currentPage, pageSize);
+        return result.getData();
     }
 
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "根据分类查询内容", description = "分页查询指定分类的内容列表")
-    public Result<PageResponse<ContentResponse>> getContentsByCategory(@PathVariable("categoryId") Long categoryId,
-                                                                     @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
-                                                                     @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                     @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST根据分类查询内容: 分类ID={}", categoryId);
-        return contentFacadeService.getContentsByCategory(categoryId, contentType, pageNum, pageSize);
+    public PageResponse<ContentResponse> getContentsByCategory(@PathVariable("categoryId") Long categoryId,
+                                                             @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
+                                                             @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST根据分类查询内容: 分类ID={}，页码：{}", categoryId, currentPage);
+        Result<PageResponse<ContentResponse>> result = contentFacadeService.getContentsByCategory(categoryId, contentType, currentPage, pageSize);
+        return result.getData();
     }
 
     @GetMapping("/search")
     @Operation(summary = "搜索内容", description = "根据关键词搜索内容（标题、描述、标签）")
-    public Result<PageResponse<ContentResponse>> searchContents(@Parameter(description = "搜索关键词") @RequestParam String keyword,
-                                                              @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
-                                                              @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                              @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST搜索内容: 关键词={}", keyword);
-        return contentFacadeService.searchContents(keyword, contentType, pageNum, pageSize);
+    public PageResponse<ContentResponse> searchContents(@Parameter(description = "搜索关键词") @RequestParam String keyword,
+                                                      @Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
+                                                      @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                      @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST搜索内容: 关键词={}，页码：{}", keyword, currentPage);
+        Result<PageResponse<ContentResponse>> result = contentFacadeService.searchContents(keyword, contentType, currentPage, pageSize);
+        return result.getData();
     }
 
     @GetMapping("/popular")
     @Operation(summary = "获取热门内容", description = "根据综合热度排序获取热门内容")
-    public Result<PageResponse<ContentResponse>> getPopularContents(@Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
-                                                                  @Parameter(description = "时间范围(天)") @RequestParam(required = false) Integer timeRange,
-                                                                  @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                  @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST获取热门内容: 类型={}, 时间范围={}", contentType, timeRange);
-        return contentFacadeService.getPopularContents(contentType, timeRange, pageNum, pageSize);
+    public PageResponse<ContentResponse> getPopularContents(@Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
+                                                          @Parameter(description = "时间范围(天)") @RequestParam(required = false) Integer timeRange,
+                                                          @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                          @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST获取热门内容: 类型={}, 时间范围={}，页码：{}", contentType, timeRange, currentPage);
+        Result<PageResponse<ContentResponse>> result = contentFacadeService.getPopularContents(contentType, timeRange, currentPage, pageSize);
+        return result.getData();
     }
 
     @GetMapping("/latest")
     @Operation(summary = "获取最新内容", description = "按发布时间排序获取最新内容")
-    public Result<PageResponse<ContentResponse>> getLatestContents(@Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
-                                                                 @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
-                                                                 @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
-        log.debug("REST获取最新内容: 类型={}", contentType);
-        return contentFacadeService.getLatestContents(contentType, pageNum, pageSize);
+    public PageResponse<ContentResponse> getLatestContents(@Parameter(description = "内容类型") @RequestParam(required = false) String contentType,
+                                                         @Parameter(description = "页码") @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+                                                         @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.debug("REST获取最新内容: 类型={}，页码：{}", contentType, currentPage);
+        Result<PageResponse<ContentResponse>> result = contentFacadeService.getLatestContents(contentType, currentPage, pageSize);
+        return result.getData();
     }
 
     // =================== 数据同步 ===================
@@ -253,5 +267,146 @@ public class ContentController {
                                                 @Parameter(description = "审核意见") @RequestParam(required = false) String reviewComment) {
         log.info("REST审核内容: ID={}, 状态={}, 审核人={}", contentId, reviewStatus, reviewerId);
         return contentFacadeService.reviewContent(contentId, reviewStatus, reviewerId, reviewComment);
+    }
+
+    // =================== 跨模块功能增强 ===================
+
+    @GetMapping("/{id}/like/status")
+    @Operation(summary = "获取用户点赞状态", description = "检查用户是否已点赞该内容")
+    public Result<Boolean> getUserLikeStatus(@PathVariable("id") Long contentId,
+                                           @Parameter(description = "用户ID") @RequestParam Long userId) {
+        log.debug("REST获取用户点赞状态: 内容ID={}, 用户ID={}", contentId, userId);
+        return likeFacadeService.checkLikeStatus(userId, "CONTENT", contentId);
+    }
+
+    @PostMapping("/{id}/like")
+    @Operation(summary = "点赞内容", description = "用户点赞/取消点赞内容") 
+    public Result<Boolean> toggleContentLike(@PathVariable("id") Long contentId,
+                                           @Parameter(description = "用户ID") @RequestParam Long userId) {
+        log.info("REST切换内容点赞状态: 内容ID={}, 用户ID={}", contentId, userId);
+        
+        // 首先检查当前点赞状态
+        var statusResult = likeFacadeService.checkLikeStatus(userId, "CONTENT", contentId);
+        boolean currentlyLiked = statusResult.getSuccess() && statusResult.getData();
+        
+        try {
+            if (currentlyLiked) {
+                // 取消点赞
+                var cancelRequest = new com.gig.collide.api.like.request.LikeCancelRequest();
+                cancelRequest.setUserId(userId);
+                cancelRequest.setLikeType("CONTENT");  
+                cancelRequest.setTargetId(contentId);
+                
+                var result = likeFacadeService.cancelLike(cancelRequest);
+                if (result.getSuccess()) {
+                    contentFacadeService.increaseLikeCount(contentId, -1);
+                    return Result.success(false);
+                }
+                return Result.error("CANCEL_LIKE_FAILED", "取消点赞失败");
+            } else {
+                // 添加点赞
+                var likeRequest = new com.gig.collide.api.like.request.LikeRequest();
+                likeRequest.setUserId(userId);
+                likeRequest.setLikeType("CONTENT");
+                likeRequest.setTargetId(contentId);
+                
+                var result = likeFacadeService.addLike(likeRequest);
+                if (result.getSuccess()) {
+                    contentFacadeService.increaseLikeCount(contentId, 1);
+                    return Result.success(true);
+                }
+                return Result.error("ADD_LIKE_FAILED", "点赞失败");
+            }
+        } catch (Exception e) {
+            log.error("切换点赞状态失败", e);
+            return Result.error("TOGGLE_LIKE_FAILED", "切换点赞状态失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/favorite/status")
+    @Operation(summary = "获取用户收藏状态", description = "检查用户是否已收藏该内容")
+    public Result<Boolean> getUserFavoriteStatus(@PathVariable("id") Long contentId,
+                                                @Parameter(description = "用户ID") @RequestParam Long userId) {
+        log.debug("REST获取用户收藏状态: 内容ID={}, 用户ID={}", contentId, userId);
+        return favoriteFacadeService.checkFavoriteStatus(userId, "CONTENT", contentId);
+    }
+
+    @PostMapping("/{id}/favorite")
+    @Operation(summary = "收藏内容", description = "用户收藏/取消收藏内容")
+    public Result<Boolean> toggleContentFavorite(@PathVariable("id") Long contentId,
+                                               @Parameter(description = "用户ID") @RequestParam Long userId) {
+        log.info("REST切换内容收藏状态: 内容ID={}, 用户ID={}", contentId, userId);
+        
+        // 首先检查当前收藏状态
+        var statusResult = favoriteFacadeService.checkFavoriteStatus(userId, "CONTENT", contentId);
+        boolean currentlyFavorited = statusResult.getSuccess() && statusResult.getData();
+        
+        try {
+            if (currentlyFavorited) {
+                // 取消收藏
+                var deleteRequest = new com.gig.collide.api.favorite.request.FavoriteDeleteRequest();
+                deleteRequest.setUserId(userId);
+                deleteRequest.setFavoriteType("CONTENT");
+                deleteRequest.setTargetId(contentId);
+                
+                var result = favoriteFacadeService.removeFavorite(deleteRequest);
+                if (result.getSuccess()) {
+                    contentFacadeService.increaseFavoriteCount(contentId, -1);
+                    return Result.success(false);
+                }
+                return Result.error("REMOVE_FAVORITE_FAILED", "取消收藏失败");
+            } else {
+                // 添加收藏
+                var favoriteRequest = new com.gig.collide.api.favorite.request.FavoriteCreateRequest();
+                favoriteRequest.setUserId(userId);
+                favoriteRequest.setFavoriteType("CONTENT");
+                favoriteRequest.setTargetId(contentId);
+                
+                var result = favoriteFacadeService.addFavorite(favoriteRequest);
+                if (result.getSuccess()) {
+                    contentFacadeService.increaseFavoriteCount(contentId, 1);
+                    return Result.success(true);
+                }
+                return Result.error("ADD_FAVORITE_FAILED", "收藏失败");
+            }
+        } catch (Exception e) {
+            log.error("切换收藏状态失败", e);
+            return Result.error("TOGGLE_FAVORITE_FAILED", "切换收藏状态失败: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}/interaction")
+    @Operation(summary = "获取用户互动状态", description = "一次性获取用户对该内容的点赞、收藏状态")
+    public Result<Map<String, Object>> getUserInteractionStatus(@PathVariable("id") Long contentId,
+                                                               @Parameter(description = "用户ID") @RequestParam Long userId) {
+        log.debug("REST获取用户互动状态: 内容ID={}, 用户ID={}", contentId, userId);
+        
+        Map<String, Object> interaction = new HashMap<>();
+        
+        try {
+            // 获取点赞状态
+            var likeResult = likeFacadeService.checkLikeStatus(userId, "CONTENT", contentId);
+            interaction.put("isLiked", likeResult.getSuccess() ? likeResult.getData() : false);
+            
+            // 获取收藏状态
+            var favoriteResult = favoriteFacadeService.checkFavoriteStatus(userId, "CONTENT", contentId);
+            interaction.put("isFavorited", favoriteResult.getSuccess() ? favoriteResult.getData() : false);
+            
+            // 获取实时计数
+            var likeCountResult = likeFacadeService.getLikeCount("CONTENT", contentId);
+            interaction.put("likeCount", likeCountResult.getSuccess() ? likeCountResult.getData() : 0);
+            
+            var favoriteCountResult = favoriteFacadeService.getTargetFavoriteCount("CONTENT", contentId);
+            interaction.put("favoriteCount", favoriteCountResult.getSuccess() ? favoriteCountResult.getData() : 0);
+            
+            interaction.put("contentId", contentId);
+            interaction.put("userId", userId);
+            
+            return Result.success(interaction);
+            
+        } catch (Exception e) {
+            log.error("获取用户互动状态失败", e);
+            return Result.error("INTERACTION_STATUS_FAILED", "获取用户互动状态失败: " + e.getMessage());
+        }
     }
 }

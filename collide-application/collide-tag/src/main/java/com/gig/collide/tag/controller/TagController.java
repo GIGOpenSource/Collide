@@ -15,10 +15,11 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 /**
- * 标签管理控制器 - 简洁版
+ * 标签管理控制器 - 缓存增强版
+ * 基于JetCache双级缓存，对齐collide-content设计风格
  *
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (缓存增强版)
  */
 @Slf4j
 @RestController
@@ -32,7 +33,7 @@ public class TagController {
      * 创建标签
      */
     @PostMapping
-    public Result<TagResponse> createTag(@Valid @RequestBody TagCreateRequest request) {
+    public Result<Void> createTag(@Valid @RequestBody TagCreateRequest request) {
         log.info("REST - 创建标签：{}", request);
         return tagFacadeService.createTag(request);
     }

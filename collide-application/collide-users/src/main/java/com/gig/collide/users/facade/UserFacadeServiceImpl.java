@@ -17,9 +17,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.apache.dubbo.config.annotation.DubboService;
+import com.alicp.jetcache.anno.Cached;
+import com.alicp.jetcache.anno.CacheInvalidate;
+import com.alicp.jetcache.anno.CacheUpdate;
+import com.alicp.jetcache.anno.CacheType;
+import com.gig.collide.users.infrastructure.cache.UserCacheConstant;
 
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 用户门面服务实现 - 简洁版
@@ -39,8 +45,11 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     private WalletService walletService;
 
     @Override
-    public Result<UserResponse> createUser(UserCreateRequest request) {
+    @CacheInvalidate(name = UserCacheConstant.USER_LIST_CACHE)
+    public Result<Void> createUser(UserCreateRequest request) {
         try {
+            log.info("创建用户请求: {}", request.getUsername());
+            
             User user = new User();
             BeanUtils.copyProperties(request, user);
             
@@ -49,9 +58,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             user.setStatus("active");
             
             User savedUser = userService.createUser(user);
-            UserResponse response = convertToResponse(savedUser);
             
-            return Result.success(response);
+            log.info("用户创建成功: ID={}", savedUser.getId());
+            return Result.success(null);
         } catch (Exception e) {
             log.error("创建用户失败", e);
             return Result.error("USER_CREATE_ERROR", "创建用户失败: " + e.getMessage());
@@ -59,8 +68,15 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @CacheUpdate(name = UserCacheConstant.USER_DETAIL_CACHE,
+                 key = UserCacheConstant.USER_DETAIL_KEY,
+                 value = "#result.data")
+    @CacheInvalidate(name = UserCacheConstant.USER_LIST_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.USER_USERNAME_CACHE)
     public Result<UserResponse> updateUser(UserUpdateRequest request) {
         try {
+            log.info("更新用户请求: ID={}", request.getId());
+            
             User user = userService.getUserById(request.getId());
             if (user == null) {
                 return Result.error("USER_NOT_FOUND", "用户不存在");
@@ -70,6 +86,7 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             User updatedUser = userService.updateUser(user);
             UserResponse response = convertToResponse(updatedUser);
             
+            log.info("用户更新成功: ID={}", updatedUser.getId());
             return Result.success(response);
         } catch (Exception e) {
             log.error("更新用户失败", e);
@@ -78,8 +95,15 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @Cached(name = UserCacheConstant.USER_DETAIL_CACHE,
+            key = UserCacheConstant.USER_DETAIL_KEY,
+            expire = UserCacheConstant.USER_DETAIL_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
     public Result<UserResponse> getUserById(Long userId) {
         try {
+            log.debug("获取用户详情: ID={}", userId);
+            
             User user = userService.getUserById(userId);
             if (user == null) {
                 return Result.error("USER_NOT_FOUND", "用户不存在");
@@ -94,8 +118,15 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @Cached(name = UserCacheConstant.USER_USERNAME_CACHE,
+            key = UserCacheConstant.USERNAME_KEY,
+            expire = UserCacheConstant.USERNAME_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
     public Result<UserResponse> getUserByUsername(String username) {
         try {
+            log.debug("根据用户名获取用户: username={}", username);
+            
             User user = userService.getUserByUsername(username);
             if (user == null) {
                 return Result.error("USER_NOT_FOUND", "用户不存在");
@@ -110,8 +141,49 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    public Result<UserResponse> getUserProfile(Long userId) {
+        try {
+            log.debug("获取用户个人信息: ID={}", userId);
+            
+            // 获取基础用户信息
+            User user = userService.getUserById(userId);
+            if (user == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            UserResponse response = convertToResponse(user);
+            
+            // 增强用户信息 - 获取钱包信息
+            try {
+                UserWallet wallet = walletService.getWalletByUserId(userId);
+                if (wallet != null) {
+                    response.setWalletBalance(wallet.getBalance());
+                    response.setWalletFrozen(wallet.getFrozenAmount());
+                    response.setWalletStatus(wallet.getStatus());
+                }
+            } catch (Exception e) {
+                log.warn("获取钱包信息失败: userId={}, error={}", userId, e.getMessage());
+                // 不影响主流程，继续返回用户信息
+            }
+            
+            log.debug("用户个人信息获取成功: userId={}", userId);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("获取用户个人信息失败", e);
+            return Result.error("USER_PROFILE_ERROR", "获取用户个人信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = UserCacheConstant.USER_LIST_CACHE,
+            key = UserCacheConstant.USER_LIST_KEY,
+            expire = UserCacheConstant.USER_LIST_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
     public Result<PageResponse<UserResponse>> queryUsers(UserQueryRequest request) {
         try {
+            log.debug("分页查询用户列表: currentPage={}, pageSize={}", request.getCurrentPage(), request.getPageSize());
+            
             PageResponse<User> pageResult = userService.queryUsers(request);
             
             List<UserResponse> responses = pageResult.getDatas().stream()
@@ -159,9 +231,18 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @CacheInvalidate(name = UserCacheConstant.USER_DETAIL_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.USER_LIST_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.USER_USERNAME_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.WALLET_DETAIL_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.WALLET_BALANCE_CACHE)
     public Result<Void> deleteUser(Long userId) {
         try {
+            log.info("删除用户请求: ID={}", userId);
+            
             userService.deleteUser(userId);
+            
+            log.info("用户删除成功: ID={}", userId);
             return Result.success(null);
         } catch (Exception e) {
             log.error("删除用户失败", e);
@@ -183,8 +264,15 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     // =================== 钱包管理功能实现 ===================
 
     @Override
+    @Cached(name = UserCacheConstant.WALLET_DETAIL_CACHE,
+            key = UserCacheConstant.WALLET_DETAIL_KEY,
+            expire = UserCacheConstant.WALLET_DETAIL_EXPIRE,
+            timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
     public Result<WalletResponse> getUserWallet(Long userId) {
         try {
+            log.debug("获取用户钱包: userId={}", userId);
+            
             UserWallet wallet = walletService.getWalletByUserId(userId);
             if (wallet == null) {
                 // 自动创建钱包
@@ -211,6 +299,8 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @CacheInvalidate(name = UserCacheConstant.WALLET_DETAIL_CACHE)
+    @CacheInvalidate(name = UserCacheConstant.WALLET_BALANCE_CACHE)
     public Result<WalletResponse> walletOperation(WalletOperationRequest request) {
         try {
             UserWallet wallet;
