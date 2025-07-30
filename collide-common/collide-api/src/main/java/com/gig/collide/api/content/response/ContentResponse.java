@@ -1,6 +1,7 @@
 package com.gig.collide.api.content.response;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonRawValue;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -48,6 +49,7 @@ public class ContentResponse implements Serializable {
     /**
      * 内容数据，JSON格式
      */
+    @JsonRawValue
     private String contentData;
 
     /**
@@ -58,6 +60,7 @@ public class ContentResponse implements Serializable {
     /**
      * 标签，JSON数组格式
      */
+    @JsonRawValue
     private String tags;
 
     // =================== 作者信息（冗余字段） ===================

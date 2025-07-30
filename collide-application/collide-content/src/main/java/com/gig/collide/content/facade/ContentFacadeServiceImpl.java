@@ -758,6 +758,15 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     private ContentResponse convertToResponse(Content content) {
         ContentResponse response = new ContentResponse();
         BeanUtils.copyProperties(content, response);
+        
+        // 处理JSON字段的安全性
+        if (content.getTags() == null || content.getTags().trim().isEmpty()) {
+            response.setTags("[]");  // 默认空数组
+        }
+        if (content.getContentData() == null || content.getContentData().trim().isEmpty()) {
+            response.setContentData("{}");  // 默认空对象
+        }
+        
         return response;
     }
 
