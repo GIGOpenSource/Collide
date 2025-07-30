@@ -1,54 +1,28 @@
 services:
   mysql:
     image: mysql:8.4.1
-    container_name: mysql
-    ports:
-      - "3306:3306"
+    container_name: mysql-8
     environment:
-      MYSQL_ROOT_PASSWORD: 123456
-      TZ: Asia/Shanghai
-      SET_CONTAINER_TIMEZONE: true
-      CONTAINER_TIMEZONE: Asia/Shanghai
-      MYSQL_DATABASE: nacos-mysql
-      MYSQL_USER: test_user
-      MYSQL_PASSWORD: test123
+      - MYSQL_ROOT_PASSWORD=123456
+      - TZ=Asia/Shanghai
+      - SET_CONTAINER_TIMEZONE=true
+      - CONTAINER_TIMEZONE=Asia/Shanghai
     volumes:
       - ${PWD}/mysql/config:/etc/mysql/conf.d
       - ${PWD}/mysql/data:/var/lib/mysql
       - ${PWD}/mysql/logs:/var/log/mysql
       - /etc/localtime:/etc/localtime:ro
-    restart: unless-stopped
+    ports:
+      - 3306:3306
+    restart: always
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
       interval: 5s
       timeout: 10s
       retries: 10
     networks:
       collide-network:
         ipv4_address: 172.20.1.10
-
-#  # MinIO
-#  minio:
-#    image: minio/minio
-#    container_name: minio
-#    ports:
-#      - "9000:9000"
-#      - "9001:9001"
-#    environment:
-#      MINIO_ROOT_USER: minioadmin
-#      MINIO_ROOT_PASSWORD: minioadmin
-#    volumes:
-#      - ${PWD}/minio_data/data:/data
-#    command: server /data --console-address ":9001"
-#    healthcheck:
-#      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-#      interval: 30s
-#      timeout: 20s
-#      retries: 3
-#    restart: unless-stopped
-#    networks:
-#      collide-network:
-#        ipv4_address: 172.20.1.20
 
   # Nacos
   nacos:
@@ -68,6 +42,29 @@ services:
     networks:
       collide-network:
         ipv4_address: 172.20.1.30
+
+  #  # MinIO
+  #  minio:
+  #    image: minio/minio
+  #    container_name: minio
+  #    ports:
+  #      - "9000:9000"
+  #      - "9001:9001"
+  #    environment:
+  #      MINIO_ROOT_USER: minioadmin
+  #      MINIO_ROOT_PASSWORD: minioadmin
+  #    volumes:
+  #      - ${PWD}/minio_data/data:/data
+  #    command: server /data --console-address ":9001"
+  #    healthcheck:
+  #      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #      interval: 30s
+  #      timeout: 20s
+  #      retries: 3
+  #    restart: unless-stopped
+  #    networks:
+  #      collide-network:
+  #        ipv4_address: 172.20.1.20
 
   # Redis
   redis:
@@ -180,7 +177,6 @@ services:
       - ./nginx.conf:/etc/nginx/nginx.conf
     restart: unless-stopped
 
-# 使用外部网络（由init-network.sh脚本创建）
 networks:
   collide-network:
     external: true
