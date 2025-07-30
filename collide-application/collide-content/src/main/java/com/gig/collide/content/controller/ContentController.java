@@ -147,7 +147,7 @@ public class ContentController {
         return contentFacadeService.increaseViewCount(contentId, increment);
     }
 
-    @PostMapping("/{id}/like")
+    @PostMapping("/{id}/like-count")
     @Operation(summary = "增加点赞数", description = "增加内容的点赞数统计")
     public Result<Long> increaseLikeCount(@PathVariable("id") Long contentId,
                                          @Parameter(description = "增加数量") @RequestParam(defaultValue = "1") Integer increment) {
