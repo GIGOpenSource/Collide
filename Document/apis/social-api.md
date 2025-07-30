@@ -4,10 +4,23 @@
 
 Collide 社交服务提供完整的社交功能，包括动态发布、动态流、社交互动、用户社交关系管理等核心功能。支持多媒体动态、话题标签、社交推荐等特性。
 
-**服务版本**: v1.0.0  
+**服务版本**: v1.1.0  
 **基础路径**: `/api/v1/social`  
 **Dubbo服务**: `collide-social`  
-**设计理念**: 构建活跃的社交生态，促进用户互动和内容传播
+**设计理念**: 构建活跃的社交生态，促进用户互动和内容传播  
+
+### 🎯 核心特性
+- **🔄 跨模块集成**: 通过Dubbo服务调用用户、点赞、评论等模块
+- **⚡ 缓存优化**: 集成JetCache分布式缓存，提升查询性能
+- **📊 数据聚合**: 智能聚合用户互动记录，提供统一的社交数据视图
+- **🔒 权限控制**: 细粒度的隐私控制和内容权限管理
+- **📱 响应式设计**: 支持分页、排序、筛选等灵活的数据查询方式
+
+### 🆕 v1.1.0 新增功能
+- ✅ **用户互动记录聚合接口**: 统一展示点赞和评论的双向互动
+- ✅ **JetCache缓存集成**: 全面的缓存策略优化查询性能
+- ✅ **跨模块数据增强**: 实时同步用户、内容等模块数据
+- ✅ **智能错误处理**: 完善的异常处理和错误码体系
 
 ---
 
@@ -184,12 +197,38 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 #### 请求参数
 - **userId** (path): 用户ID，必填
 - **viewerId** (query): 查看者用户ID，可选
-- **pageNum** (query): 页码，可选
-- **pageSize** (query): 页面大小，可选
+- **currentPage** (query): 页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
+- **dynamicType** (query): 动态类型，可选
+
+#### 特性说明
+- ✅ **分页查询**: 支持分页获取用户动态
+- ✅ **类型筛选**: 支持按动态类型筛选
+- ✅ **权限控制**: 根据查看者权限过滤可见动态
+- ✅ **缓存优化**: 使用JetCache缓存提升查询性能
 
 ---
 
 ## 动态互动 API
+
+### 🔄 社交互动生态概述
+
+Collide 社交模块构建了完整的用户互动生态，通过多维度的互动机制促进用户参与和内容传播：
+
+#### 核心互动类型
+- **👍 点赞系统**: 支持对动态、评论的点赞和取消点赞
+- **💬 评论系统**: 支持多级评论、回复和嵌套讨论  
+- **📤 分享系统**: 支持动态转发和二次传播
+- **⭐ 收藏系统**: 支持用户收藏感兴趣的内容
+- **🚩 举报系统**: 支持举报不当内容，维护社区环境
+
+#### 智能聚合展示
+- **📊 互动聚合**: 统一展示用户的所有社交互动记录
+- **🔔 实时通知**: 区分已读/未读状态，提供及时的互动反馈
+- **⏰ 时间排序**: 按最新时间排序，确保用户获取最新互动信息
+- **🚀 性能优化**: 使用JetCache缓存和分页技术保证查询性能
+
+---
 
 ### 1. 点赞动态
 **接口路径**: `POST /api/v1/social/dynamics/{id}/like`  
@@ -263,6 +302,79 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
   "description": "内容不当"           // 可选，详细描述
 }
 ```
+
+---
+
+### 7. 获取用户互动记录聚合列表
+**接口路径**: `GET /api/v1/social/dynamics/user/{userId}/interactions`  
+**接口描述**: 获取用户的社交互动记录聚合列表，包含点赞和评论的双向互动记录
+
+#### 请求参数
+- **userId** (path): 用户ID，必填
+- **currentPage** (query): 当前页码，可选，默认1
+- **pageSize** (query): 页面大小，可选，默认20
+
+#### 响应示例
+**成功响应 (200)**:
+```json
+{
+  "success": true,
+  "responseCode": "SUCCESS",
+  "responseMessage": "查询成功",
+  "datas": [
+    {
+      "interactionId": 12345,
+      "interactionType": "LIKE_RECEIVE",        // 互动类型：LIKE_GIVE/LIKE_RECEIVE/COMMENT_GIVE/COMMENT_RECEIVE
+      "interactionTime": "2024-01-16T15:30:00",
+      "dynamicId": 789,
+      "dynamicContent": "今天学习了Java设计模式...",
+      "dynamicAuthorId": 12345,
+      "dynamicAuthorName": "技术达人",
+      "dynamicAuthorAvatar": "https://example.com/avatar1.jpg",
+      "interactionUserId": 67890,
+      "interactionUserName": "coding_lover",
+      "interactionUserAvatar": "https://example.com/avatar2.jpg",
+      "commentContent": null,                   // 仅评论类型时有值
+      "isRead": false,
+      "extraData": null
+    },
+    {
+      "interactionId": 12346,
+      "interactionType": "COMMENT_GIVE",
+      "interactionTime": "2024-01-16T14:20:00",
+      "dynamicId": 790,
+      "dynamicContent": "分享一个有趣的技术文章",
+      "dynamicAuthorId": 54321,
+      "dynamicAuthorName": "分享者",
+      "dynamicAuthorAvatar": "https://example.com/avatar3.jpg",
+      "interactionUserId": 12345,
+      "interactionUserName": "技术达人",
+      "interactionUserAvatar": "https://example.com/avatar1.jpg",
+      "commentContent": "很有用的文章，谢谢分享！",
+      "isRead": true,
+      "extraData": null
+    }
+  ],
+  "total": 156,
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 8
+}
+```
+
+#### 互动类型说明
+- **LIKE_GIVE**: 用户点赞别人的动态
+- **LIKE_RECEIVE**: 用户的动态被别人点赞  
+- **COMMENT_GIVE**: 用户评论别人的动态
+- **COMMENT_RECEIVE**: 用户的动态被别人评论
+
+#### 特性说明
+- ✅ **聚合展示**: 统一展示用户的所有社交互动记录
+- ✅ **双向互动**: 同时包含主动互动和被动接收的记录
+- ✅ **时间排序**: 按互动时间倒序排列，最新的在前
+- ✅ **分页支持**: 支持分页查询，提升加载性能
+- ✅ **缓存优化**: 使用JetCache缓存提升查询效率（缓存10分钟）
+- ✅ **已读状态**: 区分已读和未读状态，便于消息提醒
 
 ---
 
@@ -425,8 +537,11 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 | MEDIA_UPLOAD_FAILED | 媒体文件上传失败 |
 | USER_BLOCKED | 用户被屏蔽 |
 | SENSITIVE_CONTENT | 内容包含敏感信息 |
+| INTERACTION_QUERY_ERROR | 互动记录查询失败 |
+| USER_NOT_FOUND | 用户不存在 |
+| CACHE_ERROR | 缓存服务异常 |
 
 ---
 
 **最后更新**: 2024-01-16  
-**文档版本**: v1.0.0
+**文档版本**: v1.1.0 (新增用户互动记录聚合接口)

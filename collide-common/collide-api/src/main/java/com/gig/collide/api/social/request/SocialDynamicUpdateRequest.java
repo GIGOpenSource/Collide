@@ -19,6 +19,9 @@ public class SocialDynamicUpdateRequest {
     @NotNull(message = "动态ID不能为空")
     private Long id;
 
+    @NotNull(message = "用户ID不能为空")
+    private Long userId;
+
     @Size(max = 5000, message = "动态内容长度不能超过5000字符")
     private String content;
 
