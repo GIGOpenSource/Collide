@@ -147,7 +147,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
             IPage<Category> page = categoryService.queryCategories(
                 request.getActualParentId(),
                 request.getActualStatus(),
-                request.getPageNum(),
+                request.getCurrentPage(),
                 request.getPageSize(),
                 request.getOrderBy(),
                 request.getOrderDirection()

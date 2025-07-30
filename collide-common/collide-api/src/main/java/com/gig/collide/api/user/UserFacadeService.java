@@ -3,7 +3,9 @@ package com.gig.collide.api.user;
 import com.gig.collide.api.user.request.UserCreateRequest;
 import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.request.UserUpdateRequest;
+import com.gig.collide.api.user.request.WalletOperationRequest;
 import com.gig.collide.api.user.response.UserResponse;
+import com.gig.collide.api.user.response.WalletResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.*;
 
@@ -60,4 +62,36 @@ public interface UserFacadeService {
      * 更新用户统计数据（关注数、粉丝数、内容数等）
      */
     Result<Void> updateUserStats(Long userId, String statsType, Integer increment);
+
+    // =================== 钱包管理功能 ===================
+
+    /**
+     * 获取用户钱包信息
+     */
+    Result<WalletResponse> getUserWallet(Long userId);
+
+    /**
+     * 创建用户钱包（注册时自动创建）
+     */
+    Result<WalletResponse> createUserWallet(Long userId);
+
+    /**
+     * 钱包余额操作（充值、提现、冻结、解冻）
+     */
+    Result<WalletResponse> walletOperation(WalletOperationRequest request);
+
+    /**
+     * 检查钱包余额是否充足
+     */
+    Result<Boolean> checkWalletBalance(Long userId, java.math.BigDecimal amount);
+
+    /**
+     * 钱包扣款（内部接口，供其他服务调用）
+     */
+    Result<Void> deductWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description);
+
+    /**
+     * 钱包充值（内部接口，供其他服务调用）
+     */
+    Result<Void> addWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description);
 } 

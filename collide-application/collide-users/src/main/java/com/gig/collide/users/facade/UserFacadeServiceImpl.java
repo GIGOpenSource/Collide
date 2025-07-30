@@ -4,10 +4,14 @@ import com.gig.collide.api.user.UserFacadeService;
 import com.gig.collide.api.user.request.UserCreateRequest;
 import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.request.UserUpdateRequest;
+import com.gig.collide.api.user.request.WalletOperationRequest;
 import com.gig.collide.api.user.response.UserResponse;
+import com.gig.collide.api.user.response.WalletResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.User;
+import com.gig.collide.users.domain.entity.UserWallet;
 import com.gig.collide.users.domain.service.UserService;
+import com.gig.collide.users.domain.service.WalletService;
 import com.gig.collide.web.vo.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -30,6 +34,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private WalletService walletService;
 
     @Override
     public Result<UserResponse> createUser(UserCreateRequest request) {
@@ -173,12 +180,129 @@ public class UserFacadeServiceImpl implements UserFacadeService {
         }
     }
 
+    // =================== 钱包管理功能实现 ===================
+
+    @Override
+    public Result<WalletResponse> getUserWallet(Long userId) {
+        try {
+            UserWallet wallet = walletService.getWalletByUserId(userId);
+            if (wallet == null) {
+                // 自动创建钱包
+                wallet = walletService.createWallet(userId);
+            }
+            WalletResponse response = convertToWalletResponse(wallet);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("获取用户钱包失败", e);
+            return Result.error("WALLET_GET_ERROR", "获取用户钱包失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<WalletResponse> createUserWallet(Long userId) {
+        try {
+            UserWallet wallet = walletService.createWallet(userId);
+            WalletResponse response = convertToWalletResponse(wallet);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("创建用户钱包失败", e);
+            return Result.error("WALLET_CREATE_ERROR", "创建用户钱包失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<WalletResponse> walletOperation(WalletOperationRequest request) {
+        try {
+            UserWallet wallet;
+            String operationType = request.getOperationType();
+            
+            switch (operationType) {
+                case "recharge":
+                    wallet = walletService.recharge(request.getUserId(), request.getAmount(), 
+                                                  request.getDescription());
+                    break;
+                case "withdraw":
+                    wallet = walletService.withdraw(request.getUserId(), request.getAmount(), 
+                                                  request.getDescription());
+                    break;
+                case "freeze":
+                    wallet = walletService.freezeAmount(request.getUserId(), request.getAmount(), 
+                                                      request.getDescription());
+                    break;
+                case "unfreeze":
+                    wallet = walletService.unfreezeAmount(request.getUserId(), request.getAmount(), 
+                                                        request.getDescription());
+                    break;
+                default:
+                    return Result.error("INVALID_OPERATION", "不支持的操作类型: " + operationType);
+            }
+            
+            WalletResponse response = convertToWalletResponse(wallet);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("钱包操作失败", e);
+            return Result.error("WALLET_OPERATION_ERROR", "钱包操作失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> checkWalletBalance(Long userId, java.math.BigDecimal amount) {
+        try {
+            boolean sufficient = walletService.checkBalance(userId, amount);
+            return Result.success(sufficient);
+        } catch (Exception e) {
+            log.error("检查钱包余额失败", e);
+            return Result.error("WALLET_CHECK_ERROR", "检查钱包余额失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> deductWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description) {
+        try {
+            boolean success = walletService.deductBalance(userId, amount, businessId, description);
+            if (success) {
+                return Result.success(null);
+            } else {
+                return Result.error("WALLET_DEDUCT_ERROR", "扣款失败：余额不足或钱包状态异常");
+            }
+        } catch (Exception e) {
+            log.error("钱包扣款失败", e);
+            return Result.error("WALLET_DEDUCT_ERROR", "钱包扣款失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> addWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description) {
+        try {
+            boolean success = walletService.addBalance(userId, amount, businessId, description);
+            if (success) {
+                return Result.success(null);
+            } else {
+                return Result.error("WALLET_ADD_ERROR", "充值失败：钱包状态异常");
+            }
+        } catch (Exception e) {
+            log.error("钱包充值失败", e);
+            return Result.error("WALLET_ADD_ERROR", "钱包充值失败: " + e.getMessage());
+        }
+    }
+
     /**
      * 转换为响应对象
      */
     private UserResponse convertToResponse(User user) {
         UserResponse response = new UserResponse();
         BeanUtils.copyProperties(user, response);
+        return response;
+    }
+
+    /**
+     * 转换为钱包响应对象
+     */
+    private WalletResponse convertToWalletResponse(UserWallet wallet) {
+        WalletResponse response = new WalletResponse();
+        BeanUtils.copyProperties(wallet, response);
+        // 计算可用余额
+        response.setAvailableBalance(wallet.getAvailableBalance());
         return response;
     }
 } 

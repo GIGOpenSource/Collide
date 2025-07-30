@@ -81,7 +81,7 @@ public class CategoryController {
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
@@ -92,7 +92,7 @@ public class CategoryController {
         request.setParentId(parentId);
         request.setName(name);
         request.setStatus(status);
-        request.setPageNum(pageNum);
+        request.setCurrentPage(currentPage);
         request.setPageSize(pageSize);
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
@@ -119,19 +119,19 @@ public class CategoryController {
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
         log.info("REST - 获取分类列表，父分类：{}，名称：{}，状态：{}，页码：{}，大小：{}", 
-                parentId, name, status, pageNum, pageSize);
+                parentId, name, status, currentPage, pageSize);
         
         CategoryQueryRequest request = new CategoryQueryRequest();
         request.setParentId(parentId);
         request.setName(name);
         request.setStatus(status);
-        request.setPageNum(pageNum);
+        request.setCurrentPage(currentPage);
         request.setPageSize(pageSize);
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
@@ -147,13 +147,13 @@ public class CategoryController {
      */
     @GetMapping("/root")
     public PageResponse<CategoryResponse> getRootCategories(
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
         log.info("REST - 获取根分类列表");
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getRootCategories(pageNum, pageSize, orderBy, orderDirection);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getRootCategories(currentPage, pageSize, orderBy, orderDirection);
         return result.getData();
     }
 
@@ -163,13 +163,13 @@ public class CategoryController {
     @GetMapping("/{parentId}/children")
     public PageResponse<CategoryResponse> getChildCategories(
             @PathVariable Long parentId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
         log.info("REST - 获取子分类列表，父分类ID：{}", parentId);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getChildCategories(parentId, pageNum, pageSize, orderBy, orderDirection);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getChildCategories(parentId, currentPage, pageSize, orderBy, orderDirection);
         return result.getData();
     }
 
@@ -307,11 +307,11 @@ public class CategoryController {
     @GetMapping("/popular")
     public PageResponse<CategoryResponse> getPopularCategories(
             @RequestParam(required = false) Long parentId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
         log.info("REST - 获取热门分类，父分类：{}", parentId);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getPopularCategories(parentId, pageNum, pageSize);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getPopularCategories(parentId, currentPage, pageSize);
         return result.getData();
     }
 
@@ -324,11 +324,11 @@ public class CategoryController {
     public PageResponse<CategoryResponse> searchCategories(
             @RequestParam String keyword,
             @RequestParam(required = false) Long parentId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
         log.info("REST - 搜索分类，关键词：{}", keyword);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, pageNum, pageSize);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, currentPage, pageSize);
         return result.getData();
     }
 
@@ -372,7 +372,7 @@ public class CategoryController {
     @GetMapping("/leaf")
     public Result<PageResponse<CategoryResponse>> getLeafCategories(
             @RequestParam(required = false) Long parentId,
-            @RequestParam(defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         return Result.error("NOT_IMPLEMENTED", "功能开发中");
     }

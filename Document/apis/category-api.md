@@ -8,6 +8,32 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 **基础路径**: `/api/v1/categories`  
 **设计理念**: 统一分类管理，支持无限级分类层次，提供高效的分类查询和管理
 
+### 📋 响应格式说明
+
+本API提供两种响应格式：
+
+1. **标准Result响应**（POST复杂查询、增删改操作）:
+   ```json
+   {
+     "success": true,
+     "responseCode": "SUCCESS", 
+     "responseMessage": "操作成功",
+     "data": { /* 具体数据 */ }
+   }
+   ```
+
+2. **直接PageResponse响应**（GET简单查询）:
+   ```json
+   {
+     "success": true,
+     "datas": [ /* 数据列表 */ ],
+     "currentPage": 1,
+     "pageSize": 20,
+     "totalPage": 3,
+     "total": 50
+   }
+   ```
+
 ---
 
 ## 分类基础功能 API
@@ -201,7 +227,7 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
   "status": "active",               // 可选，状态筛选
   "startTime": "2024-01-01T00:00:00", // 可选，创建时间开始
   "endTime": "2024-01-31T23:59:59",   // 可选，创建时间结束
-  "pageNum": 1,                     // 必填，页码（从1开始）
+  "currentPage": 1,                 // 必填，页码（从1开始）
   "pageSize": 20,                   // 必填，每页大小
   "orderBy": "sort",                // 可选，排序字段（sort/createTime/updateTime）
   "orderDirection": "ASC"           // 可选，排序方向（ASC/DESC）
@@ -217,10 +243,10 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
   "responseMessage": "查询成功",
   "data": {
     "total": 156,
-    "pageNum": 1,
+    "currentPage": 1,
     "pageSize": 20,
-    "pages": 8,
-    "list": [
+    "totalPage": 8,
+    "datas": [
       {
         "id": 12345,
         "name": "Java编程",
@@ -250,7 +276,7 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 #### 查询参数
 - **parentId** (query): 父分类ID，可选
 - **status** (query): 状态筛选，默认active
-- **pageNum** (query): 页码，默认1
+- **currentPage** (query): 页码，默认1
 - **pageSize** (query): 每页大小，默认20
 - **orderBy** (query): 排序字段，默认sort
 - **orderDirection** (query): 排序方向，默认ASC
@@ -260,27 +286,23 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 ```json
 {
   "success": true,
-  "responseCode": "SUCCESS",
-  "responseMessage": "查询成功",
-  "data": {
-    "total": 50,
-    "pageNum": 1,
-    "pageSize": 20,
-    "pages": 3,
-    "list": [
-      {
-        "id": 1001,
-        "name": "编程语言",
-        "description": "各种编程语言分类",
-        "parentId": null,
-        "level": 1,
-        "sort": 1,
-        "status": "active",
-        "contentCount": 1250,
-        "createTime": "2024-01-01T00:00:00"
-      }
-    ]
-  }
+  "datas": [
+    {
+      "id": 1001,
+      "name": "编程语言",
+      "description": "各种编程语言分类",
+      "parentId": null,
+      "level": 1,
+      "sort": 1,
+      "status": "active",
+      "contentCount": 1250,
+      "createTime": "2024-01-01T00:00:00"
+    }
+  ],
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 3,
+  "total": 50
 }
 ```
 
@@ -293,7 +315,7 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 **接口描述**: 获取所有顶级分类（parentId为null的分类）
 
 #### 查询参数
-- **pageNum** (query): 页码，默认1
+- **currentPage** (query): 页码，默认1
 - **pageSize** (query): 每页大小，默认20
 - **orderBy** (query): 排序字段，默认sort
 - **orderDirection** (query): 排序方向，默认ASC
@@ -303,27 +325,23 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 ```json
 {
   "success": true,
-  "responseCode": "SUCCESS",
-  "responseMessage": "查询成功",
-  "data": {
-    "total": 10,
-    "pageNum": 1,
-    "pageSize": 20,
-    "pages": 1,
-    "list": [
-      {
-        "id": 1001,
-        "name": "编程语言",
-        "description": "各种编程语言分类",
-        "parentId": null,
-        "level": 1,
-        "sort": 1,
-        "status": "active",
-        "contentCount": 1250,
-        "createTime": "2024-01-01T00:00:00"
-      }
-    ]
-  }
+  "datas": [
+    {
+      "id": 1001,
+      "name": "编程语言",
+      "description": "各种编程语言分类",
+      "parentId": null,
+      "level": 1,
+      "sort": 1,
+      "status": "active",
+      "contentCount": 1250,
+      "createTime": "2024-01-01T00:00:00"
+    }
+  ],
+  "currentPage": 1,
+  "pageSize": 20,
+  "totalPage": 1,
+  "total": 10
 }
 ```
 
@@ -493,7 +511,7 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
 #### 查询参数
 - **includeChildren** (query): 是否包含子分类的内容，默认false
 - **contentType** (query): 内容类型筛选，可选
-- **pageNum** (query): 页码，默认1
+- **currentPage** (query): 页码，默认1
 - **pageSize** (query): 每页大小，默认20
 - **orderBy** (query): 排序字段，默认createTime
 - **orderDirection** (query): 排序方向，默认DESC
@@ -507,10 +525,10 @@ Collide 分类服务提供完整的分类管理功能，包括分类的创建、
   "responseMessage": "查询成功",
   "data": {
     "total": 156,
-    "pageNum": 1,
+    "currentPage": 1,
     "pageSize": 20,
-    "pages": 8,
-    "list": [
+    "totalPage": 8,
+    "datas": [
       {
         "contentId": 54321,
         "title": "Java基础教程",
@@ -598,7 +616,7 @@ const categoryTree = await getCategoryTree();
 const contents = await getCategoryContents(javaCategory.id, {
   includeChildren: true,
   contentType: "ARTICLE",
-  pageNum: 1,
+  currentPage: 1,
   pageSize: 20
 });
 ```

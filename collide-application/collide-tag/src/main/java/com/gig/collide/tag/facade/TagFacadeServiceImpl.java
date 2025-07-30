@@ -103,16 +103,7 @@ public class TagFacadeServiceImpl implements TagFacadeService {
                 request.getStatus()
             );
             
-            List<TagResponse> responses = page.getRecords().stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
-            
-            PageResponse<TagResponse> result = new PageResponse<>();
-            result.setDatas(responses);
-            result.setTotal((int) page.getTotal());
-            result.setCurrentPage(request.getCurrentPage());
-            result.setPageSize(request.getPageSize());
-            
+            PageResponse<TagResponse> result = convertToPageResponse(page);
             return Result.success(result);
         } catch (Exception e) {
             log.error("分页查询标签失败", e);
@@ -270,5 +261,31 @@ public class TagFacadeServiceImpl implements TagFacadeService {
         TagResponse response = new TagResponse();
         BeanUtils.copyProperties(tag, response);
         return response;
+    }
+
+    /**
+     * 转换分页结果
+     */
+    private PageResponse<TagResponse> convertToPageResponse(IPage<Tag> page) {
+        PageResponse<TagResponse> response = new PageResponse<>();
+        response.setSuccess(true);  // 设置成功状态
+        response.setDatas(convertToResponseList(page.getRecords()));
+        response.setTotalPage((int) page.getPages());
+        response.setCurrentPage((int) page.getCurrent());
+        response.setPageSize((int) page.getSize());
+        response.setTotal(page.getTotal());
+        return response;
+    }
+
+    /**
+     * 转换实体列表为响应列表
+     */
+    private List<TagResponse> convertToResponseList(List<Tag> tags) {
+        if (tags == null) {
+            return null;
+        }
+        return tags.stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
     }
 } 
