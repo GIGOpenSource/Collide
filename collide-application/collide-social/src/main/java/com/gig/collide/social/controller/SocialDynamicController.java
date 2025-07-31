@@ -67,14 +67,6 @@ public class SocialDynamicController {
         return socialFacadeService.deleteDynamic(dynamicId, operatorId);
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "获取动态详情", description = "根据ID获取动态详情")
-    public Result<SocialDynamicResponse> getDynamicById(@PathVariable("id") Long dynamicId,
-                                                       @Parameter(description = "是否包含已删除的动态") @RequestParam(defaultValue = "false") Boolean includeDeleted) {
-        log.debug("REST获取动态详情: ID={}", dynamicId);
-        return socialFacadeService.getDynamicById(dynamicId, includeDeleted);
-    }
-
     // =================== 动态查询 ===================
 
     @PostMapping("/query")
@@ -92,6 +84,14 @@ public class SocialDynamicController {
             @Parameter(description = "动态类型") @RequestParam(required = false) String dynamicType) {
         log.debug("REST查询最新动态: 页码={}, 大小={}, 类型={}", currentPage, pageSize, dynamicType);
         return socialFacadeService.getLatestDynamics(currentPage, pageSize, dynamicType);
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "获取动态详情", description = "根据ID获取动态详情")
+    public Result<SocialDynamicResponse> getDynamicById(@PathVariable("id") Long dynamicId,
+                                                       @Parameter(description = "是否包含已删除的动态") @RequestParam(defaultValue = "false") Boolean includeDeleted) {
+        log.debug("REST获取动态详情: ID={}", dynamicId);
+        return socialFacadeService.getDynamicById(dynamicId, includeDeleted);
     }
 
     @GetMapping("/user/{userId}")
