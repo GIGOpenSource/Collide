@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserBlockMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="baseColumns">
+        id, user_id, blocked_user_id, user_username, blocked_username, 
+        status, reason, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询拉黑记录 -->
+    <select id="findById" parameterType="long" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询拉黑关系 -->
+    <select id="findByUserAndBlocked" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询用户的拉黑列表 -->
+    <select id="findByUserId" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 查询被拉黑情况 -->
+    <select id="findByBlockedUserId" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 统计用户拉黑数量 -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 统计被拉黑数量 -->
+    <select id="countByBlockedUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 检查拉黑状态 -->
+    <select id="checkBlockStatus" resultType="int">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE user_id = #{userId} 
+        AND blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 分页查询拉黑记录（支持条件查询） -->
+    <select id="findBlocksByCondition" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="blockedUserId != null">
+                AND blocked_user_id = #{blockedUserId}
+            </if>
+            <if test="userUsername != null and userUsername != ''">
+                AND user_username LIKE #{userUsername}
+            </if>
+            <if test="blockedUsername != null and blockedUsername != ''">
+                AND blocked_username LIKE #{blockedUsername}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 统计拉黑记录数量（支持条件查询） -->
+    <select id="countBlocksByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="blockedUserId != null">
+                AND blocked_user_id = #{blockedUserId}
+            </if>
+            <if test="userUsername != null and userUsername != ''">
+                AND user_username LIKE #{userUsername}
+            </if>
+            <if test="blockedUsername != null and blockedUsername != ''">
+                AND blocked_username LIKE #{blockedUsername}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入拉黑记录 -->
+    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.UserBlock" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user_block (
+            user_id, blocked_user_id, user_username, blocked_username, 
+            status, reason, create_time, update_time
+        ) VALUES (
+            #{userId}, #{blockedUserId}, #{userUsername}, #{blockedUsername}, 
+            #{status}, #{reason}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新拉黑记录 -->
+    <update id="updateById" parameterType="com.gig.collide.users.domain.entity.UserBlock">
+        UPDATE t_user_block
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新拉黑状态 -->
+    <update id="updateStatus">
+        UPDATE t_user_block
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 取消拉黑（更新状态为cancelled） -->
+    <update id="cancelBlock">
+        UPDATE t_user_block
+        SET status = 'cancelled', update_time = NOW()
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </update>
+
+    <!-- 删除拉黑记录（物理删除，慎用） -->
+    <delete id="deleteById">
+        DELETE FROM t_user_block
+        WHERE id = #{id}
+    </delete>
+
+</mapper>
