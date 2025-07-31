@@ -4,8 +4,11 @@ import com.gig.collide.api.user.request.UserCreateRequest;
 import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.request.UserUpdateRequest;
 import com.gig.collide.api.user.request.WalletOperationRequest;
+import com.gig.collide.api.user.request.UserBlockCreateRequest;
+import com.gig.collide.api.user.request.UserBlockQueryRequest;
 import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.user.response.WalletResponse;
+import com.gig.collide.api.user.response.UserBlockResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.*;
 
@@ -100,4 +103,51 @@ public interface UserFacadeService {
      * 钱包充值（内部接口，供其他服务调用）
      */
     Result<Void> addWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description);
+
+    // =================== 用户拉黑功能 ===================
+
+    /**
+     * 拉黑用户
+     */
+    Result<UserBlockResponse> blockUser(Long userId, UserBlockCreateRequest request);
+
+    /**
+     * 取消拉黑
+     */
+    Result<Void> unblockUser(Long userId, Long blockedUserId);
+
+    /**
+     * 检查拉黑状态
+     */
+    Result<Boolean> checkBlockStatus(Long userId, Long blockedUserId);
+
+    /**
+     * 获取拉黑关系详情
+     */
+    Result<UserBlockResponse> getBlockRelation(Long userId, Long blockedUserId);
+
+    /**
+     * 获取用户拉黑列表
+     */
+    Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 获取用户被拉黑列表
+     */
+    Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize);
+
+    /**
+     * 分页查询拉黑记录
+     */
+    Result<PageResponse<UserBlockResponse>> queryBlocks(UserBlockQueryRequest request);
+
+    /**
+     * 统计用户拉黑数量
+     */
+    Result<Long> countUserBlocks(Long userId);
+
+    /**
+     * 统计用户被拉黑数量
+     */
+    Result<Long> countUserBlocked(Long blockedUserId);
 } 

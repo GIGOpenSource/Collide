@@ -72,6 +72,31 @@ CREATE TABLE `t_user_wallet` (
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户钱包表';
 
+-- 用户拉黑表（无连表设计）
+DROP TABLE IF EXISTS `t_user_block`;
+CREATE TABLE `t_user_block` (
+    `id`               BIGINT      NOT NULL AUTO_INCREMENT COMMENT '拉黑记录ID',
+    `user_id`          BIGINT      NOT NULL                COMMENT '拉黑者用户ID',
+    `blocked_user_id`  BIGINT      NOT NULL                COMMENT '被拉黑用户ID',
+    
+    -- 冗余用户信息，避免连表查询
+    `user_username`    VARCHAR(50) NOT NULL                COMMENT '拉黑者用户名',
+    `blocked_username` VARCHAR(50) NOT NULL                COMMENT '被拉黑用户名',
+    
+    `status`           VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '拉黑状态：active、cancelled',
+    `reason`           VARCHAR(200)                        COMMENT '拉黑原因',
+    
+    `create_time`      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '拉黑时间',
+    `update_time`      TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_blocked` (`user_id`, `blocked_user_id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_blocked_user_id` (`blocked_user_id`),
+    KEY `idx_status` (`status`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户拉黑关系表';
+
 -- 初始化管理员用户
 INSERT INTO `t_user` (`username`, `nickname`, `email`, `password_hash`, `role`, `status`) VALUES
 ('admin', '系统管理员', 'admin@collide.com', '$2a$10$encrypted_password_hash', 'admin', 'active'),

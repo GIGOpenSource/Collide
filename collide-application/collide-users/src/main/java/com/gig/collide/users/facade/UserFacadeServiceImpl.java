@@ -5,13 +5,18 @@ import com.gig.collide.api.user.request.UserCreateRequest;
 import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.api.user.request.UserUpdateRequest;
 import com.gig.collide.api.user.request.WalletOperationRequest;
+import com.gig.collide.api.user.request.UserBlockCreateRequest;
+import com.gig.collide.api.user.request.UserBlockQueryRequest;
 import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.user.response.WalletResponse;
+import com.gig.collide.api.user.response.UserBlockResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.UserWallet;
+import com.gig.collide.users.domain.entity.UserBlock;
 import com.gig.collide.users.domain.service.UserService;
 import com.gig.collide.users.domain.service.WalletService;
+import com.gig.collide.users.domain.service.UserBlockService;
 import com.gig.collide.web.vo.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -43,6 +48,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Autowired
     private WalletService walletService;
+
+    @Autowired
+    private UserBlockService userBlockService;
 
     @Override
     @CacheInvalidate(name = UserCacheConstant.USER_LIST_CACHE)
@@ -393,6 +401,190 @@ public class UserFacadeServiceImpl implements UserFacadeService {
         BeanUtils.copyProperties(wallet, response);
         // 计算可用余额
         response.setAvailableBalance(wallet.getAvailableBalance());
+        return response;
+    }
+
+    // =================== 用户拉黑功能实现 ===================
+
+    @Override
+    public Result<UserBlockResponse> blockUser(Long userId, UserBlockCreateRequest request) {
+        try {
+            log.info("门面服务-拉黑用户: userId={}, request={}", userId, request);
+            
+            // 获取用户信息
+            User user = userService.getUserById(userId);
+            User blockedUser = userService.getUserById(request.getBlockedUserId());
+            
+            if (user == null || blockedUser == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            // 执行拉黑操作
+            UserBlock userBlock = userBlockService.blockUser(
+                userId, 
+                request.getBlockedUserId(), 
+                user.getUsername(), 
+                blockedUser.getUsername(), 
+                request.getReason()
+            );
+            
+            // 转换为响应对象
+            UserBlockResponse response = convertToUserBlockResponse(userBlock);
+            
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("门面服务-拉黑用户失败", e);
+            return Result.error("USER_BLOCK_ERROR", "拉黑用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> unblockUser(Long userId, Long blockedUserId) {
+        try {
+            log.info("门面服务-取消拉黑: userId={}, blockedUserId={}", userId, blockedUserId);
+            userBlockService.unblockUser(userId, blockedUserId);
+            return Result.success(null);
+        } catch (Exception e) {
+            log.error("门面服务-取消拉黑失败", e);
+            return Result.error("USER_UNBLOCK_ERROR", "取消拉黑失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> checkBlockStatus(Long userId, Long blockedUserId) {
+        try {
+            log.info("门面服务-检查拉黑状态: userId={}, blockedUserId={}", userId, blockedUserId);
+            boolean isBlocked = userBlockService.isBlocked(userId, blockedUserId);
+            return Result.success(isBlocked);
+        } catch (Exception e) {
+            log.error("门面服务-检查拉黑状态失败", e);
+            return Result.error("CHECK_BLOCK_STATUS_ERROR", "检查拉黑状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<UserBlockResponse> getBlockRelation(Long userId, Long blockedUserId) {
+        try {
+            log.info("门面服务-获取拉黑关系: userId={}, blockedUserId={}", userId, blockedUserId);
+            UserBlock userBlock = userBlockService.getBlockRelation(userId, blockedUserId);
+            
+            if (userBlock == null) {
+                return Result.error("BLOCK_RELATION_NOT_FOUND", "拉黑关系不存在");
+            }
+            
+            UserBlockResponse response = convertToUserBlockResponse(userBlock);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("门面服务-获取拉黑关系失败", e);
+            return Result.error("GET_BLOCK_RELATION_ERROR", "获取拉黑关系失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer pageNum, Integer pageSize) {
+        try {
+            log.info("门面服务-获取用户拉黑列表: userId={}, pageNum={}, pageSize={}", userId, pageNum, pageSize);
+            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockList(userId, pageNum, pageSize);
+            
+            // 转换为响应对象
+            PageResponse<UserBlockResponse> result = new PageResponse<>();
+            result.setTotal(pageResponse.getTotal());
+            result.setCurrentPage(pageResponse.getCurrentPage());
+            result.setPageSize(pageResponse.getPageSize());
+            
+            if (pageResponse.getDatas() != null) {
+                result.setDatas(pageResponse.getDatas().stream()
+                    .map(this::convertToUserBlockResponse)
+                    .toList());
+            }
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("门面服务-获取用户拉黑列表失败", e);
+            return Result.error("GET_USER_BLOCK_LIST_ERROR", "获取用户拉黑列表失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize) {
+        try {
+            log.info("门面服务-获取用户被拉黑列表: blockedUserId={}, pageNum={}, pageSize={}", blockedUserId, pageNum, pageSize);
+            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockedList(blockedUserId, pageNum, pageSize);
+            
+            // 转换为响应对象
+            PageResponse<UserBlockResponse> result = new PageResponse<>();
+            result.setTotal(pageResponse.getTotal());
+            result.setCurrentPage(pageResponse.getCurrentPage());
+            result.setPageSize(pageResponse.getPageSize());
+            
+            if (pageResponse.getDatas() != null) {
+                result.setDatas(pageResponse.getDatas().stream()
+                    .map(this::convertToUserBlockResponse)
+                    .toList());
+            }
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("门面服务-获取用户被拉黑列表失败", e);
+            return Result.error("GET_USER_BLOCKED_LIST_ERROR", "获取用户被拉黑列表失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<UserBlockResponse>> queryBlocks(UserBlockQueryRequest request) {
+        try {
+            log.info("门面服务-分页查询拉黑记录: {}", request);
+            PageResponse<UserBlock> pageResponse = userBlockService.queryBlocks(request);
+            
+            // 转换为响应对象
+            PageResponse<UserBlockResponse> result = new PageResponse<>();
+            result.setTotal(pageResponse.getTotal());
+            result.setCurrentPage(pageResponse.getCurrentPage());
+            result.setPageSize(pageResponse.getPageSize());
+            
+            if (pageResponse.getDatas() != null) {
+                result.setDatas(pageResponse.getDatas().stream()
+                    .map(this::convertToUserBlockResponse)
+                    .toList());
+            }
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("门面服务-分页查询拉黑记录失败", e);
+            return Result.error("QUERY_BLOCKS_ERROR", "分页查询拉黑记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countUserBlocks(Long userId) {
+        try {
+            log.info("门面服务-统计用户拉黑数量: userId={}", userId);
+            Long count = userBlockService.countUserBlocks(userId);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("门面服务-统计用户拉黑数量失败", e);
+            return Result.error("COUNT_USER_BLOCKS_ERROR", "统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countUserBlocked(Long blockedUserId) {
+        try {
+            log.info("门面服务-统计用户被拉黑数量: blockedUserId={}", blockedUserId);
+            Long count = userBlockService.countUserBlocked(blockedUserId);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("门面服务-统计用户被拉黑数量失败", e);
+            return Result.error("COUNT_USER_BLOCKED_ERROR", "统计失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 转换为用户拉黑响应对象
+     */
+    private UserBlockResponse convertToUserBlockResponse(UserBlock userBlock) {
+        UserBlockResponse response = new UserBlockResponse();
+        BeanUtils.copyProperties(userBlock, response);
         return response;
     }
 } 
