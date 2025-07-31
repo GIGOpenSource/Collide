@@ -4,7 +4,9 @@ import com.gig.collide.api.user.request.UserQueryRequest;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.service.UserService;
+import com.gig.collide.users.domain.service.WalletService;
 import com.gig.collide.users.infrastructure.mapper.UserMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,11 +20,15 @@ import java.util.List;
  * @author GIG Team
  * @version 2.0.0
  */
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private WalletService walletService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
@@ -46,7 +52,19 @@ public class UserServiceImpl implements UserService {
         user.setLoginCount(0L);
         user.setInvitedCount(0L);
         
+        // 插入用户
         userMapper.insert(user);
+        
+        // 自动创建默认钱包
+        try {
+            walletService.createWallet(user.getId());
+            log.info("用户注册成功，已自动创建默认钱包: userId={}, username={}", user.getId(), user.getUsername());
+        } catch (Exception e) {
+            log.error("用户注册时创建默认钱包失败: userId={}, username={}", user.getId(), user.getUsername(), e);
+            // 注意：这里不抛出异常，避免影响用户注册流程
+            // 钱包创建失败时可以在后续手动创建
+        }
+        
         return user;
     }
 

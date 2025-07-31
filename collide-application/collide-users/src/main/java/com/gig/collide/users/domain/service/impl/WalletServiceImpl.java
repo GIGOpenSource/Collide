@@ -48,89 +48,72 @@ public class WalletServiceImpl implements WalletService {
         return wallet;
     }
 
+
+
     @Override
     @Transactional
-    public UserWallet recharge(Long userId, BigDecimal amount, String description) {
-        log.info("用户{}充值，金额：{}，描述：{}", userId, amount, description);
-        
-        int result = walletMapper.addBalance(userId, amount);
-        if (result <= 0) {
-            throw new RuntimeException("充值失败：钱包状态异常");
-        }
+    public boolean freezeAmount(Long userId, BigDecimal amount, String businessId, String description) {
+        log.info("用户{}冻结金额，金额：{}，业务ID：{}，描述：{}", userId, amount, businessId, description);
 
-        return getWalletByUserId(userId);
+        try {
+            UserWallet wallet = getWalletByUserId(userId);
+            if (wallet == null) {
+                log.error("冻结失败：钱包不存在，用户ID：{}", userId);
+                return false;
+            }
+
+            if (!wallet.hasSufficientBalance(amount)) {
+                log.error("冻结失败：可用余额不足，用户ID：{}，需要金额：{}，可用余额：{}", userId, amount, wallet.getAvailableBalance());
+                return false;
+            }
+
+            // 减少可用余额，增加冻结金额
+            int deductResult = walletMapper.updateBalance(userId, amount, false);
+            int freezeResult = walletMapper.updateFrozenAmount(userId, amount, true);
+
+            if (deductResult <= 0 || freezeResult <= 0) {
+                log.error("冻结失败：数据库操作失败，用户ID：{}，金额：{}", userId, amount);
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("冻结失败：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage());
+            return false;
+        }
     }
 
     @Override
     @Transactional
-    public UserWallet withdraw(Long userId, BigDecimal amount, String description) {
-        log.info("用户{}提现，金额：{}，描述：{}", userId, amount, description);
+    public boolean unfreezeAmount(Long userId, BigDecimal amount, String businessId, String description) {
+        log.info("用户{}解冻金额，金额：{}，业务ID：{}，描述：{}", userId, amount, businessId, description);
 
-        UserWallet wallet = getWalletByUserId(userId);
-        if (wallet == null) {
-            throw new RuntimeException("钱包不存在");
+        try {
+            UserWallet wallet = getWalletByUserId(userId);
+            if (wallet == null) {
+                log.error("解冻失败：钱包不存在，用户ID：{}", userId);
+                return false;
+            }
+
+            if (wallet.getFrozenAmount().compareTo(amount) < 0) {
+                log.error("解冻失败：冻结金额不足，用户ID：{}，需要解冻：{}，冻结金额：{}", userId, amount, wallet.getFrozenAmount());
+                return false;
+            }
+
+            // 减少冻结金额，增加可用余额
+            int unfreezeResult = walletMapper.updateFrozenAmount(userId, amount, false);
+            int addResult = walletMapper.updateBalance(userId, amount, true);
+
+            if (unfreezeResult <= 0 || addResult <= 0) {
+                log.error("解冻失败：数据库操作失败，用户ID：{}，金额：{}", userId, amount);
+                return false;
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("解冻失败：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage());
+            return false;
         }
-
-        if (!wallet.hasSufficientBalance(amount)) {
-            throw new RuntimeException("余额不足");
-        }
-
-        int result = walletMapper.deductBalance(userId, amount);
-        if (result <= 0) {
-            throw new RuntimeException("提现失败：余额不足或钱包状态异常");
-        }
-
-        return getWalletByUserId(userId);
-    }
-
-    @Override
-    @Transactional
-    public UserWallet freezeAmount(Long userId, BigDecimal amount, String description) {
-        log.info("用户{}冻结金额，金额：{}，描述：{}", userId, amount, description);
-
-        UserWallet wallet = getWalletByUserId(userId);
-        if (wallet == null) {
-            throw new RuntimeException("钱包不存在");
-        }
-
-        if (!wallet.hasSufficientBalance(amount)) {
-            throw new RuntimeException("可用余额不足");
-        }
-
-        // 减少可用余额，增加冻结金额
-        int deductResult = walletMapper.updateBalance(userId, amount, false);
-        int freezeResult = walletMapper.updateFrozenAmount(userId, amount, true);
-
-        if (deductResult <= 0 || freezeResult <= 0) {
-            throw new RuntimeException("冻结失败：余额不足");
-        }
-
-        return getWalletByUserId(userId);
-    }
-
-    @Override
-    @Transactional
-    public UserWallet unfreezeAmount(Long userId, BigDecimal amount, String description) {
-        log.info("用户{}解冻金额，金额：{}，描述：{}", userId, amount, description);
-
-        UserWallet wallet = getWalletByUserId(userId);
-        if (wallet == null) {
-            throw new RuntimeException("钱包不存在");
-        }
-
-        if (wallet.getFrozenAmount().compareTo(amount) < 0) {
-            throw new RuntimeException("冻结金额不足");
-        }
-
-        // 减少冻结金额，增加可用余额
-        int unfreezeResult = walletMapper.updateFrozenAmount(userId, amount, false);
-        int addResult = walletMapper.updateBalance(userId, amount, true);
-
-        if (unfreezeResult <= 0 || addResult <= 0) {
-            throw new RuntimeException("解冻失败：冻结金额不足");
-        }
-
-        return getWalletByUserId(userId);
     }
 
     @Override

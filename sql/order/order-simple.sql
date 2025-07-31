@@ -18,6 +18,8 @@ CREATE TABLE `t_order` (
   `goods_name`   VARCHAR(200)                         COMMENT '商品名称（冗余）',
   `goods_price`  DECIMAL(10,2) NOT NULL              COMMENT '商品单价（冗余）',
   `goods_cover`  VARCHAR(500)                         COMMENT '商品封面（冗余）',
+  `goods_category_name` VARCHAR(100)                  COMMENT '商品分类名称（冗余）',
+  `goods_coin_amount` DECIMAL(15,2)                   COMMENT '商品金币数量（冗余，仅金币类商品有效）',
   
   `quantity`     INT          NOT NULL DEFAULT 1     COMMENT '购买数量',
   `total_amount` DECIMAL(10,2) NOT NULL              COMMENT '订单总金额',

@@ -2,11 +2,14 @@ package com.gig.collide.order.domain.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.gig.collide.api.user.UserFacadeService;
 import com.gig.collide.order.domain.entity.Order;
 import com.gig.collide.order.domain.service.OrderService;
 import com.gig.collide.order.infrastructure.mapper.OrderMapper;
+import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +33,9 @@ import java.util.Random;
 public class OrderServiceImpl implements OrderService {
 
     private final OrderMapper orderMapper;
+
+    @DubboReference
+    private UserFacadeService userFacadeService;
     private final Random random = new Random();
 
     @Override
@@ -99,6 +105,37 @@ public class OrderServiceImpl implements OrderService {
                 // 重新查询更新后的订单
                 order = orderMapper.selectById(orderId);
                 log.info("订单支付成功，订单号: {}, 第三方交易号: {}", order.getOrderNo(), thirdPartyTradeNo);
+                
+                // 5. 🪙 金币类商品支付成功后自动增加钱包余额
+                if (order.isCoinGoods()) {
+                    try {
+                        BigDecimal coinAmount = order.getTotalCoinAmount();
+                        log.info("检测到金币类商品订单支付成功，开始增加用户钱包余额: userId={}, coinAmount={}, payAmount={}, orderNo={}", 
+                                order.getUserId(), coinAmount, order.getFinalAmount(), order.getOrderNo());
+                        
+                        Result<Void> walletResult = userFacadeService.addWalletBalance(
+                            order.getUserId(), 
+                            coinAmount,  // 🔑 使用金币数量而不是支付金额
+                            order.getOrderNo(), 
+                            String.format("购买金币：%s (数量×%d=%.2f金币)", 
+                                order.getGoodsName(), order.getQuantity(), coinAmount)
+                        );
+                        
+                        if (walletResult.getSuccess()) {
+                            log.info("✅ 金币充值成功: userId={}, coinAmount={}, orderNo={}", 
+                                    order.getUserId(), coinAmount, order.getOrderNo());
+                        } else {
+                            log.error("❌ 金币充值失败: userId={}, coinAmount={}, orderNo={}, error={}", 
+                                    order.getUserId(), coinAmount, order.getOrderNo(), walletResult.getMessage());
+                            // 注意：这里不抛出异常，避免影响订单支付流程，但需要记录错误日志
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ 金币充值异常: userId={}, orderNo={}", 
+                                order.getUserId(), order.getOrderNo(), e);
+                        // 不影响主流程，但需要后续补偿处理
+                    }
+                }
+                
                 return order;
             } else {
                 throw new RuntimeException("更新支付信息失败");
@@ -194,10 +231,48 @@ public class OrderServiceImpl implements OrderService {
         log.info("更新订单状态，订单ID: {}, 新状态: {}", orderId, status);
         
         try {
+            // 先获取订单信息，用于后续的钱包操作判断
+            Order order = orderMapper.selectById(orderId);
+            if (order == null) {
+                log.error("订单不存在，订单ID: {}", orderId);
+                return false;
+            }
+            
             int result = orderMapper.updateOrderStatus(orderId, status);
             
             if (result > 0) {
                 log.info("订单状态更新成功，订单ID: {}", orderId);
+                
+                // 💰 处理退款时的钱包操作
+                if ("refunded".equals(status) && order.isCoinGoods()) {
+                    try {
+                        BigDecimal coinAmount = order.getTotalCoinAmount();
+                        log.info("检测到金币类商品订单退款，开始减少用户钱包余额: userId={}, coinAmount={}, refundAmount={}, orderNo={}", 
+                                order.getUserId(), coinAmount, order.getFinalAmount(), order.getOrderNo());
+                        
+                        Result<Void> walletResult = userFacadeService.deductWalletBalance(
+                            order.getUserId(), 
+                            coinAmount,  // 🔑 使用金币数量而不是退款金额
+                            order.getOrderNo(), 
+                            String.format("退款扣减：%s (数量×%d=%.2f金币)", 
+                                order.getGoodsName(), order.getQuantity(), coinAmount)
+                        );
+                        
+                        if (walletResult.getSuccess()) {
+                            log.info("✅ 金币退款扣减成功: userId={}, coinAmount={}, orderNo={}", 
+                                    order.getUserId(), coinAmount, order.getOrderNo());
+                        } else {
+                            log.error("❌ 金币退款扣减失败: userId={}, coinAmount={}, orderNo={}, error={}", 
+                                    order.getUserId(), coinAmount, order.getOrderNo(), walletResult.getMessage());
+                            // 注意：这里不抛出异常，避免影响订单状态更新，但需要记录错误日志用于后续补偿
+                        }
+                    } catch (Exception e) {
+                        log.error("❌ 金币退款扣减异常: userId={}, orderNo={}", 
+                                order.getUserId(), order.getOrderNo(), e);
+                        // 不影响主流程，但需要后续补偿处理
+                    }
+                }
+                
                 return true;
             } else {
                 log.warn("订单状态更新失败，订单ID: {}", orderId);

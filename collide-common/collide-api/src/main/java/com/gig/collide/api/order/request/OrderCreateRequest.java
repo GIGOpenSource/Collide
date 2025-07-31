@@ -65,6 +65,16 @@ public class OrderCreateRequest implements Serializable {
      */
     private String goodsCover;
 
+    /**
+     * 商品分类名称 - 冗余字段（用于金币类商品判断）
+     */
+    private String goodsCategoryName;
+
+    /**
+     * 商品金币数量 - 冗余字段（仅金币类商品有效）
+     */
+    private BigDecimal goodsCoinAmount;
+
     // =================== 订单金额信息 ===================
     
     /**

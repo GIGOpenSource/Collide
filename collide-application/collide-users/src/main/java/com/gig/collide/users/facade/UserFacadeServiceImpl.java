@@ -307,40 +307,11 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    @CacheInvalidate(name = UserCacheConstant.WALLET_DETAIL_CACHE)
-    @CacheInvalidate(name = UserCacheConstant.WALLET_BALANCE_CACHE)
     public Result<WalletResponse> walletOperation(WalletOperationRequest request) {
-        try {
-            UserWallet wallet;
-            String operationType = request.getOperationType();
-            
-            switch (operationType) {
-                case "recharge":
-                    wallet = walletService.recharge(request.getUserId(), request.getAmount(), 
-                                                  request.getDescription());
-                    break;
-                case "withdraw":
-                    wallet = walletService.withdraw(request.getUserId(), request.getAmount(), 
-                                                  request.getDescription());
-                    break;
-                case "freeze":
-                    wallet = walletService.freezeAmount(request.getUserId(), request.getAmount(), 
-                                                      request.getDescription());
-                    break;
-                case "unfreeze":
-                    wallet = walletService.unfreezeAmount(request.getUserId(), request.getAmount(), 
-                                                        request.getDescription());
-                    break;
-                default:
-                    return Result.error("INVALID_OPERATION", "不支持的操作类型: " + operationType);
-            }
-            
-            WalletResponse response = convertToWalletResponse(wallet);
-            return Result.success(response);
-        } catch (Exception e) {
-            log.error("钱包操作失败", e);
-            return Result.error("WALLET_OPERATION_ERROR", "钱包操作失败: " + e.getMessage());
-        }
+        // 🔒 安全限制：禁止通过门面服务直接操作钱包金额
+        log.warn("钱包直接操作已被禁用，操作类型: {}, 用户ID: {}", request.getOperationType(), request.getUserId());
+        return Result.error("OPERATION_FORBIDDEN", 
+            "出于安全考虑，钱包金额变动只能通过订单系统。请使用相应的业务流程（如购买金币、订单支付等）");
     }
 
     @Override

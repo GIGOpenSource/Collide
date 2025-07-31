@@ -77,6 +77,18 @@ public class Order {
     @TableField("goods_cover")
     private String goodsCover;
 
+    /**
+     * 商品分类名称（冗余）
+     */
+    @TableField("goods_category_name")
+    private String goodsCategoryName;
+
+    /**
+     * 商品金币数量（冗余，仅金币类商品有效）
+     */
+    @TableField("goods_coin_amount")
+    private BigDecimal goodsCoinAmount;
+
     // =================== 订单金额信息 ===================
     
     /**
@@ -171,5 +183,22 @@ public class Order {
      */
     public boolean isCancelled() {
         return "cancelled".equals(status);
+    }
+
+    /**
+     * 判断是否为金币类商品订单
+     */
+    public boolean isCoinGoods() {
+        return "金币".equals(goodsCategoryName);
+    }
+
+    /**
+     * 获取总金币数量（商品金币数量 * 购买数量）
+     */
+    public BigDecimal getTotalCoinAmount() {
+        if (goodsCoinAmount == null || quantity == null) {
+            return BigDecimal.ZERO;
+        }
+        return goodsCoinAmount.multiply(BigDecimal.valueOf(quantity));
     }
 }
