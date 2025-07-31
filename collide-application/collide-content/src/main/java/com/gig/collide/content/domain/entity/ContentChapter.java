@@ -111,4 +111,40 @@ public class ContentChapter {
         }
         return Math.max(1, (int) Math.ceil(wordCount / 300.0));
     }
+
+    /**
+     * 计算字数
+     */
+    public void calculateWordCount() {
+        if (content != null) {
+            // 简单的字数计算（去除空格和换行）
+            String cleanContent = content.replaceAll("\\s+", "");
+            this.wordCount = cleanContent.length();
+        } else {
+            this.wordCount = 0;
+        }
+    }
+
+    /**
+     * 验证章节数据是否有效
+     */
+    public boolean isValid() {
+        return title != null && !title.trim().isEmpty() 
+               && content != null && !content.trim().isEmpty()
+               && chapterNum != null && chapterNum > 0;
+    }
+
+    /**
+     * 判断是否可以发布
+     */
+    public boolean canPublish() {
+        return isDraft() && isValid();
+    }
+
+    /**
+     * 判断是否可以编辑
+     */
+    public boolean canEdit() {
+        return isDraft() || isPublished();
+    }
 }

@@ -16,7 +16,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,31 +23,63 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- * 内容管理控制器 - 简洁版
- * 基于content-simple.sql的双表设计，提供HTTP REST接口
- * 支持评分功能、章节管理、内容审核
+ * 内容核心管理控制器
+ * 专注于内容的基础管理功能，与其他专业控制器协同工作
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * <h3>职责范围：</h3>
+ * <ul>
+ *   <li><b>内容CRUD：</b>创建、查询、更新、删除、发布、下线内容</li>
+ *   <li><b>章节管理：</b>多章节内容（小说、漫画）的章节操作</li>
+ *   <li><b>基础统计：</b>浏览量、点赞数、评论数、收藏数、评分</li>
+ *   <li><b>内容检索：</b>按作者、分类、关键词、热度等维度查询</li>
+ *   <li><b>数据同步：</b>作者信息、分类信息同步，内容审核</li>
+ *   <li><b>社交集成：</b>与点赞、收藏模块的集成功能</li>
+ * </ul>
+ * 
+ * <h3>协同控制器：</h3>
+ * <ul>
+ *   <li><b>ContentPurchaseController：</b>处理内容购买、权限验证、购买记录</li>
+ *   <li><b>ContentPaymentController：</b>管理付费配置、价格策略、销售分析</li>
+ * </ul>
+ * 
+ * @author GIG Team
+ * @version 2.0.0 (内容付费版)
+ * @since 2024-01-31
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/content")
 @RequiredArgsConstructor
-@Tag(name = "内容管理", description = "内容管理相关接口 - 简洁版")
+@Tag(name = "内容核心管理", description = "内容基础管理、章节管理、统计分析、社交集成等核心功能")
 public class ContentController {
 
-    @Autowired
-    private ContentFacadeService contentFacadeService;
-    
-    @Autowired
-    private LikeFacadeService likeFacadeService;
-    
-    @Autowired
-    private FavoriteFacadeService favoriteFacadeService;
+    private final ContentFacadeService contentFacadeService;
+    private final LikeFacadeService likeFacadeService;
+    private final FavoriteFacadeService favoriteFacadeService;
 
-    // =================== 内容管理 ===================
+    /*
+     * =================== 控制器分工说明 ===================
+     * 
+     * ContentController (当前)：
+     * - 路径前缀：/api/v1/content
+     * - 职责：内容核心管理、章节管理、基础统计、检索发现、社交集成
+     * 
+     * ContentPurchaseController：
+     * - 路径前缀：/api/v1/content/purchase
+     * - 职责：内容购买、权限验证、购买记录查询、用户推荐
+     * 
+     * ContentPaymentController：
+     * - 路径前缀：/api/v1/content/payment
+     * - 职责：付费配置管理、价格策略、销售统计、收益分析
+     * 
+     * 这种设计确保了：
+     * 1. 职责单一：每个控制器专注特定领域
+     * 2. 路径清晰：通过URL即可识别功能归属
+     * 3. 扩展灵活：可独立开发和维护各功能模块
+     */
+
+    // =================== 内容基础管理 ===================
+    // 负责内容的核心CRUD操作，不涉及付费和购买逻辑
 
     @PostMapping("/create")
     @Operation(summary = "创建内容", description = "创建新内容，支持多种类型：NOVEL、COMIC、VIDEO、ARTICLE、AUDIO")
@@ -104,6 +135,7 @@ public class ContentController {
     }
 
     // =================== 章节管理 ===================
+    // 专门处理多章节内容（小说、漫画等）的章节操作
 
     @PostMapping("/chapter/create")
     @Operation(summary = "创建章节", description = "为小说、漫画等多章节内容创建新章节")
@@ -138,7 +170,8 @@ public class ContentController {
         return contentFacadeService.publishChapter(chapterId, authorId);
     }
 
-    // =================== 统计管理 ===================
+    // =================== 基础统计管理 ===================
+    // 处理内容的基础统计指标，不包含付费相关的销售统计
 
     @PostMapping("/{id}/view")
     @Operation(summary = "增加浏览量", description = "增加内容的浏览量统计")
@@ -177,13 +210,14 @@ public class ContentController {
     }
 
     @GetMapping("/{id}/statistics")
-    @Operation(summary = "获取内容统计", description = "获取内容的完整统计信息，包括评分")
+    @Operation(summary = "获取内容基础统计", description = "获取内容的基础统计信息（浏览、点赞、评论、收藏、评分），不包含付费相关统计")
     public Result<Map<String, Object>> getContentStatistics(@PathVariable("id") Long contentId) {
         log.debug("REST获取内容统计: ID={}", contentId);
         return contentFacadeService.getContentStatistics(contentId);
     }
 
-    // =================== 内容查询 ===================
+    // =================== 内容检索与发现 ===================
+    // 提供多维度的内容查询功能，支持个性化推荐
 
     @GetMapping("/author/{authorId}")
     @Operation(summary = "根据作者查询内容", description = "分页查询指定作者的内容列表")
@@ -240,7 +274,8 @@ public class ContentController {
         return result.getData();
     }
 
-    // =================== 数据同步 ===================
+    // =================== 数据同步与审核 ===================
+    // 处理跨模块数据同步和内容审核流程
 
     @PostMapping("/sync/author")
     @Operation(summary = "同步作者信息", description = "更新内容表中的冗余作者信息")
@@ -269,7 +304,8 @@ public class ContentController {
         return contentFacadeService.reviewContent(contentId, reviewStatus, reviewerId, reviewComment);
     }
 
-    // =================== 跨模块功能增强 ===================
+    // =================== 社交功能集成 ===================
+    // 与点赞、收藏模块的集成，提供用户互动功能
 
     @GetMapping("/{id}/like/status")
     @Operation(summary = "获取用户点赞状态", description = "检查用户是否已点赞该内容")

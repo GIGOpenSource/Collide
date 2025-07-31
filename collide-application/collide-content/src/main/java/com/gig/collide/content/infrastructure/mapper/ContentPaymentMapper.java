@@ -5,7 +5,7 @@ import com.gig.collide.content.domain.entity.ContentPayment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
+import java.util.*;
 
 /**
  * 内容付费配置表数据映射接口
@@ -102,7 +102,7 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 统计各付费类型的数量
      */
-    List<Object> countByPaymentType();
+    List<Map<String, Object>> countByPaymentType();
 
     /**
      * 统计活跃配置数量
@@ -112,7 +112,7 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 获取价格统计信息
      */
-    Object getPriceStats();
+    Map<String, Object> getPriceStats();
 
     /**
      * 获取销售排行榜
@@ -153,15 +153,15 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 获取总销售统计
      */
-    Object getTotalSalesStats();
+    Map<String, Object> getTotalSalesStats();
 
     /**
      * 获取月度销售统计
      */
-    List<Object> getMonthlySalesStats(@Param("months") Integer months);
+    List<Map<String, Object>> getMonthlySalesStats(@Param("months") Integer months);
 
     /**
      * 获取付费转化率统计
      */
-    Object getConversionStats();
+    Map<String, Object> getConversionStats();
 }

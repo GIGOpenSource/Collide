@@ -202,4 +202,56 @@ public class Content {
     public boolean isViewable() {
         return isPublished() && isApproved();
     }
+
+    /**
+     * 发布内容
+     */
+    public void publish() {
+        this.status = "PUBLISHED";
+        if (this.publishTime == null) {
+            this.publishTime = LocalDateTime.now();
+        }
+    }
+
+    /**
+     * 下线内容
+     */
+    public void offline() {
+        this.status = "OFFLINE";
+    }
+
+    /**
+     * 审核通过
+     */
+    public void approveReview() {
+        this.reviewStatus = "APPROVED";
+    }
+
+    /**
+     * 审核拒绝
+     */
+    public void rejectReview() {
+        this.reviewStatus = "REJECTED";
+    }
+
+    /**
+     * 判断是否可以发布
+     */
+    public boolean canPublish() {
+        return "DRAFT".equals(status) && "APPROVED".equals(reviewStatus);
+    }
+
+    /**
+     * 判断是否可以编辑
+     */
+    public boolean canEdit() {
+        return "DRAFT".equals(status) || "PUBLISHED".equals(status);
+    }
+
+    /**
+     * 判断是否可以删除
+     */
+    public boolean canDelete() {
+        return "DRAFT".equals(status);
+    }
 }

@@ -11,9 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 内容业务逻辑实现类 - 简洁版
@@ -135,9 +133,48 @@ public class ContentServiceImpl implements ContentService {
                                      Long authorId, Long categoryId, String status, String reviewStatus,
                                      String orderBy, String orderDirection) {
         
-        return contentMapper.findWithConditions(page, title, contentType, authorId, categoryId,
-                                               status, reviewStatus, null, null, null, null, null,
-                                               orderBy, orderDirection);
+        // 简化实现：使用MyBatis-Plus的条件查询
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        
+        if (StringUtils.hasText(title)) {
+            queryWrapper.like(Content::getTitle, title);
+        }
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        if (authorId != null) {
+            queryWrapper.eq(Content::getAuthorId, authorId);
+        }
+        if (categoryId != null) {
+            queryWrapper.eq(Content::getCategoryId, categoryId);
+        }
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(Content::getStatus, status);
+        }
+        if (StringUtils.hasText(reviewStatus)) {
+            queryWrapper.eq(Content::getReviewStatus, reviewStatus);
+        }
+        
+        // 排序
+        if ("desc".equalsIgnoreCase(orderDirection)) {
+            if ("createTime".equals(orderBy)) {
+                queryWrapper.orderByDesc(Content::getCreateTime);
+            } else if ("viewCount".equals(orderBy)) {
+                queryWrapper.orderByDesc(Content::getViewCount);
+            } else {
+                queryWrapper.orderByDesc(Content::getId);
+            }
+        } else {
+            if ("createTime".equals(orderBy)) {
+                queryWrapper.orderByAsc(Content::getCreateTime);
+            } else if ("viewCount".equals(orderBy)) {
+                queryWrapper.orderByAsc(Content::getViewCount);
+            } else {
+                queryWrapper.orderByAsc(Content::getId);
+            }
+        }
+        
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     // =================== 状态管理 ===================
@@ -221,32 +258,82 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public Page<Content> getContentsByAuthor(Page<Content> page, Long authorId, String contentType, String status) {
-        return contentMapper.findByAuthor(page, authorId, contentType, status);
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getAuthorId, authorId);
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(Content::getStatus, status);
+        }
+        queryWrapper.orderByDesc(Content::getCreateTime);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public Page<Content> getContentsByCategory(Page<Content> page, Long categoryId, String contentType) {
-        return contentMapper.findByCategory(page, categoryId, contentType, "PUBLISHED");
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getCategoryId, categoryId)
+                   .eq(Content::getStatus, "PUBLISHED");
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        queryWrapper.orderByDesc(Content::getCreateTime);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public Page<Content> searchContents(Page<Content> page, String keyword, String contentType) {
-        return contentMapper.searchContents(page, keyword, contentType, "PUBLISHED");
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED");
+        if (StringUtils.hasText(keyword)) {
+            queryWrapper.and(wrapper -> wrapper
+                .like(Content::getTitle, keyword)
+                .or()
+                .like(Content::getDescription, keyword));
+        }
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        queryWrapper.orderByDesc(Content::getViewCount);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public Page<Content> getPopularContents(Page<Content> page, String contentType, Integer timeRange) {
-        return contentMapper.findPopularContents(page, contentType, timeRange, null, null);
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED");
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        // 按浏览量排序
+        queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public Page<Content> getLatestContents(Page<Content> page, String contentType) {
-        return contentMapper.findLatestContents(page, contentType, "PUBLISHED");
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED");
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        queryWrapper.orderByDesc(Content::getPublishTime);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public Page<Content> getContentsByScore(Page<Content> page, Double minScore, String contentType) {
-        return contentMapper.findByScore(page, minScore, contentType);
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED");
+        if (minScore != null) {
+            queryWrapper.ge(Content::getAverageScore, minScore);
+        }
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        queryWrapper.orderByDesc(Content::getAverageScore);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     // =================== 统计功能 ===================
@@ -256,10 +343,14 @@ public class ContentServiceImpl implements ContentService {
     public Long increaseViewCount(Long contentId, Integer increment) {
         log.debug("增加浏览量: ID={}, 增量={}", contentId, increment);
         
-        contentMapper.increaseViewCount(contentId, increment);
-        
+        // 使用MyBatis-Plus更新方式
         Content content = contentMapper.selectById(contentId);
-        return content != null ? content.getViewCount() : 0L;
+        if (content != null) {
+            content.setViewCount((content.getViewCount() != null ? content.getViewCount() : 0L) + increment);
+            contentMapper.updateById(content);
+            return content.getViewCount();
+        }
+        return 0L;
     }
 
     @Override
@@ -267,10 +358,13 @@ public class ContentServiceImpl implements ContentService {
     public Long increaseLikeCount(Long contentId, Integer increment) {
         log.debug("增加点赞数: ID={}, 增量={}", contentId, increment);
         
-        contentMapper.increaseLikeCount(contentId, increment);
-        
         Content content = contentMapper.selectById(contentId);
-        return content != null ? content.getLikeCount() : 0L;
+        if (content != null) {
+            content.setLikeCount((content.getLikeCount() != null ? content.getLikeCount() : 0L) + increment);
+            contentMapper.updateById(content);
+            return content.getLikeCount();
+        }
+        return 0L;
     }
 
     @Override
@@ -278,10 +372,13 @@ public class ContentServiceImpl implements ContentService {
     public Long increaseCommentCount(Long contentId, Integer increment) {
         log.debug("增加评论数: ID={}, 增量={}", contentId, increment);
         
-        contentMapper.increaseCommentCount(contentId, increment);
-        
         Content content = contentMapper.selectById(contentId);
-        return content != null ? content.getCommentCount() : 0L;
+        if (content != null) {
+            content.setCommentCount((content.getCommentCount() != null ? content.getCommentCount() : 0L) + increment);
+            contentMapper.updateById(content);
+            return content.getCommentCount();
+        }
+        return 0L;
     }
 
     @Override
@@ -289,10 +386,13 @@ public class ContentServiceImpl implements ContentService {
     public Long increaseFavoriteCount(Long contentId, Integer increment) {
         log.debug("增加收藏数: ID={}, 增量={}", contentId, increment);
         
-        contentMapper.increaseFavoriteCount(contentId, increment);
-        
         Content content = contentMapper.selectById(contentId);
-        return content != null ? content.getFavoriteCount() : 0L;
+        if (content != null) {
+            content.setFavoriteCount((content.getFavoriteCount() != null ? content.getFavoriteCount() : 0L) + increment);
+            contentMapper.updateById(content);
+            return content.getFavoriteCount();
+        }
+        return 0L;
     }
 
     @Override
@@ -305,15 +405,44 @@ public class ContentServiceImpl implements ContentService {
             throw new IllegalArgumentException("评分必须在1-10之间");
         }
         
-        contentMapper.addScore(contentId, score);
-        
         Content content = contentMapper.selectById(contentId);
-        return content != null ? content.getAverageScore() : 0.0;
+        if (content != null) {
+            // 更新评分统计
+            Long scoreTotal = content.getScoreTotal() != null ? content.getScoreTotal() : 0L;
+            Long scoreCount = content.getScoreCount() != null ? content.getScoreCount() : 0L;
+            
+            scoreTotal += score;
+            scoreCount += 1;
+            
+            content.setScoreTotal(scoreTotal);
+            content.setScoreCount(scoreCount);
+            
+            contentMapper.updateById(content);
+            return content.getAverageScore();
+        }
+        return 0.0;
     }
 
     @Override
     public Map<String, Object> getContentStatistics(Long contentId) {
-        return contentMapper.getContentStatistics(contentId);
+        // 简化实现：基于实体数据构建统计信息
+        Content content = contentMapper.selectById(contentId);
+        if (content == null) {
+            return Collections.emptyMap();
+        }
+        
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("id", content.getId());
+        stats.put("title", content.getTitle());
+        stats.put("viewCount", content.getViewCount());
+        stats.put("likeCount", content.getLikeCount());
+        stats.put("commentCount", content.getCommentCount());
+        stats.put("favoriteCount", content.getFavoriteCount());
+        stats.put("scoreCount", content.getScoreCount());
+        stats.put("averageScore", content.getAverageScore());
+        stats.put("createTime", content.getCreateTime());
+        stats.put("updateTime", content.getUpdateTime());
+        return stats;
     }
 
     // =================== 数据同步 ===================
@@ -322,14 +451,57 @@ public class ContentServiceImpl implements ContentService {
     @Transactional(rollbackFor = Exception.class)
     public Integer updateAuthorInfo(Long authorId, String nickname, String avatar) {
         log.info("同步作者信息: ID={}, 昵称={}", authorId, nickname);
-        return contentMapper.updateAuthorInfo(authorId, nickname, avatar);
+        
+        // 使用MyBatis-Plus更新相关内容的作者信息
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getAuthorId, authorId);
+        
+        List<Content> contents = contentMapper.selectList(queryWrapper);
+        if (contents.isEmpty()) {
+            return 0;
+        }
+        
+        int updateCount = 0;
+        for (Content content : contents) {
+            if (StringUtils.hasText(nickname)) {
+                content.setAuthorNickname(nickname);
+            }
+            if (StringUtils.hasText(avatar)) {
+                content.setAuthorAvatar(avatar);
+            }
+            contentMapper.updateById(content);
+            updateCount++;
+        }
+        
+        log.info("作者信息同步完成: 更新{}条记录", updateCount);
+        return updateCount;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer updateCategoryInfo(Long categoryId, String categoryName) {
         log.info("同步分类信息: ID={}, 名称={}", categoryId, categoryName);
-        return contentMapper.updateCategoryInfo(categoryId, categoryName);
+        
+        // 使用MyBatis-Plus更新相关内容的分类信息
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getCategoryId, categoryId);
+        
+        List<Content> contents = contentMapper.selectList(queryWrapper);
+        if (contents.isEmpty()) {
+            return 0;
+        }
+        
+        int updateCount = 0;
+        for (Content content : contents) {
+            if (StringUtils.hasText(categoryName)) {
+                content.setCategoryName(categoryName);
+            }
+            contentMapper.updateById(content);
+            updateCount++;
+        }
+        
+        log.info("分类信息同步完成: 更新{}条记录", updateCount);
+        return updateCount;
     }
 
     // =================== 业务验证 ===================
@@ -389,39 +561,96 @@ public class ContentServiceImpl implements ContentService {
 
     @Override
     public Page<Content> getRecommendedContents(Page<Content> page, String contentType, Long excludeAuthorId) {
-        return contentMapper.findRecommendedContents(page, contentType, excludeAuthorId);
+        // 简化实现：推荐热门内容
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED");
+        
+        if (StringUtils.hasText(contentType)) {
+            queryWrapper.eq(Content::getContentType, contentType);
+        }
+        if (excludeAuthorId != null) {
+            queryWrapper.ne(Content::getAuthorId, excludeAuthorId);
+        }
+        
+        queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
+        return contentMapper.selectPage(page, queryWrapper);
     }
 
     @Override
     public List<Content> getSimilarContents(Long contentId, Integer limit) {
         Content content = contentMapper.selectById(contentId);
         if (content == null) {
-            return List.of();
+            return Collections.emptyList();
         }
         
-        return contentMapper.findSimilarContents(content.getCategoryId(), 
-                                                content.getContentType(), 
-                                                contentId, limit);
+        // 简化实现：查找同分类同类型的其他内容
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getCategoryId, content.getCategoryId())
+                   .eq(Content::getContentType, content.getContentType())
+                   .eq(Content::getStatus, "PUBLISHED")
+                   .ne(Content::getId, contentId)
+                   .orderByDesc(Content::getViewCount)
+                   .last("LIMIT " + (limit != null ? limit : 10));
+        
+        return contentMapper.selectList(queryWrapper);
     }
 
     @Override
     public List<Content> getNeedsChapterManagement(Long authorId) {
-        return contentMapper.findNeedsChapterManagement(authorId);
+        // 查找需要章节管理的内容类型（小说、漫画等）
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getAuthorId, authorId)
+                   .in(Content::getContentType, "NOVEL", "COMIC")
+                   .eq(Content::getStatus, "PUBLISHED")
+                   .orderByDesc(Content::getCreateTime);
+        
+        return contentMapper.selectList(queryWrapper);
     }
 
     @Override
     public Long countByAuthor(Long authorId, String status) {
-        return contentMapper.countByAuthor(authorId, status);
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getAuthorId, authorId);
+        
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(Content::getStatus, status);
+        }
+        
+        return contentMapper.selectCount(queryWrapper);
     }
 
     @Override
     public Long countByCategory(Long categoryId, String status) {
-        return contentMapper.countByCategory(categoryId, status);
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getCategoryId, categoryId);
+        
+        if (StringUtils.hasText(status)) {
+            queryWrapper.eq(Content::getStatus, status);
+        }
+        
+        return contentMapper.selectCount(queryWrapper);
     }
 
     @Override
     public List<Map<String, Object>> getContentTypeStats() {
-        return contentMapper.getContentTypeStats();
+        // 简化实现：基于现有数据统计各类型内容数量
+        List<Map<String, Object>> stats = new ArrayList<>();
+        
+        String[] contentTypes = {"NOVEL", "COMIC", "VIDEO", "ARTICLE", "AUDIO"};
+        for (String type : contentTypes) {
+            LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+            queryWrapper.eq(Content::getContentType, type)
+                       .eq(Content::getStatus, "PUBLISHED");
+            
+            Long count = contentMapper.selectCount(queryWrapper);
+            
+            Map<String, Object> stat = new HashMap<>();
+            stat.put("content_type", type);
+            stat.put("count", count);
+            stats.add(stat);
+        }
+        
+        return stats;
     }
 
     // =================== 私有辅助方法 ===================

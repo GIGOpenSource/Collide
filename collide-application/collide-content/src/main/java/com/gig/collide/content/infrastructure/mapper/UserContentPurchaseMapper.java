@@ -6,7 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
-import java.util.List;
+import java.util.*;
 
 /**
  * 用户内容购买记录表数据映射接口
@@ -127,27 +127,27 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
     /**
      * 获取热门购买内容排行
      */
-    List<Object> getPopularContentRanking(@Param("limit") Integer limit);
+    List<Map<String, Object>> getPopularContentRanking(@Param("limit") Integer limit);
 
     /**
      * 获取用户购买统计
      */
-    Object getUserPurchaseStats(@Param("userId") Long userId);
+    Map<String, Object> getUserPurchaseStats(@Param("userId") Long userId);
 
     /**
      * 获取内容销售统计
      */
-    Object getContentSalesStats(@Param("contentId") Long contentId);
+    Map<String, Object> getContentSalesStats(@Param("contentId") Long contentId);
 
     /**
      * 获取作者收入统计
      */
-    Object getAuthorRevenueStats(@Param("authorId") Long authorId);
+    Map<String, Object> getAuthorRevenueStats(@Param("authorId") Long authorId);
 
     /**
      * 获取日期范围内的购买统计
      */
-    List<Object> getPurchaseStatsByDateRange(@Param("startDate") LocalDateTime startDate,
+    List<Map<String, Object>> getPurchaseStatsByDateRange(@Param("startDate") LocalDateTime startDate,
                                             @Param("endDate") LocalDateTime endDate);
 
     /**
