@@ -17,7 +17,7 @@ import jakarta.validation.Valid;
  * 用户控制器 - 简洁版
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (简洁版)
  */
 @Slf4j
 @RestController

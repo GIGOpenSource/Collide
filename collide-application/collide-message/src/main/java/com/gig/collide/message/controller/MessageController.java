@@ -73,30 +73,30 @@ public class MessageController {
     public Result<PageResponse<MessageResponse>> getChatHistory(
             @Parameter(description = "用户1 ID") @RequestParam Long userId1,
             @Parameter(description = "用户2 ID") @RequestParam Long userId2,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
         log.debug("REST获取聊天记录: 用户1={}, 用户2={}", userId1, userId2);
-        return messageFacadeService.getChatHistory(userId1, userId2, pageNum, pageSize);
+        return messageFacadeService.getChatHistory(userId1, userId2, currentPage, pageSize);
     }
 
     @GetMapping("/wall/{userId}")
     @Operation(summary = "获取用户留言板", description = "获取用户个人页面的留言（包含置顶消息）")
     public Result<PageResponse<MessageResponse>> getUserWallMessages(
             @PathVariable("userId") Long userId,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
         log.debug("REST获取用户留言板: 用户ID={}", userId);
-        return messageFacadeService.getUserWallMessages(userId, pageNum, pageSize);
+        return messageFacadeService.getUserWallMessages(userId, currentPage, pageSize);
     }
 
     @GetMapping("/replies/{messageId}")
     @Operation(summary = "获取消息回复", description = "获取指定消息的所有回复")
     public Result<PageResponse<MessageResponse>> getMessageReplies(
             @PathVariable("messageId") Long messageId,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
         log.debug("REST获取消息回复: 消息ID={}", messageId);
-        return messageFacadeService.getMessageReplies(messageId, pageNum, pageSize);
+        return messageFacadeService.getMessageReplies(messageId, currentPage, pageSize);
     }
 
     @GetMapping("/search")
@@ -104,10 +104,10 @@ public class MessageController {
     public Result<PageResponse<MessageResponse>> searchMessages(
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "搜索关键词") @RequestParam String keyword,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
         log.debug("REST搜索消息: 用户ID={}, 关键词={}", userId, keyword);
-        return messageFacadeService.searchMessages(userId, keyword, pageNum, pageSize);
+        return messageFacadeService.searchMessages(userId, keyword, currentPage, pageSize);
     }
 
     // =================== 会话管理 ===================
@@ -116,10 +116,10 @@ public class MessageController {
     @Operation(summary = "获取用户会话列表", description = "获取用户的所有聊天会话")
     public Result<PageResponse<MessageSessionResponse>> getUserSessions(
             @PathVariable("userId") Long userId,
-            @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer pageNum,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") Integer pageSize) {
         log.debug("REST获取用户会话: 用户ID={}", userId);
-        return messageFacadeService.getUserSessions(userId, pageNum, pageSize);
+        return messageFacadeService.getUserSessions(userId, currentPage, pageSize);
     }
 
     // =================== 消息状态 ===================

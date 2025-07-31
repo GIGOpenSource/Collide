@@ -77,9 +77,9 @@ public class SocialDynamicController {
 
     // =================== 动态查询 ===================
 
-    @GetMapping
+    @PostMapping("/query")
     @Operation(summary = "分页查询动态列表", description = "支持多条件分页查询动态")
-    public PageResponse<SocialDynamicResponse> queryDynamics(@Validated SocialDynamicQueryRequest request) {
+    public PageResponse<SocialDynamicResponse> queryDynamics(@Validated @RequestBody SocialDynamicQueryRequest request) {
         log.debug("REST分页查询动态: 页码={}, 大小={}", request.getCurrentPage(), request.getPageSize());
         return socialFacadeService.queryDynamics(request);
     }

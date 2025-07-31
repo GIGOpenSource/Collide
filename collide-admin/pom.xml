@@ -76,11 +76,11 @@
             <artifactId>sa-token-redis-jackson</artifactId>
         </dependency>
 
-        <!-- 数据库相关（如果需要直接数据库操作） -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-boot-starter</artifactId>
-        </dependency>
+<!--        &lt;!&ndash; 数据库相关（如果需要直接数据库操作） &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>com.baomidou</groupId>-->
+<!--            <artifactId>mybatis-plus-boot-starter</artifactId>-->
+<!--        </dependency>-->
         
         <dependency>
             <groupId>mysql</groupId>
@@ -117,12 +117,12 @@
             <version>2.3.0</version>
         </dependency>
 
-        <!-- 配置处理器 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
+<!--        &lt;!&ndash; 配置处理器 &ndash;&gt;-->
+<!--        <dependency>-->
+<!--            <groupId>org.springframework.boot</groupId>-->
+<!--            <artifactId>spring-boot-configuration-processor</artifactId>-->
+<!--            <optional>true</optional>-->
+<!--        </dependency>-->
 
         <!-- 监控 -->
         <dependency>

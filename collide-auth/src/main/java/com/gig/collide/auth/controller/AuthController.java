@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*;
  * 认证控制器 - 简洁版
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (简洁版)
  */
 @Slf4j
 @RestController

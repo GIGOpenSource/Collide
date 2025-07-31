@@ -20,7 +20,7 @@ import jakarta.validation.Valid;
  * 用户拉黑控制器 - 简洁版
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 2.0.0 (简洁版)
  */
 @Slf4j
 @RestController
@@ -131,11 +131,11 @@ public class UserBlockController {
      */
     @GetMapping("/{userId}")
     public Result<PageResponse<UserBlockResponse>> getUserBlockList(@PathVariable Long userId,
-                                                                   @RequestParam(defaultValue = "1") Integer pageNum,
+                                                                   @RequestParam(defaultValue = "1") Integer currentPage,
                                                                    @RequestParam(defaultValue = "10") Integer pageSize) {
         try {
-            log.info("获取用户拉黑列表: userId={}, pageNum={}, pageSize={}", userId, pageNum, pageSize);
-            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockList(userId, pageNum, pageSize);
+            log.info("获取用户拉黑列表: userId={}, currentPage={}, pageSize={}", userId, currentPage, pageSize);
+            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockList(userId, currentPage, pageSize);
             
             // 转换为响应对象
             PageResponse<UserBlockResponse> result = new PageResponse<>();
