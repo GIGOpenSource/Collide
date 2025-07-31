@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>collide-common</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-sms</artifactId>
     <description>短信服务组件</description>
 
@@ -27,12 +27,12 @@
         </dependency>
         
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-base</artifactId>
         </dependency>
         
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-lock</artifactId>
         </dependency>
         

@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>collide-application</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-goods</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>Collide 商品服务 - 商品管理微服务</description>
@@ -24,27 +24,27 @@
     <dependencies>
         <!-- Collide 公共模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-base</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-web</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-datasource</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-cache</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
 
@@ -54,11 +54,14 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- 数据库相关 - 通过collide-datasource标准化模块提供 -->
-        <!-- 已通过collide-datasource依赖提供，无需直接引入 -->
-
-        <!-- Dubbo RPC - 通过collide-rpc标准化模块提供 -->
-        <!-- 已通过collide-rpc依赖提供，无需直接引入 -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
 
         <!-- JSON处理 -->
         <dependency>

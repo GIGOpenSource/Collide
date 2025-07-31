@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>collide-application</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
@@ -31,42 +31,42 @@
         
         <!-- Collide API 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-api</artifactId>
         </dependency>
         
         <!-- Collide Base 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-base</artifactId>
         </dependency>
         
         <!-- Collide Cache 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-cache</artifactId>
         </dependency>
         
         <!-- Collide DataSource 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-datasource</artifactId>
         </dependency>
         
         <!-- Collide RPC 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-config</artifactId>
         </dependency>
         
         <!-- Collide Web 模块 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-web</artifactId>
         </dependency>
         

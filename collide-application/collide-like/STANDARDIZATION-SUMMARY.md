@@ -126,7 +126,7 @@ public interface LikeConverter {
 #### 7.1 依赖配置 ✅
 ```xml
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-rpc</artifactId>
 </dependency>
 ```

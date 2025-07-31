@@ -6,12 +6,12 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>Collide</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-application</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>Collide Business Modules</description>
@@ -38,6 +38,7 @@
         <module>collide-order</module>
         <module>collide-payment</module>
         <module>collide-app</module>
+        <module>collide-message</module>
     </modules>
 
 </project>

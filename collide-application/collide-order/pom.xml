@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>collide-application</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-order</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>Collide 订单服务 - 订单管理微服务</description>
@@ -26,79 +26,79 @@
         
         <!-- 数据源组件（包含MyBatis-Plus、MySQL等） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-datasource</artifactId>
         </dependency>
         
         <!-- API组件（包含基础API定义） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-api</artifactId>
         </dependency>
         
         <!-- 基础组件（包含Lombok等基础工具） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-base</artifactId>
         </dependency>
         
         <!-- RPC组件（包含Dubbo配置） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
         
         <!-- 缓存组件（包含Redis、JetCache等） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-cache</artifactId>
         </dependency>
         
         <!-- 分布式锁组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-lock</artifactId>
         </dependency>
         
         <!-- 消息队列组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-mq</artifactId>
         </dependency>
         
         <!-- 配置组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-config</artifactId>
         </dependency>
         
         <!-- 限流组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-limiter</artifactId>
         </dependency>
         
         <!-- Web组件（包含Spring Boot Web） -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-web</artifactId>
         </dependency>
         
         <!-- 监控组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-prometheus</artifactId>
         </dependency>
         
         <!-- 链路追踪组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-skywalking</artifactId>
         </dependency>
         
         <!-- SA-Token权限组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-sa-token</artifactId>
         </dependency>
         
