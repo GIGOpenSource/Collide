@@ -48,6 +48,65 @@ public class ContentCacheConstant {
      */
     public static final String CONTENT_LATEST_CACHE = "content:latest";
     
+    // =================== 购买记录缓存常量 ===================
+    
+    /**
+     * 用户购买记录缓存
+     */
+    public static final String USER_PURCHASE_CACHE = "content:purchase:user";
+    
+    /**
+     * 内容购买记录缓存
+     */
+    public static final String CONTENT_PURCHASE_CACHE = "content:purchase:content";
+    
+    /**
+     * 用户访问权限缓存
+     */
+    public static final String USER_ACCESS_PERMISSION_CACHE = "content:access:permission";
+    
+    /**
+     * 购买统计缓存
+     */
+    public static final String PURCHASE_STATISTICS_CACHE = "content:purchase:statistics";
+    
+    // =================== 付费配置缓存常量 ===================
+    
+    /**
+     * 内容付费配置缓存
+     */
+    public static final String CONTENT_PAYMENT_CONFIG_CACHE = "content:payment:config";
+    
+    /**
+     * 付费内容列表缓存
+     */
+    public static final String PAID_CONTENT_LIST_CACHE = "content:payment:list";
+    
+    /**
+     * 免费内容列表缓存
+     */
+    public static final String FREE_CONTENT_LIST_CACHE = "content:free:list";
+    
+    /**
+     * VIP内容列表缓存
+     */
+    public static final String VIP_CONTENT_LIST_CACHE = "content:vip:list";
+    
+    /**
+     * 热门付费内容缓存
+     */
+    public static final String HOT_PAID_CONTENT_CACHE = "content:payment:hot";
+    
+    /**
+     * 销售排行榜缓存
+     */
+    public static final String SALES_RANKING_CACHE = "content:sales:ranking";
+    
+    /**
+     * 收入排行榜缓存
+     */
+    public static final String REVENUE_RANKING_CACHE = "content:revenue:ranking";
+    
     /**
      * 作者内容缓存
      */
@@ -195,6 +254,88 @@ public class ContentCacheConstant {
      * 分类内容缓存失效键模板
      */
     public static final String CATEGORY_CONTENT_INVALIDATE_KEY = "'content:category:' + #categoryId + '*'";
+    
+    // =================== 购买记录缓存键模板 ===================
+    
+    /**
+     * 用户购买记录缓存键模板
+     */
+    public static final String USER_PURCHASE_KEY = "'content:purchase:user:' + #userId";
+    
+    /**
+     * 用户内容访问权限缓存键模板
+     */
+    public static final String USER_ACCESS_PERMISSION_KEY = "'content:access:' + #userId + ':' + #contentId";
+    
+    /**
+     * 内容购买统计缓存键模板
+     */
+    public static final String CONTENT_PURCHASE_STATS_KEY = "'content:purchase:stats:' + #contentId";
+    
+    // =================== 付费配置缓存键模板 ===================
+    
+    /**
+     * 内容付费配置缓存键模板
+     */
+    public static final String CONTENT_PAYMENT_CONFIG_KEY = "'content:payment:config:' + #contentId";
+    
+    /**
+     * 付费类型内容列表缓存键模板
+     */
+    public static final String PAYMENT_TYPE_LIST_KEY = "'content:payment:type:' + #paymentType";
+    
+    /**
+     * 价格范围内容列表缓存键模板
+     */
+    public static final String PRICE_RANGE_LIST_KEY = "'content:price:' + #minPrice + ':' + #maxPrice";
+    
+    // =================== 缓存失效键模板 ===================
+    
+    /**
+     * 用户购买记录缓存失效键模板
+     */
+    public static final String USER_PURCHASE_INVALIDATE_KEY = "'content:purchase:user:' + #userId + '*'";
+    
+    /**
+     * 内容购买记录缓存失效键模板
+     */
+    public static final String CONTENT_PURCHASE_INVALIDATE_KEY = "'content:purchase:content:' + #contentId + '*'";
+    
+    /**
+     * 付费配置缓存失效键模板
+     */
+    public static final String PAYMENT_CONFIG_INVALIDATE_KEY = "'content:payment:*'";
+    
+    /**
+     * 销售统计缓存失效键模板
+     */
+    public static final String SALES_STATS_INVALIDATE_KEY = "'content:sales:*'";
+    
+    // =================== 新增过期时间配置 ===================
+    
+    /**
+     * 购买记录缓存过期时间（30分钟）
+     */
+    public static final long PURCHASE_CACHE_EXPIRE_TIME = 30;
+    public static final TimeUnit PURCHASE_CACHE_EXPIRE_UNIT = TimeUnit.MINUTES;
+    
+    /**
+     * 访问权限缓存过期时间（15分钟）
+     */
+    public static final long ACCESS_PERMISSION_CACHE_EXPIRE_TIME = 15;
+    public static final TimeUnit ACCESS_PERMISSION_CACHE_EXPIRE_UNIT = TimeUnit.MINUTES;
+    
+    /**
+     * 付费配置缓存过期时间（2小时）
+     */
+    public static final long PAYMENT_CONFIG_CACHE_EXPIRE_TIME = 2;
+    public static final TimeUnit PAYMENT_CONFIG_CACHE_EXPIRE_UNIT = TimeUnit.HOURS;
+    
+    /**
+     * 销售统计缓存过期时间（1小时）
+     */
+    public static final long SALES_STATS_CACHE_EXPIRE_TIME = 1;
+    public static final TimeUnit SALES_STATS_CACHE_EXPIRE_UNIT = TimeUnit.HOURS;
 
     private ContentCacheConstant() {
         // 工具类，禁止实例化

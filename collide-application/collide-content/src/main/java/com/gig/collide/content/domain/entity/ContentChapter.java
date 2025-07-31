@@ -1,28 +1,24 @@
 package com.gig.collide.content.domain.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
 
 /**
- * 内容章节实体类 - 简洁版
- * 基于content-simple.sql的t_content_chapter表结构
- * 用于小说、漫画等多章节内容管理
- * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * 内容章节表实体类
+ * 用于小说、漫画等多章节内容的管理
+ *
+ * @author GIG Team
+ * @version 2.0.0 (内容付费版)
+ * @since 2024-01-31
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
+@Data
+@EqualsAndHashCode(callSuper = false)
 @TableName("t_content_chapter")
 public class ContentChapter {
 
@@ -71,104 +67,48 @@ public class ContentChapter {
     /**
      * 创建时间
      */
-    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    @TableField("create_time")
     private LocalDateTime createTime;
 
     /**
      * 更新时间
      */
-    @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
+    @TableField("update_time")
     private LocalDateTime updateTime;
 
-    // =================== 业务方法 ===================
+    // =================== 计算属性 ===================
 
     /**
-     * 是否为草稿状态
-     */
-    public boolean isDraft() {
-        return "DRAFT".equals(status);
-    }
-
-    /**
-     * 是否已发布
+     * 判断是否已发布
      */
     public boolean isPublished() {
         return "PUBLISHED".equals(status);
     }
 
     /**
-     * 发布章节
+     * 判断是否草稿状态
      */
-    public void publish() {
-        this.status = "PUBLISHED";
+    public boolean isDraft() {
+        return "DRAFT".equals(status);
     }
 
     /**
-     * 设为草稿
+     * 获取内容摘要（前100字符）
      */
-    public void setToDraft() {
-        this.status = "DRAFT";
-    }
-
-    /**
-     * 计算字数（如果没有提供）
-     */
-    public void calculateWordCount() {
-        if (content != null) {
-            this.wordCount = content.replaceAll("\\s", "").length();
-        } else {
-            this.wordCount = 0;
+    public String getContentSummary() {
+        if (content == null || content.length() <= 100) {
+            return content;
         }
+        return content.substring(0, 100) + "...";
     }
 
     /**
-     * 获取阅读时长估算（按300字/分钟计算）
+     * 计算阅读时长（按300字/分钟计算）
      */
-    public Integer getEstimateReadMinutes() {
-        if (wordCount == null || wordCount <= 0) {
-            return 0;
+    public Integer getEstimatedReadingTime() {
+        if (wordCount == null || wordCount == 0) {
+            return 1;
         }
-        return Math.max(1, wordCount / 300);
-    }
-
-    /**
-     * 是否可以发布
-     */
-    public boolean canPublish() {
-        return isDraft() && title != null && !title.trim().isEmpty() 
-               && content != null && !content.trim().isEmpty();
-    }
-
-    /**
-     * 是否可以编辑
-     */
-    public boolean canEdit() {
-        return isDraft();
-    }
-
-    /**
-     * 获取章节摘要（前100个字符）
-     */
-    public String getSummary() {
-        if (content == null || content.trim().isEmpty()) {
-            return "";
-        }
-        String cleanContent = content.replaceAll("\\s", "");
-        return cleanContent.length() > 100 ? cleanContent.substring(0, 100) + "..." : cleanContent;
-    }
-
-    /**
-     * 验证章节数据
-     */
-    public boolean isValid() {
-        return contentId != null && chapterNum != null && chapterNum > 0
-               && title != null && !title.trim().isEmpty();
-    }
-
-    /**
-     * 生成唯一键
-     */
-    public String generateUniqueKey() {
-        return contentId + "_" + chapterNum;
+        return Math.max(1, (int) Math.ceil(wordCount / 300.0));
     }
 }

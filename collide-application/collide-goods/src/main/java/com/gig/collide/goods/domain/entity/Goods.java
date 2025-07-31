@@ -1,34 +1,29 @@
 package com.gig.collide.goods.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 商品实体类 - 简洁版
- * 基于goods-simple.sql的t_goods表结构
- * 采用无连表设计，包含分类和商家信息冗余字段
- * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * 商品实体类 - 支持四种商品类型
+ * 基于goods-simple.sql的单表设计，支持无连表查询
+ *
+ * @author GIG Team
+ * @version 2.0.0 (扩展版)
+ * @since 2024-01-31
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
+@Data
+@EqualsAndHashCode(callSuper = false)
+@Accessors(chain = true)
 @TableName("t_goods")
 public class Goods {
 
     /**
-     * 商品ID - 主键
+     * 商品ID
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
@@ -58,7 +53,13 @@ public class Goods {
     private String categoryName;
 
     /**
-     * 商品价格
+     * 商品类型：coin-金币、goods-商品、subscription-订阅、content-内容
+     */
+    @TableField("goods_type")
+    private GoodsType goodsType;
+
+    /**
+     * 现金价格（内容类型为0）
      */
     @TableField("price")
     private BigDecimal price;
@@ -70,7 +71,43 @@ public class Goods {
     private BigDecimal originalPrice;
 
     /**
-     * 库存数量
+     * 金币价格（内容类型专用，其他类型为0）
+     */
+    @TableField("coin_price")
+    private Long coinPrice;
+
+    /**
+     * 金币数量（仅金币类商品：购买后获得的金币数）
+     */
+    @TableField("coin_amount")
+    private Long coinAmount;
+
+    /**
+     * 关联内容ID（仅内容类型有效）
+     */
+    @TableField("content_id")
+    private Long contentId;
+
+    /**
+     * 内容标题（冗余，仅内容类型）
+     */
+    @TableField("content_title")
+    private String contentTitle;
+
+    /**
+     * 订阅时长（天数，仅订阅类型有效）
+     */
+    @TableField("subscription_duration")
+    private Integer subscriptionDuration;
+
+    /**
+     * 订阅类型（VIP、PREMIUM等，仅订阅类型有效）
+     */
+    @TableField("subscription_type")
+    private String subscriptionType;
+
+    /**
+     * 库存数量（-1表示无限库存，适用于虚拟商品）
      */
     @TableField("stock")
     private Integer stock;
@@ -87,8 +124,6 @@ public class Goods {
     @TableField("images")
     private String images;
 
-    // =================== 商家信息（冗余字段，避免连表） ===================
-
     /**
      * 商家ID
      */
@@ -101,13 +136,11 @@ public class Goods {
     @TableField("seller_name")
     private String sellerName;
 
-    // =================== 状态和统计 ===================
-
     /**
      * 状态：active、inactive、sold_out
      */
     @TableField("status")
-    private String status;
+    private GoodsStatus status;
 
     /**
      * 销量（冗余统计）
@@ -116,133 +149,157 @@ public class Goods {
     private Long salesCount;
 
     /**
-     * 浏览量（冗余统计）
+     * 查看数（冗余统计）
      */
     @TableField("view_count")
     private Long viewCount;
 
     /**
-     * 创建时间 - 自动填充
+     * 创建时间
      */
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 
     /**
-     * 更新时间 - 自动填充
+     * 更新时间
      */
     @TableField(value = "update_time", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updateTime;
 
-    // =================== 业务方法 ===================
-
     /**
-     * 判断是否为活跃状态
+     * 商品类型枚举
      */
-    public boolean isActive() {
-        return "active".equals(status);
-    }
+    public enum GoodsType {
+        /**
+         * 金币充值包
+         */
+        COIN("coin", "金币充值包"),
+        /**
+         * 实体商品
+         */
+        GOODS("goods", "实体商品"),
+        /**
+         * 订阅服务
+         */
+        SUBSCRIPTION("subscription", "订阅服务"),
+        /**
+         * 付费内容
+         */
+        CONTENT("content", "付费内容");
 
-    /**
-     * 判断是否为非活跃状态
-     */
-    public boolean isInactive() {
-        return "inactive".equals(status);
-    }
+        private final String code;
+        private final String description;
 
-    /**
-     * 判断是否售罄
-     */
-    public boolean isSoldOut() {
-        return "sold_out".equals(status) || (stock != null && stock <= 0);
-    }
-
-    /**
-     * 判断是否有库存
-     */
-    public boolean hasStock() {
-        return stock != null && stock > 0;
-    }
-
-    /**
-     * 判断是否有折扣
-     */
-    public boolean hasDiscount() {
-        return originalPrice != null && price != null && 
-               originalPrice.compareTo(price) > 0;
-    }
-
-    /**
-     * 获取折扣金额
-     */
-    public BigDecimal getDiscountAmount() {
-        if (hasDiscount()) {
-            return originalPrice.subtract(price);
+        GoodsType(String code, String description) {
+            this.code = code;
+            this.description = description;
         }
-        return BigDecimal.ZERO;
-    }
 
-    /**
-     * 激活商品
-     */
-    public void activate() {
-        this.status = "active";
-    }
+        public String getCode() {
+            return code;
+        }
 
-    /**
-     * 停用商品
-     */
-    public void deactivate() {
-        this.status = "inactive";
-    }
+        public String getDescription() {
+            return description;
+        }
 
-    /**
-     * 设置为售罄状态
-     */
-    public void setSoldOut() {
-        this.status = "sold_out";
-    }
+        /**
+         * 是否为虚拟商品（无限库存）
+         */
+        public boolean isVirtual() {
+            return this == COIN || this == SUBSCRIPTION || this == CONTENT;
+        }
 
-    /**
-     * 增加库存
-     */
-    public void addStock(Integer amount) {
-        if (amount > 0) {
-            this.stock = (this.stock == null ? 0 : this.stock) + amount;
-            // 如果之前是售罄状态且现在有库存，恢复为活跃状态
-            if ("sold_out".equals(this.status) && this.stock > 0) {
-                this.status = "active";
-            }
+        /**
+         * 是否只能现金支付
+         */
+        public boolean isCashOnly() {
+            return this != CONTENT;
+        }
+
+        /**
+         * 是否只能金币支付
+         */
+        public boolean isCoinOnly() {
+            return this == CONTENT;
         }
     }
 
     /**
-     * 减少库存
+     * 商品状态枚举
      */
-    public boolean reduceStock(Integer amount) {
-        if (amount <= 0 || this.stock == null || this.stock < amount) {
-            return false;
+    public enum GoodsStatus {
+        /**
+         * 正常销售
+         */
+        ACTIVE("active", "正常销售"),
+        /**
+         * 下架
+         */
+        INACTIVE("inactive", "下架"),
+        /**
+         * 售罄
+         */
+        SOLD_OUT("sold_out", "售罄");
+
+        private final String code;
+        private final String description;
+
+        GoodsStatus(String code, String description) {
+            this.code = code;
+            this.description = description;
         }
-        this.stock -= amount;
-        // 如果库存为0，设置为售罄状态
-        if (this.stock <= 0) {
-            this.status = "sold_out";
+
+        public String getCode() {
+            return code;
         }
-        return true;
+
+        public String getDescription() {
+            return description;
+        }
+    }
+
+    /**
+     * 获取有效价格（根据商品类型返回对应价格）
+     */
+    public Object getEffectivePrice() {
+        return goodsType == GoodsType.CONTENT ? coinPrice : price;
+    }
+
+    /**
+     * 是否为虚拟商品
+     */
+    public boolean isVirtual() {
+        return goodsType != null && goodsType.isVirtual();
+    }
+
+    /**
+     * 是否库存充足
+     */
+    public boolean hasStock(int quantity) {
+        return stock == -1 || stock >= quantity;
+    }
+
+    /**
+     * 扣减库存
+     */
+    public void reduceStock(int quantity) {
+        if (stock > 0) {
+            this.stock = Math.max(0, this.stock - quantity);
+        }
     }
 
     /**
      * 增加销量
      */
-    public void addSalesCount(Integer amount) {
-        if (amount > 0) {
-            this.salesCount = (this.salesCount == null ? 0L : this.salesCount) + amount;
-        }
+    public void increaseSales(long count) {
+        this.salesCount = (this.salesCount == null ? 0 : this.salesCount) + count;
     }
 
     /**
      * 增加浏览量
      */
-    public void increaseViewCount() {
-        this.viewCount = (this.viewCount == null ? 0L : this.viewCount) + 1;
+    public void increaseViews(long count) {
+        this.viewCount = (this.viewCount == null ? 0 : this.viewCount) + count;
     }
 }

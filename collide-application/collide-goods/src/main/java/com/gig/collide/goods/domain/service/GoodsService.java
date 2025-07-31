@@ -1,243 +1,247 @@
 package com.gig.collide.goods.domain.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.goods.domain.entity.Goods;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 商品业务逻辑接口 - 简洁版
- * 基于goods-simple.sql的业务设计，实现核心商品功能
- * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * 商品业务服务接口
+ * 提供完整的商品管理功能
+ *
+ * @author GIG Team
+ * @version 2.0.0 (扩展版)
+ * @since 2024-01-31
  */
 public interface GoodsService {
 
+    // =================== 基础CRUD操作 ===================
+
     /**
      * 创建商品
-     * 包含分类和商家信息冗余存储
-     * 
-     * @param goods 商品实体
-     * @return 创建的商品
+     *
+     * @param goods 商品信息
+     * @return 商品ID
      */
-    Goods createGoods(Goods goods);
+    Long createGoods(Goods goods);
+
+    /**
+     * 根据ID获取商品详情
+     *
+     * @param id 商品ID
+     * @return 商品信息
+     */
+    Goods getGoodsById(Long id);
 
     /**
      * 更新商品信息
-     * 支持部分字段更新，自动更新冗余字段
-     * 
-     * @param goods 商品实体
-     * @return 更新后的商品
-     */
-    Goods updateGoods(Goods goods);
-
-    /**
-     * 删除商品
-     * 逻辑删除，将状态更新为inactive
-     * 
-     * @param goodsId 商品ID
-     * @param deleteReason 删除原因
-     * @param operatorId 操作人ID
+     *
+     * @param goods 商品信息
      * @return 是否成功
      */
-    boolean deleteGoods(Long goodsId, String deleteReason, Long operatorId);
+    boolean updateGoods(Goods goods);
 
     /**
-     * 根据ID获取商品
-     * 
-     * @param goodsId 商品ID
-     * @return 商品实体
+     * 删除商品（软删除）
+     *
+     * @param id 商品ID
+     * @return 是否成功
      */
-    Goods getGoodsById(Long goodsId);
+    boolean deleteGoods(Long id);
+
+    /**
+     * 批量删除商品
+     *
+     * @param ids 商品ID列表
+     * @return 是否成功
+     */
+    boolean batchDeleteGoods(List<Long> ids);
+
+    // =================== 查询操作 ===================
 
     /**
      * 分页查询商品
-     * 支持复合条件查询
-     * 
-     * @param pageNum 页码
-     * @param pageSize 页面大小
-     * @param categoryId 分类ID（可选）
-     * @param sellerId 商家ID（可选）
-     * @param nameKeyword 名称关键词（可选）
-     * @param minPrice 最小价格（可选）
-     * @param maxPrice 最大价格（可选）
-     * @param hasStock 是否有库存（可选）
-     * @param status 状态（可选）
-     * @param orderBy 排序字段
-     * @param orderDirection 排序方向
+     *
+     * @param page      分页参数
+     * @param goodsType 商品类型
+     * @param status    商品状态
      * @return 分页结果
      */
-    IPage<Goods> queryGoods(Integer pageNum, Integer pageSize, Long categoryId, Long sellerId,
-                           String nameKeyword, BigDecimal minPrice, BigDecimal maxPrice,
-                           Boolean hasStock, String status, String orderBy, String orderDirection);
+    IPage<Goods> queryGoods(Page<Goods> page, String goodsType, String status);
 
     /**
-     * 根据分类ID查询商品
-     * 
+     * 根据分类查询商品
+     *
+     * @param page       分页参数
      * @param categoryId 分类ID
-     * @param pageNum 页码
-     * @param pageSize 页面大小
+     * @param status     商品状态
      * @return 分页结果
      */
-    IPage<Goods> getGoodsByCategory(Long categoryId, Integer pageNum, Integer pageSize);
+    IPage<Goods> getGoodsByCategory(Page<Goods> page, Long categoryId, String status);
 
     /**
-     * 根据商家ID查询商品
-     * 
+     * 根据商家查询商品
+     *
+     * @param page     分页参数
      * @param sellerId 商家ID
-     * @param pageNum 页码
-     * @param pageSize 页面大小
+     * @param status   商品状态
      * @return 分页结果
      */
-    IPage<Goods> getGoodsBySeller(Long sellerId, Integer pageNum, Integer pageSize);
+    IPage<Goods> getGoodsBySeller(Page<Goods> page, Long sellerId, String status);
+
+    /**
+     * 获取热门商品
+     *
+     * @param page      分页参数
+     * @param goodsType 商品类型（可为空）
+     * @return 分页结果
+     */
+    IPage<Goods> getHotGoods(Page<Goods> page, String goodsType);
 
     /**
      * 搜索商品
-     * 根据商品名称进行模糊搜索
-     * 
+     *
+     * @param page    分页参数
      * @param keyword 搜索关键词
-     * @param pageNum 页码
-     * @param pageSize 页面大小
-     * @return 搜索结果
+     * @param status  商品状态
+     * @return 分页结果
      */
-    IPage<Goods> searchGoods(String keyword, Integer pageNum, Integer pageSize);
+    IPage<Goods> searchGoods(Page<Goods> page, String keyword, String status);
 
     /**
-     * 更新商品库存
-     * 支持增加或减少库存，自动处理售罄状态
-     * 
-     * @param goodsId 商品ID
-     * @param stockChange 库存变化量（正数为增加，负数为减少）
-     * @return 是否成功
+     * 按价格区间查询商品
+     *
+     * @param page      分页参数
+     * @param minPrice  最低价格
+     * @param maxPrice  最高价格
+     * @param goodsType 商品类型
+     * @return 分页结果
      */
-    boolean updateStock(Long goodsId, Integer stockChange);
+    IPage<Goods> getGoodsByPriceRange(Page<Goods> page, Object minPrice, Object maxPrice, String goodsType);
 
-    /**
-     * 更新商品销量
-     * 通常在订单完成时调用
-     * 
-     * @param goodsId 商品ID
-     * @param salesChange 销量变化量
-     * @return 是否成功
-     */
-    boolean updateSalesCount(Long goodsId, Integer salesChange);
-
-    /**
-     * 增加商品浏览量
-     * 每次商品被查看时调用
-     * 
-     * @param goodsId 商品ID
-     * @return 是否成功
-     */
-    boolean increaseViewCount(Long goodsId);
-
-    /**
-     * 批量更新商品状态
-     * 
-     * @param goodsIds 商品ID列表
-     * @param status 新状态
-     * @return 更新成功的数量
-     */
-    int batchUpdateStatus(List<Long> goodsIds, String status);
-
-    /**
-     * 获取商品统计信息
-     * 
-     * @param goodsId 商品ID
-     * @return 统计信息Map
-     */
-    Map<String, Object> getGoodsStatistics(Long goodsId);
-
-    /**
-     * 查询热销商品
-     * 
-     * @param minSalesCount 最小销量
-     * @param pageNum 页码
-     * @param pageSize 页面大小
-     * @return 热销商品列表
-     */
-    IPage<Goods> getHotGoods(Long minSalesCount, Integer pageNum, Integer pageSize);
-
-    /**
-     * 查询最新商品
-     * 
-     * @param days 天数
-     * @param pageNum 页码
-     * @param pageSize 页面大小
-     * @return 最新商品列表
-     */
-    IPage<Goods> getLatestGoods(Integer days, Integer pageNum, Integer pageSize);
-
-    /**
-     * 查询库存不足的商品
-     * 
-     * @param threshold 库存阈值
-     * @param pageNum 页码
-     * @param pageSize 页面大小
-     * @return 库存不足的商品
-     */
-    IPage<Goods> getLowStockGoods(Integer threshold, Integer pageNum, Integer pageSize);
-
-    /**
-     * 统计商家的商品数量
-     * 
-     * @param sellerId 商家ID
-     * @param status 状态（可选）
-     * @return 商品数量
-     */
-    Long countBySeller(Long sellerId, String status);
-
-    /**
-     * 统计分类的商品数量
-     * 
-     * @param categoryId 分类ID
-     * @param status 状态（可选）
-     * @return 商品数量
-     */
-    Long countByCategory(Long categoryId, String status);
-
-    /**
-     * 验证商品请求参数
-     * 
-     * @param goods 商品对象
-     * @return 验证结果信息
-     */
-    String validateGoodsRequest(Goods goods);
-
-    /**
-     * 检查商品是否可以删除
-     * 
-     * @param goodsId 商品ID
-     * @return 是否可以删除
-     */
-    boolean canDelete(Long goodsId);
+    // =================== 库存管理 ===================
 
     /**
      * 检查库存是否充足
-     * 
-     * @param goodsId 商品ID
-     * @param requiredStock 需要的库存数量
+     *
+     * @param goodsId  商品ID
+     * @param quantity 需要数量
      * @return 是否充足
      */
-    boolean checkStockAvailable(Long goodsId, Integer requiredStock);
+    boolean checkStock(Long goodsId, Integer quantity);
 
     /**
-     * 激活商品
-     * 
+     * 扣减库存
+     *
+     * @param goodsId  商品ID
+     * @param quantity 扣减数量
+     * @return 是否成功
+     */
+    boolean reduceStock(Long goodsId, Integer quantity);
+
+    /**
+     * 批量扣减库存
+     *
+     * @param stockMap 商品ID和扣减数量的映射
+     * @return 是否成功
+     */
+    boolean batchReduceStock(Map<Long, Integer> stockMap);
+
+    /**
+     * 查询低库存商品
+     *
+     * @param threshold 库存阈值
+     * @return 商品列表
+     */
+    List<Goods> getLowStockGoods(Integer threshold);
+
+    // =================== 统计操作 ===================
+
+    /**
+     * 增加商品销量
+     *
+     * @param goodsId 商品ID
+     * @param count   增加数量
+     * @return 是否成功
+     */
+    boolean increaseSales(Long goodsId, Long count);
+
+    /**
+     * 增加商品浏览量
+     *
+     * @param goodsId 商品ID
+     * @param count   增加数量
+     * @return 是否成功
+     */
+    boolean increaseViews(Long goodsId, Long count);
+
+    /**
+     * 批量增加浏览量
+     *
+     * @param viewMap 商品ID和浏览量的映射
+     * @return 是否成功
+     */
+    boolean batchIncreaseViews(Map<Long, Long> viewMap);
+
+    /**
+     * 获取商品统计信息
+     *
+     * @return 统计结果
+     */
+    List<Map<String, Object>> getGoodsStatistics();
+
+    // =================== 状态管理 ===================
+
+    /**
+     * 上架商品
+     *
      * @param goodsId 商品ID
      * @return 是否成功
      */
-    boolean activateGoods(Long goodsId);
+    boolean publishGoods(Long goodsId);
 
     /**
-     * 停用商品
-     * 
+     * 下架商品
+     *
      * @param goodsId 商品ID
      * @return 是否成功
      */
-    boolean deactivateGoods(Long goodsId);
+    boolean unpublishGoods(Long goodsId);
+
+    /**
+     * 批量上架商品
+     *
+     * @param goodsIds 商品ID列表
+     * @return 是否成功
+     */
+    boolean batchPublishGoods(List<Long> goodsIds);
+
+    /**
+     * 批量下架商品
+     *
+     * @param goodsIds 商品ID列表
+     * @return 是否成功
+     */
+    boolean batchUnpublishGoods(List<Long> goodsIds);
+
+    // =================== 业务验证 ===================
+
+    /**
+     * 验证商品是否可购买
+     *
+     * @param goodsId  商品ID
+     * @param quantity 购买数量
+     * @return 验证结果和错误信息
+     */
+    Map<String, Object> validatePurchase(Long goodsId, Integer quantity);
+
+    /**
+     * 验证商品数据完整性
+     *
+     * @param goods 商品信息
+     * @return 验证结果和错误信息
+     */
+    Map<String, Object> validateGoodsData(Goods goods);
 }

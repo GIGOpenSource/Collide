@@ -4,107 +4,158 @@
 
 <mapper namespace="com.gig.collide.goods.infrastructure.mapper.GoodsMapper">
 
-    <!-- 基础字段列表 -->
+    <!-- 基础字段列表 - 支持四种商品类型 -->
     <sql id="baseColumns">
-        id, name, description, category_id, category_name,
-        price, original_price, stock, cover_url, images,
-        seller_id, seller_name,
-        status, sales_count, view_count,
-        create_time, update_time
+        id, name, description, category_id, category_name, goods_type,
+        price, original_price, coin_price, coin_amount,
+        content_id, content_title, subscription_duration, subscription_type,
+        stock, cover_url, images, seller_id, seller_name,
+        status, sales_count, view_count, create_time, update_time
     </sql>
 
-    <!-- 根据分类ID查询商品 -->
-    <select id="findByCategory" resultType="com.gig.collide.goods.domain.entity.Goods">
-        SELECT <include refid="baseColumns" />
-        FROM t_goods
-        WHERE category_id = #{categoryId}
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY create_time DESC
-    </select>
-
-    <!-- 根据商家ID查询商品 -->
-    <select id="findBySeller" resultType="com.gig.collide.goods.domain.entity.Goods">
-        SELECT <include refid="baseColumns" />
-        FROM t_goods
-        WHERE seller_id = #{sellerId}
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY create_time DESC
-    </select>
-
-    <!-- 根据名称关键词搜索商品 -->
-    <select id="searchByName" resultType="com.gig.collide.goods.domain.entity.Goods">
-        SELECT <include refid="baseColumns" />
-        FROM t_goods
-        WHERE name LIKE CONCAT('%', #{keyword}, '%')
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY sales_count DESC, create_time DESC
-    </select>
-
-    <!-- 根据价格区间查询商品 -->
-    <select id="findByPriceRange" resultType="com.gig.collide.goods.domain.entity.Goods">
+    <!-- 根据商品类型和状态分页查询 -->
+    <select id="selectByTypeAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
         WHERE 1=1
-          <if test="minPrice != null">
-              AND price >= #{minPrice}
-          </if>
-          <if test="maxPrice != null">
-              AND price &lt;= #{maxPrice}
-          </if>
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY price ASC
+        <if test="goodsType != null and goodsType != ''">
+            AND goods_type = #{goodsType}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 查询有库存的商品 -->
-    <select id="findInStock" resultType="com.gig.collide.goods.domain.entity.Goods">
+    <!-- 根据分类和状态查询商品 -->
+    <select id="selectByCategoryAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
-        WHERE stock > 0
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY stock DESC
+        WHERE category_id = #{categoryId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 查询库存不足的商品 -->
-    <select id="findLowStock" resultType="com.gig.collide.goods.domain.entity.Goods">
+    <!-- 根据商家和状态查询商品 -->
+    <select id="selectBySellerAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
-        WHERE stock &lt;= #{threshold}
-        ORDER BY stock ASC
+        WHERE seller_id = #{sellerId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY create_time DESC
     </select>
 
-    <!-- 更新商品库存 -->
-    <update id="updateStock">
+    <!-- 查询热门商品 -->
+    <select id="selectHotGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE status = 'active'
+        <if test="goodsType != null and goodsType != ''">
+            AND goods_type = #{goodsType}
+        </if>
+        ORDER BY sales_count DESC, view_count DESC, create_time DESC
+    </select>
+
+    <!-- 搜索商品 -->
+    <select id="searchGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY sales_count DESC, create_time DESC
+    </select>
+
+    <!-- 按价格区间查询商品 -->
+    <select id="selectByPriceRange" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE status = 'active'
+        <if test="goodsType != null and goodsType != ''">
+            AND goods_type = #{goodsType}
+        </if>
+        <if test="minPrice != null">
+            <choose>
+                <when test="goodsType == 'content'">
+                    AND coin_price >= #{minPrice}
+                </when>
+                <otherwise>
+                    AND price >= #{minPrice}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="maxPrice != null">
+            <choose>
+                <when test="goodsType == 'content'">
+                    AND coin_price &lt;= #{maxPrice}
+                </when>
+                <otherwise>
+                    AND price &lt;= #{maxPrice}
+                </otherwise>
+            </choose>
+        </if>
+        <choose>
+            <when test="goodsType == 'content'">
+                ORDER BY coin_price ASC
+            </when>
+            <otherwise>
+                ORDER BY price ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询低库存商品 -->
+    <select id="selectLowStockGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE stock BETWEEN 0 AND #{threshold}
+        AND status = 'active'
+        ORDER BY stock ASC, create_time DESC
+    </select>
+
+    <!-- 扣减库存 -->
+    <update id="reduceStock">
         UPDATE t_goods
-        SET stock = stock + #{stockChange},
+        SET stock = stock - #{quantity},
+            update_time = NOW()
+        WHERE id = #{goodsId}
+        AND stock >= #{quantity}
+    </update>
+
+    <!-- 增加销量 -->
+    <update id="increaseSalesCount">
+        UPDATE t_goods
+        SET sales_count = sales_count + #{count},
             update_time = NOW()
         WHERE id = #{goodsId}
     </update>
 
-    <!-- 更新商品销量 -->
-    <update id="updateSalesCount">
-        UPDATE t_goods
-        SET sales_count = sales_count + #{salesChange},
-            update_time = NOW()
-        WHERE id = #{goodsId}
-    </update>
-
-    <!-- 增加商品浏览量 -->
+    <!-- 增加浏览量 -->
     <update id="increaseViewCount">
         UPDATE t_goods
-        SET view_count = view_count + 1,
+        SET view_count = view_count + #{count},
             update_time = NOW()
         WHERE id = #{goodsId}
     </update>
+
+    <!-- 按类型和状态统计 -->
+    <select id="countByTypeAndStatus" resultType="map">
+        SELECT 
+            goods_type,
+            status,
+            COUNT(*) as goods_count,
+            SUM(sales_count) as total_sales,
+            SUM(view_count) as total_views,
+            AVG(price) as avg_price
+        FROM t_goods
+        GROUP BY goods_type, status
+        ORDER BY goods_type, status
+    </select>
 
     <!-- 批量更新商品状态 -->
     <update id="batchUpdateStatus">
@@ -117,63 +168,24 @@
         </foreach>
     </update>
 
-    <!-- 获取商品统计信息 -->
-    <select id="getGoodsStatistics" resultType="map">
-        SELECT 
-            id,
-            name,
-            stock,
-            sales_count,
-            view_count,
-            status,
-            price,
-            category_name,
-            seller_name,
-            create_time
-        FROM t_goods
-        WHERE id = #{goodsId}
-    </select>
-
-    <!-- 统计商家的商品数量 -->
-    <select id="countBySeller" resultType="long">
-        SELECT COUNT(*)
-        FROM t_goods
-        WHERE seller_id = #{sellerId}
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-    </select>
-
-    <!-- 统计分类的商品数量 -->
+    <!-- 根据分类统计商品数量 -->
     <select id="countByCategory" resultType="long">
         SELECT COUNT(*)
         FROM t_goods
         WHERE category_id = #{categoryId}
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
     </select>
 
-    <!-- 查询热销商品 -->
-    <select id="findHotGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
-        SELECT <include refid="baseColumns" />
+    <!-- 根据商家统计商品数量 -->
+    <select id="countBySeller" resultType="long">
+        SELECT COUNT(*)
         FROM t_goods
-        WHERE sales_count >= #{minSalesCount}
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY sales_count DESC, view_count DESC
-    </select>
-
-    <!-- 查询最新商品 -->
-    <select id="findLatestGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
-        SELECT <include refid="baseColumns" />
-        FROM t_goods
-        WHERE create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-        ORDER BY create_time DESC
+        WHERE seller_id = #{sellerId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
     </select>
 
     <!-- 复合条件查询商品 -->
@@ -181,38 +193,53 @@
         SELECT <include refid="baseColumns" />
         FROM t_goods
         WHERE 1=1
-          <if test="categoryId != null">
-              AND category_id = #{categoryId}
-          </if>
-          <if test="sellerId != null">
-              AND seller_id = #{sellerId}
-          </if>
-          <if test="nameKeyword != null and nameKeyword != ''">
-              AND name LIKE CONCAT('%', #{nameKeyword}, '%')
-          </if>
-          <if test="minPrice != null">
-              AND price >= #{minPrice}
-          </if>
-          <if test="maxPrice != null">
-              AND price &lt;= #{maxPrice}
-          </if>
-          <if test="hasStock != null">
-              <if test="hasStock == true">
-                  AND stock > 0
-              </if>
-              <if test="hasStock == false">
-                  AND stock = 0
-              </if>
-          </if>
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
+        <if test="categoryId != null">
+            AND category_id = #{categoryId}
+        </if>
+        <if test="sellerId != null">
+            AND seller_id = #{sellerId}
+        </if>
+        <if test="goodsType != null and goodsType != ''">
+            AND goods_type = #{goodsType}
+        </if>
+        <if test="nameKeyword != null and nameKeyword != ''">
+            AND (name LIKE CONCAT('%', #{nameKeyword}, '%') OR description LIKE CONCAT('%', #{nameKeyword}, '%'))
+        </if>
+        <if test="minPrice != null">
+            AND price >= #{minPrice}
+        </if>
+        <if test="maxPrice != null">
+            AND price &lt;= #{maxPrice}
+        </if>
+        <if test="minCoinPrice != null">
+            AND coin_price >= #{minCoinPrice}
+        </if>
+        <if test="maxCoinPrice != null">
+            AND coin_price &lt;= #{maxCoinPrice}
+        </if>
+        <if test="hasStock != null">
+            <if test="hasStock == true">
+                AND (stock > 0 OR stock = -1)
+            </if>
+            <if test="hasStock == false">
+                AND stock = 0
+            </if>
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
         <choose>
             <when test="orderBy == 'price' and orderDirection == 'ASC'">
                 ORDER BY price ASC
             </when>
             <when test="orderBy == 'price' and orderDirection == 'DESC'">
                 ORDER BY price DESC
+            </when>
+            <when test="orderBy == 'coin_price' and orderDirection == 'ASC'">
+                ORDER BY coin_price ASC
+            </when>
+            <when test="orderBy == 'coin_price' and orderDirection == 'DESC'">
+                ORDER BY coin_price DESC
             </when>
             <when test="orderBy == 'sales_count' and orderDirection == 'ASC'">
                 ORDER BY sales_count ASC
@@ -238,4 +265,4 @@
         </choose>
     </select>
 
-</mapper> 
+</mapper>

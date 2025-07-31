@@ -125,24 +125,42 @@ CREATE TABLE `t_user_reward_record` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户奖励记录表';
 
 -- ==========================================
--- 用户金币账户表（可选扩展）
+-- 资产管理说明（使用统一的钱包表）
 -- ==========================================
 
--- 用户金币账户表
-DROP TABLE IF EXISTS `t_user_coin_account`;
-CREATE TABLE `t_user_coin_account` (
-    `id`            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '账户ID',
-    `user_id`       BIGINT       NOT NULL                COMMENT '用户ID',
-    `total_coin`    BIGINT       NOT NULL DEFAULT 0      COMMENT '总金币数',
-    `available_coin` BIGINT      NOT NULL DEFAULT 0      COMMENT '可用金币数',
-    `frozen_coin`   BIGINT       NOT NULL DEFAULT 0      COMMENT '冻结金币数',
-    `total_earned`  BIGINT       NOT NULL DEFAULT 0      COMMENT '累计获得金币',
-    `total_spent`   BIGINT       NOT NULL DEFAULT 0      COMMENT '累计消费金币',
-    `create_time`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_time`   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户金币账户表';
+-- 注意：本任务系统的金币奖励将使用用户模块的 t_user_wallet 表
+-- 统一资产管理，避免数据冲突
+-- 
+-- 钱包表字段映射：
+-- - balance -> 对应金币余额（单位：分，100分=1金币）
+-- - frozen_amount -> 对应冻结金币
+-- - total_income -> 对应累计获得金币
+-- - total_expense -> 对应累计消费金币
+-- 
+-- 建议在用户钱包表中增加币种字段以支持多种虚拟货币：
+
+-- 扩展钱包表结构（可选，替代原 t_user_wallet）
+-- DROP TABLE IF EXISTS `t_user_wallet_extended`;
+-- CREATE TABLE `t_user_wallet_extended` (
+--     `id`             BIGINT        NOT NULL AUTO_INCREMENT COMMENT '钱包ID',
+--     `user_id`        BIGINT        NOT NULL                COMMENT '用户ID',
+--     `currency_type`  VARCHAR(20)   NOT NULL DEFAULT 'CNY'  COMMENT '币种类型：CNY、USD、COIN等',
+--     `balance`        DECIMAL(15,2) NOT NULL DEFAULT 0.00   COMMENT '余额',
+--     `frozen_amount`  DECIMAL(15,2) NOT NULL DEFAULT 0.00   COMMENT '冻结金额',
+--     `total_income`   DECIMAL(15,2) NOT NULL DEFAULT 0.00   COMMENT '总收入',
+--     `total_expense`  DECIMAL(15,2) NOT NULL DEFAULT 0.00   COMMENT '总支出',
+--     `status`         VARCHAR(20)   NOT NULL DEFAULT 'active' COMMENT '状态：active、frozen',
+--     `create_time`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+--     `update_time`    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+--     PRIMARY KEY (`id`),
+--     UNIQUE KEY `uk_user_currency` (`user_id`, `currency_type`),
+--     KEY `idx_currency_type` (`currency_type`),
+--     KEY `idx_status` (`status`)
+-- ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户多币种钱包表';
+
+-- 或者在现有钱包表基础上增加字段：
+-- ALTER TABLE `t_user_wallet` ADD COLUMN `currency_type` VARCHAR(20) NOT NULL DEFAULT 'CNY' COMMENT '币种类型' AFTER `user_id`;
+-- ALTER TABLE `t_user_wallet` ADD COLUMN `coin_balance` BIGINT NOT NULL DEFAULT 0 COMMENT '金币余额（任务奖励用）' AFTER `frozen_amount`;
 
 -- ==========================================
 -- 初始化任务模板数据
@@ -303,16 +321,25 @@ DELIMITER ;
 -- 触发器（自动发放奖励）
 -- ==========================================
 
--- 任务完成后自动记录奖励
+-- 任务完成后自动记录奖励并发放金币
 DROP TRIGGER IF EXISTS `tr_task_complete_reward`;
 DELIMITER $$
 CREATE TRIGGER `tr_task_complete_reward`
 AFTER UPDATE ON `t_user_task_record`
 FOR EACH ROW
 BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_reward_type VARCHAR(50);
+    DECLARE v_reward_amount INT;
+    DECLARE v_reward_cursor CURSOR FOR 
+        SELECT reward_type, reward_amount 
+        FROM t_task_reward 
+        WHERE task_id = NEW.task_id;
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+    
     -- 如果任务刚完成且未发放奖励
     IF NEW.is_completed = 1 AND OLD.is_completed = 0 AND NEW.is_rewarded = 0 THEN
-        -- 为该任务创建奖励记录
+        -- 创建奖励记录
         INSERT INTO t_user_reward_record (
             user_id, task_record_id, reward_source, reward_type, 
             reward_name, reward_amount, reward_data, status
@@ -322,6 +349,31 @@ BEGIN
             tr.reward_name, tr.reward_amount, tr.reward_data, 'pending'
         FROM t_task_reward tr
         WHERE tr.task_id = NEW.task_id;
+        
+        -- 自动发放金币奖励
+        OPEN v_reward_cursor;
+        reward_loop: LOOP
+            FETCH v_reward_cursor INTO v_reward_type, v_reward_amount;
+            IF done THEN
+                LEAVE reward_loop;
+            END IF;
+            
+            -- 如果是金币奖励，直接发放到钱包
+            IF v_reward_type = 'coin' THEN
+                CALL grant_coin_reward(NEW.user_id, v_reward_amount, 'task_reward');
+                
+                -- 更新奖励记录状态为已发放
+                UPDATE t_user_reward_record 
+                SET status = 'success', grant_time = NOW()
+                WHERE task_record_id = NEW.id AND reward_type = 'coin';
+            END IF;
+        END LOOP;
+        CLOSE v_reward_cursor;
+        
+        -- 标记任务奖励已发放
+        UPDATE t_user_task_record 
+        SET is_rewarded = 1, reward_time = NOW()
+        WHERE id = NEW.id;
     END IF;
 END$$
 DELIMITER ;
@@ -359,3 +411,29 @@ DELIMITER ;
 --    - 冗余字段避免复杂连表查询
 --    - 合理索引支持高并发访问
 --    - 存储过程批量处理任务更新
+
+-- 5. 资产集成：
+--    - 金币奖励统一使用 t_user_wallet 表管理
+--    - 自动调用 grant_coin_reward 存储过程发放奖励
+--    - 触发器自动处理金币发放，确保数据一致性
+--    - 支持金币、道具、VIP等多种奖励类型
+
+-- 6. 钱包集成说明：
+--    - 任务完成时自动发放金币到用户钱包
+--    - 金币余额实时更新，支持即时消费
+--    - 完整的收支记录，便于财务管理
+--    - 与用户钱包系统无缝集成，避免数据冲突
+
+-- 7. 使用示例：
+--    -- 模拟用户完成登录任务
+--    CALL update_user_task_progress(123, 'login', 1);
+--    
+--    -- 查看用户任务完成情况和金币余额
+--    SELECT u.username, w.coin_balance, w.coin_total_earned
+--    FROM t_user u JOIN t_user_wallet w ON u.id = w.user_id 
+--    WHERE u.id = 123;
+--    
+--    -- 查看今日任务奖励记录
+--    SELECT tr.reward_name, tr.reward_amount, tr.status, tr.grant_time
+--    FROM t_user_reward_record tr
+--    WHERE tr.user_id = 123 AND DATE(tr.create_time) = CURDATE();
