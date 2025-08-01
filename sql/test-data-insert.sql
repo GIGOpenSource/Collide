@@ -6,6 +6,44 @@
 USE collide;
 
 -- ==========================================
+-- 数据清理（避免重复键冲突）
+-- ==========================================
+
+-- 关闭外键检查，避免删除顺序问题
+SET FOREIGN_KEY_CHECKS = 0;
+
+-- 清理测试数据（保留管理员账户）
+DELETE FROM `t_user_reward_record` WHERE `user_id` > 2;
+DELETE FROM `t_user_task_record` WHERE `user_id` > 2;
+DELETE FROM `t_hot_search`;
+DELETE FROM `t_search_history` WHERE `user_id` > 2;
+DELETE FROM `t_message_setting` WHERE `user_id` > 2;
+DELETE FROM `t_message_session` WHERE `user_id` > 2;
+DELETE FROM `t_message` WHERE `sender_id` > 2 OR `receiver_id` > 2;
+DELETE FROM `t_social_dynamic` WHERE `user_id` > 2;
+DELETE FROM `t_comment` WHERE `user_id` > 2;
+DELETE FROM `t_favorite` WHERE `user_id` > 2;
+DELETE FROM `t_like` WHERE `user_id` > 2;
+DELETE FROM `t_follow` WHERE `follower_id` > 2 OR `followee_id` > 2;
+DELETE FROM `t_payment` WHERE `user_id` > 2;
+DELETE FROM `t_order` WHERE `user_id` > 2;
+DELETE FROM `t_goods` WHERE `id` > 8; -- 保留前8个基础商品
+DELETE FROM `t_user_content_purchase` WHERE `user_id` > 2;
+DELETE FROM `t_content_payment` WHERE `content_id` > 0;
+DELETE FROM `t_content_tag` WHERE `content_id` > 0;
+DELETE FROM `t_content_chapter` WHERE `content_id` > 0;
+DELETE FROM `t_content` WHERE `author_id` > 2;
+DELETE FROM `t_user_interest_tag` WHERE `user_id` > 2;
+DELETE FROM `t_tag` WHERE `id` > 6; -- 保留前6个基础标签
+DELETE FROM `t_category` WHERE `id` > 5; -- 保留前5个基础分类
+DELETE FROM `t_user_block` WHERE `user_id` > 2;
+DELETE FROM `t_user_wallet` WHERE `user_id` > 2;
+DELETE FROM `t_user` WHERE `id` > 2;
+
+-- 重新开启外键检查
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ==========================================
 -- 1. 用户模块测试数据
 -- ==========================================
 
@@ -830,58 +868,6 @@ INSERT INTO `t_user_reward_record` (
 (6, 13, 'task', 'coin', '金币', 20, NULL, 'success', '2024-01-15 14:21:00'),
 (6, 13, 'task', 'experience', '经验值', 5, NULL, 'success', '2024-01-15 14:21:00'),
 (6, 14, 'task', 'coin', '金币', 15, NULL, 'success', '2024-01-15 15:31:00');
-
--- ==========================================
--- 15. 广告模块测试数据（扩展已有数据）
--- ==========================================
-
--- 广告展示记录数据
-INSERT INTO `t_ad_record` (
-    `campaign_id`, `user_id`, `session_id`, `ip_address`, `user_agent`, 
-    `page_url`, `view_time`, `is_clicked`, `click_time`, 
-    `view_revenue`, `click_revenue`
-) VALUES
--- 首页科技产品推广的展示记录
-(1, 3, 'sess_alice_001', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 10:00:00', 1, '2024-01-15 10:02:30', 0.0100, 1.0000),
-(1, 4, 'sess_bob_001', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 10:15:00', 0, NULL, 0.0100, 0.0000),
-(1, 5, 'sess_charlie_001', '192.168.1.102', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 10:30:00', 1, '2024-01-15 10:35:15', 0.0100, 1.0000),
-(1, 6, 'sess_diana_001', '192.168.1.103', 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15', 'https://collide.com/', '2024-01-15 10:45:00', 0, NULL, 0.0100, 0.0000),
-(1, 7, 'sess_evan_001', '192.168.1.104', 'Mozilla/5.0 (Android 11; Mobile; rv:92.0) Gecko/92.0 Firefox/92.0', 'https://collide.com/', '2024-01-15 11:00:00', 1, '2024-01-15 11:05:45', 0.0100, 1.0000),
-
--- 首页右侧教育课程的展示记录
-(2, 8, 'sess_fiona_001', '192.168.1.105', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 11:20:00', 1, '2024-01-15 11:25:20', 0.0080, 0.8000),
-(2, 9, 'sess_george_001', '192.168.1.106', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 11:35:00', 0, NULL, 0.0080, 0.0000),
-(2, 10, 'sess_helen_001', '192.168.1.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/', '2024-01-15 11:50:00', 1, '2024-01-15 11:55:30', 0.0080, 0.8000),
-(2, 11, 'sess_ivan_001', '192.168.1.108', 'Mozilla/5.0 (iPad; CPU OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15', 'https://collide.com/', '2024-01-15 12:05:00', 0, NULL, 0.0080, 0.0000),
-
--- 内容页APP推广的展示记录
-(3, 3, 'sess_alice_002', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/content/1', '2024-01-15 12:20:00', 0, NULL, 0.0120, 0.0000),
-(3, 4, 'sess_bob_002', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'https://collide.com/content/2', '2024-01-15 12:35:00', 1, '2024-01-15 12:40:15', 0.0120, 1.2000),
-(3, 12, 'sess_julia_001', '192.168.1.109', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/content/5', '2024-01-15 12:50:00', 0, NULL, 0.0120, 0.0000),
-
--- 搜索页品牌推广的展示记录
-(4, 5, 'sess_charlie_002', '192.168.1.102', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', 'https://collide.com/search?q=Java', '2024-01-15 13:10:00', 1, '2024-01-15 13:15:45', 0.0150, 1.5000),
-(4, 6, 'sess_diana_002', '192.168.1.103', 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_7_1 like Mac OS X) AppleWebKit/605.1.15', 'https://collide.com/search?q=设计', '2024-01-15 13:25:00', 0, NULL, 0.0150, 0.0000),
-(4, 9, 'sess_george_002', '192.168.1.106', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', 'https://collide.com/search?q=摄影', '2024-01-15 13:40:00', 1, '2024-01-15 13:45:20', 0.0150, 1.5000);
-
--- 广告统计数据
-INSERT INTO `t_ad_statistics` (
-    `stat_date`, `campaign_id`, `total_views`, `total_clicks`, `unique_users`, 
-    `click_rate`, `total_revenue`, `avg_revenue_per_click`
-) VALUES
-('2024-01-15', 1, 150, 18, 89, 0.1200, 23.50, 1.3056),
-('2024-01-15', 2, 120, 12, 67, 0.1000, 10.56, 0.8800),
-('2024-01-15', 3, 89, 8, 45, 0.0899, 10.68, 1.3350),
-('2024-01-15', 4, 67, 9, 34, 0.1343, 14.85, 1.6500),
-('2024-01-14', 1, 134, 15, 78, 0.1119, 21.34, 1.4227),
-('2024-01-14', 2, 98, 10, 56, 0.1020, 8.80, 0.8800),
-('2024-01-14', 3, 76, 6, 38, 0.0789, 8.12, 1.3533),
-('2024-01-14', 4, 55, 7, 29, 0.1273, 10.75, 1.5357),
-('2024-01-13', 1, 145, 20, 85, 0.1379, 25.45, 1.2725),
-('2024-01-13', 2, 112, 14, 63, 0.1250, 12.32, 0.8800),
-('2024-01-13', 3, 87, 9, 42, 0.1034, 11.28, 1.2533),
-('2024-01-13', 4, 72, 8, 36, 0.1111, 12.96, 1.6200);
-
 -- ==========================================
 -- 数据插入完成
 -- ==========================================
@@ -910,18 +896,6 @@ UPDATE `t_tag` SET
     ) + (
         SELECT COUNT(*) FROM `t_user_interest_tag` WHERE `tag_id` = `t_tag`.`id` AND `status` = 'active'
     );
-
--- 更新广告投放统计
-UPDATE `t_ad_campaign` SET 
-    `total_views` = (SELECT IFNULL(SUM(`total_views`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`),
-    `total_clicks` = (SELECT IFNULL(SUM(`total_clicks`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`),
-    `total_revenue` = (SELECT IFNULL(SUM(`total_revenue`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`),
-    `click_rate` = CASE 
-        WHEN (SELECT IFNULL(SUM(`total_views`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`) > 0 
-        THEN (SELECT IFNULL(SUM(`total_clicks`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`) / 
-             (SELECT IFNULL(SUM(`total_views`), 0) FROM `t_ad_statistics` WHERE `campaign_id` = `t_ad_campaign`.`id`)
-        ELSE 0 
-    END;
 
 -- ==========================================
 -- 测试数据插入脚本完成

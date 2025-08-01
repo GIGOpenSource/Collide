@@ -163,10 +163,10 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
     }
 
     @Override
-    public Result<PageResponse<CategoryResponse>> getRootCategories(Integer pageNum, Integer pageSize, 
+    public Result<PageResponse<CategoryResponse>> getRootCategories(Integer currentPage, Integer pageSize, 
                                                                   String orderBy, String orderDirection) {
         try {
-            IPage<Category> page = categoryService.getRootCategories(pageNum, pageSize, orderBy, orderDirection);
+            IPage<Category> page = categoryService.getRootCategories(currentPage, pageSize, orderBy, orderDirection);
             PageResponse<CategoryResponse> response = convertToPageResponse(page);
             return Result.success(response);
             
@@ -177,14 +177,14 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
     }
 
     @Override
-    public Result<PageResponse<CategoryResponse>> getChildCategories(Long parentId, Integer pageNum, Integer pageSize,
+    public Result<PageResponse<CategoryResponse>> getChildCategories(Long parentId, Integer currentPage, Integer pageSize,
                                                                    String orderBy, String orderDirection) {
         try {
             if (parentId == null) {
                 return Result.error("INVALID_REQUEST", "父分类ID不能为空");
             }
             
-            IPage<Category> page = categoryService.getChildCategories(parentId, pageNum, pageSize, orderBy, orderDirection);
+            IPage<Category> page = categoryService.getChildCategories(parentId, currentPage, pageSize, orderBy, orderDirection);
             PageResponse<CategoryResponse> response = convertToPageResponse(page);
             return Result.success(response);
             
@@ -350,9 +350,9 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
     }
 
     @Override
-    public Result<PageResponse<CategoryResponse>> getPopularCategories(Long parentId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<CategoryResponse>> getPopularCategories(Long parentId, Integer currentPage, Integer pageSize) {
         try {
-            IPage<Category> page = categoryService.getPopularCategories(parentId, pageNum, pageSize);
+            IPage<Category> page = categoryService.getPopularCategories(parentId, currentPage, pageSize);
             PageResponse<CategoryResponse> response = convertToPageResponse(page);
             return Result.success(response);
             
@@ -364,13 +364,13 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
 
     @Override
     public Result<PageResponse<CategoryResponse>> searchCategories(String keyword, Long parentId, 
-                                                                 Integer pageNum, Integer pageSize) {
+                                                                 Integer currentPage, Integer pageSize) {
         try {
             if (keyword == null || keyword.trim().isEmpty()) {
                 return Result.error("INVALID_REQUEST", "搜索关键词不能为空");
             }
             
-            IPage<Category> page = categoryService.searchCategories(keyword, parentId, pageNum, pageSize, "sort", "ASC");
+            IPage<Category> page = categoryService.searchCategories(keyword, parentId, currentPage, pageSize, "sort", "ASC");
             PageResponse<CategoryResponse> response = convertToPageResponse(page);
             return Result.success(response);
             
@@ -512,7 +512,7 @@ public class CategoryFacadeServiceImpl implements CategoryFacadeService {
     }
 
     @Override
-    public Result<PageResponse<CategoryResponse>> getLeafCategories(Long parentId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<CategoryResponse>> getLeafCategories(Long parentId, Integer currentPage, Integer pageSize) {
         return Result.error("NOT_IMPLEMENTED", "功能开发中");
     }
 

@@ -105,12 +105,12 @@ public interface ContentFacadeService {
      * 
      * @param contentId 内容ID
      * @param status 章节状态（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 章节列表
      */
     Result<PageResponse<ChapterResponse>> getContentChapters(Long contentId, String status, 
-                                                           Integer pageNum, Integer pageSize);
+                                                           Integer currentPage, Integer pageSize);
     
     /**
      * 获取章节详情
@@ -193,24 +193,24 @@ public interface ContentFacadeService {
      * @param authorId 作者ID
      * @param contentType 内容类型（可选）
      * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 内容列表
      */
     Result<PageResponse<ContentResponse>> getContentsByAuthor(Long authorId, String contentType, 
-                                                            String status, Integer pageNum, Integer pageSize);
+                                                            String status, Integer currentPage, Integer pageSize);
     
     /**
      * 根据分类查询内容
      * 
      * @param categoryId 分类ID
      * @param contentType 内容类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 内容列表
      */
     Result<PageResponse<ContentResponse>> getContentsByCategory(Long categoryId, String contentType,
-                                                              Integer pageNum, Integer pageSize);
+                                                              Integer currentPage, Integer pageSize);
     
     /**
      * 搜索内容
@@ -218,12 +218,12 @@ public interface ContentFacadeService {
      * 
      * @param keyword 搜索关键词
      * @param contentType 内容类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 搜索结果
      */
     Result<PageResponse<ContentResponse>> searchContents(String keyword, String contentType,
-                                                       Integer pageNum, Integer pageSize);
+                                                       Integer currentPage, Integer pageSize);
     
     /**
      * 获取热门内容
@@ -231,23 +231,23 @@ public interface ContentFacadeService {
      * 
      * @param contentType 内容类型（可选）
      * @param timeRange 时间范围（天）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 热门内容列表
      */
     Result<PageResponse<ContentResponse>> getPopularContents(String contentType, Integer timeRange,
-                                                           Integer pageNum, Integer pageSize);
+                                                           Integer currentPage, Integer pageSize);
     
     /**
      * 获取最新内容
      * 按发布时间排序
      * 
      * @param contentType 内容类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 最新内容列表
      */
-    Result<PageResponse<ContentResponse>> getLatestContents(String contentType, Integer pageNum, Integer pageSize);
+    Result<PageResponse<ContentResponse>> getLatestContents(String contentType, Integer currentPage, Integer pageSize);
     
     // =================== 数据同步 ===================
     

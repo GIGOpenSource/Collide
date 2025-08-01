@@ -60,7 +60,7 @@ public class FollowQueryRequest implements Serializable {
      * 页码，从1开始
      */
     @Min(value = 1, message = "页码必须大于0")
-    private Integer pageNum = 1;
+    private Integer currentPage = 1;
 
     /**
      * 页面大小

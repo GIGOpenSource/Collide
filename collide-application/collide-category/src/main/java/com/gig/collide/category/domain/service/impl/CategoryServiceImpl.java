@@ -155,34 +155,34 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public IPage<Category> queryCategories(Long parentId, String status, Integer pageNum, Integer pageSize,
+    public IPage<Category> queryCategories(Long parentId, String status, Integer currentPage, Integer pageSize,
                                          String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+        Page<Category> page = new Page<>(currentPage, pageSize);
         
         return categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
     }
 
     @Override
-    public IPage<Category> searchCategories(String keyword, Long parentId, Integer pageNum, Integer pageSize,
+    public IPage<Category> searchCategories(String keyword, Long parentId, Integer currentPage, Integer pageSize,
                                           String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+        Page<Category> page = new Page<>(currentPage, pageSize);
         String status = "active"; // 搜索只返回激活状态的分类
         
         return categoryMapper.searchCategories(page, keyword, parentId, status, orderBy, orderDirection);
     }
 
     @Override
-    public IPage<Category> getRootCategories(Integer pageNum, Integer pageSize, String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+    public IPage<Category> getRootCategories(Integer currentPage, Integer pageSize, String orderBy, String orderDirection) {
+        Page<Category> page = new Page<>(currentPage, pageSize);
         String status = "active";
         
         return categoryMapper.selectRootCategories(page, status, orderBy, orderDirection);
     }
 
     @Override
-    public IPage<Category> getChildCategories(Long parentId, Integer pageNum, Integer pageSize,
+    public IPage<Category> getChildCategories(Long parentId, Integer currentPage, Integer pageSize,
                                             String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+        Page<Category> page = new Page<>(currentPage, pageSize);
         String status = "active";
         
         return categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
@@ -315,8 +315,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public IPage<Category> getPopularCategories(Long parentId, Integer pageNum, Integer pageSize) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+    public IPage<Category> getPopularCategories(Long parentId, Integer currentPage, Integer pageSize) {
+        Page<Category> page = new Page<>(currentPage, pageSize);
         String status = "active";
         
         return categoryMapper.selectPopularCategories(page, parentId, status);
@@ -382,8 +382,8 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
-    public IPage<Category> getLeafCategories(Long parentId, Integer pageNum, Integer pageSize) {
-        Page<Category> page = new Page<>(pageNum, pageSize);
+    public IPage<Category> getLeafCategories(Long parentId, Integer currentPage, Integer pageSize) {
+        Page<Category> page = new Page<>(currentPage, pageSize);
         String status = "active";
         
         return categoryMapper.selectLeafCategories(page, parentId, status);

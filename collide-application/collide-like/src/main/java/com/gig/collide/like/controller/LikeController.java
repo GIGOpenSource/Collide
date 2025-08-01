@@ -120,7 +120,7 @@ public class LikeController {
     public Result<PageResponse<LikeResponse>> queryLikes(@RequestBody LikeQueryRequest request) {
         try {
             log.info("分页查询点赞记录: 页码={}, 页大小={}, 用户={}, 类型={}", 
-                    request.getPageNum(), request.getPageSize(), request.getUserId(), request.getLikeType());
+                    request.getCurrentPage(), request.getPageSize(), request.getUserId(), request.getLikeType());
 
             // 调用门面服务
             Result<PageResponse<LikeResponse>> result = likeFacadeService.queryLikes(request);
@@ -131,7 +131,7 @@ public class LikeController {
             }
             return result;
         } catch (Exception e) {
-            log.error("分页查询点赞记录失败: 页码={}, 页大小={}", request.getPageNum(), request.getPageSize(), e);
+            log.error("分页查询点赞记录失败: 页码={}, 页大小={}", request.getCurrentPage(), request.getPageSize(), e);
             return Result.error("LIKE_QUERY_ERROR", "查询点赞记录失败: " + e.getMessage());
         }
     }

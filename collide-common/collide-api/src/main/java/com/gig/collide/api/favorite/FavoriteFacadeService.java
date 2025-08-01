@@ -71,12 +71,12 @@ public interface FavoriteFacadeService {
      * 
      * @param userId 用户ID
      * @param favoriteType 收藏类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 收藏列表
      */
     Result<PageResponse<FavoriteResponse>> getUserFavorites(Long userId, String favoriteType, 
-                                                          Integer pageNum, Integer pageSize);
+                                                          Integer currentPage, Integer pageSize);
     
     /**
      * 获取目标对象的收藏列表
@@ -84,12 +84,12 @@ public interface FavoriteFacadeService {
      * 
      * @param favoriteType 收藏类型
      * @param targetId 目标ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 收藏用户列表
      */
     Result<PageResponse<FavoriteResponse>> getTargetFavorites(String favoriteType, Long targetId,
-                                                            Integer pageNum, Integer pageSize);
+                                                            Integer currentPage, Integer pageSize);
     
     /**
      * 获取用户收藏数量
@@ -139,23 +139,23 @@ public interface FavoriteFacadeService {
      * @param userId 用户ID
      * @param titleKeyword 标题关键词
      * @param favoriteType 收藏类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 搜索结果
      */
     Result<PageResponse<FavoriteResponse>> searchFavoritesByTitle(Long userId, String titleKeyword, 
-                                                                String favoriteType, Integer pageNum, Integer pageSize);
+                                                                String favoriteType, Integer currentPage, Integer pageSize);
     
     /**
      * 获取热门收藏对象
      * 查询被收藏次数最多的对象
      * 
      * @param favoriteType 收藏类型
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 热门收藏对象列表
      */
-    Result<PageResponse<FavoriteResponse>> getPopularFavorites(String favoriteType, Integer pageNum, Integer pageSize);
+    Result<PageResponse<FavoriteResponse>> getPopularFavorites(String favoriteType, Integer currentPage, Integer pageSize);
     
     /**
      * 清理已取消的收藏记录

@@ -68,7 +68,7 @@ public class SearchFacadeServiceImpl implements SearchFacadeService {
                 request.getKeyword(),
                 request.getSearchType(),
                 request.getUserId(),
-                request.getPageNum(),
+                request.getCurrentPage(),
                 request.getPageSize(),
                 request.getSortBy()
             );

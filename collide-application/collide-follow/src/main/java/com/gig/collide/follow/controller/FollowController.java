@@ -163,8 +163,8 @@ public class FollowController {
             request.setFollowerId(followerId);
             request.setFolloweeId(followeeId);
             request.setStatus(status);
-            request.setPageNum(page);
-            request.setPageNum(size);
+            request.setCurrentPage(page);
+            request.setPageSize(size);
             
             return followFacadeService.queryFollows(request);
         } catch (Exception e) {

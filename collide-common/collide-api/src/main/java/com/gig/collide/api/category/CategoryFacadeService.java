@@ -75,13 +75,13 @@ public interface CategoryFacadeService {
      * 获取根分类列表
      * 获取所有顶级分类（parent_id = 0）
      * 
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 根分类列表
      */
-    Result<PageResponse<CategoryResponse>> getRootCategories(Integer pageNum, Integer pageSize,
+    Result<PageResponse<CategoryResponse>> getRootCategories(Integer currentPage, Integer pageSize,
                                                            String orderBy, String orderDirection);
 
     /**
@@ -89,13 +89,13 @@ public interface CategoryFacadeService {
      * 获取指定分类的直接子分类
      * 
      * @param parentId 父分类ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 子分类列表
      */
-    Result<PageResponse<CategoryResponse>> getChildCategories(Long parentId, Integer pageNum, Integer pageSize,
+    Result<PageResponse<CategoryResponse>> getChildCategories(Long parentId, Integer currentPage, Integer pageSize,
                                                             String orderBy, String orderDirection);
 
     /**
@@ -214,11 +214,11 @@ public interface CategoryFacadeService {
      * 根据内容数量排序
      * 
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 热门分类列表
      */
-    Result<PageResponse<CategoryResponse>> getPopularCategories(Long parentId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<CategoryResponse>> getPopularCategories(Long parentId, Integer currentPage, Integer pageSize);
 
     // =================== 搜索功能 ===================
 
@@ -228,12 +228,12 @@ public interface CategoryFacadeService {
      * 
      * @param keyword 搜索关键词
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 搜索结果
      */
     Result<PageResponse<CategoryResponse>> searchCategories(String keyword, Long parentId,
-                                                          Integer pageNum, Integer pageSize);
+                                                          Integer currentPage, Integer pageSize);
 
     /**
      * 获取分类建议
@@ -314,11 +314,11 @@ public interface CategoryFacadeService {
      * 获取没有子分类的分类
      * 
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 叶子分类列表
      */
-    Result<PageResponse<CategoryResponse>> getLeafCategories(Long parentId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<CategoryResponse>> getLeafCategories(Long parentId, Integer currentPage, Integer pageSize);
 
     /**
      * 克隆分类

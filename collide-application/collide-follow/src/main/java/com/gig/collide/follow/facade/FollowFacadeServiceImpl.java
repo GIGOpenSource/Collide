@@ -158,11 +158,11 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     public Result<PageResponse<FollowResponse>> queryFollows(FollowQueryRequest request) {
         try {
             log.info("RPC分页查询关注记录: pageNum={}, pageSize={}, followerId={}, followeeId={}", 
-                    request.getPageNum(), request.getPageSize(), request.getFollowerId(), request.getFolloweeId());
+                    request.getCurrentPage(), request.getPageSize(), request.getFollowerId(), request.getFolloweeId());
             long startTime = System.currentTimeMillis();
 
             IPage<Follow> followPage = followService.queryFollows(
-                    request.getPageNum(),
+                    request.getCurrentPage(),
                     request.getPageSize(),
                     request.getFollowerId(),
                     request.getFolloweeId(),
@@ -182,7 +182,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
                     pageResponse.getTotal(), pageResponse.getCurrentPage(), duration);
             return Result.success(pageResponse);
         } catch (Exception e) {
-            log.error("分页查询关注记录失败: 页码={}, 页大小={}", request.getPageNum(), request.getPageSize(), e);
+            log.error("分页查询关注记录失败: 页码={}, 页大小={}", request.getCurrentPage(), request.getPageSize(), e);
             return Result.error("FOLLOW_QUERY_ERROR", "查询关注记录失败: " + e.getMessage());
         }
     }

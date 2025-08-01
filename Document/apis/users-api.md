@@ -186,7 +186,7 @@ Collide 用户服务提供完整的用户管理功能，包括用户注册、信
 #### 请求参数
 ```json
 {
-  "pageNum": 1,           // 页码（从1开始）
+  "currentPage": 1,           // 页码（从1开始）
   "pageSize": 20,         // 每页大小（默认10，最大100）
   "userQueryCondition": {
     "status": "ACTIVE",   // 用户状态筛选
@@ -205,7 +205,7 @@ Collide 用户服务提供完整的用户管理功能，包括用户注册、信
   "responseCode": "SUCCESS",
   "responseMessage": "查询成功",
   "totalCount": 1500,
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20,
   "pages": 75,
   "data": [

@@ -68,13 +68,13 @@ public interface CategoryService {
      * 
      * @param parentId 父分类ID
      * @param status 状态
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 分页分类列表
      */
-    IPage<Category> queryCategories(Long parentId, String status, Integer pageNum, Integer pageSize,
+    IPage<Category> queryCategories(Long parentId, String status, Integer currentPage, Integer pageSize,
                                    String orderBy, String orderDirection);
 
     /**
@@ -82,13 +82,13 @@ public interface CategoryService {
      * 
      * @param keyword 搜索关键词
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 搜索结果
      */
-    IPage<Category> searchCategories(String keyword, Long parentId, Integer pageNum, Integer pageSize,
+    IPage<Category> searchCategories(String keyword, Long parentId, Integer currentPage, Integer pageSize,
                                    String orderBy, String orderDirection);
 
     // =================== 层级分类 ===================
@@ -96,25 +96,25 @@ public interface CategoryService {
     /**
      * 获取根分类列表
      * 
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 根分类列表
      */
-    IPage<Category> getRootCategories(Integer pageNum, Integer pageSize, String orderBy, String orderDirection);
+    IPage<Category> getRootCategories(Integer currentPage, Integer pageSize, String orderBy, String orderDirection);
 
     /**
      * 获取子分类列表
      * 
      * @param parentId 父分类ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
      * @return 子分类列表
      */
-    IPage<Category> getChildCategories(Long parentId, Integer pageNum, Integer pageSize,
+    IPage<Category> getChildCategories(Long parentId, Integer currentPage, Integer pageSize,
                                       String orderBy, String orderDirection);
 
     /**
@@ -235,11 +235,11 @@ public interface CategoryService {
      * 获取热门分类
      * 
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 热门分类列表
      */
-    IPage<Category> getPopularCategories(Long parentId, Integer pageNum, Integer pageSize);
+    IPage<Category> getPopularCategories(Long parentId, Integer currentPage, Integer pageSize);
 
     // =================== 排序管理 ===================
 
@@ -288,11 +288,11 @@ public interface CategoryService {
      * 获取叶子分类
      * 
      * @param parentId 父分类ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 叶子分类列表
      */
-    IPage<Category> getLeafCategories(Long parentId, Integer pageNum, Integer pageSize);
+    IPage<Category> getLeafCategories(Long parentId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取分类建议

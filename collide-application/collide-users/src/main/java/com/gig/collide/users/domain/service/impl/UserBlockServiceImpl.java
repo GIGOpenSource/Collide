@@ -87,25 +87,25 @@ public class UserBlockServiceImpl implements UserBlockService {
     }
 
     @Override
-    public PageResponse<UserBlock> getUserBlockList(Long userId, Integer pageNum, Integer pageSize) {
-        log.info("查询用户拉黑列表：用户ID={}, 页码={}, 页大小={}", userId, pageNum, pageSize);
+    public PageResponse<UserBlock> getUserBlockList(Long userId, Integer currentPage, Integer pageSize) {
+        log.info("查询用户拉黑列表：用户ID={}, 页码={}, 页大小={}", userId, currentPage, pageSize);
         
-        int offset = (pageNum - 1) * pageSize;
+        int offset = (currentPage - 1) * pageSize;
         List<UserBlock> blocks = userBlockMapper.findByUserId(userId, "active", offset, pageSize);
         Long total = userBlockMapper.countByUserId(userId, "active");
         
-        return PageResponse.of(blocks, total, pageSize, pageNum);
+        return PageResponse.of(blocks, total, pageSize, currentPage);
     }
 
     @Override
-    public PageResponse<UserBlock> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize) {
-        log.info("查询用户被拉黑列表：用户ID={}, 页码={}, 页大小={}", blockedUserId, pageNum, pageSize);
+    public PageResponse<UserBlock> getUserBlockedList(Long blockedUserId, Integer currentPage, Integer pageSize) {
+        log.info("查询用户被拉黑列表：用户ID={}, 页码={}, 页大小={}", blockedUserId, currentPage, pageSize);
         
-        int offset = (pageNum - 1) * pageSize;
+        int offset = (currentPage - 1) * pageSize;
         List<UserBlock> blocks = userBlockMapper.findByBlockedUserId(blockedUserId, "active", offset, pageSize);
         Long total = userBlockMapper.countByBlockedUserId(blockedUserId, "active");
         
-        return PageResponse.of(blocks, total, pageSize, pageNum);
+        return PageResponse.of(blocks, total, pageSize, currentPage);
     }
 
     @Override

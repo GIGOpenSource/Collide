@@ -452,10 +452,10 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    public Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer currentPage, Integer pageSize) {
         try {
-            log.info("门面服务-获取用户拉黑列表: userId={}, pageNum={}, pageSize={}", userId, pageNum, pageSize);
-            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockList(userId, pageNum, pageSize);
+            log.info("门面服务-获取用户拉黑列表: userId={}, currentPage={}, pageSize={}", userId, currentPage, pageSize);
+            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockList(userId, currentPage, pageSize);
             
             // 转换为响应对象
             PageResponse<UserBlockResponse> result = new PageResponse<>();
@@ -477,9 +477,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    public Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer currentPage, Integer pageSize) {
         try {
-            log.info("门面服务-获取用户被拉黑列表: blockedUserId={}, pageNum={}, pageSize={}", blockedUserId, pageNum, pageSize);
+            log.info("门面服务-获取用户被拉黑列表: blockedUserId={}, currentPage={}, pageSize={}", blockedUserId, pageNum, pageSize);
             PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockedList(blockedUserId, pageNum, pageSize);
             
             // 转换为响应对象

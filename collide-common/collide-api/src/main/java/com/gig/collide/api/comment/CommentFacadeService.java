@@ -78,22 +78,22 @@ public interface CommentFacadeService {
      * @param targetId 目标对象ID
      * @param commentType 评论类型：CONTENT、DYNAMIC
      * @param parentCommentId 父评论ID，0表示获取根评论
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 评论列表
      */
     Result<PageResponse<CommentResponse>> getTargetComments(Long targetId, String commentType, 
-                                                           Long parentCommentId, Integer pageNum, Integer pageSize);
+                                                           Long parentCommentId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取评论的回复列表
      * 
      * @param parentCommentId 父评论ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 回复列表
      */
-    Result<PageResponse<CommentResponse>> getCommentReplies(Long parentCommentId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<CommentResponse>> getCommentReplies(Long parentCommentId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取目标对象的评论树
@@ -102,12 +102,12 @@ public interface CommentFacadeService {
      * @param targetId 目标对象ID
      * @param commentType 评论类型
      * @param maxDepth 最大层级深度
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 评论树
      */
     Result<PageResponse<CommentResponse>> getCommentTree(Long targetId, String commentType, 
-                                                        Integer maxDepth, Integer pageNum, Integer pageSize);
+                                                        Integer maxDepth, Integer currentPage, Integer pageSize);
 
     // =================== 用户评论 ===================
 
@@ -117,22 +117,22 @@ public interface CommentFacadeService {
      * @param userId 用户ID
      * @param commentType 评论类型（可选）
      * @param status 状态（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 评论列表
      */
     Result<PageResponse<CommentResponse>> getUserComments(Long userId, String commentType, 
-                                                         String status, Integer pageNum, Integer pageSize);
+                                                         String status, Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户收到的回复
      * 
      * @param userId 用户ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 回复列表
      */
-    Result<PageResponse<CommentResponse>> getUserReplies(Long userId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<CommentResponse>> getUserReplies(Long userId, Integer currentPage, Integer pageSize);
 
     // =================== 状态管理 ===================
 
@@ -245,12 +245,12 @@ public interface CommentFacadeService {
      * @param keyword 搜索关键词
      * @param commentType 评论类型（可选）
      * @param targetId 目标对象ID（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 搜索结果
      */
     Result<PageResponse<CommentResponse>> searchComments(String keyword, String commentType, 
-                                                        Long targetId, Integer pageNum, Integer pageSize);
+                                                        Long targetId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取热门评论
@@ -259,24 +259,24 @@ public interface CommentFacadeService {
      * @param targetId 目标对象ID
      * @param commentType 评论类型
      * @param timeRange 时间范围（天）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 热门评论列表
      */
     Result<PageResponse<CommentResponse>> getPopularComments(Long targetId, String commentType, 
-                                                           Integer timeRange, Integer pageNum, Integer pageSize);
+                                                           Integer timeRange, Integer currentPage, Integer pageSize);
 
     /**
      * 获取最新评论
      * 
      * @param targetId 目标对象ID（可选）
      * @param commentType 评论类型（可选）
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 最新评论列表
      */
     Result<PageResponse<CommentResponse>> getLatestComments(Long targetId, String commentType, 
-                                                          Integer pageNum, Integer pageSize);
+                                                          Integer currentPage, Integer pageSize);
 
     /**
      * 批量删除目标对象的评论

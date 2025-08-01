@@ -452,7 +452,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             likeQuery.setUserId(userId);
             likeQuery.setLikeType("DYNAMIC");
             likeQuery.setStatus("active");
-            likeQuery.setPageNum(1);
+            likeQuery.setCurrentPage(1);
             likeQuery.setPageSize(100); // 获取前100条记录
             likeQuery.setOrderBy("create_time");
             likeQuery.setOrderDirection("DESC");
@@ -492,7 +492,7 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
             likeQuery.setTargetAuthorId(userId);
             likeQuery.setLikeType("DYNAMIC");
             likeQuery.setStatus("active");
-            likeQuery.setPageNum(1);
+            likeQuery.setCurrentPage(1);
             likeQuery.setPageSize(100); // 获取前100条记录
             likeQuery.setOrderBy("create_time");
             likeQuery.setOrderDirection("DESC");

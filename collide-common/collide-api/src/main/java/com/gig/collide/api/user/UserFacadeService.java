@@ -129,12 +129,12 @@ public interface UserFacadeService {
     /**
      * 获取用户拉黑列表
      */
-    Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<UserBlockResponse>> getUserBlockList(Long userId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户被拉黑列表
      */
-    Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer currentPage, Integer pageSize);
 
     /**
      * 分页查询拉黑记录

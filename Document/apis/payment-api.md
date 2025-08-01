@@ -220,7 +220,7 @@ Collide 支付服务提供完整的支付处理功能，包括支付创建、支
 #### 请求参数
 ```json
 {
-  "pageNum": 1,                            // 页码（从1开始）
+  "currentPage": 1,                            // 页码（从1开始）
   "pageSize": 20,                          // 每页大小
   "userId": 12345,                         // 可选，用户ID筛选
   "orderId": 987654,                       // 可选，订单ID筛选
@@ -308,7 +308,7 @@ Collide 支付服务提供完整的支付处理功能，包括支付创建、支
 #### 请求参数
 ```json
 {
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20,
   "userId": 12345,
   "paymentId": "PAY202401160001",
@@ -466,7 +466,7 @@ Collide 支付服务提供完整的支付处理功能，包括支付创建、支
 
 ```json
 {
-  "pageNum": 1,
+  "currentPage": 1,
   "pageSize": 20,
   "transactionType": "all",              // 交易类型：all/recharge/withdraw/transfer/payment
   "startTime": "2024-01-01T00:00:00",

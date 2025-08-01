@@ -40,12 +40,12 @@ public interface UserBlockService {
     /**
      * 获取用户拉黑列表
      */
-    PageResponse<UserBlock> getUserBlockList(Long userId, Integer pageNum, Integer pageSize);
+    PageResponse<UserBlock> getUserBlockList(Long userId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户被拉黑列表
      */
-    PageResponse<UserBlock> getUserBlockedList(Long blockedUserId, Integer pageNum, Integer pageSize);
+    PageResponse<UserBlock> getUserBlockedList(Long blockedUserId, Integer currentPage, Integer pageSize);
 
     /**
      * 分页查询拉黑记录

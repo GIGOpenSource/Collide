@@ -68,22 +68,22 @@ public interface FollowFacadeService {
      * 查询某用户关注的所有人
      * 
      * @param followerId 关注者ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 关注列表
      */
-    Result<PageResponse<FollowResponse>> getFollowing(Long followerId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<FollowResponse>> getFollowing(Long followerId, Integer currentPage, Integer pageSize);
     
     /**
      * 获取用户的粉丝列表
      * 查询关注某用户的所有人
      * 
      * @param followeeId 被关注者ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 粉丝列表
      */
-    Result<PageResponse<FollowResponse>> getFollowers(Long followeeId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<FollowResponse>> getFollowers(Long followeeId, Integer currentPage, Integer pageSize);
     
     /**
      * 获取用户关注数量
@@ -127,11 +127,11 @@ public interface FollowFacadeService {
      * 查询双向关注关系
      * 
      * @param userId 用户ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 互关好友列表
      */
-    Result<PageResponse<FollowResponse>> getMutualFollows(Long userId, Integer pageNum, Integer pageSize);
+    Result<PageResponse<FollowResponse>> getMutualFollows(Long userId, Integer currentPage, Integer pageSize);
     
     /**
      * 清理已取消的关注记录

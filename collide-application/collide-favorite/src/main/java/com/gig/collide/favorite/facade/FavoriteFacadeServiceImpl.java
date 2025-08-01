@@ -166,11 +166,11 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             expire = FavoriteCacheConstant.FAVORITE_RECORDS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
     public Result<PageResponse<FavoriteResponse>> queryFavorites(FavoriteQueryRequest request) {
         try {
-            log.info("分页查询收藏记录: 页码={}, 大小={}", request.getPageNum(), request.getPageSize());
+            log.info("分页查询收藏记录: 页码={}, 大小={}", request.getCurrentPage(), request.getPageSize());
             long startTime = System.currentTimeMillis();
 
             IPage<Favorite> favoritePage = favoriteService.queryFavorites(
-                    request.getPageNum(),
+                    request.getCurrentPage(),
                     request.getPageSize(),
                     request.getUserId(),
                     request.getFavoriteType(),
