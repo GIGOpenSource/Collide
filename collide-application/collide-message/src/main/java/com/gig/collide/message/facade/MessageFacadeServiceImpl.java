@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @since 2024-01-16
  */
 @Slf4j
-@DubboService
+@DubboService(version = "1.0.0")
 @RequiredArgsConstructor
 public class MessageFacadeServiceImpl implements MessageFacadeService {
 
