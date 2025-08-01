@@ -47,6 +47,10 @@
             <groupId>com.gig.collide</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-config</artifactId>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>
