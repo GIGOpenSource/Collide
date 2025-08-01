@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.task.infrastructure.mapper.TaskRewardMapper">
+
+    <!-- 根据任务ID查询所有奖励 -->
+    <select id="findRewardsByTaskId" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE task_id = #{taskId}
+        ORDER BY is_main_reward DESC, create_time ASC
+    </select>
+
+    <!-- 根据任务ID查询主要奖励 -->
+    <select id="findMainRewardsByTaskId" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE task_id = #{taskId} AND is_main_reward = 1
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 根据任务ID查询次要奖励 -->
+    <select id="findSecondaryRewardsByTaskId" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE task_id = #{taskId} AND is_main_reward = 0
+        ORDER BY create_time ASC
+    </select>
+
+    <!-- 根据奖励类型查询奖励配置 -->
+    <select id="findRewardsByType" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = #{rewardType}
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 条件查询任务奖励 -->
+    <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        <where>
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+            <if test="rewardType != null and rewardType != ''">
+                AND reward_type = #{rewardType}
+            </if>
+            <if test="rewardName != null and rewardName != ''">
+                AND reward_name LIKE CONCAT('%', #{rewardName}, '%')
+            </if>
+            <if test="isMainReward != null">
+                AND is_main_reward = #{isMainReward}
+            </if>
+            <if test="minAmount != null">
+                AND reward_amount &gt;= #{minAmount}
+            </if>
+            <if test="maxAmount != null">
+                AND reward_amount &lt;= #{maxAmount}
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy != null and orderBy != ''">
+                ORDER BY ${orderBy} ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY is_main_reward DESC, reward_amount DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 批量查询多个任务的奖励 -->
+    <select id="findRewardsByTaskIds" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE task_id IN
+        <foreach collection="taskIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY task_id, is_main_reward DESC
+    </select>
+
+    <!-- 查询指定类型的所有奖励 -->
+    <select id="findAllRewardsByType" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = #{rewardType}
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 查询所有主要奖励 -->
+    <select id="findAllMainRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE is_main_reward = 1
+        ORDER BY task_id, reward_amount DESC
+    </select>
+
+    <!-- 统计任务的奖励数量 -->
+    <select id="countRewardsByTaskId" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_task_reward WHERE task_id = #{taskId}
+    </select>
+
+    <!-- 统计各类型奖励数量 -->
+    <select id="countRewardsByType" resultType="java.util.Map">
+        SELECT reward_type, COUNT(*) as count 
+        FROM t_task_reward 
+        GROUP BY reward_type
+    </select>
+
+    <!-- 统计任务的总奖励价值（仅金币奖励） -->
+    <select id="sumCoinRewardsByTaskId" resultType="java.lang.Long">
+        SELECT IFNULL(SUM(reward_amount), 0) FROM t_task_reward 
+        WHERE task_id = #{taskId} AND reward_type = 'coin'
+    </select>
+
+    <!-- 统计所有任务的平均奖励金额 -->
+    <select id="getAverageRewardAmount" resultType="java.lang.Double">
+        SELECT AVG(reward_amount) FROM t_task_reward 
+        <if test="rewardType != null and rewardType != ''">
+            WHERE reward_type = #{rewardType}
+        </if>
+    </select>
+
+    <!-- 批量删除任务的奖励 -->
+    <delete id="deleteRewardsByTaskId">
+        DELETE FROM t_task_reward WHERE task_id = #{taskId}
+    </delete>
+
+    <!-- 批量删除指定任务的奖励 -->
+    <delete id="deleteRewardsByTaskIds">
+        DELETE FROM t_task_reward WHERE task_id IN
+        <foreach collection="taskIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <!-- 批量更新奖励数量 -->
+    <update id="batchUpdateRewardAmount">
+        <foreach collection="rewardList" item="item" separator=";">
+            UPDATE t_task_reward 
+            SET reward_amount = #{item.rewardAmount}, update_time = NOW()
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <!-- 查询金币奖励配置（按金额排序） -->
+    <select id="findCoinRewardsOrderByAmount" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = 'coin'
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount ${orderDirection}
+    </select>
+
+    <!-- 查询VIP奖励配置 -->
+    <select id="findVipRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = 'vip'
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 查询道具奖励配置 -->
+    <select id="findItemRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = 'item'
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 查询经验奖励配置 -->
+    <select id="findExperienceRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = 'experience'
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 搜索奖励配置 -->
+    <select id="searchRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (reward_name LIKE CONCAT('%', #{keyword}, '%') 
+                     OR reward_desc LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="rewardType != null and rewardType != ''">
+                AND reward_type = #{rewardType}
+            </if>
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+        </where>
+        ORDER BY is_main_reward DESC, reward_amount DESC
+    </select>
+
+    <!-- 查询奖励金额范围 -->
+    <select id="findRewardsByAmountRange" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_amount BETWEEN #{minAmount} AND #{maxAmount}
+        <if test="rewardType != null and rewardType != ''">
+            AND reward_type = #{rewardType}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 检查任务是否有主要奖励 -->
+    <select id="hasMainReward" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_task_reward 
+        WHERE task_id = #{taskId} AND is_main_reward = 1
+    </select>
+
+    <!-- 检查任务是否有指定类型的奖励 -->
+    <select id="hasRewardOfType" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_task_reward 
+        WHERE task_id = #{taskId} AND reward_type = #{rewardType}
+    </select>
+
+    <!-- 获取任务的奖励类型列表 -->
+    <select id="getRewardTypesByTaskId" resultType="java.lang.String">
+        SELECT DISTINCT reward_type FROM t_task_reward 
+        WHERE task_id = #{taskId}
+        ORDER BY reward_type
+    </select>
+
+</mapper>

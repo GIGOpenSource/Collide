@@ -34,6 +34,7 @@
         <module>collide-auth</module>
 <!--        <module>collide-admin</module>-->
         <module>collide-application</module>
+        <module>collide-application/collide-task</module>
     </modules>
 
     <dependencyManagement>
@@ -231,6 +232,11 @@
             <dependency>
                 <groupId>com.gig.collide</groupId>
                 <artifactId>collide-message</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.gig.collide</groupId>
+                <artifactId>collide-task</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
