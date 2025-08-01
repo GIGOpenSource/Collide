@@ -179,7 +179,7 @@ public class FavoriteController {
             request.setFavoriteType(favoriteType);
             request.setTargetId(targetId);
             request.setStatus(status);
-            request.setPageNum(page);
+            request.setCurrentPage(page);
             request.setPageSize(size);
             
             return favoriteFacadeService.queryFavorites(request);

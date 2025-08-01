@@ -479,8 +479,8 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     @Override
     public Result<PageResponse<UserBlockResponse>> getUserBlockedList(Long blockedUserId, Integer currentPage, Integer pageSize) {
         try {
-            log.info("门面服务-获取用户被拉黑列表: blockedUserId={}, currentPage={}, pageSize={}", blockedUserId, pageNum, pageSize);
-            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockedList(blockedUserId, pageNum, pageSize);
+            log.info("门面服务-获取用户被拉黑列表: blockedUserId={}, currentPage={}, pageSize={}", blockedUserId, currentPage, pageSize);
+            PageResponse<UserBlock> pageResponse = userBlockService.getUserBlockedList(blockedUserId, currentPage, pageSize);
             
             // 转换为响应对象
             PageResponse<UserBlockResponse> result = new PageResponse<>();
