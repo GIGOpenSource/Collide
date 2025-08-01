@@ -93,6 +93,15 @@ public interface GoodsFacadeService {
     PageResponse<GoodsResponse> getGoodsBySeller(Long sellerId, Integer currentPage, Integer pageSize);
 
     /**
+     * 根据内容ID获取商品信息
+     * 用于内容购买流程中获取对应的商品信息
+     *
+     * @param contentId 内容ID
+     * @return 商品信息
+     */
+    Result<GoodsResponse> getGoodsByContentId(Long contentId);
+
+    /**
      * 获取热门商品
      *
      * @param goodsType   商品类型（可为空）
@@ -287,4 +296,84 @@ public interface GoodsFacadeService {
      * @return 分页结果
      */
     PageResponse<GoodsResponse> getPhysicalGoods(Integer currentPage, Integer pageSize);
+
+    // =================== 内容同步相关方法 ===================
+
+    /**
+     * 根据内容信息自动创建商品
+     * 当新内容发布时调用，自动为内容创建对应的商品记录
+     *
+     * @param contentId       内容ID
+     * @param contentTitle    内容标题
+     * @param contentDesc     内容描述
+     * @param categoryId      分类ID
+     * @param categoryName    分类名称
+     * @param authorId        作者ID
+     * @param authorNickname  作者昵称
+     * @param coverUrl        封面图URL
+     * @param coinPrice       金币价格
+     * @param contentStatus   内容状态
+     * @return 创建结果
+     */
+    Result<Void> createGoodsFromContent(Long contentId, String contentTitle, String contentDesc,
+                                       Long categoryId, String categoryName, Long authorId, 
+                                       String authorNickname, String coverUrl, Long coinPrice,
+                                       String contentStatus);
+
+    /**
+     * 同步内容信息到商品
+     * 当内容信息更新时调用，同步更新对应的商品信息
+     *
+     * @param contentId       内容ID
+     * @param contentTitle    内容标题
+     * @param contentDesc     内容描述
+     * @param categoryId      分类ID
+     * @param categoryName    分类名称
+     * @param authorId        作者ID
+     * @param authorNickname  作者昵称
+     * @param coverUrl        封面图URL
+     * @return 同步结果
+     */
+    Result<Void> syncContentToGoods(Long contentId, String contentTitle, String contentDesc,
+                                   Long categoryId, String categoryName, Long authorId,
+                                   String authorNickname, String coverUrl);
+
+    /**
+     * 同步内容状态到商品
+     * 当内容状态变更时调用，同步更新商品状态
+     *
+     * @param contentId     内容ID
+     * @param contentStatus 内容状态 (PUBLISHED, OFFLINE, DRAFT, etc.)
+     * @return 同步结果
+     */
+    Result<Void> syncContentStatusToGoods(Long contentId, String contentStatus);
+
+    /**
+     * 同步内容价格到商品
+     * 当内容付费配置变更时调用，同步更新商品价格
+     *
+     * @param contentId 内容ID
+     * @param coinPrice 金币价格
+     * @param isActive  是否启用付费
+     * @return 同步结果
+     */
+    Result<Void> syncContentPriceToGoods(Long contentId, Long coinPrice, Boolean isActive);
+
+    /**
+     * 批量同步内容商品
+     * 用于系统维护，批量检查和同步内容与商品的一致性
+     *
+     * @param batchSize 批处理大小
+     * @return 同步结果（包含处理统计信息）
+     */
+    Result<Map<String, Object>> batchSyncContentGoods(Integer batchSize);
+
+    /**
+     * 删除内容对应的商品
+     * 当内容被删除时调用，删除对应的商品记录
+     *
+     * @param contentId 内容ID
+     * @return 删除结果
+     */
+    Result<Void> deleteGoodsByContentId(Long contentId);
 }

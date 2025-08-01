@@ -45,6 +45,11 @@ public class GoodsCacheConstant {
     public static final String GOODS_SELLER_CACHE = "goods:seller";
     
     /**
+     * 内容商品缓存
+     */
+    public static final String GOODS_CONTENT_CACHE = "goods:content";
+    
+    /**
      * 商品统计缓存
      */
     public static final String GOODS_STATISTICS_CACHE = "goods:statistics";
@@ -85,6 +90,11 @@ public class GoodsCacheConstant {
      * 商家商品键模板：goods:seller:{sellerId}:{page}:{size}
      */
     public static final String GOODS_SELLER_KEY = "goods:seller:";
+    
+    /**
+     * 内容商品键模板：goods:content:{contentId}
+     */
+    public static final String GOODS_CONTENT_KEY = "goods:content:";
 
     // =================== 缓存过期时间 ===================
     
@@ -179,5 +189,12 @@ public class GoodsCacheConstant {
      */
     public static String buildSellerKey(Long sellerId, int page, int size) {
         return GOODS_SELLER_KEY + sellerId + ":" + page + ":" + size;
+    }
+    
+    /**
+     * 构建内容商品缓存键
+     */
+    public static String buildContentKey(Long contentId) {
+        return GOODS_CONTENT_KEY + contentId;
     }
 }

@@ -18,6 +18,7 @@ import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -40,17 +41,26 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     private WalletFacadeService walletFacadeService;
 
     @Override
-    public Result<Void> createOrder(OrderCreateRequest request) {
+    public Result<OrderResponse> createOrder(OrderCreateRequest request) {
         try {
-            log.info("REST创建订单: userId={}, goodsId={}", request.getUserId(), request.getGoodsId());
+            log.info("REST创建订单: userId={}, goodsId={}, goodsType={}, paymentMode={}", 
+                request.getUserId(), request.getGoodsId(), request.getGoodsType(), request.getPaymentMode());
             request.validateParams();
             
             Order order = convertToEntity(request);
-            orderService.createOrder(order);
             
-            return Result.success();
+            // 创建订单并获取ID
+            Long orderId = orderService.createOrder(order);
+            order.setId(orderId);
+            
+            // 返回创建的订单信息
+            OrderResponse response = convertToResponse(order);
+            
+            log.info("订单创建成功: orderId={}, orderNo={}", orderId, order.getOrderNo());
+            return Result.success(response);
+            
         } catch (Exception e) {
-            log.error("订单创建失败", e);
+            log.error("订单创建失败: userId={}, goodsId={}", request.getUserId(), request.getGoodsId(), e);
             return Result.failure("订单创建失败: " + e.getMessage());
         }
     }
@@ -166,10 +176,21 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
         try {
             log.info("处理订单支付: orderId={}, payMethod={}", orderId, payMethod);
             
-            // 1. 处理支付
+            // 获取订单信息，用于判断支付类型
+            Order order = orderService.getOrderById(orderId);
+            if (order == null) {
+                return Result.failure("订单不存在");
+            }
+            
+            // 1. 处理金币支付模式
+            if ("coin".equals(payMethod) && Order.PaymentMode.COIN.equals(order.getPaymentMode())) {
+                return handleCoinPayment(order);
+            }
+            
+            // 2. 处理现金支付模式
             Map<String, Object> result = orderService.processPayment(orderId, payMethod);
             
-            // 2. 检查是否支付成功，如果是金币充值订单则自动充值
+            // 3. 检查是否支付成功，如果是金币充值订单则自动充值
             if (result != null && "success".equals(result.get("status"))) {
                 handleCoinRechargeIfNeeded(orderId);
             }
@@ -177,7 +198,98 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
             return Result.success(result);
         } catch (Exception e) {
             log.error("支付处理失败: orderId={}", orderId, e);
-            return Result.failure("支付处理失败");
+            return Result.failure("支付处理失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 处理金币支付逻辑
+     * 用于虚拟商品（如内容）的金币支付
+     */
+    private Result<Map<String, Object>> handleCoinPayment(Order order) {
+        try {
+            log.info("处理金币支付: orderId={}, userId={}, coinCost={}", 
+                order.getId(), order.getUserId(), order.getCoinCost());
+            
+            // 1. 检查金币余额
+            Result<Boolean> balanceCheck = walletFacadeService.checkCoinBalance(
+                order.getUserId(), order.getCoinCost());
+            if (!balanceCheck.isSuccess() || !balanceCheck.getData()) {
+                return Result.failure("金币余额不足");
+            }
+            
+            // 2. 扣减金币
+            Result<Void> consumeResult = walletFacadeService.consumeCoin(
+                order.getUserId(),
+                order.getCoinCost(),
+                "content_purchase",
+                "内容购买支付，订单号：" + order.getOrderNo()
+            );
+            
+            if (!consumeResult.isSuccess()) {
+                return Result.failure("金币扣减失败: " + consumeResult.getMessage());
+            }
+            
+            // 3. 更新订单状态为已支付
+            boolean updateSuccess = orderService.updatePaymentStatus(order.getId(), "paid", "coin");
+            if (!updateSuccess) {
+                // 扣费失败，尝试回滚金币
+                try {
+                    walletFacadeService.grantCoinReward(
+                        order.getUserId(),
+                        order.getCoinCost(),
+                        "refund",
+                        "订单支付失败回滚，订单号：" + order.getOrderNo()
+                    );
+                } catch (Exception e) {
+                    log.error("金币回滚失败: orderId={}, userId={}, coinCost={}", 
+                        order.getId(), order.getUserId(), order.getCoinCost(), e);
+                }
+                return Result.failure("订单状态更新失败");
+            }
+            
+            // 4. 处理特定商品类型的后续逻辑
+            handlePostPaymentActions(order);
+            
+            // 5. 构建返回结果
+            Map<String, Object> result = new HashMap<>();
+            result.put("status", "success");
+            result.put("orderId", order.getId());
+            result.put("orderNo", order.getOrderNo());
+            result.put("payMethod", "coin");
+            result.put("coinCost", order.getCoinCost());
+            result.put("message", "金币支付成功");
+            result.put("payTime", System.currentTimeMillis());
+            
+            log.info("金币支付成功: orderId={}, userId={}, coinCost={}", 
+                order.getId(), order.getUserId(), order.getCoinCost());
+            
+            return Result.success(result);
+            
+        } catch (Exception e) {
+            log.error("金币支付处理失败: orderId={}, userId={}", 
+                order.getId(), order.getUserId(), e);
+            return Result.failure("金币支付处理失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 处理支付成功后的特定商品类型逻辑
+     */
+    private void handlePostPaymentActions(Order order) {
+        try {
+            if (Order.GoodsType.CONTENT.equals(order.getGoodsType()) && order.getContentId() != null) {
+                // 内容购买成功，创建用户内容购买记录
+                log.info("内容购买支付成功，准备创建购买记录: orderId={}, userId={}, contentId={}", 
+                    order.getId(), order.getUserId(), order.getContentId());
+                
+                // 这里可以通过消息队列或直接调用内容服务来创建购买记录
+                // 暂时通过日志记录，后续可以集成内容服务
+                // contentFacadeService.createUserContentPurchase(order.getUserId(), order.getContentId(), order.getId());
+            }
+        } catch (Exception e) {
+            log.error("支付后处理失败: orderId={}", order.getId(), e);
+            // 不抛出异常，避免影响支付流程
         }
     }
     
@@ -477,6 +589,28 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
         order.setQuantity(request.getQuantity());
         order.setDiscountAmount(request.getEffectiveDiscountAmount());
         order.setOrderNo(orderService.generateOrderNo(request.getUserId()));
+        
+        // 设置扩展字段
+        if (request.getGoodsType() != null) {
+            order.setGoodsType(Order.GoodsType.valueOf(request.getGoodsType().toUpperCase()));
+        }
+        
+        if (request.getPaymentMode() != null) {
+            order.setPaymentMode(Order.PaymentMode.valueOf(request.getPaymentMode().toUpperCase()));
+        }
+        
+        if (request.getCashAmount() != null) {
+            order.setCashAmount(request.getCashAmount());
+        }
+        
+        if (request.getCoinCost() != null) {
+            order.setCoinCost(request.getCoinCost());
+        }
+        
+        if (request.getContentId() != null) {
+            order.setContentId(request.getContentId());
+        }
+        
         return order;
     }
 

@@ -40,6 +40,7 @@ public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeSe
     // =================== 购买功能 ===================
 
     @Override
+    @Deprecated
     public Result<Map<String, Object>> purchaseContent(ContentPurchaseRequest request) {
         log.info("处理内容购买请求: userId={}, contentId={}", request.getUserId(), request.getContentId());
         
@@ -73,6 +74,64 @@ public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeSe
         } catch (Exception e) {
             log.error("处理内容购买失败", e);
             return Result.failure("购买处理失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> validateContentPurchase(ContentPurchaseRequest request) {
+        log.info("验证内容购买权限: userId={}, contentId={}", request.getUserId(), request.getContentId());
+        
+        try {
+            Map<String, Object> validationResult = new HashMap<>();
+            
+            // =================== 1. 验证购买权限 ===================
+            
+            boolean canPurchase = userContentPurchaseService.validatePurchasePermission(
+                request.getUserId(), request.getContentId());
+            if (!canPurchase) {
+                return Result.failure("无购买权限");
+            }
+            
+            // =================== 2. 检查是否已购买 ===================
+            
+            UserContentPurchase existing = userContentPurchaseService.getUserContentPurchase(
+                request.getUserId(), request.getContentId());
+            if (existing != null && existing.hasAccessPermission()) {
+                return Result.failure("已购买该内容");
+            }
+            
+            // =================== 3. 验证价格 ===================
+            
+            Long actualPrice = contentPaymentService.calculateActualPrice(
+                request.getUserId(), request.getContentId());
+            if (!actualPrice.equals(request.getConfirmedPrice())) {
+                return Result.failure("价格已变更，请重新确认。当前价格: " + actualPrice + " 金币");
+            }
+            
+            // =================== 4. 获取访问策略 ===================
+            
+            Map<String, Object> accessPolicy = contentPaymentService.getAccessPolicy(
+                request.getUserId(), request.getContentId());
+            
+            // =================== 5. 构建验证结果 ===================
+            
+            validationResult.put("canPurchase", true);
+            validationResult.put("actualPrice", actualPrice);
+            validationResult.put("confirmedPrice", request.getConfirmedPrice());
+            validationResult.put("accessPolicy", accessPolicy);
+            validationResult.put("userId", request.getUserId());
+            validationResult.put("contentId", request.getContentId());
+            validationResult.put("validationTime", System.currentTimeMillis());
+            
+            log.info("内容购买验证通过: userId={}, contentId={}, price={}", 
+                request.getUserId(), request.getContentId(), actualPrice);
+            
+            return Result.success("验证通过", validationResult);
+            
+        } catch (Exception e) {
+            log.error("验证内容购买权限失败: userId={}, contentId={}", 
+                request.getUserId(), request.getContentId(), e);
+            return Result.failure("验证失败: " + e.getMessage());
         }
     }
 

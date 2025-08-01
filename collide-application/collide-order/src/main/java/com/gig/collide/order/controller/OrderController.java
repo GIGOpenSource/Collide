@@ -41,7 +41,7 @@ public class OrderController {
 
     @PostMapping
     @Operation(summary = "创建订单", description = "创建新订单，支持四种商品类型和双支付模式")
-    public Result<Void> createOrder(@Valid @RequestBody OrderCreateRequest request) {
+    public Result<OrderResponse> createOrder(@Valid @RequestBody OrderCreateRequest request) {
         return orderFacadeService.createOrder(request);
     }
 

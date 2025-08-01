@@ -153,6 +153,17 @@ public interface OrderService {
     boolean confirmPayment(Long orderId, String payMethod);
 
     /**
+     * 更新订单支付状态
+     * 用于金币支付等需要直接更新状态的场景
+     *
+     * @param orderId   订单ID
+     * @param payStatus 支付状态 (paid, failed, pending)
+     * @param payMethod 支付方式
+     * @return 是否成功
+     */
+    boolean updatePaymentStatus(Long orderId, String payStatus, String payMethod);
+
+    /**
      * 处理支付回调
      *
      * @param orderNo    订单号

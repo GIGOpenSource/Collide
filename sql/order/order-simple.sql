@@ -23,7 +23,6 @@ CREATE TABLE `t_order` (
   -- 商品特殊信息（根据类型使用）
   `coin_amount`  BIGINT                               COMMENT '金币数量（金币类商品：购买后获得金币数）',
   `content_id`   BIGINT                               COMMENT '内容ID（内容类商品）',
-  `content_title` VARCHAR(200)                        COMMENT '内容标题（内容类商品冗余）',
   `subscription_duration` INT                         COMMENT '订阅时长天数（订阅类商品）',
   `subscription_type` VARCHAR(50)                     COMMENT '订阅类型（订阅类商品）',
   
@@ -76,10 +75,10 @@ INSERT INTO `t_order` (`order_no`, `user_id`, `user_nickname`, `goods_id`, `good
 ('ORD202501310006', 1, '测试用户1', 8, 'PREMIUM会员月卡', 'subscription', 30, 'PREMIUM', 1, 'cash', 39.90, 39.90, 39.90, 'alipay', 'paid', 'paid');
 
 -- 付费内容订单（金币支付）
-INSERT INTO `t_order` (`order_no`, `user_id`, `user_nickname`, `goods_id`, `goods_name`, `goods_type`, `content_id`, `content_title`, `quantity`, `payment_mode`, `coin_cost`, `pay_method`, `status`, `pay_status`) VALUES
-('ORD202501310007', 1, '测试用户1', 9, 'Java高级教程', 'content', 1001, 'Java高级编程实战指南', 1, 'coin', 50, 'coin', 'completed', 'paid'),
-('ORD202501310008', 2, '测试用户2', 10, 'Python爬虫实战', 'content', 1002, 'Python爬虫从入门到精通', 1, 'coin', 80, 'coin', 'pending', 'unpaid'),
-('ORD202501310009', 3, '测试用户3', 11, '前端架构设计', 'content', 1003, '现代前端架构设计指南', 1, 'coin', 120, 'coin', 'completed', 'paid');
+INSERT INTO `t_order` (`order_no`, `user_id`, `user_nickname`, `goods_id`, `goods_name`, `goods_type`, `content_id`, `quantity`, `payment_mode`, `coin_cost`, `pay_method`, `status`, `pay_status`) VALUES
+('ORD202501310007', 1, '测试用户1', 9, 'Java高级教程', 'content', 1001, 1, 'coin', 50, 'coin', 'completed', 'paid'),
+('ORD202501310008', 2, '测试用户2', 10, 'Python爬虫实战', 'content', 1002, 1, 'coin', 80, 'coin', 'pending', 'unpaid'),
+('ORD202501310009', 3, '测试用户3', 11, '前端架构设计', 'content', 1003, 1, 'coin', 120, 'coin', 'completed', 'paid');
 
 -- ==========================================
 -- 订单处理存储过程

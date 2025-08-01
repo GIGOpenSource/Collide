@@ -92,6 +92,15 @@ public interface GoodsService {
     IPage<Goods> getGoodsBySeller(Page<Goods> page, Long sellerId, String status);
 
     /**
+     * 根据内容ID获取商品信息
+     * 用于内容购买流程中获取对应的商品记录
+     *
+     * @param contentId 内容ID
+     * @return 商品信息
+     */
+    Goods getGoodsByContentId(Long contentId);
+
+    /**
      * 获取热门商品
      *
      * @param page      分页参数

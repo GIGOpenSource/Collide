@@ -305,4 +305,91 @@ public class GoodsController {
         log.debug("REST获取实体商品: page={}, size={}", currentPage, pageSize);
         return goodsFacadeService.getPhysicalGoods(currentPage, pageSize);
     }
+
+    // =================== 内容同步管理接口 ===================
+
+    @PostMapping("/sync/content/create")
+    @Operation(summary = "根据内容创建商品", description = "当新内容发布时，自动创建对应的商品记录")
+    public Result<Void> createGoodsFromContent(
+            @Parameter(description = "内容ID") @RequestParam @NotNull Long contentId,
+            @Parameter(description = "内容标题") @RequestParam @NotNull String contentTitle,
+            @Parameter(description = "内容描述") @RequestParam(required = false) String contentDesc,
+            @Parameter(description = "分类ID") @RequestParam @NotNull Long categoryId,
+            @Parameter(description = "分类名称") @RequestParam @NotNull String categoryName,
+            @Parameter(description = "作者ID") @RequestParam @NotNull Long authorId,
+            @Parameter(description = "作者昵称") @RequestParam @NotNull String authorNickname,
+            @Parameter(description = "封面图URL") @RequestParam(required = false) String coverUrl,
+            @Parameter(description = "金币价格") @RequestParam(required = false, defaultValue = "0") Long coinPrice,
+            @Parameter(description = "内容状态") @RequestParam(required = false, defaultValue = "PUBLISHED") String contentStatus) {
+        
+        log.info("REST管理-根据内容创建商品: contentId={}, title={}", contentId, contentTitle);
+        return goodsFacadeService.createGoodsFromContent(contentId, contentTitle, contentDesc,
+                categoryId, categoryName, authorId, authorNickname, coverUrl, coinPrice, contentStatus);
+    }
+
+    @PutMapping("/sync/content/{contentId}/info")
+    @Operation(summary = "同步内容信息到商品", description = "当内容信息更新时，同步更新商品信息")
+    public Result<Void> syncContentToGoods(
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId,
+            @Parameter(description = "内容标题") @RequestParam @NotNull String contentTitle,
+            @Parameter(description = "内容描述") @RequestParam(required = false) String contentDesc,
+            @Parameter(description = "分类ID") @RequestParam @NotNull Long categoryId,
+            @Parameter(description = "分类名称") @RequestParam @NotNull String categoryName,
+            @Parameter(description = "作者ID") @RequestParam @NotNull Long authorId,
+            @Parameter(description = "作者昵称") @RequestParam @NotNull String authorNickname,
+            @Parameter(description = "封面图URL") @RequestParam(required = false) String coverUrl) {
+        
+        log.info("REST管理-同步内容信息到商品: contentId={}, title={}", contentId, contentTitle);
+        return goodsFacadeService.syncContentToGoods(contentId, contentTitle, contentDesc,
+                categoryId, categoryName, authorId, authorNickname, coverUrl);
+    }
+
+    @PutMapping("/sync/content/{contentId}/status")
+    @Operation(summary = "同步内容状态到商品", description = "当内容状态变更时，同步更新商品状态")
+    public Result<Void> syncContentStatusToGoods(
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId,
+            @Parameter(description = "内容状态") @RequestParam @NotNull String contentStatus) {
+        
+        log.info("REST管理-同步内容状态到商品: contentId={}, status={}", contentId, contentStatus);
+        return goodsFacadeService.syncContentStatusToGoods(contentId, contentStatus);
+    }
+
+    @PutMapping("/sync/content/{contentId}/price")
+    @Operation(summary = "同步内容价格到商品", description = "当内容付费配置变更时，同步更新商品价格")
+    public Result<Void> syncContentPriceToGoods(
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId,
+            @Parameter(description = "金币价格") @RequestParam @NotNull Long coinPrice,
+            @Parameter(description = "是否启用付费") @RequestParam(required = false) Boolean isActive) {
+        
+        log.info("REST管理-同步内容价格到商品: contentId={}, coinPrice={}, isActive={}", 
+                contentId, coinPrice, isActive);
+        return goodsFacadeService.syncContentPriceToGoods(contentId, coinPrice, isActive);
+    }
+
+    @PostMapping("/sync/content/batch")
+    @Operation(summary = "批量同步内容商品", description = "批量检查和同步内容与商品的一致性")
+    public Result<Map<String, Object>> batchSyncContentGoods(
+            @Parameter(description = "批处理大小") @RequestParam(defaultValue = "100") @Min(1) Integer batchSize) {
+        
+        log.info("REST管理-批量同步内容商品: batchSize={}", batchSize);
+        return goodsFacadeService.batchSyncContentGoods(batchSize);
+    }
+
+    @DeleteMapping("/sync/content/{contentId}")
+    @Operation(summary = "删除内容对应的商品", description = "当内容被删除时，删除对应的商品记录")
+    public Result<Void> deleteGoodsByContentId(
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId) {
+        
+        log.info("REST管理-删除内容商品: contentId={}", contentId);
+        return goodsFacadeService.deleteGoodsByContentId(contentId);
+    }
+
+    @GetMapping("/sync/content/{contentId}")
+    @Operation(summary = "根据内容ID获取商品", description = "查询内容对应的商品信息")
+    public Result<GoodsResponse> getGoodsByContentId(
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId) {
+        
+        log.debug("REST查询内容商品: contentId={}", contentId);
+        return goodsFacadeService.getGoodsByContentId(contentId);
+    }
 }

@@ -59,6 +59,28 @@ public class OrderCreateRequest {
     @Schema(description = "订单来源", allowableValues = {"web", "app", "h5", "mini"}, defaultValue = "web")
     private String source = "web";
 
+    // =================== 扩展字段（用于支持不同商品类型和支付模式） ===================
+
+    @Pattern(regexp = "^(coin|goods|subscription|content)$", message = "商品类型只能是: coin、goods、subscription、content")
+    @Schema(description = "商品类型", allowableValues = {"coin", "goods", "subscription", "content"})
+    private String goodsType;
+
+    @Pattern(regexp = "^(cash|coin)$", message = "支付模式只能是: cash、coin")
+    @Schema(description = "支付模式", allowableValues = {"cash", "coin"})
+    private String paymentMode;
+
+    @DecimalMin(value = "0.00", message = "现金金额不能为负数")
+    @Digits(integer = 10, fraction = 2, message = "现金金额格式不正确")
+    @Schema(description = "现金金额（现金支付时使用）")
+    private BigDecimal cashAmount;
+
+    @Min(value = 0, message = "金币成本不能为负数")
+    @Schema(description = "金币成本（金币支付时使用）")
+    private Long coinCost;
+
+    @Schema(description = "内容ID（内容类商品时使用）")
+    private Long contentId;
+
     /**
      * 验证请求参数
      */
@@ -77,6 +99,31 @@ public class OrderCreateRequest {
         
         if (discountAmount != null && discountAmount.compareTo(BigDecimal.ZERO) < 0) {
             throw new IllegalArgumentException("优惠金额不能为负数");
+        }
+        
+        // 验证扩展字段
+        if (goodsType != null && !goodsType.matches("^(coin|goods|subscription|content)$")) {
+            throw new IllegalArgumentException("商品类型无效");
+        }
+        
+        if (paymentMode != null && !paymentMode.matches("^(cash|coin)$")) {
+            throw new IllegalArgumentException("支付模式无效");
+        }
+        
+        // 验证支付金额的一致性
+        if ("cash".equals(paymentMode)) {
+            if (cashAmount == null || cashAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("现金支付模式下，现金金额必须大于0");
+            }
+        } else if ("coin".equals(paymentMode)) {
+            if (coinCost == null || coinCost <= 0) {
+                throw new IllegalArgumentException("金币支付模式下，金币成本必须大于0");
+            }
+        }
+        
+        // 验证内容类商品的contentId
+        if ("content".equals(goodsType) && contentId == null) {
+            throw new IllegalArgumentException("内容类商品必须提供内容ID");
         }
     }
 

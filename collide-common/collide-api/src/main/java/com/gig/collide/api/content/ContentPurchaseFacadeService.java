@@ -22,13 +22,22 @@ public interface ContentPurchaseFacadeService {
     // =================== 购买功能 ===================
 
     /**
-     * 购买内容
-     * 验证权限、价格、库存等，创建订单并处理支付
-     *
+     * 购买内容（已废弃，使用统一下单流程）
+     * @deprecated 使用新的统一购买流程，通过Controller直接调用order和wallet服务
      * @param request 购买请求
      * @return 购买结果（包含订单信息或支付链接）
      */
+    @Deprecated
     Result<Map<String, Object>> purchaseContent(ContentPurchaseRequest request);
+
+    /**
+     * 验证内容购买权限和价格
+     * 用于统一购买流程的第一步验证
+     *
+     * @param request 购买请求
+     * @return 验证结果（包含实际价格、权限信息等）
+     */
+    Result<Map<String, Object>> validateContentPurchase(ContentPurchaseRequest request);
 
     /**
      * 获取内容购买信息

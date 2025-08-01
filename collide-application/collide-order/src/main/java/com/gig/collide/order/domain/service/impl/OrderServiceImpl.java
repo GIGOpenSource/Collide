@@ -322,6 +322,45 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheInvalidate(name = OrderCacheConstant.ORDER_DETAIL_CACHE, 
+                     key = OrderCacheConstant.ORDER_DETAIL_KEY + "#orderId")
+    @CacheInvalidate(name = OrderCacheConstant.USER_ORDER_CACHE)
+    public boolean updatePaymentStatus(Long orderId, String payStatus, String payMethod) {
+        log.info("更新订单支付状态: orderId={}, payStatus={}, payMethod={}", orderId, payStatus, payMethod);
+        
+        try {
+            // 更新支付状态和支付方式
+            LocalDateTime payTime = "paid".equals(payStatus) ? LocalDateTime.now() : null;
+            int result = orderMapper.updatePaymentInfo(orderId, payStatus, payMethod, payTime);
+            
+            if (result > 0) {
+                // 如果支付成功，更新订单状态
+                if ("paid".equals(payStatus)) {
+                    Order order = getOrderById(orderId);
+                    if (order != null) {
+                        String newStatus = order.isVirtualGoods() ? 
+                                Order.OrderStatus.COMPLETED.getCode() : Order.OrderStatus.PAID.getCode();
+                        updateOrderStatus(orderId, newStatus);
+                        
+                        // 处理支付成功后的业务逻辑
+                        handlePaymentSuccess(order);
+                    }
+                }
+                
+                log.info("订单支付状态更新成功: orderId={}, payStatus={}", orderId, payStatus);
+                return true;
+            } else {
+                log.warn("订单支付状态更新失败: orderId={}, payStatus={}", orderId, payStatus);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("订单支付状态更新异常: orderId={}, payStatus={}", orderId, payStatus, e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean handlePaymentCallback(String orderNo, String payStatus, String payMethod, 
                                        LocalDateTime payTime, Map<String, Object> extraInfo) {
         log.info("处理支付回调: orderNo={}, payStatus={}, payMethod={}", orderNo, payStatus, payMethod);

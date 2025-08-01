@@ -142,8 +142,6 @@ public class ContentPaymentFacadeServiceImpl implements ContentPaymentFacadeServ
         }
     }
 
-    // =================== 付费内容查询 ===================
-
     @Override
     public Result<PageResponse<PaidContentResponse>> queryPaidContent(PaidContentQueryRequest request) {
         // TODO: 实现复杂的付费内容查询逻辑

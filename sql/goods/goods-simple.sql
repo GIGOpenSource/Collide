@@ -24,7 +24,6 @@ CREATE TABLE `t_goods`
     
     -- 特殊字段
     `content_id`     BIGINT         COMMENT '关联内容ID（仅内容类型有效）',
-    `content_title`  VARCHAR(200)   COMMENT '内容标题（冗余，仅内容类型）',
     `subscription_duration` INT     COMMENT '订阅时长（天数，仅订阅类型有效）',
     `subscription_type` VARCHAR(50) COMMENT '订阅类型（VIP、PREMIUM等，仅订阅类型有效）',
     
@@ -77,10 +76,10 @@ INSERT INTO `t_goods` (`name`, `description`, `category_id`, `category_name`, `g
 ('PREMIUM会员月卡', '高级会员权益，包含VIP所有功能+更多特权', 4, '会员服务', 'subscription', 39.90, 30, 'PREMIUM', 1, '官方商城', '/images/premium_monthly.png');
 
 -- 付费内容
-INSERT INTO `t_goods` (`name`, `description`, `category_id`, `category_name`, `goods_type`, `coin_price`, `content_id`, `content_title`, `seller_id`, `seller_name`, `cover_url`) VALUES
-('Java高级教程', '深入学习Java高级特性和框架应用', 5, '付费内容', 'content', 50, 1001, 'Java高级编程实战指南', 4, '技术博主', '/images/java_tutorial.png'),
-('Python爬虫实战', '从零开始学习Python网络爬虫技术', 5, '付费内容', 'content', 80, 1002, 'Python爬虫从入门到精通', 5, '编程专家', '/images/python_spider.png'),
-('前端架构设计', '大型前端项目架构设计与最佳实践', 5, '付费内容', 'content', 120, 1003, '现代前端架构设计指南', 6, '前端大神', '/images/frontend_arch.png');
+INSERT INTO `t_goods` (`name`, `description`, `category_id`, `category_name`, `goods_type`, `coin_price`, `content_id`, `seller_id`, `seller_name`, `cover_url`) VALUES
+('Java高级教程', '深入学习Java高级特性和框架应用', 5, '付费内容', 'content', 50, 1001, 4, '技术博主', '/images/java_tutorial.png'),
+('Python爬虫实战', '从零开始学习Python网络爬虫技术', 5, '付费内容', 'content', 80, 1002, 5, '编程专家', '/images/python_spider.png'),
+('前端架构设计', '大型前端项目架构设计与最佳实践', 5, '付费内容', 'content', 120, 1003, 6, '前端大神', '/images/frontend_arch.png');
 
 -- ==========================================
 -- 商品类型使用说明

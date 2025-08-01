@@ -209,6 +209,22 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
+    @Cached(name = GoodsCacheConstant.GOODS_CONTENT_CACHE,
+            key = "T(com.gig.collide.goods.infrastructure.cache.GoodsCacheConstant).buildContentKey(#contentId)",
+            expire = GoodsCacheConstant.DETAIL_EXPIRE,
+            timeUnit = TimeUnit.MINUTES)
+    public Goods getGoodsByContentId(Long contentId) {
+        log.debug("根据内容ID查询商品: contentId={}", contentId);
+        
+        if (contentId == null || contentId <= 0) {
+            log.warn("内容ID无效: {}", contentId);
+            return null;
+        }
+        
+        return goodsMapper.selectByContentId(contentId, "content");
+    }
+
+    @Override
     @Cached(name = GoodsCacheConstant.GOODS_HOT_CACHE,
             key = "T(com.gig.collide.goods.infrastructure.cache.GoodsCacheConstant).buildHotKey(#goodsType, #page.current, #page.size)",
             expire = GoodsCacheConstant.HOT_EXPIRE,

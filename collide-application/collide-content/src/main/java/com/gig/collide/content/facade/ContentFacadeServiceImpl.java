@@ -203,7 +203,6 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             
             ContentResponse response = convertToResponse(content);
             
-            // =================== 跨模块信息增强 ===================
             
             // 1. 获取作者详细信息
             try {

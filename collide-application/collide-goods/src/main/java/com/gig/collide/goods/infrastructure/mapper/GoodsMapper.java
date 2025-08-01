@@ -76,6 +76,24 @@ public interface GoodsMapper extends BaseMapper<Goods> {
                                         @Param("status") String status);
 
     /**
+     * 根据内容ID查询商品
+     * 用于内容购买流程中获取对应的商品记录
+     *
+     * @param contentId 内容ID
+     * @param goodsType 商品类型
+     * @return 商品信息
+     */
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE content_id = #{contentId} 
+            AND goods_type = #{goodsType}
+            ORDER BY create_time DESC
+            LIMIT 1
+            """)
+    Goods selectByContentId(@Param("contentId") Long contentId, 
+                           @Param("goodsType") String goodsType);
+
+    /**
      * 热门商品查询（按销量排序）
      *
      * @param page      分页参数

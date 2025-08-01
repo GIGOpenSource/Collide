@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -238,6 +239,40 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
         } catch (Exception e) {
             log.error("根据商家查询商品失败: sellerId={}", sellerId, e);
             return PageResponse.empty();
+        }
+    }
+
+    @Override
+    public Result<GoodsResponse> getGoodsByContentId(Long contentId) {
+        try {
+            log.debug("REST根据内容ID查询商品: contentId={}", contentId);
+            
+            if (contentId == null || contentId <= 0) {
+                return Result.failure("内容ID不能为空");
+            }
+            
+            // 查询内容类型的商品
+            Goods goods = goodsService.getGoodsByContentId(contentId);
+            if (goods == null) {
+                return Result.failure("未找到对应的商品记录");
+            }
+            
+            // 验证商品状态
+            if (!"active".equals(goods.getStatus().getCode())) {
+                return Result.failure("商品已下架或不可用");
+            }
+            
+            // 转换为响应对象
+            GoodsResponse response = convertToResponse(goods);
+            
+            log.debug("根据内容ID查询商品成功: contentId={}, goodsId={}, price={}", 
+                contentId, goods.getId(), goods.getCoinPrice());
+            
+            return Result.success(response);
+            
+        } catch (Exception e) {
+            log.error("根据内容ID查询商品失败: contentId={}", contentId, e);
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
@@ -749,6 +784,247 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             return goods.getCoinPrice() * quantity;
         } else {
             return goods.getPrice().multiply(java.math.BigDecimal.valueOf(quantity));
+        }
+    }
+
+    // =================== 内容同步相关方法实现 ===================
+
+    @Override
+    public Result<Void> createGoodsFromContent(Long contentId, String contentTitle, String contentDesc,
+                                             Long categoryId, String categoryName, Long authorId,
+                                             String authorNickname, String coverUrl, Long coinPrice,
+                                             String contentStatus) {
+        try {
+            log.info("REST根据内容创建商品: contentId={}, title={}, authorId={}, coinPrice={}", 
+                contentId, contentTitle, authorId, coinPrice);
+
+            // 检查是否已存在该内容的商品
+            Goods existingGoods = goodsService.getGoodsByContentId(contentId);
+            if (existingGoods != null) {
+                log.warn("内容商品已存在: contentId={}, goodsId={}", contentId, existingGoods.getId());
+                return Result.failure("该内容的商品已存在");
+            }
+
+            // 创建商品实体
+            Goods goods = new Goods();
+            goods.setName(contentTitle);
+            goods.setDescription(contentDesc != null ? contentDesc : contentTitle);
+            goods.setCategoryId(categoryId);
+            goods.setCategoryName(categoryName);
+            goods.setGoodsType(Goods.GoodsType.CONTENT);
+
+            // 设置价格信息
+            goods.setPrice(java.math.BigDecimal.ZERO); // 内容类商品现金价格为0
+            goods.setCoinPrice(coinPrice != null ? coinPrice : 0L);
+
+            // 设置内容相关信息
+            goods.setContentId(contentId);
+
+            // 设置商家信息（作者）
+            goods.setSellerId(authorId);
+            goods.setSellerName(authorNickname);
+
+            // 设置图片和库存
+            goods.setCoverUrl(coverUrl);
+            goods.setStock(-1); // 虚拟商品无限库存
+
+            // 设置状态
+            String goodsStatus = convertContentStatusToGoodsStatus(contentStatus);
+            goods.setStatus(Goods.GoodsStatus.valueOf(goodsStatus.toUpperCase()));
+
+            // 创建商品
+            goodsService.createGoods(goods);
+
+            log.info("内容商品创建成功: contentId={}, goodsId={}", contentId, goods.getId());
+            return Result.success();
+
+        } catch (Exception e) {
+            log.error("根据内容创建商品失败: contentId={}, title={}", contentId, contentTitle, e);
+            return Result.failure("创建商品失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> syncContentToGoods(Long contentId, String contentTitle, String contentDesc,
+                                         Long categoryId, String categoryName, Long authorId,
+                                         String authorNickname, String coverUrl) {
+        try {
+            log.info("REST同步内容信息到商品: contentId={}, title={}", contentId, contentTitle);
+
+            // 查找对应的商品
+            Goods goods = goodsService.getGoodsByContentId(contentId);
+            if (goods == null) {
+                log.warn("未找到对应的商品: contentId={}", contentId);
+                return Result.failure("未找到对应的商品记录");
+            }
+
+            // 更新商品信息
+            goods.setName(contentTitle);
+            goods.setDescription(contentDesc != null ? contentDesc : contentTitle);
+            goods.setCategoryId(categoryId);
+            goods.setCategoryName(categoryName);
+            goods.setSellerId(authorId);
+            goods.setSellerName(authorNickname);
+            goods.setCoverUrl(coverUrl);
+
+            // 保存更新
+            boolean success = goodsService.updateGoods(goods);
+            if (success) {
+                log.info("内容信息同步成功: contentId={}, goodsId={}", contentId, goods.getId());
+                return Result.success();
+            } else {
+                return Result.failure("同步失败");
+            }
+
+        } catch (Exception e) {
+            log.error("同步内容信息到商品失败: contentId={}", contentId, e);
+            return Result.failure("同步失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> syncContentStatusToGoods(Long contentId, String contentStatus) {
+        try {
+            log.info("REST同步内容状态到商品: contentId={}, status={}", contentId, contentStatus);
+
+            // 查找对应的商品
+            Goods goods = goodsService.getGoodsByContentId(contentId);
+            if (goods == null) {
+                log.warn("未找到对应的商品: contentId={}", contentId);
+                return Result.failure("未找到对应的商品记录");
+            }
+
+            // 转换并设置状态
+            String goodsStatus = convertContentStatusToGoodsStatus(contentStatus);
+            goods.setStatus(Goods.GoodsStatus.valueOf(goodsStatus.toUpperCase()));
+
+            // 保存更新
+            boolean success = goodsService.updateGoods(goods);
+            if (success) {
+                log.info("内容状态同步成功: contentId={}, goodsId={}, status={}", 
+                    contentId, goods.getId(), goodsStatus);
+                return Result.success();
+            } else {
+                return Result.failure("状态同步失败");
+            }
+
+        } catch (Exception e) {
+            log.error("同步内容状态到商品失败: contentId={}, status={}", contentId, contentStatus, e);
+            return Result.failure("状态同步失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> syncContentPriceToGoods(Long contentId, Long coinPrice, Boolean isActive) {
+        try {
+            log.info("REST同步内容价格到商品: contentId={}, coinPrice={}, isActive={}", 
+                contentId, coinPrice, isActive);
+
+            // 查找对应的商品
+            Goods goods = goodsService.getGoodsByContentId(contentId);
+            if (goods == null) {
+                log.warn("未找到对应的商品: contentId={}", contentId);
+                return Result.failure("未找到对应的商品记录");
+            }
+
+            // 更新价格信息
+            goods.setCoinPrice(coinPrice != null ? coinPrice : 0L);
+
+            // 根据付费状态更新商品状态
+            if (isActive != null) {
+                if (isActive && goods.getStatus() == Goods.GoodsStatus.INACTIVE) {
+                    goods.setStatus(Goods.GoodsStatus.ACTIVE);
+                } else if (!isActive && goods.getStatus() == Goods.GoodsStatus.ACTIVE) {
+                    goods.setStatus(Goods.GoodsStatus.INACTIVE);
+                }
+            }
+
+            // 保存更新
+            boolean success = goodsService.updateGoods(goods);
+            if (success) {
+                log.info("内容价格同步成功: contentId={}, goodsId={}, coinPrice={}", 
+                    contentId, goods.getId(), coinPrice);
+                return Result.success();
+            } else {
+                return Result.failure("价格同步失败");
+            }
+
+        } catch (Exception e) {
+            log.error("同步内容价格到商品失败: contentId={}, coinPrice={}", contentId, coinPrice, e);
+            return Result.failure("价格同步失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> batchSyncContentGoods(Integer batchSize) {
+        try {
+            log.info("REST开始批量同步内容商品: batchSize={}", batchSize);
+
+            Map<String, Object> result = new HashMap<>();
+            int processedCount = 0;
+            int successCount = 0;
+            int failureCount = 0;
+
+            // 这里需要调用内容服务获取所有已发布的内容
+            // 由于跨模块调用，这里先记录日志，实际实现可能需要通过消息队列或定时任务
+            log.info("批量同步功能需要与内容服务集成，建议通过定时任务或消息队列实现");
+
+            result.put("processedCount", processedCount);
+            result.put("successCount", successCount);
+            result.put("failureCount", failureCount);
+            result.put("message", "批量同步功能需要进一步集成内容服务");
+
+            return Result.success(result);
+
+        } catch (Exception e) {
+            log.error("批量同步内容商品失败: batchSize={}", batchSize, e);
+            return Result.failure("批量同步失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> deleteGoodsByContentId(Long contentId) {
+        try {
+            log.info("REST删除内容对应的商品: contentId={}", contentId);
+
+            // 查找对应的商品
+            Goods goods = goodsService.getGoodsByContentId(contentId);
+            if (goods == null) {
+                log.warn("未找到对应的商品: contentId={}", contentId);
+                return Result.success(); // 已经不存在，认为删除成功
+            }
+
+            // 软删除商品
+            boolean success = goodsService.deleteGoods(goods.getId());
+            if (success) {
+                log.info("内容商品删除成功: contentId={}, goodsId={}", contentId, goods.getId());
+                return Result.success();
+            } else {
+                return Result.failure("删除失败");
+            }
+
+        } catch (Exception e) {
+            log.error("删除内容商品失败: contentId={}", contentId, e);
+            return Result.failure("删除失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 将内容状态转换为商品状态
+     */
+    private String convertContentStatusToGoodsStatus(String contentStatus) {
+        if (contentStatus == null) {
+            return "inactive";
+        }
+        
+        switch (contentStatus.toUpperCase()) {
+            case "PUBLISHED":
+                return "active";
+            case "OFFLINE":
+            case "DRAFT":
+            case "REVIEW":
+            default:
+                return "inactive";
         }
     }
 }

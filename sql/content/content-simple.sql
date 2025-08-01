@@ -76,14 +76,8 @@ CREATE TABLE `t_user_content_purchase` (
     `user_id`      BIGINT       NOT NULL                COMMENT '用户ID',
     `content_id`   BIGINT       NOT NULL                COMMENT '内容ID',
     
-    -- 内容信息冗余（避免连表查询）
-    `content_title`     VARCHAR(200)                    COMMENT '内容标题（冗余）',
-    `content_type`      VARCHAR(50)                     COMMENT '内容类型（冗余）',
-    `content_cover_url` VARCHAR(500)                    COMMENT '内容封面（冗余）',
-    
-    -- 作者信息冗余
-    `author_id`         BIGINT                          COMMENT '作者ID（冗余）',
-    `author_nickname`   VARCHAR(50)                     COMMENT '作者昵称（冗余）',
+    -- 作者信息（保留author_id用于业务逻辑）
+    `author_id`         BIGINT                          COMMENT '作者ID',
     
     -- 购买相关信息
     `order_id`          BIGINT                          COMMENT '关联订单ID',

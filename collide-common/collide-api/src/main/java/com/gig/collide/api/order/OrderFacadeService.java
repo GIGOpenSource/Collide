@@ -26,9 +26,9 @@ public interface OrderFacadeService {
      * 创建订单
      *
      * @param request 订单创建请求
-     * @return 创建结果（仅返回状态）
+     * @return 创建的订单信息
      */
-    Result<Void> createOrder(OrderCreateRequest request);
+    Result<OrderResponse> createOrder(OrderCreateRequest request);
 
     /**
      * 根据ID获取订单详情
