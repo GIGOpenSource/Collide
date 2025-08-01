@@ -68,7 +68,7 @@ public class ContentPurchaseController {
             
             // 1.1 验证购买权限和价格（Content模块负责）
             Result<Map<String, Object>> validationResult = contentPurchaseFacadeService.validateContentPurchase(request);
-            if (!validationResult.isSuccess()) {
+            if (!validationResult.getSuccess()) {
                 return validationResult;
             }
             
@@ -79,7 +79,7 @@ public class ContentPurchaseController {
             
             // 2.1 检查用户金币余额是否充足
             Result<Boolean> balanceCheckResult = walletFacadeService.checkCoinBalance(request.getUserId(), actualPrice);
-            if (!balanceCheckResult.isSuccess()) {
+            if (!balanceCheckResult.getSuccess()) {
                 return Result.failure("余额检查失败: " + balanceCheckResult.getMessage());
             }
             
@@ -91,7 +91,7 @@ public class ContentPurchaseController {
             
             // 3.1 查询对应的商品记录
             Result<GoodsResponse> goodsResult = goodsFacadeService.getGoodsByContentId(request.getContentId());
-            if (!goodsResult.isSuccess()) {
+            if (!goodsResult.getSuccess()) {
                 log.error("查询商品信息失败: contentId={}, error={}", request.getContentId(), goodsResult.getMessage());
                 return Result.failure("商品信息查询失败");
             }
@@ -121,7 +121,7 @@ public class ContentPurchaseController {
             
             // 4.2 创建订单
             Result<OrderResponse> orderResult = orderFacadeService.createOrder(orderRequest);
-            if (!orderResult.isSuccess()) {
+            if (!orderResult.getSuccess()) {
                 log.error("订单创建失败: userId={}, contentId={}, error={}", 
                     request.getUserId(), request.getContentId(), orderResult.getMessage());
                 return Result.failure("订单创建失败: " + orderResult.getMessage());
@@ -134,7 +134,7 @@ public class ContentPurchaseController {
             
             // 5.1 立即处理金币支付（虚拟商品无需等待）
             Result<Map<String, Object>> paymentResult = orderFacadeService.processPayment(order.getId(), "coin");
-            if (!paymentResult.isSuccess()) {
+            if (!paymentResult.getSuccess()) {
                 log.error("金币支付失败: orderId={}, error={}", order.getId(), paymentResult.getMessage());
                 
                 // 支付失败，尝试取消订单

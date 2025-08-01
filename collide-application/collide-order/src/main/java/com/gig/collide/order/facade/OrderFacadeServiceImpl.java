@@ -214,7 +214,7 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
             // 1. 检查金币余额
             Result<Boolean> balanceCheck = walletFacadeService.checkCoinBalance(
                 order.getUserId(), order.getCoinCost());
-            if (!balanceCheck.isSuccess() || !balanceCheck.getData()) {
+            if (!balanceCheck.getSuccess() || !balanceCheck.getData()) {
                 return Result.failure("金币余额不足");
             }
             
@@ -226,7 +226,7 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
                 "内容购买支付，订单号：" + order.getOrderNo()
             );
             
-            if (!consumeResult.isSuccess()) {
+            if (!consumeResult.getSuccess()) {
                 return Result.failure("金币扣减失败: " + consumeResult.getMessage());
             }
             
