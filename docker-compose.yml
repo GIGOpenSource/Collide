@@ -295,7 +295,7 @@ services:
       context: .
       dockerfile: collide-application/collide-message/Dockerfile
     image: collide/message:latest
-    container_name: collide-payment
+    container_name: collide-message
     environment:
       - JAVA_OPTS=-Xms128m -Xmx256m -server
     restart: unless-stopped
