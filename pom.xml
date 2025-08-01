@@ -239,6 +239,11 @@
                 <artifactId>collide-task</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.gig.collide</groupId>
+                <artifactId>collide-ads</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- 业务聚合 -->
             <dependency>

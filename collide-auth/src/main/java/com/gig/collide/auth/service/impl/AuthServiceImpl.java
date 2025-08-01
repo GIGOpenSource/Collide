@@ -28,7 +28,7 @@ import java.util.Map;
 @Service
 public class AuthServiceImpl implements AuthService {
 
-    @DubboReference(version = "1.0.0")
+    @DubboReference(version = "1.0.0", timeout = 10000)
     private UserFacadeService userFacadeService;
 
     /**

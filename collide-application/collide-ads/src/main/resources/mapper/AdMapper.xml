@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.ads.infrastructure.mapper.AdMapper">
+
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.ads.domain.entity.Ad">
+        <id column="id" property="id"/>
+        <result column="ad_name" property="adName"/>
+        <result column="ad_title" property="adTitle"/>
+        <result column="ad_description" property="adDescription"/>
+        <result column="ad_type" property="adType"/>
+        <result column="image_url" property="imageUrl"/>
+        <result column="click_url" property="clickUrl"/>
+        <result column="is_active" property="isActive"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 基础字段列表 -->
+    <sql id="Base_Column_List">
+        id, ad_name, ad_title, ad_description, ad_type, image_url, click_url,
+        is_active, sort_order, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询 -->
+    <select id="selectById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_ad
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据广告类型查询启用的广告列表（按权重排序） -->
+    <select id="findByAdType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_ad
+        WHERE ad_type = #{adType}
+          AND is_active = 1
+        ORDER BY sort_order DESC, id ASC
+    </select>
+
+    <!-- 随机获取指定类型的广告列表 -->
+    <select id="findRandomByAdType" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM t_ad
+        WHERE ad_type = #{adType}
+          AND is_active = 1
+        ORDER BY RAND()
+        LIMIT #{limit}
+    </select>
+
+    <!-- 插入广告 -->
+    <insert id="insert" parameterType="com.gig.collide.ads.domain.entity.Ad" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_ad (
+            ad_name, ad_title, ad_description, ad_type, image_url, click_url,
+            is_active, sort_order, create_time, update_time
+        ) VALUES (
+            #{adName}, #{adTitle}, #{adDescription}, #{adType}, #{imageUrl}, #{clickUrl},
+            #{isActive}, #{sortOrder}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 根据ID更新 -->
+    <update id="updateById" parameterType="com.gig.collide.ads.domain.entity.Ad">
+        UPDATE t_ad
+        <set>
+            <if test="adName != null">ad_name = #{adName},</if>
+            <if test="adTitle != null">ad_title = #{adTitle},</if>
+            <if test="adDescription != null">ad_description = #{adDescription},</if>
+            <if test="adType != null">ad_type = #{adType},</if>
+            <if test="imageUrl != null">image_url = #{imageUrl},</if>
+            <if test="clickUrl != null">click_url = #{clickUrl},</if>
+            <if test="isActive != null">is_active = #{isActive},</if>
+            <if test="sortOrder != null">sort_order = #{sortOrder},</if>
+            <if test="updateTime != null">update_time = #{updateTime},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 根据ID删除 -->
+    <delete id="deleteById">
+        DELETE FROM t_ad WHERE id = #{id}
+    </delete>
+
+</mapper>

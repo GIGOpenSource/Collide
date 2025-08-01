@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+
+server:
+  port: 9620
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.ads.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

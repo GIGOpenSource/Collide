@@ -39,6 +39,7 @@
         <module>collide-payment</module>
         <module>collide-app</module>
         <module>collide-message</module>
+        <module>collide-ads</module>
     </modules>
 
 </project>
