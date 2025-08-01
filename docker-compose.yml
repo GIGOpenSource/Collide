@@ -301,7 +301,7 @@ services:
     restart: unless-stopped
     networks:
       collide-network:
-        ipv4_address: 172.20.5.32
+        ipv4_address: 172.20.5.33
     labels:
       - "com.collide.service=message"
       - "com.collide.category=message"
