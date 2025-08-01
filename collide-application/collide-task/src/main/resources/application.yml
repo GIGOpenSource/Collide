@@ -5,7 +5,7 @@ spring:
     import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
 
 server:
-  port: 9602
+  port: 9618
 
 # MyBatis Plus配置
 mybatis-plus:

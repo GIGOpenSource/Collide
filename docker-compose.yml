@@ -307,6 +307,23 @@ services:
       - "com.collide.category=message"
       - "com.collide.type=dubbo-provider"
 
+  collide-task:
+    build:
+      context: .
+      dockerfile: collide-application/collide-task/Dockerfile
+    image: collide/task:latest
+    container_name: collide-task
+    environment:
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.34
+    labels:
+      - "com.collide.service=message"
+      - "com.collide.category=message"
+      - "com.collide.type=dubbo-provider"
+
 networks:
   collide-network:
     external: true
