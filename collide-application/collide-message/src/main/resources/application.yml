@@ -1,169 +1,36 @@
-# ==========================================
-# Collide Message 私信消息模块配置 - 简洁版
-# 基于message-simple.sql的单表设计
-# ==========================================
-
-server:
-  port: 9009
-  servlet:
-    context-path: /collide-message
-
 spring:
   application:
-    name: collide-message
-  profiles:
-    active: dev
-  
-  # 数据源配置
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/collide?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8&allowMultiQueries=true
-    username: root
-    password: 123456
-    type: com.zaxxer.hikari.HikariDataSource
-    hikari:
-      minimum-idle: 5
-      maximum-pool-size: 20
-      auto-commit: true
-      idle-timeout: 30000
-      pool-name: CollideMessageHikariCP
-      max-lifetime: 1800000
-      connection-timeout: 30000
-      connection-test-query: SELECT 1
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
 
-  # Redis配置
-  data:
-    redis:
-      host: localhost
-      port: 6379
-      database: 6
-      password: 
-      timeout: 10s
-      lettuce:
-        pool:
-          max-active: 8
-          max-wait: -1ms
-          max-idle: 8
-          min-idle: 0
+server:
+  port: 9607
 
-# MyBatis-Plus配置
+# MyBatis Plus配置
 mybatis-plus:
-  mapper-locations: classpath:mapper/*.xml
-  type-aliases-package: com.gig.collide.message.domain.entity
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.like.domain.entity
   configuration:
     map-underscore-to-camel-case: true
-    cache-enabled: false
-    call-setters-on-nulls: true
-    jdbc-type-for-null: 'null'
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-  global-config:
-    db-config:
-      id-type: AUTO
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
-# Dubbo配置
-dubbo:
-  application:
-    name: collide-message
-    version: 2.0.0
-    owner: GIG Team
-    organization: Collide
-  protocol:
-    name: dubbo
-    port: 20889
-    host: localhost
-  registry:
-    address: nacos://localhost:8848
-    group: COLLIDE_GROUP
-    namespace: collide-dev
-  provider:
-    timeout: 10000
-    retries: 0
-    loadbalance: roundrobin
-  consumer:
-    timeout: 10000
-    retries: 0
-    check: false
-
-# JetCache配置
-jetcache:
-  statIntervalMinutes: 15
-  areaInCacheName: false
-  local:
-    default:
-      type: linkedhashmap
-      keyConvertor: fastjson
-  remote:
-    default:
-      type: redis
-      keyConvertor: fastjson
-      valueEncoder: java
-      valueDecoder: java
-      poolConfig:
-        minIdle: 5
-        maxIdle: 20
-        maxTotal: 50
-      host: localhost
-      port: 6379
-      database: 6
-
-# Swagger配置
-springdoc:
-  api-docs:
-    path: /api-docs
-  swagger-ui:
-    path: /swagger-ui.html
-    operationsSorter: method
-
-# 日志配置
-logging:
-  level:
-    com.gig.collide.message: DEBUG
-    com.gig.collide.message.infrastructure.mapper: DEBUG
-  pattern:
-    file: '[%d{yyyy-MM-dd HH:mm:ss.SSS}] [%thread] [%-5level] [%logger{50}] - %msg%n'
-    console: '[%d{HH:mm:ss.SSS}] [%thread] [%-5level] [%logger{36}] - %msg%n'
-
-# 管理端点
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
-  endpoint:
-    health:
-      show-details: when-authorized
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-
-# 业务配置
+# 点赞模块专用配置
 collide:
-  message:
-    # 消息清理配置
-    cleanup:
-      enabled: true
-      deleted-message-retention-days: 30
-      archived-session-retention-days: 90
-      cleanup-interval-hours: 24
-    
-    # 消息限制配置
-    limits:
-      max-content-length: 2000
-      max-attachments-per-message: 5
-      max-message-per-minute: 30
-      
-    # 通知配置
-    notification:
-      enabled: true
-      real-time: true
-      push-service-url: http://localhost:9999/push
-      
-    # 缓存配置
-    cache:
-      message-ttl-seconds: 3600
-      session-ttl-seconds: 7200
-      statistics-ttl-seconds: 1800
+  like:
+    # 防重复点赞时间窗口（秒）
+    duplicate-window: 5
+    # 批量检查最大数量
+    batch-check-max-size: 100
+    # 点赞统计同步间隔（分钟）
+    stats-sync-interval: 10
+    # 热门内容阈值
+    hot-threshold: 100
+    # 数据清理天数
+    cleanup-days: 90

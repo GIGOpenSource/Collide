@@ -1,29 +1,5 @@
-# ==========================================
-# Collide Message 私信消息模块引导配置
-# ==========================================
-
 spring:
   application:
-    name: collide-message
-  cloud:
-    nacos:
-      discovery:
-        server-addr: localhost:8848
-        namespace: collide-dev
-        group: COLLIDE_GROUP
-        cluster-name: collide-cluster
-        service: ${spring.application.name}
-        weight: 1
-        metadata:
-          version: 2.0.0
-          author: GIG Team
-          description: 私信消息服务-简洁版
-      config:
-        server-addr: localhost:8848
-        namespace: collide-dev
-        group: COLLIDE_GROUP
-        file-extension: yml
-        shared-configs:
-          - dataId: collide-message-shared.yml
-            group: COLLIDE_GROUP
-            refresh: true
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:config.yml 
