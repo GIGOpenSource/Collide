@@ -290,6 +290,23 @@ services:
 #      - "com.collide.category=utility"
 #      - "com.collide.type=dubbo-provider"
 
+  collide-message:
+    build:
+      context: .
+      dockerfile: collide-application/collide-message/Dockerfile
+    image: collide/message:latest
+    container_name: collide-payment
+    environment:
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.32
+    labels:
+      - "com.collide.service=message"
+      - "com.collide.category=message"
+      - "com.collide.type=dubbo-provider"
+
 networks:
   collide-network:
     external: true
