@@ -324,6 +324,23 @@ services:
       - "com.collide.category=message"
       - "com.collide.type=dubbo-provider"
 
+  collide-ads:
+    build:
+      context: .
+      dockerfile: collide-application/collide-ads/Dockerfile
+    image: collide/ads:latest
+    container_name: collide-ads
+    environment:
+      - JAVA_OPTS=-Xms128m -Xmx256m -server
+    restart: unless-stopped
+    networks:
+      collide-network:
+        ipv4_address: 172.20.5.35
+    labels:
+      - "com.collide.service=message"
+      - "com.collide.category=message"
+      - "com.collide.type=dubbo-provider"
+
 networks:
   collide-network:
     external: true
