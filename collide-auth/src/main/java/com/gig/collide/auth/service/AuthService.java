@@ -33,20 +33,7 @@ public interface AuthService {
      */
     Result<String> logout();
 
-    /**
-     * 验证邀请码
-     */
-    Result<Object> validateInviteCode(String inviteCode);
 
-    /**
-     * 获取我的邀请信息
-     */
-    Result<Object> getMyInviteInfo();
-
-    /**
-     * 获取当前用户信息
-     */
-    Result<Object> getCurrentUser();
 
     /**
      * 验证Token

@@ -11,7 +11,6 @@ import com.gig.collide.social.domain.entity.SocialDynamic;
 import com.gig.collide.social.domain.service.SocialDynamicService;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.api.user.UserFacadeService;
-import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.like.LikeFacadeService;
 import com.gig.collide.api.like.request.LikeQueryRequest;
 import com.gig.collide.api.like.response.LikeResponse;

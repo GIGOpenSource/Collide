@@ -1,6 +1,6 @@
 package com.gig.collide.users.domain.service;
 
-import com.gig.collide.api.user.request.UserBlockQueryRequest;
+import com.gig.collide.api.user.request.users.block.UserBlockQueryRequest;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserBlock;
 

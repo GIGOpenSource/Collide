@@ -6,7 +6,6 @@ import com.gig.collide.api.order.OrderFacadeService;
 import com.gig.collide.api.order.request.OrderCreateRequest;
 import com.gig.collide.api.order.request.OrderQueryRequest;
 import com.gig.collide.api.order.response.OrderResponse;
-import com.gig.collide.api.user.WalletFacadeService;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.order.domain.entity.Order;
