@@ -1,6 +1,7 @@
 package com.gig.collide.task.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.gig.collide.task.domain.constant.RewardTypeConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,11 +12,12 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 任务奖励实体类 - 简洁版
- * 基于task-simple.sql的t_task_reward表结构
+ * 任务奖励实体类 - 优化版
+ * 基于优化后的task-simple.sql的t_task_reward表结构
+ * 使用数字常量替代字符串枚举，提升性能和类型安全
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (优化版)
  * @since 2024-01-16
  */
 @Getter
@@ -39,10 +41,10 @@ public class TaskReward {
     private Long taskId;
 
     /**
-     * 奖励类型：coin、item、vip、experience
+     * 奖励类型：1-coin, 2-item, 3-vip, 4-experience, 5-badge
      */
     @TableField("reward_type")
-    private String rewardType;
+    private Integer rewardType;
 
     /**
      * 奖励名称
@@ -92,28 +94,35 @@ public class TaskReward {
      * 判断是否为金币奖励
      */
     public boolean isCoinReward() {
-        return "coin".equals(rewardType);
+        return RewardTypeConstant.isCoinReward(rewardType);
     }
 
     /**
      * 判断是否为道具奖励
      */
     public boolean isItemReward() {
-        return "item".equals(rewardType);
+        return RewardTypeConstant.isItemReward(rewardType);
     }
 
     /**
      * 判断是否为VIP奖励
      */
     public boolean isVipReward() {
-        return "vip".equals(rewardType);
+        return RewardTypeConstant.isVipReward(rewardType);
     }
 
     /**
      * 判断是否为经验奖励
      */
     public boolean isExperienceReward() {
-        return "experience".equals(rewardType);
+        return RewardTypeConstant.isExperienceReward(rewardType);
+    }
+
+    /**
+     * 判断是否为徽章奖励
+     */
+    public boolean isBadgeReward() {
+        return RewardTypeConstant.isBadgeReward(rewardType);
     }
 
     /**
@@ -185,7 +194,52 @@ public class TaskReward {
      */
     public boolean isValidReward() {
         return rewardAmount != null && rewardAmount > 0 && 
-               rewardType != null && !rewardType.trim().isEmpty() &&
+               RewardTypeConstant.isValidType(rewardType) &&
                rewardName != null && !rewardName.trim().isEmpty();
+    }
+
+    // =================== 新增业务方法 ===================
+
+    /**
+     * 获取奖励类型名称
+     */
+    public String getRewardTypeName() {
+        return RewardTypeConstant.getTypeName(rewardType);
+    }
+
+    /**
+     * 判断是否需要立即同步到钱包
+     * 金币奖励需要立即发放到用户钱包
+     */
+    public boolean requiresImmediateWalletSync() {
+        return RewardTypeConstant.requiresImmediateWalletSync(rewardType);
+    }
+
+    /**
+     * 创建金币奖励的工厂方法
+     */
+    public static TaskReward createCoinReward(Long taskId, String name, String desc, Integer amount, boolean isMain) {
+        TaskReward reward = new TaskReward();
+        reward.setTaskId(taskId);
+        reward.setRewardType(RewardTypeConstant.COIN);
+        reward.setRewardName(name);
+        reward.setRewardDesc(desc);
+        reward.setRewardAmount(amount);
+        reward.setIsMainReward(isMain);
+        return reward;
+    }
+
+    /**
+     * 创建徽章奖励的工厂方法
+     */
+    public static TaskReward createBadgeReward(Long taskId, String name, String desc, boolean isMain) {
+        TaskReward reward = new TaskReward();
+        reward.setTaskId(taskId);
+        reward.setRewardType(RewardTypeConstant.BADGE);
+        reward.setRewardName(name);
+        reward.setRewardDesc(desc);
+        reward.setRewardAmount(1);
+        reward.setIsMainReward(isMain);
+        return reward;
     }
 }

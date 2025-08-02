@@ -4,38 +4,46 @@
 
 <mapper namespace="com.gig.collide.task.infrastructure.mapper.UserRewardRecordMapper">
 
-    <!-- 查询用户的奖励记录 -->
+    <!-- 
+    ==========================================
+    用户奖励记录映射文件 - 优化版
+    基于优化后的task-simple.sql表结构
+    使用数字常量和HASH索引优化查询性能
+    ==========================================
+    -->
+
+    <!-- 查询用户的奖励记录（优化版 - 使用数字常量） -->
     <select id="findUserRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
         <where>
             <if test="userId != null">
                 AND user_id = #{userId}
             </if>
-            <if test="rewardSource != null and rewardSource != ''">
+            <if test="rewardSource != null">
                 AND reward_source = #{rewardSource}
             </if>
-            <if test="rewardType != null and rewardType != ''">
+            <if test="rewardType != null">
                 AND reward_type = #{rewardType}
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 AND status = #{status}
             </if>
         </where>
         ORDER BY create_time DESC
     </select>
 
-    <!-- 查询用户待发放的奖励 -->
+    <!-- 查询用户待发放的奖励（使用数字常量1=pending） -->
     <select id="findUserPendingRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'pending'
+        WHERE user_id = #{userId} AND status = 1
         ORDER BY create_time ASC
     </select>
 
-    <!-- 查询用户已发放的奖励 -->
+    <!-- 查询用户已发放的奖励（使用数字常量2=success） -->
     <select id="findUserGrantedRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'success'
-        <if test="rewardType != null and rewardType != ''">
+        WHERE user_id = #{userId} AND status = 2
+        <if test="rewardType != null">
             AND reward_type = #{rewardType}
         </if>
         <if test="startTime != null">
@@ -54,7 +62,7 @@
         ORDER BY create_time ASC
     </select>
 
-    <!-- 条件查询奖励记录 -->
+    <!-- 条件查询奖励记录（优化版 - 使用数字常量） -->
     <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
         <where>
@@ -64,13 +72,13 @@
             <if test="taskRecordId != null">
                 AND task_record_id = #{taskRecordId}
             </if>
-            <if test="rewardSource != null and rewardSource != ''">
+            <if test="rewardSource != null">
                 AND reward_source = #{rewardSource}
             </if>
-            <if test="rewardType != null and rewardType != ''">
+            <if test="rewardType != null">
                 AND reward_type = #{rewardType}
             </if>
-            <if test="status != null and status != ''">
+            <if test="status != null">
                 AND status = #{status}
             </if>
             <if test="startTime != null">
@@ -90,23 +98,23 @@
         </choose>
     </select>
 
-    <!-- 统计用户奖励情况 -->
+    <!-- 统计用户奖励情况（使用数字常量优化） -->
     <select id="getUserRewardStatistics" resultType="java.util.Map">
         SELECT 
             COUNT(*) as totalRewards,
-            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as successRewards,
-            SUM(CASE WHEN status = 'pending' THEN 1 ELSE 0 END) as pendingRewards,
-            SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failedRewards,
-            SUM(CASE WHEN reward_type = 'coin' AND status = 'success' THEN reward_amount ELSE 0 END) as totalCoins
+            SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as successRewards,
+            SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as pendingRewards,
+            SUM(CASE WHEN status = 3 THEN 1 ELSE 0 END) as failedRewards,
+            SUM(CASE WHEN reward_type = 1 AND status = 2 THEN reward_amount ELSE 0 END) as totalCoins
         FROM t_user_reward_record 
         WHERE user_id = #{userId}
     </select>
 
-    <!-- 统计用户指定类型奖励总量 -->
+    <!-- 统计用户指定类型奖励总量（优化版 - 使用数字常量） -->
     <select id="sumUserRewardAmount" resultType="java.lang.Long">
         SELECT IFNULL(SUM(reward_amount), 0) FROM t_user_reward_record 
         WHERE user_id = #{userId} AND reward_type = #{rewardType}
-        <if test="status != null and status != ''">
+        <if test="status != null">
             AND status = #{status}
         </if>
         <if test="startTime != null">
@@ -117,21 +125,21 @@
         </if>
     </select>
 
-    <!-- 统计用户各类型奖励数量 -->
+    <!-- 统计用户各类型奖励数量（优化版 - 使用数字常量） -->
     <select id="countRewardsByType" resultType="java.util.Map">
         SELECT reward_type, COUNT(*) as count 
         FROM t_user_reward_record 
         WHERE user_id = #{userId}
-        <if test="status != null and status != ''">
+        <if test="status != null">
             AND status = #{status}
         </if>
         GROUP BY reward_type
     </select>
 
-    <!-- 统计待发放奖励数量 -->
+    <!-- 统计待发放奖励数量（使用数字常量1=pending） -->
     <select id="countPendingRewards" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'pending'
+        WHERE user_id = #{userId} AND status = 1
     </select>
 
     <!-- 统计过期奖励数量 -->
@@ -142,26 +150,26 @@
           AND expire_time &lt; #{currentTime}
     </select>
 
-    <!-- 统计失败奖励数量 -->
+    <!-- 统计失败奖励数量（使用数字常量3=failed） -->
     <select id="countFailedRewards" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'failed'
+        WHERE user_id = #{userId} AND status = 3
     </select>
 
-    <!-- 批量更新奖励状态为成功 -->
+    <!-- 批量更新奖励状态为成功（使用数字常量2=success） -->
     <update id="batchMarkRewardsSuccess">
         UPDATE t_user_reward_record 
-        SET status = 'success', grant_time = NOW(), update_time = NOW()
+        SET status = 2, grant_time = NOW(), update_time = NOW()
         WHERE id IN
         <foreach collection="rewardIds" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
     </update>
 
-    <!-- 批量更新奖励状态为失败 -->
+    <!-- 批量更新奖励状态为失败（使用数字常量3=failed） -->
     <update id="batchMarkRewardsFailed">
         UPDATE t_user_reward_record 
-        SET status = 'failed', grant_time = NOW(), update_time = NOW()
+        SET status = 3, grant_time = NOW(), update_time = NOW()
         WHERE id IN
         <foreach collection="rewardIds" item="id" open="(" separator="," close=")">
             #{id}
@@ -187,36 +195,36 @@
         </if>
     </delete>
 
-    <!-- 查询即将过期的奖励 -->
+    <!-- 查询即将过期的奖励（使用数字常量1=pending） -->
     <select id="findRewardsExpiringSoon" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
         WHERE expire_time IS NOT NULL 
           AND expire_time BETWEEN #{currentTime} AND DATE_ADD(#{currentTime}, INTERVAL #{hours} HOUR)
-          AND status = 'pending'
+          AND status = 1
         ORDER BY expire_time ASC
     </select>
 
-    <!-- 查询过期未发放的奖励 -->
+    <!-- 查询过期未发放的奖励（使用数字常量1=pending） -->
     <select id="findExpiredPendingRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
         WHERE expire_time IS NOT NULL 
           AND expire_time &lt; #{currentTime}
-          AND status = 'pending'
+          AND status = 1
         ORDER BY expire_time ASC
     </select>
 
-    <!-- 查询发放失败需要重试的奖励 -->
+    <!-- 查询发放失败需要重试的奖励（使用数字常量3=failed） -->
     <select id="findFailedRewardsForRetry" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE status = 'failed' 
+        WHERE status = 3 
           AND grant_time &lt; DATE_SUB(#{currentTime}, INTERVAL #{retryAfterHours} HOUR)
         ORDER BY grant_time ASC
     </select>
 
-    <!-- 查询用户金币奖励历史 -->
+    <!-- 查询用户金币奖励历史（使用数字常量1=coin） -->
     <select id="findUserCoinRewardHistory" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND reward_type = 'coin'
+        WHERE user_id = #{userId} AND reward_type = 1
         <if test="startTime != null">
             AND grant_time &gt;= #{startTime}
         </if>
@@ -226,21 +234,21 @@
         ORDER BY grant_time DESC
     </select>
 
-    <!-- 查询用户VIP奖励历史 -->
+    <!-- 查询用户VIP奖励历史（使用数字常量3=vip） -->
     <select id="findUserVipRewardHistory" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND reward_type = 'vip'
+        WHERE user_id = #{userId} AND reward_type = 3
         ORDER BY grant_time DESC
     </select>
 
-    <!-- 查询系统奖励发放记录 -->
+    <!-- 查询系统奖励发放记录（使用数字常量3=system） -->
     <select id="findSystemRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE reward_source = 'system'
-        <if test="rewardType != null and rewardType != ''">
+        WHERE reward_source = 3
+        <if test="rewardType != null">
             AND reward_type = #{rewardType}
         </if>
-        <if test="status != null and status != ''">
+        <if test="status != null">
             AND status = #{status}
         </if>
         <if test="startTime != null">
@@ -272,14 +280,14 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 查询用户金币奖励排行榜 -->
+    <!-- 查询用户金币奖励排行榜（使用数字常量1=coin，2=success） -->
     <select id="getCoinRewardRanking" resultType="java.util.Map">
         SELECT 
             user_id,
             SUM(reward_amount) as totalCoins,
             COUNT(*) as rewardCount
         FROM t_user_reward_record 
-        WHERE reward_type = 'coin' AND status = 'success'
+        WHERE reward_type = 1 AND status = 2
         <if test="startTime != null">
             AND grant_time &gt;= #{startTime}
         </if>
@@ -293,14 +301,14 @@
         </if>
     </select>
 
-    <!-- 查询活跃奖励用户排行 -->
+    <!-- 查询活跃奖励用户排行（使用数字常量2=success） -->
     <select id="getActiveRewardUsersRanking" resultType="java.util.Map">
         SELECT 
             user_id,
             COUNT(*) as rewardCount,
             COUNT(DISTINCT reward_type) as rewardTypeCount
         FROM t_user_reward_record 
-        WHERE status = 'success' 
+        WHERE status = 2 
           AND grant_time &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
         GROUP BY user_id
         ORDER BY rewardCount DESC, rewardTypeCount DESC
@@ -309,45 +317,45 @@
         </if>
     </select>
 
-    <!-- 清理过期的奖励记录 -->
+    <!-- 清理过期的奖励记录（使用数字常量3=failed） -->
     <delete id="cleanExpiredRewards">
         DELETE FROM t_user_reward_record 
         WHERE create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-          AND status = 'failed'
+          AND status = 3
     </delete>
 
-    <!-- 清理已发放的历史奖励记录 -->
+    <!-- 清理已发放的历史奖励记录（使用数字常量2=success） -->
     <delete id="cleanOldGrantedRewards">
         DELETE FROM t_user_reward_record 
         WHERE grant_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-          AND status = 'success'
+          AND status = 2
     </delete>
 
-    <!-- 检查用户是否有待发放奖励 -->
+    <!-- 检查用户是否有待发放奖励（使用数字常量1=pending） -->
     <select id="hasPendingRewards" resultType="boolean">
         SELECT COUNT(*) > 0 FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'pending'
+        WHERE user_id = #{userId} AND status = 1
     </select>
 
-    <!-- 检查任务记录是否已发放奖励 -->
+    <!-- 检查任务记录是否已发放奖励（使用数字常量2=success） -->
     <select id="hasRewardGranted" resultType="boolean">
         SELECT COUNT(*) > 0 FROM t_user_reward_record 
-        WHERE task_record_id = #{taskRecordId} AND status = 'success'
+        WHERE task_record_id = #{taskRecordId} AND status = 2
     </select>
 
-    <!-- 获取用户指定日期的奖励总量 -->
+    <!-- 获取用户指定日期的奖励总量（使用数字常量2=success） -->
     <select id="getUserDailyRewardSum" resultType="java.lang.Long">
         SELECT IFNULL(SUM(reward_amount), 0) FROM t_user_reward_record 
         WHERE user_id = #{userId} 
           AND reward_type = #{rewardType}
-          AND status = 'success'
+          AND status = 2
           AND DATE(grant_time) = #{date}
     </select>
 
-    <!-- 获取最近发放的奖励记录 -->
+    <!-- 获取最近发放的奖励记录（使用数字常量2=success） -->
     <select id="getRecentRewards" resultType="com.gig.collide.task.domain.entity.UserRewardRecord">
         SELECT * FROM t_user_reward_record 
-        WHERE user_id = #{userId} AND status = 'success'
+        WHERE user_id = #{userId} AND status = 2
         ORDER BY grant_time DESC
         <if test="limit != null">
             LIMIT #{limit}

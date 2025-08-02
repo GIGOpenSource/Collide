@@ -1,6 +1,7 @@
 package com.gig.collide.task.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.gig.collide.task.domain.constant.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,11 +12,12 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 用户奖励记录实体类 - 简洁版
- * 基于task-simple.sql的t_user_reward_record表结构
+ * 用户奖励记录实体类 - 优化版
+ * 基于优化后的task-simple.sql的t_user_reward_record表结构
+ * 使用数字常量管理奖励类型、来源和状态，提升性能和类型安全
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (优化版)
  * @since 2024-01-16
  */
 @Getter
@@ -45,16 +47,16 @@ public class UserRewardRecord {
     private Long taskRecordId;
 
     /**
-     * 奖励来源：task、event、system
+     * 奖励来源：1-task, 2-event, 3-system, 4-admin
      */
     @TableField("reward_source")
-    private String rewardSource;
+    private Integer rewardSource;
 
     /**
-     * 奖励类型：coin、item、vip、experience
+     * 奖励类型：1-coin, 2-item, 3-vip, 4-experience, 5-badge
      */
     @TableField("reward_type")
-    private String rewardType;
+    private Integer rewardType;
 
     /**
      * 奖励名称
@@ -75,10 +77,10 @@ public class UserRewardRecord {
     private Map<String, Object> rewardData;
 
     /**
-     * 状态：pending、success、failed
+     * 状态：1-pending, 2-success, 3-failed, 4-expired
      */
     @TableField("status")
-    private String status;
+    private Integer status;
 
     /**
      * 发放时间
@@ -110,70 +112,91 @@ public class UserRewardRecord {
      * 判断是否为金币奖励
      */
     public boolean isCoinReward() {
-        return "coin".equals(rewardType);
+        return RewardTypeConstant.isCoinReward(rewardType);
     }
 
     /**
      * 判断是否为道具奖励
      */
     public boolean isItemReward() {
-        return "item".equals(rewardType);
+        return RewardTypeConstant.isItemReward(rewardType);
     }
 
     /**
      * 判断是否为VIP奖励
      */
     public boolean isVipReward() {
-        return "vip".equals(rewardType);
+        return RewardTypeConstant.isVipReward(rewardType);
     }
 
     /**
      * 判断是否为经验奖励
      */
     public boolean isExperienceReward() {
-        return "experience".equals(rewardType);
+        return RewardTypeConstant.isExperienceReward(rewardType);
+    }
+
+    /**
+     * 判断是否为徽章奖励
+     */
+    public boolean isBadgeReward() {
+        return RewardTypeConstant.isBadgeReward(rewardType);
     }
 
     /**
      * 判断是否为任务奖励
      */
     public boolean isTaskReward() {
-        return "task".equals(rewardSource);
+        return RewardSourceConstant.isTaskReward(rewardSource);
     }
 
     /**
      * 判断是否为事件奖励
      */
     public boolean isEventReward() {
-        return "event".equals(rewardSource);
+        return RewardSourceConstant.isEventReward(rewardSource);
     }
 
     /**
      * 判断是否为系统奖励
      */
     public boolean isSystemReward() {
-        return "system".equals(rewardSource);
+        return RewardSourceConstant.isSystemReward(rewardSource);
+    }
+
+    /**
+     * 判断是否为管理员奖励
+     */
+    public boolean isAdminReward() {
+        return RewardSourceConstant.isAdminReward(rewardSource);
     }
 
     /**
      * 判断奖励是否为待发放状态
      */
     public boolean isPending() {
-        return "pending".equals(status);
+        return RewardStatusConstant.isPending(status);
     }
 
     /**
      * 判断奖励是否已成功发放
      */
     public boolean isSuccess() {
-        return "success".equals(status);
+        return RewardStatusConstant.isSuccess(status);
     }
 
     /**
      * 判断奖励发放是否失败
      */
     public boolean isFailed() {
-        return "failed".equals(status);
+        return RewardStatusConstant.isFailed(status);
+    }
+
+    /**
+     * 判断奖励是否已过期
+     */
+    public boolean isStatusExpired() {
+        return RewardStatusConstant.isExpired(status);
     }
 
     /**
@@ -194,7 +217,7 @@ public class UserRewardRecord {
      * 标记奖励为发放成功
      */
     public void markAsSuccess() {
-        this.status = "success";
+        this.status = RewardStatusConstant.SUCCESS;
         this.grantTime = LocalDateTime.now();
     }
 
@@ -202,7 +225,15 @@ public class UserRewardRecord {
      * 标记奖励为发放失败
      */
     public void markAsFailed() {
-        this.status = "failed";
+        this.status = RewardStatusConstant.FAILED;
+        this.grantTime = LocalDateTime.now();
+    }
+
+    /**
+     * 标记奖励为已过期
+     */
+    public void markAsExpired() {
+        this.status = RewardStatusConstant.EXPIRED;
         this.grantTime = LocalDateTime.now();
     }
 
@@ -270,8 +301,78 @@ public class UserRewardRecord {
      */
     public void retryGrant() {
         if (isFailed()) {
-            this.status = "pending";
+            this.status = RewardStatusConstant.PENDING;
             this.grantTime = null;
         }
+    }
+
+    // =================== 新增业务方法 ===================
+
+    /**
+     * 获取奖励类型名称
+     */
+    public String getRewardTypeName() {
+        return RewardTypeConstant.getTypeName(rewardType);
+    }
+
+    /**
+     * 获取奖励来源名称
+     */
+    public String getRewardSourceName() {
+        return RewardSourceConstant.getSourceName(rewardSource);
+    }
+
+    /**
+     * 获取奖励状态名称
+     */
+    public String getRewardStatusName() {
+        return RewardStatusConstant.getStatusName(status);
+    }
+
+    /**
+     * 判断是否需要立即同步到钱包
+     */
+    public boolean requiresImmediateWalletSync() {
+        return RewardTypeConstant.requiresImmediateWalletSync(rewardType);
+    }
+
+    /**
+     * 创建任务奖励记录
+     */
+    public static UserRewardRecord createTaskReward(Long userId, Long taskRecordId, 
+                                                    Integer rewardType, String rewardName, 
+                                                    Integer rewardAmount, Map<String, Object> rewardData) {
+        UserRewardRecord record = new UserRewardRecord();
+        record.setUserId(userId);
+        record.setTaskRecordId(taskRecordId);
+        record.setRewardSource(RewardSourceConstant.TASK);
+        record.setRewardType(rewardType);
+        record.setRewardName(rewardName);
+        record.setRewardAmount(rewardAmount);
+        record.setRewardData(rewardData);
+        record.setStatus(RewardStatusConstant.PENDING);
+        return record;
+    }
+
+    /**
+     * 创建金币奖励记录
+     */
+    public static UserRewardRecord createCoinReward(Long userId, Long taskRecordId, 
+                                                    Integer coinAmount, String description) {
+        return createTaskReward(userId, taskRecordId, 
+                               RewardTypeConstant.COIN, description, 
+                               coinAmount, null);
+    }
+
+    /**
+     * 验证奖励记录数据是否有效
+     */
+    public boolean isValidRecord() {
+        return userId != null && 
+               RewardSourceConstant.isValidSource(rewardSource) &&
+               RewardTypeConstant.isValidType(rewardType) &&
+               rewardName != null && !rewardName.trim().isEmpty() &&
+               rewardAmount != null && rewardAmount > 0 &&
+               RewardStatusConstant.isValidStatus(status);
     }
 }

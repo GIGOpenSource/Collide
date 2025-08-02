@@ -4,6 +4,7 @@ import com.alicp.jetcache.anno.Cached;
 import com.alicp.jetcache.anno.CacheInvalidate;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.gig.collide.task.domain.constant.*;
 import com.gig.collide.task.domain.entity.TaskTemplate;
 import com.gig.collide.task.domain.service.TaskTemplateService;
 import com.gig.collide.task.infrastructure.mapper.TaskTemplateMapper;
@@ -19,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * 任务模板业务服务实现类 - 简洁版
- * 基于task-simple.sql的单表设计
+ * 任务模板业务服务实现类 - 优化版
+ * 基于优化后的task-simple.sql，支持数字常量和高性能索引
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Slf4j
@@ -122,11 +123,11 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
     // =================== 查询操作 ===================
 
     @Override
-    public Page<TaskTemplate> queryTaskTemplates(String taskName, String taskType, String taskCategory,
-                                                String taskAction, Boolean isActive, LocalDate startDate,
+    public Page<TaskTemplate> queryTaskTemplates(String taskName, Integer taskType, Integer taskCategory,
+                                                Integer taskAction, Boolean isActive, LocalDate startDate,
                                                 LocalDate endDate, String orderBy, String orderDirection,
                                                 Integer currentPage, Integer pageSize) {
-        log.debug("分页查询任务模板: page={}, size={}", currentPage, pageSize);
+        log.debug("分页查询任务模板: page={}, size={}, taskType={}, taskCategory={}", currentPage, pageSize, taskType, taskCategory);
         
         Page<TaskTemplate> page = new Page<>(currentPage, pageSize);
         return taskTemplateMapper.findWithConditions(page, taskName, taskType, taskCategory, taskAction,
@@ -142,27 +143,27 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
 
     @Override
     @Cached(name = "task:template:type", key = "#taskType", expire = 15, timeUnit = TimeUnit.MINUTES)
-    public List<TaskTemplate> getAvailableTasksByType(String taskType) {
-        log.debug("根据类型查询可用任务: taskType={}", taskType);
+    public List<TaskTemplate> getAvailableTasksByType(Integer taskType) {
+        log.debug("根据类型查询可用任务: taskType={} ({})", taskType, TaskTypeConstant.getTypeName(taskType));
         return taskTemplateMapper.findAvailableTasksByType(taskType, LocalDate.now());
     }
 
     @Override
-    public List<TaskTemplate> getTasksByAction(String taskAction) {
-        log.debug("根据动作查询任务: taskAction={}", taskAction);
+    public List<TaskTemplate> getTasksByAction(Integer taskAction) {
+        log.debug("根据动作查询任务: taskAction={} ({})", taskAction, TaskActionConstant.getActionName(taskAction));
         return taskTemplateMapper.findTasksByAction(taskAction, true, LocalDate.now());
     }
 
     @Override
-    public List<TaskTemplate> getTasksByCategory(String taskCategory) {
-        log.debug("根据分类查询任务: taskCategory={}", taskCategory);
+    public List<TaskTemplate> getTasksByCategory(Integer taskCategory) {
+        log.debug("根据分类查询任务: taskCategory={} ({})", taskCategory, TaskCategoryConstant.getCategoryName(taskCategory));
         return taskTemplateMapper.findTasksByCategory(taskCategory, true);
     }
 
     @Override
-    public Page<TaskTemplate> searchTaskTemplates(String keyword, String taskType, String taskCategory,
+    public Page<TaskTemplate> searchTaskTemplates(String keyword, Integer taskType, Integer taskCategory,
                                                  Boolean isActive, Integer currentPage, Integer pageSize) {
-        log.debug("搜索任务模板: keyword={}", keyword);
+        log.debug("搜索任务模板: keyword={}, taskType={}, taskCategory={}", keyword, taskType, taskCategory);
         
         Page<TaskTemplate> page = new Page<>(currentPage, pageSize);
         return taskTemplateMapper.searchTasks(page, keyword, taskType, taskCategory, isActive);
@@ -343,7 +344,8 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
     }
 
     @Override
-    public boolean isTaskActionExists(String taskAction) {
+    public boolean isTaskActionExists(Integer taskAction) {
+        log.debug("检查任务动作是否存在: taskAction={} ({})", taskAction, TaskActionConstant.getActionName(taskAction));
         return taskTemplateMapper.existsByTaskAction(taskAction, true);
     }
 
@@ -354,7 +356,7 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
     }
 
     @Override
-    public Integer getMaxOrderByCategory(String taskCategory) {
+    public Integer getMaxOrderByCategory(Integer taskCategory) {
         return taskTemplateMapper.findMaxOrderByCategory(taskCategory);
     }
 
@@ -366,8 +368,9 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
     }
 
     @Override
-    public List<TaskTemplate> getUserAvailableTasks(String taskType, LocalDate taskDate) {
-        log.debug("获取用户可用任务: taskType={}, taskDate={}", taskType, taskDate);
+    public List<TaskTemplate> getUserAvailableTasks(Integer taskType, LocalDate taskDate) {
+        log.debug("获取用户可用任务: taskType={} ({}), taskDate={}", 
+                taskType, TaskTypeConstant.getTypeName(taskType), taskDate);
         return taskTemplateMapper.findAvailableTasksByType(taskType, taskDate);
     }
 
@@ -378,17 +381,17 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
             return false;
         }
         
-        // 检查必要字段是否完整
+        // 检查必要字段是否完整（使用数字常量验证）
         return taskTemplate.getTaskName() != null && !taskTemplate.getTaskName().trim().isEmpty() &&
-               taskTemplate.getTaskType() != null && !taskTemplate.getTaskType().trim().isEmpty() &&
-               taskTemplate.getTaskCategory() != null && !taskTemplate.getTaskCategory().trim().isEmpty() &&
-               taskTemplate.getTaskAction() != null && !taskTemplate.getTaskAction().trim().isEmpty() &&
+               taskTemplate.getTaskType() != null && TaskTypeConstant.isValidType(taskTemplate.getTaskType()) &&
+               taskTemplate.getTaskCategory() != null && TaskCategoryConstant.isValidCategory(taskTemplate.getTaskCategory()) &&
+               taskTemplate.getTaskAction() != null && TaskActionConstant.isValidAction(taskTemplate.getTaskAction()) &&
                taskTemplate.getTargetCount() != null && taskTemplate.getTargetCount() > 0;
     }
 
     @Override
     @Cached(name = "task:template:categories", expire = 60, timeUnit = TimeUnit.MINUTES)
-    public List<String> getTaskCategories() {
+    public List<Integer> getTaskCategories() {
         LambdaQueryWrapper<TaskTemplate> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(TaskTemplate::getTaskCategory)
                .eq(TaskTemplate::getIsActive, true)
@@ -397,12 +400,13 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
         return taskTemplateMapper.selectList(wrapper)
                 .stream()
                 .map(TaskTemplate::getTaskCategory)
+                .distinct()
                 .collect(Collectors.toList());
     }
 
     @Override
     @Cached(name = "task:template:actions", expire = 60, timeUnit = TimeUnit.MINUTES)
-    public List<String> getTaskActions() {
+    public List<Integer> getTaskActions() {
         LambdaQueryWrapper<TaskTemplate> wrapper = new LambdaQueryWrapper<>();
         wrapper.select(TaskTemplate::getTaskAction)
                .eq(TaskTemplate::getIsActive, true)
@@ -411,6 +415,7 @@ public class TaskTemplateServiceImpl implements TaskTemplateService {
         return taskTemplateMapper.selectList(wrapper)
                 .stream()
                 .map(TaskTemplate::getTaskAction)
+                .distinct()
                 .collect(Collectors.toList());
     }
 

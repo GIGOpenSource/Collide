@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 任务模板业务服务接口 - 简洁版
- * 基于task-simple.sql的单表设计
+ * 任务模板业务服务接口 - 优化版
+ * 基于优化后的task-simple.sql，支持数字常量和高性能索引
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 public interface TaskTemplateService {
@@ -47,10 +47,10 @@ public interface TaskTemplateService {
     // =================== 查询操作 ===================
 
     /**
-     * 分页查询任务模板
+     * 分页查询任务模板（数字常量优化版）
      */
-    Page<TaskTemplate> queryTaskTemplates(String taskName, String taskType, String taskCategory,
-                                         String taskAction, Boolean isActive, LocalDate startDate, 
+    Page<TaskTemplate> queryTaskTemplates(String taskName, Integer taskType, Integer taskCategory,
+                                         Integer taskAction, Boolean isActive, LocalDate startDate, 
                                          LocalDate endDate, String orderBy, String orderDirection,
                                          Integer currentPage, Integer pageSize);
 
@@ -60,24 +60,24 @@ public interface TaskTemplateService {
     List<TaskTemplate> getAllActiveTasks();
 
     /**
-     * 根据类型查询可用任务模板
+     * 根据类型查询可用任务模板（使用数字常量优化）
      */
-    List<TaskTemplate> getAvailableTasksByType(String taskType);
+    List<TaskTemplate> getAvailableTasksByType(Integer taskType);
 
     /**
-     * 根据动作查询任务模板
+     * 根据动作查询任务模板（使用数字常量优化）
      */
-    List<TaskTemplate> getTasksByAction(String taskAction);
+    List<TaskTemplate> getTasksByAction(Integer taskAction);
 
     /**
-     * 根据分类查询任务模板
+     * 根据分类查询任务模板（使用数字常量优化）
      */
-    List<TaskTemplate> getTasksByCategory(String taskCategory);
+    List<TaskTemplate> getTasksByCategory(Integer taskCategory);
 
     /**
-     * 搜索任务模板
+     * 搜索任务模板（数字常量优化版）
      */
-    Page<TaskTemplate> searchTaskTemplates(String keyword, String taskType, String taskCategory,
+    Page<TaskTemplate> searchTaskTemplates(String keyword, Integer taskType, Integer taskCategory,
                                           Boolean isActive, Integer currentPage, Integer pageSize);
 
     // =================== 状态管理 ===================
@@ -164,9 +164,9 @@ public interface TaskTemplateService {
     boolean isTaskNameExists(String taskName, Long excludeId);
 
     /**
-     * 验证任务动作是否存在
+     * 验证任务动作是否存在（使用数字常量优化）
      */
-    boolean isTaskActionExists(String taskAction);
+    boolean isTaskActionExists(Integer taskAction);
 
     /**
      * 验证任务模板是否可用
@@ -174,9 +174,9 @@ public interface TaskTemplateService {
     boolean isTaskTemplateAvailable(Long id);
 
     /**
-     * 获取分类下的最大排序值
+     * 获取分类下的最大排序值（使用数字常量优化）
      */
-    Integer getMaxOrderByCategory(String taskCategory);
+    Integer getMaxOrderByCategory(Integer taskCategory);
 
     // =================== 工具方法 ===================
 
@@ -186,9 +186,9 @@ public interface TaskTemplateService {
     List<TaskTemplate> getTasksByOrderRange(Integer minOrder, Integer maxOrder);
 
     /**
-     * 获取用户可用的任务列表（根据日期和类型筛选）
+     * 获取用户可用的任务列表（根据日期和类型筛选，数字常量优化版）
      */
-    List<TaskTemplate> getUserAvailableTasks(String taskType, LocalDate taskDate);
+    List<TaskTemplate> getUserAvailableTasks(Integer taskType, LocalDate taskDate);
 
     /**
      * 检查任务模板配置是否完整
@@ -196,12 +196,12 @@ public interface TaskTemplateService {
     boolean isTaskTemplateConfigComplete(Long id);
 
     /**
-     * 获取任务分类列表
+     * 获取任务分类列表（返回数字常量）
      */
-    List<String> getTaskCategories();
+    List<Integer> getTaskCategories();
 
     /**
-     * 获取任务动作列表
+     * 获取任务动作列表（返回数字常量）
      */
-    List<String> getTaskActions();
+    List<Integer> getTaskActions();
 }

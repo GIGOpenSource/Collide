@@ -4,11 +4,19 @@
 
 <mapper namespace="com.gig.collide.task.infrastructure.mapper.UserTaskRecordMapper">
 
-    <!-- 查询用户指定日期的任务记录 -->
+    <!-- 
+    ==========================================
+    用户任务记录映射文件 - 优化版
+    基于优化后的task-simple.sql表结构
+    使用数字常量和复合索引优化查询性能
+    ==========================================
+    -->
+
+    <!-- 查询用户指定日期的任务记录（利用用户日期复合索引） -->
     <select id="findUserTasksByDate" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
         WHERE user_id = #{userId} AND task_date = #{taskDate}
-        <if test="taskType != null and taskType != ''">
+        <if test="taskType != null">
             AND task_type = #{taskType}
         </if>
         ORDER BY task_type, create_time ASC
@@ -31,7 +39,7 @@
         ORDER BY task_date DESC, create_time ASC
     </select>
 
-    <!-- 条件查询用户任务记录 -->
+    <!-- 条件查询用户任务记录（优化版 - 使用数字常量） -->
     <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
         <where>
@@ -41,10 +49,10 @@
             <if test="taskId != null">
                 AND task_id = #{taskId}
             </if>
-            <if test="taskType != null and taskType != ''">
+            <if test="taskType != null">
                 AND task_type = #{taskType}
             </if>
-            <if test="taskCategory != null and taskCategory != ''">
+            <if test="taskCategory != null">
                 AND task_category = #{taskCategory}
             </if>
             <if test="isCompleted != null">
@@ -82,14 +90,14 @@
         ORDER BY complete_time ASC
     </select>
 
-    <!-- 查询用户未完成的任务 -->
+    <!-- 查询用户未完成的任务（优化版 - 使用数字常量） -->
     <select id="findUserIncompleteTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
         WHERE user_id = #{userId} AND is_completed = 0
         <if test="taskDate != null">
             AND task_date = #{taskDate}
         </if>
-        <if test="taskType != null and taskType != ''">
+        <if test="taskType != null">
             AND task_type = #{taskType}
         </if>
         ORDER BY task_date DESC, create_time ASC
@@ -123,12 +131,12 @@
         </if>
     </select>
 
-    <!-- 统计用户连续登录天数 -->
+    <!-- 统计用户连续登录天数（使用数字常量1=login优化） -->
     <select id="countConsecutiveLoginDays" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM (
             SELECT task_date FROM t_user_task_record 
             WHERE user_id = #{userId} 
-              AND task_category = 'login' 
+              AND task_category = 1 
               AND is_completed = 1
               AND task_date &lt;= #{endDate}
             ORDER BY task_date DESC
@@ -205,7 +213,7 @@
         </foreach>
     </update>
 
-    <!-- 重置每日任务进度 -->
+    <!-- 重置每日任务进度（使用数字常量1=daily） -->
     <update id="resetDailyTaskProgress">
         UPDATE t_user_task_record 
         SET current_count = 0, 
@@ -216,7 +224,7 @@
             update_time = NOW()
         WHERE user_id = #{userId} 
           AND task_date = #{taskDate}
-          AND task_type = 'daily'
+          AND task_type = 1
     </update>
 
     <!-- 查询用户任务进度排行 -->
@@ -245,21 +253,21 @@
         HAVING COUNT(*) &gt;= #{minCompletedTasks}
     </select>
 
-    <!-- 查询过期未完成的任务记录 -->
+    <!-- 查询过期未完成的任务记录（使用数字常量1=daily） -->
     <select id="findExpiredIncompleteTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
         WHERE task_date &lt; #{currentDate} 
           AND is_completed = 0
-          AND task_type = 'daily'
+          AND task_type = 1
     </select>
 
-    <!-- 查询需要重置的每日任务记录 -->
+    <!-- 查询需要重置的每日任务记录（使用数字常量1=daily） -->
     <select id="findDailyTasksToReset" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
-        WHERE task_date = #{resetDate} AND task_type = 'daily'
+        WHERE task_date = #{resetDate} AND task_type = 1
     </select>
 
-    <!-- 搜索用户任务记录 -->
+    <!-- 搜索用户任务记录（优化版 - 使用数字常量） -->
     <select id="searchUserTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
         SELECT * FROM t_user_task_record 
         <where>
@@ -267,10 +275,9 @@
                 AND user_id = #{userId}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND (task_name LIKE CONCAT('%', #{keyword}, '%') 
-                     OR task_category LIKE CONCAT('%', #{keyword}, '%'))
+                AND task_name LIKE CONCAT('%', #{keyword}, '%')
             </if>
-            <if test="taskType != null and taskType != ''">
+            <if test="taskType != null">
                 AND task_type = #{taskType}
             </if>
             <if test="isCompleted != null">
@@ -280,11 +287,11 @@
         ORDER BY task_date DESC, create_time ASC
     </select>
 
-    <!-- 清理过期的任务记录 -->
+    <!-- 清理过期的任务记录（使用数字常量1=daily） -->
     <delete id="cleanExpiredRecords">
         DELETE FROM t_user_task_record 
         WHERE create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-          AND task_type = 'daily'
+          AND task_type = 1
           AND task_date &lt; DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
     </delete>
 

@@ -4,6 +4,14 @@
 
 <mapper namespace="com.gig.collide.task.infrastructure.mapper.TaskTemplateMapper">
 
+    <!-- 
+    ==========================================
+    任务模板映射文件 - 优化版
+    基于优化后的task-simple.sql表结构
+    使用数字常量替代字符串枚举，提升查询性能
+    ==========================================
+    -->
+
     <!-- 根据任务类型查询可用任务模板 -->
     <select id="findAvailableTasksByType" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
         SELECT * FROM t_task_template 
@@ -14,7 +22,7 @@
         ORDER BY sort_order ASC
     </select>
 
-    <!-- 根据任务动作查询任务模板 -->
+    <!-- 根据任务动作查询任务模板（使用HASH索引优化） -->
     <select id="findTasksByAction" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
         SELECT * FROM t_task_template 
         WHERE task_action = #{taskAction}
@@ -28,20 +36,20 @@
         ORDER BY sort_order ASC
     </select>
 
-    <!-- 条件查询任务模板 -->
+    <!-- 条件查询任务模板（优化版 - 使用数字常量） -->
     <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
         SELECT * FROM t_task_template 
         <where>
             <if test="taskName != null and taskName != ''">
                 AND task_name LIKE CONCAT('%', #{taskName}, '%')
             </if>
-            <if test="taskType != null and taskType != ''">
+            <if test="taskType != null">
                 AND task_type = #{taskType}
             </if>
-            <if test="taskCategory != null and taskCategory != ''">
+            <if test="taskCategory != null">
                 AND task_category = #{taskCategory}
             </if>
-            <if test="taskAction != null and taskAction != ''">
+            <if test="taskAction != null">
                 AND task_action = #{taskAction}
             </if>
             <if test="isActive != null">
@@ -168,7 +176,7 @@
         WHERE task_category = #{taskCategory}
     </select>
 
-    <!-- 搜索任务模板 -->
+    <!-- 搜索任务模板（优化版 - 使用数字常量） -->
     <select id="searchTasks" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
         SELECT * FROM t_task_template 
         <where>
@@ -176,10 +184,10 @@
                 AND (task_name LIKE CONCAT('%', #{keyword}, '%') 
                      OR task_desc LIKE CONCAT('%', #{keyword}, '%'))
             </if>
-            <if test="taskType != null and taskType != ''">
+            <if test="taskType != null">
                 AND task_type = #{taskType}
             </if>
-            <if test="taskCategory != null and taskCategory != ''">
+            <if test="taskCategory != null">
                 AND task_category = #{taskCategory}
             </if>
             <if test="isActive != null">

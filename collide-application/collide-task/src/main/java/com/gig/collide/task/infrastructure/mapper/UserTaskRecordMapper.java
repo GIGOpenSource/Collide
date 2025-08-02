@@ -10,11 +10,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * 用户任务记录数据访问接口 - 简洁版
- * 基于task-simple.sql的无连表设计
+ * 用户任务记录数据访问接口 - 优化版
+ * 基于task-simple.sql的数字常量设计，充分利用复合索引
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Mapper
@@ -23,11 +23,11 @@ public interface UserTaskRecordMapper extends BaseMapper<UserTaskRecord> {
     // =================== 基础查询 ===================
 
     /**
-     * 查询用户指定日期的任务记录
+     * 查询用户指定日期的任务记录（利用用户日期复合索引）
      */
     List<UserTaskRecord> findUserTasksByDate(@Param("userId") Long userId,
                                            @Param("taskDate") LocalDate taskDate,
-                                           @Param("taskType") String taskType);
+                                           @Param("taskType") Integer taskType);
 
     /**
      * 查询用户今日任务记录
@@ -35,21 +35,21 @@ public interface UserTaskRecordMapper extends BaseMapper<UserTaskRecord> {
     List<UserTaskRecord> findUserTodayTasks(@Param("userId") Long userId);
 
     /**
-     * 查询用户指定类型的任务记录
+     * 查询用户指定类型的任务记录（使用数字常量优化）
      */
     Page<UserTaskRecord> findUserTasksByType(Page<UserTaskRecord> page,
                                             @Param("userId") Long userId,
-                                            @Param("taskType") String taskType,
+                                            @Param("taskType") Integer taskType,
                                             @Param("taskDate") LocalDate taskDate);
 
     /**
-     * 条件查询用户任务记录
+     * 条件查询用户任务记录（数字常量优化版）
      */
     Page<UserTaskRecord> findWithConditions(Page<UserTaskRecord> page,
                                            @Param("userId") Long userId,
                                            @Param("taskId") Long taskId,
-                                           @Param("taskType") String taskType,
-                                           @Param("taskCategory") String taskCategory,
+                                           @Param("taskType") Integer taskType,
+                                           @Param("taskCategory") Integer taskCategory,
                                            @Param("isCompleted") Boolean isCompleted,
                                            @Param("isRewarded") Boolean isRewarded,
                                            @Param("startDate") LocalDate startDate,
@@ -64,11 +64,11 @@ public interface UserTaskRecordMapper extends BaseMapper<UserTaskRecord> {
                                               @Param("taskDate") LocalDate taskDate);
 
     /**
-     * 查询用户未完成的任务
+     * 查询用户未完成的任务（使用数字常量优化）
      */
     List<UserTaskRecord> findUserIncompleteTasks(@Param("userId") Long userId,
                                                 @Param("taskDate") LocalDate taskDate,
-                                                @Param("taskType") String taskType);
+                                                @Param("taskType") Integer taskType);
 
     // =================== 统计查询 ===================
 
@@ -79,15 +79,15 @@ public interface UserTaskRecordMapper extends BaseMapper<UserTaskRecord> {
                                                         @Param("taskDate") LocalDate taskDate);
 
     /**
-     * 统计用户指定类型任务完成数
+     * 统计用户指定类型任务完成数（使用数字常量优化）
      */
     Long countCompletedTasksByType(@Param("userId") Long userId,
-                                  @Param("taskType") String taskType,
+                                  @Param("taskType") Integer taskType,
                                   @Param("startDate") LocalDate startDate,
                                   @Param("endDate") LocalDate endDate);
 
     /**
-     * 统计用户连续登录天数
+     * 统计用户连续登录天数（使用数字常量1=login优化）
      */
     Integer countConsecutiveLoginDays(@Param("userId") Long userId,
                                      @Param("endDate") LocalDate endDate);
@@ -138,9 +138,9 @@ public interface UserTaskRecordMapper extends BaseMapper<UserTaskRecord> {
     // =================== 特殊查询 ===================
 
     /**
-     * 查询用户任务进度排行
+     * 查询用户任务进度排行（使用数字常量优化）
      */
-    List<java.util.Map<String, Object>> getUserTaskRanking(@Param("taskType") String taskType,
+    List<java.util.Map<String, Object>> getUserTaskRanking(@Param("taskType") Integer taskType,
                                                            @Param("taskDate") LocalDate taskDate,
                                                            @Param("limit") Integer limit);
 

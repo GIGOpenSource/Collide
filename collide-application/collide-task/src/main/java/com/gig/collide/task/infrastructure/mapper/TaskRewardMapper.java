@@ -9,11 +9,11 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * 任务奖励数据访问接口 - 简洁版
- * 基于task-simple.sql的无连表设计
+ * 任务奖励数据访问接口 - 优化版
+ * 基于task-simple.sql的数字常量设计，充分利用HASH索引
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Mapper
@@ -37,18 +37,18 @@ public interface TaskRewardMapper extends BaseMapper<TaskReward> {
     List<TaskReward> findSecondaryRewardsByTaskId(@Param("taskId") Long taskId);
 
     /**
-     * 根据奖励类型查询奖励配置
+     * 根据奖励类型查询奖励配置（使用数字常量和HASH索引优化）
      */
     Page<TaskReward> findRewardsByType(Page<TaskReward> page,
-                                      @Param("rewardType") String rewardType,
+                                      @Param("rewardType") Integer rewardType,
                                       @Param("taskId") Long taskId);
 
     /**
-     * 条件查询任务奖励
+     * 条件查询任务奖励（数字常量优化版）
      */
     Page<TaskReward> findWithConditions(Page<TaskReward> page,
                                        @Param("taskId") Long taskId,
-                                       @Param("rewardType") String rewardType,
+                                       @Param("rewardType") Integer rewardType,
                                        @Param("rewardName") String rewardName,
                                        @Param("isMainReward") Boolean isMainReward,
                                        @Param("minAmount") Integer minAmount,
@@ -64,9 +64,9 @@ public interface TaskRewardMapper extends BaseMapper<TaskReward> {
     List<TaskReward> findRewardsByTaskIds(@Param("taskIds") List<Long> taskIds);
 
     /**
-     * 查询指定类型的所有奖励
+     * 查询指定类型的所有奖励（使用数字常量优化）
      */
-    List<TaskReward> findAllRewardsByType(@Param("rewardType") String rewardType);
+    List<TaskReward> findAllRewardsByType(@Param("rewardType") Integer rewardType);
 
     /**
      * 查询所有主要奖励
@@ -91,9 +91,9 @@ public interface TaskRewardMapper extends BaseMapper<TaskReward> {
     Long sumCoinRewardsByTaskId(@Param("taskId") Long taskId);
 
     /**
-     * 统计所有任务的平均奖励金额
+     * 统计所有任务的平均奖励金额（数字常量优化版）
      */
-    Double getAverageRewardAmount(@Param("rewardType") String rewardType);
+    Double getAverageRewardAmount(@Param("rewardType") Integer rewardType);
 
     // =================== 批量操作 ===================
 
@@ -115,40 +115,45 @@ public interface TaskRewardMapper extends BaseMapper<TaskReward> {
     // =================== 特殊查询 ===================
 
     /**
-     * 查询金币奖励配置（按金额排序）
+     * 查询金币奖励配置（按金额排序，使用数字常量1=coin）
      */
     List<TaskReward> findCoinRewardsOrderByAmount(@Param("taskId") Long taskId,
                                                  @Param("orderDirection") String orderDirection);
 
     /**
-     * 查询VIP奖励配置
+     * 查询VIP奖励配置（使用数字常量3=vip）
      */
     List<TaskReward> findVipRewards(@Param("taskId") Long taskId);
 
     /**
-     * 查询道具奖励配置
+     * 查询道具奖励配置（使用数字常量2=item）
      */
     List<TaskReward> findItemRewards(@Param("taskId") Long taskId);
 
     /**
-     * 查询经验奖励配置
+     * 查询经验奖励配置（使用数字常量4=experience）
      */
     List<TaskReward> findExperienceRewards(@Param("taskId") Long taskId);
 
     /**
-     * 搜索奖励配置（支持名称和描述模糊搜索）
+     * 查询徽章奖励配置（使用数字常量5=badge）
+     */
+    List<TaskReward> findBadgeRewards(@Param("taskId") Long taskId);
+
+    /**
+     * 搜索奖励配置（支持名称和描述模糊搜索，数字常量优化版）
      */
     Page<TaskReward> searchRewards(Page<TaskReward> page,
                                   @Param("keyword") String keyword,
-                                  @Param("rewardType") String rewardType,
+                                  @Param("rewardType") Integer rewardType,
                                   @Param("taskId") Long taskId);
 
     /**
-     * 查询奖励金额范围
+     * 查询奖励金额范围（数字常量优化版）
      */
     List<TaskReward> findRewardsByAmountRange(@Param("minAmount") Integer minAmount,
                                             @Param("maxAmount") Integer maxAmount,
-                                            @Param("rewardType") String rewardType);
+                                            @Param("rewardType") Integer rewardType);
 
     // =================== 验证查询 ===================
 
@@ -158,13 +163,13 @@ public interface TaskRewardMapper extends BaseMapper<TaskReward> {
     boolean hasMainReward(@Param("taskId") Long taskId);
 
     /**
-     * 检查任务是否有指定类型的奖励
+     * 检查任务是否有指定类型的奖励（使用数字常量优化）
      */
     boolean hasRewardOfType(@Param("taskId") Long taskId,
-                           @Param("rewardType") String rewardType);
+                           @Param("rewardType") Integer rewardType);
 
     /**
-     * 获取任务的奖励类型列表
+     * 获取任务的奖励类型列表（返回数字常量）
      */
-    List<String> getRewardTypesByTaskId(@Param("taskId") Long taskId);
+    List<Integer> getRewardTypesByTaskId(@Param("taskId") Long taskId);
 }

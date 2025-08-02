@@ -1,6 +1,7 @@
 package com.gig.collide.task.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.gig.collide.task.domain.constant.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,11 +12,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 用户任务记录实体类 - 简洁版
- * 基于task-simple.sql的t_user_task_record表结构
+ * 用户任务记录实体类 - 优化版
+ * 基于优化后的task-simple.sql的t_user_task_record表结构
+ * 使用数字常量存储任务类型和分类，保持数据一致性
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (优化版)
  * @since 2024-01-16
  */
 @Getter
@@ -57,16 +59,16 @@ public class UserTaskRecord {
     private String taskName;
 
     /**
-     * 任务类型（冗余）
+     * 任务类型（冗余）：1-daily, 2-weekly, 3-monthly, 4-achievement
      */
     @TableField("task_type")
-    private String taskType;
+    private Integer taskType;
 
     /**
-     * 任务分类（冗余）
+     * 任务分类（冗余）：1-login, 2-content, 3-social, 4-consume, 5-invite
      */
     @TableField("task_category")
-    private String taskCategory;
+    private Integer taskCategory;
 
     /**
      * 目标完成次数（冗余）
@@ -136,21 +138,28 @@ public class UserTaskRecord {
      * 判断是否为每日任务
      */
     public boolean isDailyTask() {
-        return "daily".equals(taskType);
+        return TaskTypeConstant.isDailyTask(taskType);
     }
 
     /**
      * 判断是否为周常任务
      */
     public boolean isWeeklyTask() {
-        return "weekly".equals(taskType);
+        return TaskTypeConstant.isWeeklyTask(taskType);
+    }
+
+    /**
+     * 判断是否为月度任务
+     */
+    public boolean isMonthlyTask() {
+        return TaskTypeConstant.isMonthlyTask(taskType);
     }
 
     /**
      * 判断是否为成就任务
      */
     public boolean isAchievementTask() {
-        return "achievement".equals(taskType);
+        return TaskTypeConstant.isAchievementTask(taskType);
     }
 
     /**
@@ -240,7 +249,73 @@ public class UserTaskRecord {
         if (isDailyTask()) {
             return taskDate != null && taskDate.isBefore(LocalDate.now());
         }
-        // 周常和成就任务暂不设置过期
+        // 周常、月度和成就任务暂不设置过期
         return false;
+    }
+
+    // =================== 新增业务方法 ===================
+
+    /**
+     * 获取任务类型名称
+     */
+    public String getTaskTypeName() {
+        return TaskTypeConstant.getTypeName(taskType);
+    }
+
+    /**
+     * 获取任务分类名称
+     */
+    public String getTaskCategoryName() {
+        return TaskCategoryConstant.getCategoryName(taskCategory);
+    }
+
+    /**
+     * 从任务模板复制基础信息
+     */
+    public void copyFromTemplate(TaskTemplate template) {
+        if (template != null) {
+            this.taskId = template.getId();
+            this.taskName = template.getTaskName();
+            this.taskType = template.getTaskType();
+            this.taskCategory = template.getTaskCategory();
+            this.targetCount = template.getTargetCount();
+        }
+    }
+
+    /**
+     * 更新任务进度，如果达成目标则自动完成
+     */
+    public boolean updateProgress(int increment) {
+        incrementCurrentCount(increment);
+        return isTaskCompleted();
+    }
+
+    /**
+     * 获取任务状态描述
+     */
+    public String getStatusDescription() {
+        if (isTaskCompleted()) {
+            return isRewardReceived() ? "已完成并领取奖励" : "已完成待领取奖励";
+        } else if (isExpired()) {
+            return "已过期";
+        } else {
+            return String.format("进行中 (%d/%d)", 
+                currentCount != null ? currentCount : 0, 
+                targetCount != null ? targetCount : 0);
+        }
+    }
+
+    /**
+     * 创建用户任务记录的工厂方法
+     */
+    public static UserTaskRecord createFromTemplate(Long userId, TaskTemplate template, LocalDate taskDate) {
+        UserTaskRecord record = new UserTaskRecord();
+        record.setUserId(userId);
+        record.setTaskDate(taskDate);
+        record.copyFromTemplate(template);
+        record.setCurrentCount(0);
+        record.setIsCompleted(false);
+        record.setIsRewarded(false);
+        return record;
     }
 }

@@ -9,11 +9,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 用户奖励记录业务服务接口 - 简洁版
- * 基于task-simple.sql的单表设计
+ * 用户奖励记录业务服务接口 - 优化版
+ * 基于优化后的task-simple.sql的单表设计
+ * 支持数字常量和立即钱包同步功能
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (优化版)
  * @since 2024-01-16
  */
 public interface UserRewardRecordService {
@@ -48,15 +49,29 @@ public interface UserRewardRecordService {
     // =================== 奖励发放 ===================
 
     /**
-     * 发放用户奖励
+     * 发放用户奖励（优化版 - 使用数字常量）
+     * 金币奖励会立即同步到用户钱包
      */
-    boolean grantUserReward(Long userId, Long taskRecordId, String rewardType, 
+    boolean grantUserReward(Long userId, Long taskRecordId, Integer rewardType, 
                            String rewardName, Integer rewardAmount, Map<String, Object> rewardData);
 
     /**
+     * 发放用户奖励并立即同步到钱包
+     * 这是核心方法，确保金币奖励立即到账
+     */
+    boolean grantUserRewardWithWalletSync(Long userId, Long taskRecordId, Integer rewardType, 
+                                         String rewardName, Integer rewardAmount, Map<String, Object> rewardData);
+
+    /**
      * 批量发放奖励
+     * 支持批量钱包同步
      */
     boolean batchGrantRewards(List<UserRewardRecord> rewards);
+
+    /**
+     * 批量发放奖励并立即同步到钱包
+     */
+    int batchGrantRewardsWithWalletSync(List<UserRewardRecord> rewards);
 
     /**
      * 标记奖励发放成功
@@ -69,9 +84,9 @@ public interface UserRewardRecordService {
     boolean markRewardFailed(Long rewardId, String failReason);
 
     /**
-     * 批量标记奖励状态
+     * 批量标记奖励状态（优化版 - 使用数字常量）
      */
-    boolean batchMarkRewardStatus(List<Long> rewardIds, String status);
+    boolean batchMarkRewardStatus(List<Long> rewardIds, Integer status);
 
     /**
      * 重试失败的奖励发放
@@ -81,10 +96,10 @@ public interface UserRewardRecordService {
     // =================== 查询操作 ===================
 
     /**
-     * 分页查询用户奖励记录
+     * 分页查询用户奖励记录（优化版 - 使用数字常量）
      */
-    Page<UserRewardRecord> queryUserRewardRecords(Long userId, Long taskRecordId, String rewardSource,
-                                                 String rewardType, String status, LocalDateTime startTime,
+    Page<UserRewardRecord> queryUserRewardRecords(Long userId, Long taskRecordId, Integer rewardSource,
+                                                 Integer rewardType, Integer status, LocalDateTime startTime,
                                                  LocalDateTime endTime, String orderBy, String orderDirection,
                                                  Integer currentPage, Integer pageSize);
 
@@ -94,9 +109,9 @@ public interface UserRewardRecordService {
     List<UserRewardRecord> getUserPendingRewards(Long userId);
 
     /**
-     * 获取用户已发放奖励
+     * 获取用户已发放奖励（优化版 - 使用数字常量）
      */
-    Page<UserRewardRecord> getUserGrantedRewards(Long userId, String rewardType, 
+    Page<UserRewardRecord> getUserGrantedRewards(Long userId, Integer rewardType, 
                                                 LocalDateTime startTime, LocalDateTime endTime,
                                                 Integer currentPage, Integer pageSize);
 
@@ -106,10 +121,10 @@ public interface UserRewardRecordService {
     List<UserRewardRecord> getRewardsByTaskRecord(Long taskRecordId);
 
     /**
-     * 搜索用户奖励记录
+     * 搜索用户奖励记录（优化版 - 使用数字常量）
      */
-    Page<UserRewardRecord> searchUserRewardRecords(Long userId, String keyword, String rewardType,
-                                                  String status, Integer currentPage, Integer pageSize);
+    Page<UserRewardRecord> searchUserRewardRecords(Long userId, String keyword, Integer rewardType,
+                                                  Integer status, Integer currentPage, Integer pageSize);
 
     // =================== 统计操作 ===================
 
@@ -119,15 +134,15 @@ public interface UserRewardRecordService {
     Map<String, Object> getUserRewardStatistics(Long userId);
 
     /**
-     * 统计用户指定类型奖励总量
+     * 统计用户指定类型奖励总量（优化版 - 使用数字常量）
      */
-    Long sumUserRewardAmount(Long userId, String rewardType, String status, 
+    Long sumUserRewardAmount(Long userId, Integer rewardType, Integer status, 
                             LocalDateTime startTime, LocalDateTime endTime);
 
     /**
-     * 统计用户各类型奖励数量
+     * 统计用户各类型奖励数量（优化版 - 使用数字常量）
      */
-    Map<String, Long> countUserRewardsByType(Long userId, String status);
+    Map<String, Long> countUserRewardsByType(Long userId, Integer status);
 
     /**
      * 统计待发放奖励数量
@@ -145,9 +160,9 @@ public interface UserRewardRecordService {
     Long countFailedRewards(Long userId);
 
     /**
-     * 获取用户指定日期奖励总量
+     * 获取用户指定日期奖励总量（优化版 - 使用数字常量）
      */
-    Long getUserDailyRewardSum(Long userId, String rewardType, LocalDate date);
+    Long getUserDailyRewardSum(Long userId, Integer rewardType, LocalDate date);
 
     // =================== 特殊查询 ===================
 
@@ -198,11 +213,18 @@ public interface UserRewardRecordService {
 
     /**
      * 处理任务完成奖励
+     * 支持立即钱包同步
      */
     boolean processTaskCompletionReward(Long userId, Long taskRecordId);
 
     /**
-     * 处理金币奖励发放
+     * 处理金币奖励发放并立即同步到钱包
+     * 这是核心方法，确保金币奖励立即到账
+     */
+    boolean processCoinRewardWithWalletSync(Long userId, Integer coinAmount, String source, Long taskRecordId);
+
+    /**
+     * 处理金币奖励发放（不立即同步）
      */
     boolean processCoinReward(Long userId, Integer coinAmount, String source);
 
@@ -220,6 +242,11 @@ public interface UserRewardRecordService {
      * 处理经验奖励发放
      */
     boolean processExperienceReward(Long userId, Integer experience);
+
+    /**
+     * 处理徽章奖励发放
+     */
+    boolean processBadgeReward(Long userId, String badgeName, String badgeDesc);
 
     // =================== 系统管理 ===================
 
@@ -261,9 +288,26 @@ public interface UserRewardRecordService {
     boolean canGrantReward(UserRewardRecord reward);
 
     /**
-     * 验证奖励发放限制
+     * 验证奖励发放限制（优化版 - 使用数字常量）
      */
-    boolean validateRewardLimit(Long userId, String rewardType, Integer amount, LocalDate date);
+    boolean validateRewardLimit(Long userId, Integer rewardType, Integer amount, LocalDate date);
+
+    // =================== 钱包同步相关方法 ===================
+
+    /**
+     * 检查奖励是否已同步到钱包
+     */
+    boolean isRewardSyncedToWallet(Long userId, Long rewardId);
+
+    /**
+     * 批量检查奖励钱包同步状态
+     */
+    Map<Long, Boolean> batchCheckRewardSyncStatus(List<Long> rewardIds);
+
+    /**
+     * 重新同步失败的金币奖励到钱包
+     */
+    boolean resyncFailedCoinRewardsToWallet(List<Long> rewardIds);
 
     // =================== 报表统计 ===================
 

@@ -10,11 +10,11 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * 任务模板数据访问接口 - 简洁版
- * 基于task-simple.sql的无连表设计
+ * 任务模板数据访问接口 - 优化版
+ * 基于task-simple.sql的数字常量设计，充分利用HASH索引
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Mapper
@@ -23,26 +23,26 @@ public interface TaskTemplateMapper extends BaseMapper<TaskTemplate> {
     // =================== 基础查询 ===================
 
     /**
-     * 根据任务类型查询可用任务模板
+     * 根据任务类型查询可用任务模板（使用数字常量优化）
      */
-    List<TaskTemplate> findAvailableTasksByType(@Param("taskType") String taskType,
+    List<TaskTemplate> findAvailableTasksByType(@Param("taskType") Integer taskType,
                                                @Param("currentDate") LocalDate currentDate);
 
     /**
-     * 根据任务动作查询任务模板
+     * 根据任务动作查询任务模板（使用HASH索引优化）
      */
-    List<TaskTemplate> findTasksByAction(@Param("taskAction") String taskAction,
+    List<TaskTemplate> findTasksByAction(@Param("taskAction") Integer taskAction,
                                         @Param("isActive") Boolean isActive,
                                         @Param("currentDate") LocalDate currentDate);
 
     /**
-     * 条件查询任务模板
+     * 条件查询任务模板（数字常量优化版）
      */
     Page<TaskTemplate> findWithConditions(Page<TaskTemplate> page,
                                          @Param("taskName") String taskName,
-                                         @Param("taskType") String taskType,
-                                         @Param("taskCategory") String taskCategory,
-                                         @Param("taskAction") String taskAction,
+                                         @Param("taskType") Integer taskType,
+                                         @Param("taskCategory") Integer taskCategory,
+                                         @Param("taskAction") Integer taskAction,
                                          @Param("isActive") Boolean isActive,
                                          @Param("startDate") LocalDate startDate,
                                          @Param("endDate") LocalDate endDate,
@@ -55,9 +55,9 @@ public interface TaskTemplateMapper extends BaseMapper<TaskTemplate> {
     List<TaskTemplate> findAllActiveTasks();
 
     /**
-     * 查询指定分类的任务模板
+     * 查询指定分类的任务模板（使用数字常量优化）
      */
-    List<TaskTemplate> findTasksByCategory(@Param("taskCategory") String taskCategory,
+    List<TaskTemplate> findTasksByCategory(@Param("taskCategory") Integer taskCategory,
                                           @Param("isActive") Boolean isActive);
 
     // =================== 统计查询 ===================
@@ -121,17 +121,17 @@ public interface TaskTemplateMapper extends BaseMapper<TaskTemplate> {
                                            @Param("isActive") Boolean isActive);
 
     /**
-     * 查询同一分类下的最大排序值
+     * 查询同一分类下的最大排序值（使用数字常量优化）
      */
-    Integer findMaxOrderByCategory(@Param("taskCategory") String taskCategory);
+    Integer findMaxOrderByCategory(@Param("taskCategory") Integer taskCategory);
 
     /**
-     * 搜索任务模板（支持名称和描述模糊搜索）
+     * 搜索任务模板（支持名称和描述模糊搜索，数字常量优化版）
      */
     Page<TaskTemplate> searchTasks(Page<TaskTemplate> page,
                                   @Param("keyword") String keyword,
-                                  @Param("taskType") String taskType,
-                                  @Param("taskCategory") String taskCategory,
+                                  @Param("taskType") Integer taskType,
+                                  @Param("taskCategory") Integer taskCategory,
                                   @Param("isActive") Boolean isActive);
 
     // =================== 验证查询 ===================
@@ -143,8 +143,8 @@ public interface TaskTemplateMapper extends BaseMapper<TaskTemplate> {
                             @Param("excludeId") Long excludeId);
 
     /**
-     * 检查指定动作的任务是否存在
+     * 检查指定动作的任务是否存在（使用数字常量优化）
      */
-    boolean existsByTaskAction(@Param("taskAction") String taskAction,
+    boolean existsByTaskAction(@Param("taskAction") Integer taskAction,
                               @Param("isActive") Boolean isActive);
 }

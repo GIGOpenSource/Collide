@@ -4,7 +4,15 @@
 
 <mapper namespace="com.gig.collide.task.infrastructure.mapper.TaskRewardMapper">
 
-    <!-- 根据任务ID查询所有奖励 -->
+    <!-- 
+    ==========================================
+    任务奖励映射文件 - 优化版
+    基于优化后的task-simple.sql表结构
+    使用数字常量替代字符串枚举，充分利用HASH索引
+    ==========================================
+    -->
+
+    <!-- 根据任务ID查询所有奖励（利用主要奖励复合索引） -->
     <select id="findRewardsByTaskId" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
         WHERE task_id = #{taskId}
@@ -25,7 +33,7 @@
         ORDER BY create_time ASC
     </select>
 
-    <!-- 根据奖励类型查询奖励配置 -->
+    <!-- 根据奖励类型查询奖励配置（使用HASH索引优化） -->
     <select id="findRewardsByType" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
         WHERE reward_type = #{rewardType}
@@ -35,14 +43,14 @@
         ORDER BY reward_amount DESC
     </select>
 
-    <!-- 条件查询任务奖励 -->
+    <!-- 条件查询任务奖励（优化版 - 使用数字常量） -->
     <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
         <where>
             <if test="taskId != null">
                 AND task_id = #{taskId}
             </if>
-            <if test="rewardType != null and rewardType != ''">
+            <if test="rewardType != null">
                 AND reward_type = #{rewardType}
             </if>
             <if test="rewardName != null and rewardName != ''">
@@ -104,16 +112,16 @@
         GROUP BY reward_type
     </select>
 
-    <!-- 统计任务的总奖励价值（仅金币奖励） -->
+    <!-- 统计任务的总奖励价值（仅金币奖励 - 使用数字常量1） -->
     <select id="sumCoinRewardsByTaskId" resultType="java.lang.Long">
         SELECT IFNULL(SUM(reward_amount), 0) FROM t_task_reward 
-        WHERE task_id = #{taskId} AND reward_type = 'coin'
+        WHERE task_id = #{taskId} AND reward_type = 1
     </select>
 
-    <!-- 统计所有任务的平均奖励金额 -->
+    <!-- 统计所有任务的平均奖励金额（优化版 - 使用数字常量） -->
     <select id="getAverageRewardAmount" resultType="java.lang.Double">
         SELECT AVG(reward_amount) FROM t_task_reward 
-        <if test="rewardType != null and rewardType != ''">
+        <if test="rewardType != null">
             WHERE reward_type = #{rewardType}
         </if>
     </select>
@@ -140,47 +148,57 @@
         </foreach>
     </update>
 
-    <!-- 查询金币奖励配置（按金额排序） -->
+    <!-- 查询金币奖励配置（使用数字常量1 - 充分利用HASH索引） -->
     <select id="findCoinRewardsOrderByAmount" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
-        WHERE reward_type = 'coin'
+        WHERE reward_type = 1
         <if test="taskId != null">
             AND task_id = #{taskId}
         </if>
         ORDER BY reward_amount ${orderDirection}
     </select>
 
-    <!-- 查询VIP奖励配置 -->
+    <!-- 查询VIP奖励配置（使用数字常量3） -->
     <select id="findVipRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
-        WHERE reward_type = 'vip'
+        WHERE reward_type = 3
         <if test="taskId != null">
             AND task_id = #{taskId}
         </if>
         ORDER BY reward_amount DESC
     </select>
 
-    <!-- 查询道具奖励配置 -->
+    <!-- 查询道具奖励配置（使用数字常量2） -->
     <select id="findItemRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
-        WHERE reward_type = 'item'
+        WHERE reward_type = 2
         <if test="taskId != null">
             AND task_id = #{taskId}
         </if>
         ORDER BY reward_amount DESC
     </select>
 
-    <!-- 查询经验奖励配置 -->
+    <!-- 查询经验奖励配置（使用数字常量4） -->
     <select id="findExperienceRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
-        WHERE reward_type = 'experience'
+        WHERE reward_type = 4
         <if test="taskId != null">
             AND task_id = #{taskId}
         </if>
         ORDER BY reward_amount DESC
     </select>
 
-    <!-- 搜索奖励配置 -->
+    <!-- 查询徽章奖励配置（使用数字常量5） -->
+    <select id="findBadgeRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
+        SELECT * FROM t_task_reward 
+        WHERE reward_type = 5
+        <if test="taskId != null">
+            AND task_id = #{taskId}
+        </if>
+        ORDER BY reward_amount DESC
+    </select>
+
+    <!-- 搜索奖励配置（优化版 - 使用数字常量） -->
     <select id="searchRewards" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
         <where>
@@ -188,7 +206,7 @@
                 AND (reward_name LIKE CONCAT('%', #{keyword}, '%') 
                      OR reward_desc LIKE CONCAT('%', #{keyword}, '%'))
             </if>
-            <if test="rewardType != null and rewardType != ''">
+            <if test="rewardType != null">
                 AND reward_type = #{rewardType}
             </if>
             <if test="taskId != null">
@@ -198,11 +216,11 @@
         ORDER BY is_main_reward DESC, reward_amount DESC
     </select>
 
-    <!-- 查询奖励金额范围 -->
+    <!-- 查询奖励金额范围（优化版 - 使用数字常量） -->
     <select id="findRewardsByAmountRange" resultType="com.gig.collide.task.domain.entity.TaskReward">
         SELECT * FROM t_task_reward 
         WHERE reward_amount BETWEEN #{minAmount} AND #{maxAmount}
-        <if test="rewardType != null and rewardType != ''">
+        <if test="rewardType != null">
             AND reward_type = #{rewardType}
         </if>
         ORDER BY reward_amount DESC
