@@ -1,8 +1,10 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserBlockFacadeService;
-import com.gig.collide.api.user.request.users.block.*;
-import com.gig.collide.api.user.response.users.block.UserBlockResponse;
+import com.gig.collide.api.user.request.block.UserBlockCreateRequest;
+import com.gig.collide.api.user.request.block.UserBlockQueryRequest;
+import com.gig.collide.api.user.request.block.UserBlockUpdateRequest;
+import com.gig.collide.api.user.response.block.UserBlockResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserBlock;
 import com.gig.collide.users.domain.service.UserBlockService;

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.task.infrastructure.mapper.TaskDefinitionMapper">
+
+    <!-- ==================== 基础查询 ==================== -->
+    
+    <!-- 根据任务类型和分类查询可用任务（利用联合索引 idx_type_category） -->
+    <select id="findAvailableTasksByTypeAndCategory" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE task_type = #{taskType} 
+          AND task_category = #{taskCategory}
+          AND is_active = 1
+          AND (start_date IS NULL OR start_date &lt;= #{currentDate})
+          AND (end_date IS NULL OR end_date &gt;= #{currentDate})
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据任务类型查询可用任务（利用索引 idx_type_category） -->
+    <select id="findAvailableTasksByType" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE task_type = #{taskType} 
+          AND is_active = 1
+          AND (start_date IS NULL OR start_date &lt;= #{currentDate})
+          AND (end_date IS NULL OR end_date &gt;= #{currentDate})
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 根据任务动作查询任务（利用索引 idx_action） -->
+    <select id="findTasksByAction" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE task_action = #{taskAction}
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+        <if test="currentDate != null">
+            AND (start_date IS NULL OR start_date &lt;= #{currentDate})
+            AND (end_date IS NULL OR end_date &gt;= #{currentDate})
+        </if>
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 查询所有启用的任务（利用索引 idx_active_sort） -->
+    <select id="findAllActiveTasks" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE is_active = 1
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- ==================== JSON奖励查询（利用MySQL 8.4 JSON特性） ==================== -->
+    
+    <!-- 查询包含指定奖励类型的任务 -->
+    <select id="findTasksWithRewardType" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE JSON_CONTAINS(rewards, JSON_OBJECT('type', #{rewardType}))
+          AND is_active = 1
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 查询奖励金额大于指定值的任务 -->
+    <select id="findTasksWithMinRewardAmount" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE JSON_EXTRACT(rewards, '$[0].amount') &gt;= #{minAmount}
+          AND is_active = 1
+        ORDER BY JSON_EXTRACT(rewards, '$[0].amount') DESC
+    </select>
+
+    <!-- ==================== 条件查询 ==================== -->
+    
+    <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        <where>
+            <if test="taskName != null and taskName != ''">
+                AND task_name LIKE CONCAT('%', #{taskName}, '%')
+            </if>
+            <if test="taskType != null and taskType != ''">
+                AND task_type = #{taskType}
+            </if>
+            <if test="taskCategory != null and taskCategory != ''">
+                AND task_category = #{taskCategory}
+            </if>
+            <if test="taskAction != null and taskAction != ''">
+                AND task_action = #{taskAction}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+            <if test="startDate != null">
+                AND (start_date IS NULL OR start_date &gt;= #{startDate})
+            </if>
+            <if test="endDate != null">
+                AND (end_date IS NULL OR end_date &lt;= #{endDate})
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy != null and orderBy != ''">
+                ORDER BY ${orderBy} ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY sort_order ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- ==================== 统计查询 ==================== -->
+    
+    <!-- 统计各类型任务数量（分组查询） -->
+    <select id="countTasksByType" resultType="java.util.Map">
+        SELECT task_type, COUNT(*) as count 
+        FROM t_task_definition 
+        <if test="isActive != null">
+            WHERE is_active = #{isActive}
+        </if>
+        GROUP BY task_type
+    </select>
+
+    <!-- 统计各分类任务数量（分组查询） -->
+    <select id="countTasksByCategory" resultType="java.util.Map">
+        SELECT task_category, COUNT(*) as count 
+        FROM t_task_definition 
+        <if test="isActive != null">
+            WHERE is_active = #{isActive}
+        </if>
+        GROUP BY task_category
+    </select>
+
+    <!-- 统计启用任务总数（利用索引 idx_active_sort） -->
+    <select id="countActiveTasks" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_task_definition WHERE is_active = 1
+    </select>
+
+    <!-- ==================== 时间相关查询 ==================== -->
+    
+    <!-- 查询即将过期的任务 -->
+    <select id="findTasksExpiringSoon" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE end_date IS NOT NULL 
+          AND end_date BETWEEN #{currentDate} AND DATE_ADD(#{currentDate}, INTERVAL #{days} DAY)
+          AND is_active = 1
+        ORDER BY end_date ASC
+    </select>
+
+    <!-- 查询需要激活的定时任务 -->
+    <select id="findTasksToActivate" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE start_date = #{currentDate} AND is_active = 0
+    </select>
+
+    <!-- 查询需要停用的过期任务 -->
+    <select id="findTasksToDeactivate" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        WHERE end_date = #{currentDate} AND is_active = 1
+    </select>
+
+    <!-- ==================== 批量更新操作 ==================== -->
+    
+    <!-- 批量更新任务状态（利用索引 idx_active_sort） -->
+    <update id="batchUpdateTaskStatus">
+        UPDATE t_task_definition 
+        SET is_active = #{isActive}, update_time = CURRENT_TIMESTAMP
+        WHERE id IN
+        <foreach collection="taskIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量更新任务排序 -->
+    <update id="batchUpdateTaskOrder">
+        <foreach collection="taskOrderList" item="item" separator=";">
+            UPDATE t_task_definition 
+            SET sort_order = #{item.sortOrder}, update_time = CURRENT_TIMESTAMP
+            WHERE id = #{item.id}
+        </foreach>
+    </update>
+
+    <!-- ==================== 搜索和检查 ==================== -->
+    
+    <!-- 搜索任务（全文搜索task_name和task_desc） -->
+    <select id="searchTasks" resultType="com.gig.collide.task.domain.entity.TaskDefinition">
+        SELECT id, task_name, task_desc, task_type, task_category, task_action, 
+               target_count, rewards, sort_order, is_active, start_date, end_date,
+               create_time, update_time
+        FROM t_task_definition 
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (task_name LIKE CONCAT('%', #{keyword}, '%') 
+                     OR task_desc LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="taskType != null and taskType != ''">
+                AND task_type = #{taskType}
+            </if>
+            <if test="taskCategory != null and taskCategory != ''">
+                AND task_category = #{taskCategory}
+            </if>
+            <if test="isActive != null">
+                AND is_active = #{isActive}
+            </if>
+        </where>
+        ORDER BY sort_order ASC
+    </select>
+
+    <!-- 检查任务名称是否存在 -->
+    <select id="existsByTaskName" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_task_definition 
+        WHERE task_name = #{taskName}
+        <if test="excludeId != null">
+            AND id != #{excludeId}
+        </if>
+    </select>
+
+    <!-- 检查指定动作的任务是否存在（利用索引 idx_action） -->
+    <select id="existsByTaskAction" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_task_definition 
+        WHERE task_action = #{taskAction}
+        <if test="isActive != null">
+            AND is_active = #{isActive}
+        </if>
+    </select>
+
+    <!-- 查询同一分类下的最大排序值 -->
+    <select id="findMaxOrderByCategory" resultType="java.lang.Integer">
+        SELECT IFNULL(MAX(sort_order), 0) FROM t_task_definition 
+        WHERE task_category = #{taskCategory}
+    </select>
+
+</mapper>

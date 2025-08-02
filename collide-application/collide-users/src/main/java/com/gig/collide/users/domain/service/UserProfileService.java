@@ -2,7 +2,7 @@ package com.gig.collide.users.domain.service;
 
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserProfile;
-import com.gig.collide.api.user.request.users.profile.UserProfileQueryRequest;
+import com.gig.collide.api.user.request.profile.UserProfileQueryRequest;
 
 import java.time.LocalDate;
 import java.util.List;

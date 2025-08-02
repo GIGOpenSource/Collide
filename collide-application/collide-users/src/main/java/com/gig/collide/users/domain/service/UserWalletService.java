@@ -1,6 +1,6 @@
 package com.gig.collide.users.domain.service;
 
-import com.gig.collide.api.user.request.users.wallet.UserWalletQueryRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletQueryRequest;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserWallet;
 

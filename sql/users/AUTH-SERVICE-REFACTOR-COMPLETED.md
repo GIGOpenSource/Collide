@@ -63,12 +63,12 @@ private UserRoleFacadeService userRoleFacadeService;
 // ✅ 新增的导入
 import com.gig.collide.api.user.UserProfileFacadeService;
 import com.gig.collide.api.user.UserRoleFacadeService;
-import com.gig.collide.api.user.request.users.main.UserCoreCreateRequest;
-import com.gig.collide.api.user.request.users.main.UserLoginRequest;
-import com.gig.collide.api.user.request.users.profile.UserProfileCreateRequest;
-import com.gig.collide.api.user.request.users.role.UserRoleCreateRequest;
-import com.gig.collide.api.user.response.users.main.UserCoreResponse;
-import com.gig.collide.api.user.response.users.profile.UserProfileResponse;
+import main.com.gig.collide.api.user.request.UserCoreCreateRequest;
+import main.com.gig.collide.api.user.request.UserLoginRequest;
+import profile.com.gig.collide.api.user.request.UserProfileCreateRequest;
+import role.com.gig.collide.api.user.request.UserRoleCreateRequest;
+import main.com.gig.collide.api.user.response.UserCoreResponse;
+import profile.com.gig.collide.api.user.response.UserProfileResponse;
 ```
 
 ### **2. 用户注册流程改造** 📝

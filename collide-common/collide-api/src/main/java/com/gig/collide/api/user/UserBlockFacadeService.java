@@ -1,9 +1,9 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.block.UserBlockCreateRequest;
-import com.gig.collide.api.user.request.users.block.UserBlockUpdateRequest;
-import com.gig.collide.api.user.request.users.block.UserBlockQueryRequest;
-import com.gig.collide.api.user.response.users.block.UserBlockResponse;
+import com.gig.collide.api.user.request.block.UserBlockCreateRequest;
+import com.gig.collide.api.user.request.block.UserBlockUpdateRequest;
+import com.gig.collide.api.user.request.block.UserBlockQueryRequest;
+import com.gig.collide.api.user.response.block.UserBlockResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 

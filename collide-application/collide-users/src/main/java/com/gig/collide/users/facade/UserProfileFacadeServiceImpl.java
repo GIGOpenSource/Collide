@@ -1,8 +1,10 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserProfileFacadeService;
-import com.gig.collide.api.user.request.users.profile.*;
-import com.gig.collide.api.user.response.users.profile.UserProfileResponse;
+import com.gig.collide.api.user.request.profile.UserProfileCreateRequest;
+import com.gig.collide.api.user.request.profile.UserProfileQueryRequest;
+import com.gig.collide.api.user.request.profile.UserProfileUpdateRequest;
+import com.gig.collide.api.user.response.profile.UserProfileResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserProfile;
 import com.gig.collide.users.domain.service.UserProfileService;

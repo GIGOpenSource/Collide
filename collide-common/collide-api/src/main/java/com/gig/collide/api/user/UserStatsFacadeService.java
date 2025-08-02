@@ -1,9 +1,9 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.stats.UserStatsCreateRequest;
-import com.gig.collide.api.user.request.users.stats.UserStatsUpdateRequest;
-import com.gig.collide.api.user.request.users.stats.UserStatsQueryRequest;
-import com.gig.collide.api.user.response.users.stats.UserStatsResponse;
+import com.gig.collide.api.user.request.stats.UserStatsCreateRequest;
+import com.gig.collide.api.user.request.stats.UserStatsUpdateRequest;
+import com.gig.collide.api.user.request.stats.UserStatsQueryRequest;
+import com.gig.collide.api.user.response.stats.UserStatsResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 

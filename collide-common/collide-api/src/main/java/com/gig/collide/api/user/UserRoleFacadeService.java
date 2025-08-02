@@ -1,9 +1,9 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.role.UserRoleCreateRequest;
-import com.gig.collide.api.user.request.users.role.UserRoleUpdateRequest;
-import com.gig.collide.api.user.request.users.role.UserRoleQueryRequest;
-import com.gig.collide.api.user.response.users.role.UserRoleResponse;
+import com.gig.collide.api.user.request.role.UserRoleCreateRequest;
+import com.gig.collide.api.user.request.role.UserRoleUpdateRequest;
+import com.gig.collide.api.user.request.role.UserRoleQueryRequest;
+import com.gig.collide.api.user.response.role.UserRoleResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 import java.time.LocalDateTime;

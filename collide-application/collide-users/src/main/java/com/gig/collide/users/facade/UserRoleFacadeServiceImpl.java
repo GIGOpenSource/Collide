@@ -1,8 +1,10 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserRoleFacadeService;
-import com.gig.collide.api.user.request.users.role.*;
-import com.gig.collide.api.user.response.users.role.UserRoleResponse;
+import com.gig.collide.api.user.request.role.UserRoleCreateRequest;
+import com.gig.collide.api.user.request.role.UserRoleQueryRequest;
+import com.gig.collide.api.user.request.role.UserRoleUpdateRequest;
+import com.gig.collide.api.user.response.role.UserRoleResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserRole;
 import com.gig.collide.users.domain.service.UserRoleService;

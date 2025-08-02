@@ -1,6 +1,6 @@
 package com.gig.collide.users.domain.service.impl;
 
-import com.gig.collide.api.user.request.users.wallet.UserWalletQueryRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletQueryRequest;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserWallet;
 import com.gig.collide.users.domain.service.UserWalletService;
@@ -11,7 +11,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**

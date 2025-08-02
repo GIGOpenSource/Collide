@@ -1,10 +1,10 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.wallet.UserWalletCreateRequest;
-import com.gig.collide.api.user.request.users.wallet.UserWalletUpdateRequest;
-import com.gig.collide.api.user.request.users.wallet.UserWalletQueryRequest;
-import com.gig.collide.api.user.request.users.wallet.WalletTransactionRequest;
-import com.gig.collide.api.user.response.users.wallet.UserWalletResponse;
+import com.gig.collide.api.user.request.wallet.UserWalletCreateRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletUpdateRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletQueryRequest;
+import com.gig.collide.api.user.request.wallet.WalletTransactionRequest;
+import com.gig.collide.api.user.response.wallet.UserWalletResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 import java.math.BigDecimal;

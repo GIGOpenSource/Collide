@@ -1,8 +1,11 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserFacadeService;
-import com.gig.collide.api.user.request.users.main.*;
-import com.gig.collide.api.user.response.users.main.UserCoreResponse;
+import com.gig.collide.api.user.request.main.UserCoreCreateRequest;
+import com.gig.collide.api.user.request.main.UserCoreQueryRequest;
+import com.gig.collide.api.user.request.main.UserCoreUpdateRequest;
+import com.gig.collide.api.user.request.main.UserLoginRequest;
+import com.gig.collide.api.user.response.main.UserCoreResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserCore;
 import com.gig.collide.users.domain.service.UserCoreService;

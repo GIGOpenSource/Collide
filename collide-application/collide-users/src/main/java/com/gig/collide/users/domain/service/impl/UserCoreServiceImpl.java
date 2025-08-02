@@ -5,7 +5,7 @@ import com.gig.collide.users.domain.entity.UserCore;
 import com.gig.collide.users.domain.service.UserCoreService;
 import com.gig.collide.users.domain.service.UserWalletService;
 import com.gig.collide.users.infrastructure.mapper.UserCoreMapper;
-import com.gig.collide.api.user.request.users.main.UserCoreQueryRequest;
+import com.gig.collide.api.user.request.main.UserCoreQueryRequest;
 import com.gig.collide.api.user.constant.UserStatusConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 

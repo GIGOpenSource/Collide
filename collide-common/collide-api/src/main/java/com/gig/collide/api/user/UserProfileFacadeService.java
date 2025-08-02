@@ -1,9 +1,9 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.profile.UserProfileCreateRequest;
-import com.gig.collide.api.user.request.users.profile.UserProfileUpdateRequest;
-import com.gig.collide.api.user.request.users.profile.UserProfileQueryRequest;
-import com.gig.collide.api.user.response.users.profile.UserProfileResponse;
+import com.gig.collide.api.user.request.profile.UserProfileCreateRequest;
+import com.gig.collide.api.user.request.profile.UserProfileUpdateRequest;
+import com.gig.collide.api.user.request.profile.UserProfileQueryRequest;
+import com.gig.collide.api.user.response.profile.UserProfileResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 

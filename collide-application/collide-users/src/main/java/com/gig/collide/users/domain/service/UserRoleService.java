@@ -2,7 +2,7 @@ package com.gig.collide.users.domain.service;
 
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserRole;
-import com.gig.collide.api.user.request.users.role.UserRoleQueryRequest;
+import com.gig.collide.api.user.request.role.UserRoleQueryRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;

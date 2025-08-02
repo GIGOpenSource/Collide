@@ -1,8 +1,11 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserWalletFacadeService;
-import com.gig.collide.api.user.request.users.wallet.*;
-import com.gig.collide.api.user.response.users.wallet.UserWalletResponse;
+import com.gig.collide.api.user.request.wallet.UserWalletCreateRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletQueryRequest;
+import com.gig.collide.api.user.request.wallet.UserWalletUpdateRequest;
+import com.gig.collide.api.user.request.wallet.WalletTransactionRequest;
+import com.gig.collide.api.user.response.wallet.UserWalletResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserWallet;
 import com.gig.collide.users.domain.service.UserWalletService;

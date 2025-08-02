@@ -1,10 +1,10 @@
 package com.gig.collide.api.user;
 
-import com.gig.collide.api.user.request.users.main.UserCoreCreateRequest;
-import com.gig.collide.api.user.request.users.main.UserCoreUpdateRequest;
-import com.gig.collide.api.user.request.users.main.UserCoreQueryRequest;
-import com.gig.collide.api.user.request.users.main.UserLoginRequest;
-import com.gig.collide.api.user.response.users.main.UserCoreResponse;
+import com.gig.collide.api.user.request.main.UserCoreCreateRequest;
+import com.gig.collide.api.user.request.main.UserCoreUpdateRequest;
+import com.gig.collide.api.user.request.main.UserCoreQueryRequest;
+import com.gig.collide.api.user.request.main.UserLoginRequest;
+import com.gig.collide.api.user.response.main.UserCoreResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 

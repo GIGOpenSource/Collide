@@ -2,7 +2,7 @@ package com.gig.collide.users.domain.service;
 
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserStats;
-import com.gig.collide.api.user.request.users.stats.UserStatsQueryRequest;
+import com.gig.collide.api.user.request.stats.UserStatsQueryRequest;
 
 import java.util.List;
 

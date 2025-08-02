@@ -1,6 +1,6 @@
 package com.gig.collide.users.domain.service.impl;
 
-import com.gig.collide.api.user.request.users.role.UserRoleQueryRequest;
+import com.gig.collide.api.user.request.role.UserRoleQueryRequest;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserRole;
 import com.gig.collide.users.domain.service.UserRoleService;

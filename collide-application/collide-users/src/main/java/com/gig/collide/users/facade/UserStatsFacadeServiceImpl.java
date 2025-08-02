@@ -1,8 +1,10 @@
 package com.gig.collide.users.facade;
 
 import com.gig.collide.api.user.UserStatsFacadeService;
-import com.gig.collide.api.user.request.users.stats.*;
-import com.gig.collide.api.user.response.users.stats.UserStatsResponse;
+import com.gig.collide.api.user.request.stats.UserStatsCreateRequest;
+import com.gig.collide.api.user.request.stats.UserStatsQueryRequest;
+import com.gig.collide.api.user.request.stats.UserStatsUpdateRequest;
+import com.gig.collide.api.user.response.stats.UserStatsResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.UserStats;
 import com.gig.collide.users.domain.service.UserStatsService;
