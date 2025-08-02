@@ -16,17 +16,19 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 任务控制器 - 简洁版
- * 基于task-simple.sql的单表设计，提供任务管理功能
+ * 任务控制器 - 优化版
+ * 基于优化后的task-simple.sql，支持数字常量和高性能查询
+ * 提供完整的任务管理和奖励功能
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Slf4j
@@ -110,9 +112,10 @@ public class TaskController {
     }
 
     @GetMapping("/ranking")
-    @Operation(summary = "任务完成排行榜", description = "获取任务完成情况排行榜")
+    @Operation(summary = "任务完成排行榜", description = "获取任务完成情况排行榜（使用数字常量优化）")
     public Result<List<Map<String, Object>>> getTaskCompletionRanking(
-            @Parameter(description = "任务类型") @RequestParam(required = false) String taskType,
+            @Parameter(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务") 
+            @RequestParam(required = false) Integer taskType,
             @Parameter(description = "排行榜条数") @RequestParam(defaultValue = "10") @Min(1) Integer limit) {
         log.debug("REST获取任务完成排行榜: taskType={}, limit={}", taskType, limit);
         return taskFacadeService.getTaskCompletionRanking(taskType, limit);
@@ -121,10 +124,11 @@ public class TaskController {
     // =================== 用户行为处理 ===================
 
     @PostMapping("/action/handle")
-    @Operation(summary = "处理用户行为", description = "处理用户行为触发的任务进度更新")
+    @Operation(summary = "处理用户行为", description = "处理用户行为触发的任务进度更新（使用数字常量优化）")
     public Result<List<UserTaskResponse>> handleUserAction(
             @Parameter(description = "用户ID") @RequestParam @NotNull @Min(1) Long userId,
-            @Parameter(description = "行为类型") @RequestParam @NotNull String actionType,
+            @Parameter(description = "行为类型: 1-登录, 2-发布内容, 3-点赞, 4-评论, 5-分享, 6-购买, 7-邀请用户") 
+            @RequestParam @NotNull @Min(1) @Max(7) Integer actionType,
             @Parameter(description = "行为数据") @RequestBody(required = false) Map<String, Object> actionData) {
         log.info("REST处理用户行为: userId={}, actionType={}", userId, actionType);
         return taskFacadeService.handleUserAction(userId, actionType, actionData);

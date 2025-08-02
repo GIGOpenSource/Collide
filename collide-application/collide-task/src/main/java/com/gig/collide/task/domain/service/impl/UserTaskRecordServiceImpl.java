@@ -5,7 +5,6 @@ import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheUpdate;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gig.collide.task.domain.constant.*;
 import com.gig.collide.task.domain.entity.UserTaskRecord;
 import com.gig.collide.task.domain.service.TaskWalletSyncService;
 import com.gig.collide.task.domain.service.UserTaskRecordService;

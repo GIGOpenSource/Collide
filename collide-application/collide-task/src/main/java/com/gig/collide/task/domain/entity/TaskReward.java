@@ -1,7 +1,7 @@
 package com.gig.collide.task.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.gig.collide.task.domain.constant.RewardTypeConstant;
+import com.gig.collide.api.task.constant.RewardTypeConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

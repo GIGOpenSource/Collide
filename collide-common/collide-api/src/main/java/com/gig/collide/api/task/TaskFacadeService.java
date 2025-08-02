@@ -14,11 +14,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 任务模块门面服务接口 - 简洁版
- * 基于task-simple.sql的单表设计，实现核心任务功能
+ * 任务模块门面服务接口 - 优化版
+ * 基于优化后的task-simple.sql，支持数字常量和立即钱包同步
+ * 充分利用HASH索引和复合索引，提升查询性能
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 public interface TaskFacadeService {
@@ -100,16 +101,16 @@ public interface TaskFacadeService {
     Result<Map<String, Object>> getUserRewardStatistics(Long userId);
 
     /**
-     * 获取任务完成排行榜
+     * 获取任务完成排行榜（使用数字常量优化）
      */
-    Result<List<Map<String, Object>>> getTaskCompletionRanking(String taskType, Integer limit);
+    Result<List<Map<String, Object>>> getTaskCompletionRanking(Integer taskType, Integer limit);
 
     // =================== 系统管理 ===================
 
     /**
-     * 处理用户行为触发的任务进度更新
+     * 处理用户行为触发的任务进度更新（使用数字常量优化）
      */
-    Result<List<UserTaskResponse>> handleUserAction(Long userId, String actionType, Map<String, Object> actionData);
+    Result<List<UserTaskResponse>> handleUserAction(Long userId, Integer actionType, Map<String, Object> actionData);
 
     /**
      * 重置每日任务（系统定时调用）

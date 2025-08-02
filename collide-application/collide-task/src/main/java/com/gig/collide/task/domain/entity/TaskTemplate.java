@@ -1,7 +1,9 @@
 package com.gig.collide.task.domain.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
-import com.gig.collide.task.domain.constant.*;
+import com.gig.collide.api.task.constant.TaskActionConstant;
+import com.gig.collide.api.task.constant.TaskCategoryConstant;
+import com.gig.collide.api.task.constant.TaskTypeConstant;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

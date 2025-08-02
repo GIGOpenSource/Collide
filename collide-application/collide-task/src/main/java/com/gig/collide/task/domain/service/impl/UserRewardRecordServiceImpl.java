@@ -5,7 +5,9 @@ import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheUpdate;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.gig.collide.task.domain.constant.*;
+import com.gig.collide.api.task.constant.RewardSourceConstant;
+import com.gig.collide.api.task.constant.RewardStatusConstant;
+import com.gig.collide.api.task.constant.RewardTypeConstant;
 import com.gig.collide.task.domain.entity.UserRewardRecord;
 import com.gig.collide.task.domain.service.TaskWalletSyncService;
 import com.gig.collide.task.domain.service.UserRewardRecordService;
@@ -21,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * 用户奖励记录业务服务实现类 - 优化版

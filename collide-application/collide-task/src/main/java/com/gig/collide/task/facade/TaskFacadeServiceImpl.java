@@ -1,6 +1,8 @@
 package com.gig.collide.task.facade;
 
 import com.gig.collide.api.task.TaskFacadeService;
+import com.gig.collide.api.task.constant.TaskActionConstant;
+import com.gig.collide.api.task.constant.TaskTypeConstant;
 import com.gig.collide.api.task.request.TaskTemplateCreateRequest;
 import com.gig.collide.api.task.request.TaskTemplateQueryRequest;
 import com.gig.collide.api.task.request.UserTaskQueryRequest;
@@ -26,15 +28,16 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 任务门面服务实现 - 简洁版
- * 基于task-simple.sql的单表设计，对接Dubbo服务
+ * 任务门面服务实现 - 优化版
+ * 基于优化后的task-simple.sql，支持数字常量和立即钱包同步
+ * 充分利用HASH索引和缓存策略，提升服务性能
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Slf4j
-@DubboService(version = "2.0.0")
+@DubboService(version = "3.0.0")
 @RequiredArgsConstructor
 public class TaskFacadeServiceImpl implements TaskFacadeService {
 
@@ -350,7 +353,7 @@ public class TaskFacadeServiceImpl implements TaskFacadeService {
     }
 
     @Override
-    public Result<List<Map<String, Object>>> getTaskCompletionRanking(String taskType, Integer limit) {
+    public Result<List<Map<String, Object>>> getTaskCompletionRanking(Integer taskType, Integer limit) {
         try {
             log.debug("门面查询任务完成排行榜: taskType={}, limit={}", taskType, limit);
             
@@ -366,7 +369,7 @@ public class TaskFacadeServiceImpl implements TaskFacadeService {
     // =================== 系统管理 ===================
 
     @Override
-    public Result<List<UserTaskResponse>> handleUserAction(Long userId, String actionType, Map<String, Object> actionData) {
+    public Result<List<UserTaskResponse>> handleUserAction(Long userId, Integer actionType, Map<String, Object> actionData) {
         try {
             log.info("门面处理用户行为: userId={}, actionType={}", userId, actionType);
             

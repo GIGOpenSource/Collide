@@ -1,4 +1,4 @@
-package com.gig.collide.task.domain.constant;
+package com.gig.collide.api.task.constant;
 
 /**
  * 任务动作常量

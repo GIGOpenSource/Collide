@@ -1,4 +1,4 @@
-package com.gig.collide.task.domain.constant;
+package com.gig.collide.api.task.constant;
 
 /**
  * 奖励类型常量

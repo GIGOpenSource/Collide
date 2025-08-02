@@ -1,10 +1,9 @@
 package com.gig.collide.task.domain.service.impl;
 
-import com.gig.collide.task.domain.constant.RewardTypeConstant;
+import com.gig.collide.api.task.constant.RewardTypeConstant;
 import com.gig.collide.task.domain.entity.UserRewardRecord;
 import com.gig.collide.task.domain.service.TaskWalletSyncService;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

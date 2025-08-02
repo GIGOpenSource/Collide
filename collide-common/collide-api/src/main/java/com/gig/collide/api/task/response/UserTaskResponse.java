@@ -8,10 +8,11 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 用户任务记录响应DTO
+ * 用户任务记录响应DTO - 优化版
+ * 使用数字常量替代字符串枚举，提升传输效率
  * 
  * @author GIG Team
- * @version 2.0.0 (简洁版)
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Data
@@ -37,11 +38,11 @@ public class UserTaskResponse {
     @Schema(description = "任务描述")
     private String taskDesc;
 
-    @Schema(description = "任务类型")
-    private String taskType;
+    @Schema(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务")
+    private Integer taskType;
 
-    @Schema(description = "任务分类")
-    private String taskCategory;
+    @Schema(description = "任务分类: 1-登录, 2-内容, 3-社交, 4-消费, 5-邀请")
+    private Integer taskCategory;
 
     @Schema(description = "目标完成次数")
     private Integer targetCount;
