@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.content.infrastructure.mapper.UserContentPurchaseMapper">
+
+    <!-- 基础字段定义 -->
+    <sql id="baseColumns">
+        id, user_id, content_id, content_title, content_type, content_cover_url,
+        author_id, author_nickname, order_id, order_no, coin_amount, original_price, discount_amount,
+        status, purchase_time, expire_time, access_count, last_access_time, create_time, update_time
+    </sql>
+
+    <!-- 检查用户是否已购买指定内容 -->
+    <select id="selectByUserIdAndContentId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId} AND content_id = #{contentId}
+    </select>
+
+    <!-- 检查用户是否有权限访问内容（已购买且未过期） -->
+    <select id="selectValidPurchase" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId} AND content_id = #{contentId}
+        AND status = 'ACTIVE'
+        AND (expire_time IS NULL OR expire_time > NOW())
+    </select>
+
+    <!-- 查询用户的购买记录列表 -->
+    <select id="selectByUserId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        ORDER BY purchase_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 查询用户的有效购买记录 -->
+    <select id="selectValidPurchasesByUserId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        AND status = 'ACTIVE'
+        AND (expire_time IS NULL OR expire_time > NOW())
+        ORDER BY purchase_time DESC
+    </select>
+
+    <!-- 查询内容的购买记录列表 -->
+    <select id="selectByContentId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE content_id = #{contentId}
+        ORDER BY purchase_time DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 根据订单ID查询购买记录 -->
+    <select id="selectByOrderId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE order_id = #{orderId}
+    </select>
+
+    <!-- 根据订单号查询购买记录 -->
+    <select id="selectByOrderNo" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE order_no = #{orderNo}
+    </select>
+
+    <!-- 查询用户指定内容类型的购买记录 -->
+    <select id="selectByUserIdAndContentType" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId} AND content_type = #{contentType}
+        ORDER BY purchase_time DESC
+    </select>
+
+    <!-- 查询用户指定作者的购买记录 -->
+    <select id="selectByUserIdAndAuthorId" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId} AND author_id = #{authorId}
+        ORDER BY purchase_time DESC
+    </select>
+
+    <!-- 查询即将过期的购买记录 -->
+    <select id="selectExpiringSoon" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE status = 'ACTIVE'
+        AND expire_time IS NOT NULL
+        AND expire_time BETWEEN NOW() AND #{beforeTime}
+        ORDER BY expire_time ASC
+    </select>
+
+    <!-- 查询已过期的购买记录 -->
+    <select id="selectExpiredPurchases" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE status = 'ACTIVE'
+        AND expire_time IS NOT NULL
+        AND expire_time &lt; NOW()
+        ORDER BY expire_time ASC
+    </select>
+
+    <!-- 更新访问统计 -->
+    <update id="updateAccessStats">
+        UPDATE t_user_content_purchase
+        SET access_count = #{accessCount}, last_access_time = #{lastAccessTime}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 批量更新购买记录状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_user_content_purchase
+        SET status = #{status}
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量处理过期记录 -->
+    <update id="batchExpirePurchases">
+        UPDATE t_user_content_purchase
+        SET status = 'EXPIRED'
+        WHERE status = 'ACTIVE'
+        AND expire_time IS NOT NULL
+        AND expire_time &lt; #{beforeTime}
+    </update>
+
+    <!-- 统计用户的购买总数 -->
+    <select id="countByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计用户有效购买数 -->
+    <select id="countValidByUserId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        AND status = 'ACTIVE'
+        AND (expire_time IS NULL OR expire_time > NOW())
+    </select>
+
+    <!-- 统计内容的购买总数 -->
+    <select id="countByContentId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_user_content_purchase
+        WHERE content_id = #{contentId}
+    </select>
+
+    <!-- 统计内容的收入总额 -->
+    <select id="sumRevenueByContentId" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(coin_amount), 0)
+        FROM t_user_content_purchase
+        WHERE content_id = #{contentId}
+        AND status != 'REFUNDED'
+    </select>
+
+    <!-- 统计用户的消费总额 -->
+    <select id="sumExpenseByUserId" resultType="java.lang.Long">
+        SELECT COALESCE(SUM(coin_amount), 0)
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        AND status != 'REFUNDED'
+    </select>
+
+    <!-- 获取热门购买内容排行 -->
+    <select id="getPopularContentRanking" resultType="java.util.Map">
+        SELECT
+            content_id,
+            content_title,
+            content_type,
+            author_nickname,
+            COUNT(*) as purchase_count,
+            SUM(coin_amount) as total_revenue
+        FROM t_user_content_purchase
+        WHERE status != 'REFUNDED'
+        GROUP BY content_id, content_title, content_type, author_nickname
+        ORDER BY purchase_count DESC, total_revenue DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取用户购买统计 -->
+    <select id="getUserPurchaseStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_purchases,
+            COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_purchases,
+            COUNT(CASE WHEN status = 'EXPIRED' THEN 1 END) as expired_purchases,
+            COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) as refunded_purchases,
+            SUM(CASE WHEN status != 'REFUNDED' THEN coin_amount ELSE 0 END) as total_spent,
+            COUNT(DISTINCT content_type) as content_types_purchased,
+            COUNT(DISTINCT author_id) as authors_purchased_from,
+            MAX(purchase_time) as last_purchase_time,
+            AVG(coin_amount) as avg_purchase_amount
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 获取内容销售统计 -->
+    <select id="getContentSalesStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_sales,
+            COUNT(CASE WHEN status = 'ACTIVE' THEN 1 END) as active_sales,
+            COUNT(CASE WHEN status = 'EXPIRED' THEN 1 END) as expired_sales,
+            COUNT(CASE WHEN status = 'REFUNDED' THEN 1 END) as refunded_sales,
+            SUM(CASE WHEN status != 'REFUNDED' THEN coin_amount ELSE 0 END) as total_revenue,
+            COUNT(DISTINCT user_id) as unique_buyers,
+            MAX(purchase_time) as last_sale_time,
+            AVG(coin_amount) as avg_sale_amount,
+            SUM(access_count) as total_access_count
+        FROM t_user_content_purchase
+        WHERE content_id = #{contentId}
+    </select>
+
+    <!-- 获取作者收入统计 -->
+    <select id="getAuthorRevenueStats" resultType="java.util.Map">
+        SELECT
+            COUNT(*) as total_sales,
+            SUM(CASE WHEN status != 'REFUNDED' THEN coin_amount ELSE 0 END) as total_revenue,
+            COUNT(DISTINCT content_id) as content_sold,
+            COUNT(DISTINCT user_id) as unique_buyers,
+            AVG(coin_amount) as avg_sale_amount,
+            MAX(purchase_time) as last_sale_time
+        FROM t_user_content_purchase
+        WHERE author_id = #{authorId}
+    </select>
+
+    <!-- 获取日期范围内的购买统计 -->
+    <select id="getPurchaseStatsByDateRange" resultType="java.util.Map">
+        SELECT
+            DATE(purchase_time) as purchase_date,
+            COUNT(*) as daily_purchases,
+            SUM(coin_amount) as daily_revenue,
+            COUNT(DISTINCT user_id) as unique_buyers,
+            COUNT(DISTINCT content_id) as content_types_sold
+        FROM t_user_content_purchase
+        WHERE purchase_time BETWEEN #{startDate} AND #{endDate}
+        AND status != 'REFUNDED'
+        GROUP BY DATE(purchase_time)
+        ORDER BY purchase_date DESC
+    </select>
+
+    <!-- 查询用户最近购买的内容 -->
+    <select id="selectRecentPurchases" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        ORDER BY purchase_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询用户购买但未访问的内容 -->
+    <select id="selectUnreadPurchases" resultType="com.gig.collide.content.domain.entity.UserContentPurchase">
+        SELECT <include refid="baseColumns"/>
+        FROM t_user_content_purchase
+        WHERE user_id = #{userId}
+        AND status = 'ACTIVE'
+        AND (access_count = 0 OR access_count IS NULL)
+        ORDER BY purchase_time DESC
+    </select>
+
+</mapper>

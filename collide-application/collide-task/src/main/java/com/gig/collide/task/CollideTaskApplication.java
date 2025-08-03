@@ -10,12 +10,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 /**
- * 任务模块启动类 - 签到专用版
- * 基于task-simple-optimized.sql设计，专注于每日签到功能
- * 集成JetCache双级缓存，提供高性能签到服务
+ * 任务模块启动类 - 简洁版
+ * 基于task-simple.sql的单表设计，实现核心任务功能
+ * 集成JetCache分布式缓存，提供高性能任务服务
  *
  * @author GIG Team
- * @version 1.0.0 (签到专用版)
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 @Slf4j
@@ -30,18 +30,16 @@ public class CollideTaskApplication {
     public static void main(String[] args) {
         try {
             SpringApplication.run(CollideTaskApplication.class, args);
-            log.info("===============================================");
-            log.info("🚀 Collide Task Service (签到专用版) 启动成功！");
-            log.info("✅ 特性: 每日签到 | 金币奖励 | 连续奖励");
-            log.info("🔥 缓存: JetCache双级缓存 | 高性能查询");
-            log.info("💰 奖励: 基础10金币 | 连续7天翻倍 | 自动发放");
-            log.info("🎯 功能: 签到打卡 | 历史查询 | 统计分析");
-            log.info("⚡ 接口: Dubbo RPC + REST HTTP");
-            log.info("📱 支持: 移动端 | Web端 | 管理后台");
-            log.info("🔧 Version: 1.0.0 (Daily Check-in)");
-            log.info("===============================================");
+            log.info("========================================");
+            log.info("🚀 Collide Task 模块启动成功!");
+            log.info("🎯 每日任务服务已就绪");
+            log.info("🏆 支持功能: 每日任务、周常任务、成就任务、金币奖励");
+            log.info("🔧 技术栈: Spring Boot + Dubbo + MyBatis-Plus + JetCache");
+            log.info("📊 数据库: 基于 task-simple.sql 单表设计");
+            log.info("💰 奖励系统: 集成用户钱包，自动发放金币奖励");
+            log.info("========================================");
         } catch (Exception e) {
-            log.error("❌ Collide Task Service 启动失败！", e);
+            log.error("❌ Collide Task 模块启动失败: {}", e.getMessage(), e);
             System.exit(1);
         }
     }
@@ -51,13 +49,11 @@ public class CollideTaskApplication {
      */
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("===============================================");
-            log.info("🛑 Collide Task Service 正在关闭...");
-            log.info("✅ 签到服务已停止");
-            log.info("💰 奖励发放服务已停止");
-            log.info("🔥 缓存服务已清理");
-            log.info("🎯 感谢使用 Collide 签到系统！");
-            log.info("===============================================");
+            log.info("========================================");
+            log.info("🛑 Collide Task 模块正在关闭...");
+            log.info("🎯 每日任务服务已停止");
+            log.info("🏆 奖励发放服务已停止");
+            log.info("========================================");
         }));
     }
 }

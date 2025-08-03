@@ -24,15 +24,21 @@
     </properties>
 
     <modules>
-        <module>collide-ads</module>
+        <module>collide-search</module>
+        <module>collide-category</module>
+        <module>collide-tag</module>
+        <module>collide-users</module>
+        <module>collide-follow</module>
+        <module>collide-content</module>
+        <module>collide-comment</module>
+        <module>collide-like</module>
+        <module>collide-favorite</module>
+        <module>collide-social</module>
         <module>collide-goods</module>
-        <module>collide-message</module>
         <module>collide-order</module>
         <module>collide-payment</module>
-        <module>collide-social</module>
-        <module>collide-tag</module>
-        <module>collide-task</module>
-        <module>collide-users</module>
+        <module>collide-message</module>
+        <module>collide-ads</module>
     </modules>
 
 </project>

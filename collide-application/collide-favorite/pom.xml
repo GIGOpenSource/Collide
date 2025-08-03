@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <parent>
+        <groupId>com.gig.collide</groupId>
+        <artifactId>collide-application</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+    </parent>
+    
+    <artifactId>collide-favorite</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <name>collide-favorite</name>
+    
+    <properties>
+        <application.name>collide-favorite</application.name>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    
+    <dependencies>
+        <!-- ===================== Spring Boot 核心依赖 ===================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        
+        <!-- ===================== Collide 标准化基础模块 ===================== -->
+        <!-- 基础架构组件 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-base</artifactId>
+        </dependency>
+        
+        <!-- API接口定义 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-api</artifactId>
+        </dependency>
+        
+        <!-- Web组件 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-web</artifactId>
+        </dependency>
+        
+        <!-- 配置管理 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-config</artifactId>
+        </dependency>
+        
+        <!-- ===================== Collide 数据访问标准化模块 ===================== -->
+        <!-- 数据源组件 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-datasource</artifactId>
+        </dependency>
+        
+        <!-- 缓存组件 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-cache</artifactId>
+        </dependency>
+        
+        <!-- ===================== Collide 微服务通信标准化模块 ===================== -->
+        <!-- RPC远程调用 (Dubbo) -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-rpc</artifactId>
+        </dependency>
+        
+        <!-- ===================== Collide 功能增强标准化模块 ===================== -->
+        <!-- 分布式锁 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-lock</artifactId>
+        </dependency>
+        
+        <!-- 限流组件 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-limiter</artifactId>
+        </dependency>
+        
+        <!-- ===================== Collide 监控运维标准化模块 ===================== -->
+        <!-- 监控指标 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-prometheus</artifactId>
+        </dependency>
+        
+        <!-- 链路追踪 -->
+        <dependency>
+            <groupId>com.gig.collide</groupId>
+            <artifactId>collide-skywalking</artifactId>
+        </dependency>
+        
+        <!-- ===================== Spring Cloud 标准化服务发现 ===================== -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-bootstrap</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.cloud</groupId>
+            <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
+        </dependency>
+        
+        <!-- ===================== 开发工具标准化依赖 ===================== -->
+        <!-- MapStruct 对象映射 -->
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+        </dependency>
+        
+        <!-- Lombok -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- ===================== 测试依赖 ===================== -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        
+        <!-- H2内存数据库用于测试 -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.gig.collide.favorite.CollideFavoriteApplication</mainClass>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project> 

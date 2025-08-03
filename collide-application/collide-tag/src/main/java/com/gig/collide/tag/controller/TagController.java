@@ -7,75 +7,53 @@ import com.gig.collide.api.tag.request.TagUpdateRequest;
 import com.gig.collide.api.tag.response.TagResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckRole;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 标签管理控制器
- * 
+ * 标签管理控制器 - 缓存增强版
+ * 基于JetCache双级缓存，对齐collide-content设计风格
+ *
  * @author GIG Team
- * @version 1.0.0
+ * @version 2.0.0 (缓存增强版)
  */
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/tags")
 @RequiredArgsConstructor
-@Tag(name = "标签管理", description = "标签的增删改查和统计分析")
 public class TagController {
 
-    @DubboReference(version = "1.0.0")
-    private TagFacadeService tagFacadeService;
-
-    // =================== 标签基础管理 ===================
+    private final TagFacadeService tagFacadeService;
 
     /**
-     * 创建标签（需要管理员权限）
+     * 创建标签
      */
     @PostMapping
-    @SaCheckRole("admin")
-    @Operation(summary = "创建标签", description = "创建新的标签（管理员权限）")
-    public Result<TagResponse> createTag(@Valid @RequestBody TagCreateRequest request) {
-        log.info("创建标签: {}", request.getTagName());
+    public Result<Void> createTag(@Valid @RequestBody TagCreateRequest request) {
+        log.info("REST - 创建标签：{}", request);
         return tagFacadeService.createTag(request);
     }
 
     /**
-     * 更新标签（需要管理员权限）
+     * 更新标签
      */
     @PutMapping("/{tagId}")
-    @SaCheckRole("admin")
-    @Operation(summary = "更新标签", description = "更新标签信息（管理员权限）")
-    public Result<TagResponse> updateTag(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId,
-            @Valid @RequestBody TagUpdateRequest request) {
-        log.info("更新标签: tagId={}", tagId);
+    public Result<TagResponse> updateTag(@PathVariable Long tagId, @Valid @RequestBody TagUpdateRequest request) {
+        log.info("REST - 更新标签，ID：{}，请求：{}", tagId, request);
         request.setId(tagId);
         return tagFacadeService.updateTag(request);
     }
 
     /**
-     * 删除标签（需要管理员权限）
+     * 删除标签
      */
     @DeleteMapping("/{tagId}")
-    @SaCheckRole("admin")
-    @Operation(summary = "删除标签", description = "删除标签（管理员权限）")
-    public Result<Void> deleteTag(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId) {
-        log.info("删除标签: tagId={}", tagId);
+    public Result<Void> deleteTag(@PathVariable Long tagId) {
+        log.info("REST - 删除标签，ID：{}", tagId);
         return tagFacadeService.deleteTag(tagId);
     }
 
@@ -83,203 +61,164 @@ public class TagController {
      * 根据ID查询标签
      */
     @GetMapping("/{tagId}")
-    @Operation(summary = "查询标签详情", description = "根据ID获取标签详细信息")
-    public Result<TagResponse> getTag(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId) {
-        log.debug("查询标签: tagId={}", tagId);
-        return tagFacadeService.getTag(tagId);
+    public Result<TagResponse> getTag(@PathVariable Long tagId) {
+        log.info("REST - 查询标签，ID：{}", tagId);
+        return tagFacadeService.getTagById(tagId);
     }
 
     /**
-     * 根据名称查询标签
+     * 分页查询标签 - 专用端点
      */
-    @GetMapping("/name/{tagName}")
-    @Operation(summary = "根据名称查询标签", description = "根据标签名称获取标签信息")
-    public Result<TagResponse> getTagByName(
-            @Parameter(description = "标签名称") @PathVariable @NotBlank String tagName) {
-        log.debug("根据名称查询标签: tagName={}", tagName);
-        return tagFacadeService.getTagByName(tagName);
-    }
-
-    // =================== 标签列表查询 ===================
-
-    /**
-     * 获取所有启用的标签
-     */
-    @GetMapping("/active")
-    @Operation(summary = "获取所有启用标签", description = "获取所有状态为启用的标签")
-    public Result<List<TagResponse>> getAllActiveTags() {
-        log.debug("获取所有启用标签");
-        return tagFacadeService.getAllActiveTags();
+    @PostMapping("/page")
+    public PageResponse<TagResponse> queryTagsPost(@Valid @RequestBody TagQueryRequest request) {
+        log.info("REST - POST分页查询标签：{}", request);
+        Result<PageResponse<TagResponse>> result = tagFacadeService.queryTags(request);
+        return result.getData();
     }
 
     /**
-     * 分页查询标签
+     * 分页查询标签 - GET方式（兼容性支持）
      */
-    @PostMapping("/query")
-    @Operation(summary = "分页查询标签", description = "根据条件分页查询标签")
-    public Result<PageResponse<TagResponse>> queryTags(@Valid @RequestBody TagQueryRequest request) {
-        log.debug("分页查询标签: page={}, size={}", request.getCurrentPage(), request.getPageSize());
-        return tagFacadeService.queryTags(request);
+    @GetMapping("/page")
+    public PageResponse<TagResponse> queryTagsGet(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String tagType,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "active") String status,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(defaultValue = "create_time") String orderBy,
+            @RequestParam(defaultValue = "DESC") String orderDirection) {
+        
+        log.info("REST - GET分页查询标签，名称：{}，类型：{}，分类：{}，状态：{}，页码：{}，大小：{}", 
+                name, tagType, categoryId, status, currentPage, pageSize);
+        
+        TagQueryRequest request = new TagQueryRequest();
+        request.setName(name);
+        request.setTagType(tagType);
+        request.setCategoryId(categoryId);
+        request.setStatus(status);
+        request.setCurrentPage(currentPage);
+        request.setPageSize(pageSize);
+        request.setOrderBy(orderBy);
+        request.setOrderDirection(orderDirection);
+        
+        Result<PageResponse<TagResponse>> result = tagFacadeService.queryTags(request);
+        return result.getData();
     }
 
     /**
-     * 获取热门标签
+     * 分页查询标签 - 默认GET方式
      */
-    @GetMapping("/hot")
-    @Operation(summary = "获取热门标签", description = "获取按热度排序的标签列表")
-    public Result<List<TagResponse>> getHotTags(
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "10") @Min(1) Integer limit) {
-        log.debug("获取热门标签: limit={}", limit);
-        return tagFacadeService.getHotTags(limit);
+    @GetMapping
+    public PageResponse<TagResponse> queryTags(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) String tagType,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(defaultValue = "active") String status,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(defaultValue = "create_time") String orderBy,
+            @RequestParam(defaultValue = "DESC") String orderDirection) {
+        
+        log.info("REST - 默认分页查询标签，名称：{}，类型：{}，分类：{}，状态：{}，页码：{}，大小：{}", 
+                name, tagType, categoryId, status, currentPage, pageSize);
+        
+        TagQueryRequest request = new TagQueryRequest();
+        request.setName(name);
+        request.setTagType(tagType);
+        request.setCategoryId(categoryId);
+        request.setStatus(status);
+        request.setCurrentPage(currentPage);
+        request.setPageSize(pageSize);
+        request.setOrderBy(orderBy);
+        request.setOrderDirection(orderDirection);
+        
+        Result<PageResponse<TagResponse>> result = tagFacadeService.queryTags(request);
+        return result.getData();
     }
 
     /**
-     * 获取推荐标签
+     * 根据类型获取标签
      */
-    @GetMapping("/recommend")
-    @Operation(summary = "获取推荐标签", description = "获取系统推荐的标签列表")
-    public Result<List<TagResponse>> getRecommendTags(
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "10") @Min(1) Integer limit) {
-        log.debug("获取推荐标签: limit={}", limit);
-        return tagFacadeService.getRecommendTags(limit);
+    @GetMapping("/type/{tagType}")
+    public Result<List<TagResponse>> getTagsByType(@PathVariable String tagType) {
+        log.info("REST - 根据类型查询标签，类型：{}", tagType);
+        return tagFacadeService.getTagsByType(tagType);
     }
 
     /**
      * 搜索标签
      */
     @GetMapping("/search")
-    @Operation(summary = "搜索标签", description = "根据关键词搜索匹配的标签")
-    public Result<List<TagResponse>> searchTags(
-            @Parameter(description = "搜索关键词") @RequestParam @NotBlank String keyword,
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "10") @Min(1) Integer limit) {
-        log.debug("搜索标签: keyword={}, limit={}", keyword, limit);
+    public Result<List<TagResponse>> searchTags(@RequestParam String keyword, 
+                                               @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("REST - 搜索标签，关键词：{}，限制：{}", keyword, limit);
         return tagFacadeService.searchTags(keyword, limit);
     }
 
     /**
-     * 根据权重范围查询标签
+     * 获取热门标签
      */
-    @GetMapping("/weight")
-    @Operation(summary = "根据权重查询标签", description = "根据权重范围查询标签")
-    public Result<List<TagResponse>> getTagsByWeightRange(
-            @Parameter(description = "最小权重") @RequestParam(required = false) @Min(1) Integer minWeight,
-            @Parameter(description = "最大权重") @RequestParam(required = false) @Min(1) Integer maxWeight,
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "20") @Min(1) Integer limit) {
-        log.debug("根据权重查询标签: minWeight={}, maxWeight={}, limit={}", minWeight, maxWeight, limit);
-        return tagFacadeService.getTagsByWeightRange(minWeight, maxWeight, limit);
-    }
-
-    // =================== 标签统计分析 ===================
-
-    /**
-     * 获取标签统计信息
-     */
-    @GetMapping("/{tagId}/statistics")
-    @Operation(summary = "获取标签统计", description = "获取指定标签的统计信息")
-    public Result<Map<String, Object>> getTagStatistics(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId) {
-        log.debug("获取标签统计: tagId={}", tagId);
-        return tagFacadeService.getTagStatistics(tagId);
+    @GetMapping("/hot")
+    public Result<List<TagResponse>> getHotTags(@RequestParam(defaultValue = "10") Integer limit) {
+        log.info("REST - 获取热门标签，限制：{}", limit);
+        return tagFacadeService.getHotTags(limit);
     }
 
     /**
-     * 获取热度排行榜
+     * 获取用户兴趣标签
      */
-    @GetMapping("/ranking/hotness")
-    @Operation(summary = "热度排行榜", description = "获取按热度排序的标签排行榜")
-    public Result<List<TagResponse>> getHotnessRanking(
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "20") @Min(1) Integer limit) {
-        log.debug("获取热度排行榜: limit={}", limit);
-        return tagFacadeService.getHotnessRanking(limit);
+    @GetMapping("/user/{userId}/interests")
+    public Result<List<TagResponse>> getUserInterestTags(@PathVariable Long userId) {
+        log.info("REST - 获取用户兴趣标签，用户ID：{}", userId);
+        return tagFacadeService.getUserInterestTags(userId);
     }
 
     /**
-     * 获取关注数排行榜
+     * 添加用户兴趣标签
      */
-    @GetMapping("/ranking/follow")
-    @Operation(summary = "关注数排行榜", description = "获取按关注数排序的标签排行榜")
-    public Result<List<TagResponse>> getFollowCountRanking(
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "20") @Min(1) Integer limit) {
-        log.debug("获取关注数排行榜: limit={}", limit);
-        return tagFacadeService.getFollowCountRanking(limit);
+    @PostMapping("/user/{userId}/interests/{tagId}")
+    public Result<Void> addUserInterestTag(@PathVariable Long userId, 
+                                          @PathVariable Long tagId,
+                                          @RequestParam(defaultValue = "50.0") Double interestScore) {
+        log.info("REST - 添加用户兴趣标签，用户ID：{}，标签ID：{}，兴趣分数：{}", userId, tagId, interestScore);
+        return tagFacadeService.addUserInterestTag(userId, tagId, interestScore);
     }
 
     /**
-     * 获取内容数排行榜
+     * 移除用户兴趣标签
      */
-    @GetMapping("/ranking/content")
-    @Operation(summary = "内容数排行榜", description = "获取按内容数排序的标签排行榜")
-    public Result<List<TagResponse>> getContentCountRanking(
-            @Parameter(description = "数量限制") @RequestParam(defaultValue = "20") @Min(1) Integer limit) {
-        log.debug("获取内容数排行榜: limit={}", limit);
-        return tagFacadeService.getContentCountRanking(limit);
-    }
-
-    // =================== 标签状态管理（管理员功能） ===================
-
-    /**
-     * 更新标签状态
-     */
-    @PutMapping("/{tagId}/status")
-    @SaCheckRole("admin")
-    @Operation(summary = "更新标签状态", description = "更新标签的启用/禁用状态（管理员权限）")
-    public Result<Void> updateTagStatus(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId,
-            @Parameter(description = "状态(1-启用,0-禁用)") @RequestParam @NotNull Integer status) {
-        log.info("更新标签状态: tagId={}, status={}", tagId, status);
-        return tagFacadeService.updateTagStatus(tagId, status);
+    @DeleteMapping("/user/{userId}/interests/{tagId}")
+    public Result<Void> removeUserInterestTag(@PathVariable Long userId, @PathVariable Long tagId) {
+        log.info("REST - 移除用户兴趣标签，用户ID：{}，标签ID：{}", userId, tagId);
+        return tagFacadeService.removeUserInterestTag(userId, tagId);
     }
 
     /**
-     * 更新标签权重
+     * 获取内容标签
      */
-    @PutMapping("/{tagId}/weight")
-    @SaCheckRole("admin")
-    @Operation(summary = "更新标签权重", description = "更新标签的权重值（管理员权限）")
-    public Result<Void> updateTagWeight(
-            @Parameter(description = "标签ID") @PathVariable @NotNull @Min(1) Long tagId,
-            @Parameter(description = "权重值(1-100)") @RequestParam @NotNull @Min(1) Integer weight) {
-        log.info("更新标签权重: tagId={}, weight={}", tagId, weight);
-        return tagFacadeService.updateTagWeight(tagId, weight);
+    @GetMapping("/content/{contentId}")
+    public Result<List<TagResponse>> getContentTags(@PathVariable Long contentId) {
+        log.info("REST - 获取内容标签，内容ID：{}", contentId);
+        return tagFacadeService.getContentTags(contentId);
     }
 
     /**
-     * 批量更新标签状态
+     * 为内容添加标签
      */
-    @PutMapping("/batch/status")
-    @SaCheckRole("admin")
-    @Operation(summary = "批量更新标签状态", description = "批量更新多个标签的状态（管理员权限）")
-    public Result<Void> batchUpdateTagStatus(
-            @Parameter(description = "标签ID列表") @RequestParam List<Long> tagIds,
-            @Parameter(description = "状态(1-启用,0-禁用)") @RequestParam @NotNull Integer status) {
-        log.info("批量更新标签状态: tagIds={}, status={}", tagIds, status);
-        return tagFacadeService.batchUpdateTagStatus(tagIds, status);
-    }
-
-    // =================== 系统管理功能（管理员功能） ===================
-
-    /**
-     * 手动更新标签热度
-     */
-    @PostMapping("/hotness/update")
-    @SaCheckRole("admin")
-    @Operation(summary = "更新标签热度", description = "手动触发标签热度值更新（管理员权限）")
-    public Result<Void> updateTagHotness(
-            @Parameter(description = "标签ID（为空时更新所有）") @RequestParam(required = false) Long tagId) {
-        log.info("手动更新标签热度: tagId={}", tagId);
-        return tagFacadeService.updateTagHotness(tagId);
+    @PostMapping("/content/{contentId}/tags/{tagId}")
+    public Result<Void> addContentTag(@PathVariable Long contentId, @PathVariable Long tagId) {
+        log.info("REST - 为内容添加标签，内容ID：{}，标签ID：{}", contentId, tagId);
+        return tagFacadeService.addContentTag(contentId, tagId);
     }
 
     /**
-     * 检查标签名称可用性
+     * 移除内容标签
      */
-    @GetMapping("/check-name")
-    @Operation(summary = "检查标签名称", description = "检查标签名称是否可用")
-    public Result<Boolean> checkTagNameAvailable(
-            @Parameter(description = "标签名称") @RequestParam @NotBlank String tagName,
-            @Parameter(description = "排除的标签ID") @RequestParam(required = false) Long excludeId) {
-        log.debug("检查标签名称可用性: tagName={}, excludeId={}", tagName, excludeId);
-        return tagFacadeService.checkTagNameAvailable(tagName, excludeId);
+    @DeleteMapping("/content/{contentId}/tags/{tagId}")
+    public Result<Void> removeContentTag(@PathVariable Long contentId, @PathVariable Long tagId) {
+        log.info("REST - 移除内容标签，内容ID：{}，标签ID：{}", contentId, tagId);
+        return tagFacadeService.removeContentTag(contentId, tagId);
     }
 } 

@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
+
+server:
+  port: 9613
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.category.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 分类模块专用配置
+collide:
+  category:
+    # 最大层级深度
+    max-depth: 5
+    # 默认分类图标
+    default-icon: "https://example.com/default-category-icon.png"
+    # 内容数量同步间隔（分钟）
+    content-count-sync-interval: 30
+    # 热门分类阈值
+    popular-threshold: 100 

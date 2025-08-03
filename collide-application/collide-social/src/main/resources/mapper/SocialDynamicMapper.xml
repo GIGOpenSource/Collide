@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.social.infrastructure.mapper.SocialDynamicMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, content, dynamic_type, images, video_url, user_id, user_nickname, user_avatar,
+        share_target_type, share_target_id, share_target_title, like_count, comment_count, 
+        share_count, status, create_time, update_time
+    </sql>
+
+    <!-- =================== 基础查询 =================== -->
+
+    <!-- 根据用户ID查询动态列表 -->
+    <select id="selectByUserId" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE user_id = #{userId}
+        AND status = 'normal'
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据动态类型查询动态列表 -->
+    <select id="selectByDynamicType" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE dynamic_type = #{dynamicType}
+        AND status = 'normal'
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 搜索动态（按内容模糊搜索） -->
+    <select id="searchByContent" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE content LIKE CONCAT('%', #{keyword}, '%')
+        AND status = 'normal'
+        ORDER BY 
+            (like_count * 0.4 + comment_count * 0.3 + share_count * 0.3) DESC,
+            create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取热门动态（按点赞数排序） -->
+    <select id="selectHotDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE status = 'normal'
+        AND like_count > 0
+        AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY 
+            (like_count * 0.5 + comment_count * 0.3 + share_count * 0.2) DESC,
+            create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取关注用户的动态流 -->
+    <select id="selectFollowingDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT sd.<include refid="Base_Column_List"/>
+        FROM t_social_dynamic sd
+        INNER JOIN t_follow f ON sd.user_id = f.followee_id
+        WHERE f.follower_id = #{userId}
+        AND f.status = 'active'
+        AND sd.status = 'normal'
+        ORDER BY sd.create_time DESC
+        <if test="offset != null and offset > 0">
+            OFFSET #{offset}
+        </if>
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 批量查询用户的动态数量 -->
+    <select id="selectUserDynamicCounts" resultType="java.lang.Long">
+        SELECT user_id, COUNT(*) as dynamic_count
+        FROM t_social_dynamic
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" close=")" separator=",">
+            #{userId}
+        </foreach>
+        AND status = 'normal'
+        GROUP BY user_id
+    </select>
+
+    <!-- =================== 更新操作 =================== -->
+
+    <!-- 增加点赞数 -->
+    <update id="increaseLikeCount">
+        UPDATE t_social_dynamic
+        SET like_count = like_count + 1,
+            update_time = NOW()
+        WHERE id = #{dynamicId}
+    </update>
+
+    <!-- 减少点赞数 -->
+    <update id="decreaseLikeCount">
+        UPDATE t_social_dynamic
+        SET like_count = GREATEST(0, like_count - 1),
+            update_time = NOW()
+        WHERE id = #{dynamicId}
+    </update>
+
+    <!-- 增加评论数 -->
+    <update id="increaseCommentCount">
+        UPDATE t_social_dynamic
+        SET comment_count = comment_count + 1,
+            update_time = NOW()
+        WHERE id = #{dynamicId}
+    </update>
+
+    <!-- 增加分享数 -->
+    <update id="increaseShareCount">
+        UPDATE t_social_dynamic
+        SET share_count = share_count + 1,
+            update_time = NOW()
+        WHERE id = #{dynamicId}
+    </update>
+
+    <!-- =================== 高级查询（扩展功能） =================== -->
+
+    <!-- 获取用户动态统计 -->
+    <select id="selectUserDynamicStatistics" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            user_nickname,
+            COUNT(*) as total_dynamics,
+            SUM(like_count) as total_likes,
+            SUM(comment_count) as total_comments,
+            SUM(share_count) as total_shares,
+            AVG(like_count) as avg_likes,
+            MAX(like_count) as max_likes,
+            COUNT(DISTINCT dynamic_type) as dynamic_types
+        FROM t_social_dynamic
+        WHERE user_id = #{userId}
+        AND status = 'normal'
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY user_id, user_nickname
+    </select>
+
+    <!-- 获取动态类型分布 -->
+    <select id="selectDynamicTypeDistribution" resultType="java.util.Map">
+        SELECT 
+            dynamic_type,
+            COUNT(*) as type_count,
+            SUM(like_count) as total_likes,
+            SUM(comment_count) as total_comments,
+            SUM(share_count) as total_shares,
+            AVG(like_count) as avg_likes
+        FROM t_social_dynamic
+        WHERE status = 'normal'
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY dynamic_type
+        ORDER BY type_count DESC
+    </select>
+
+    <!-- 获取每日动态趋势 -->
+    <select id="selectDailyDynamicTrend" resultType="java.util.Map">
+        SELECT 
+            DATE(create_time) as dynamic_date,
+            COUNT(*) as daily_count,
+            COUNT(DISTINCT user_id) as active_users,
+            SUM(like_count) as daily_likes,
+            SUM(comment_count) as daily_comments,
+            SUM(share_count) as daily_shares
+        FROM t_social_dynamic
+        WHERE status = 'normal'
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        GROUP BY DATE(create_time)
+        ORDER BY dynamic_date DESC
+    </select>
+
+    <!-- 获取互动最多的动态 -->
+    <select id="selectMostInteractiveDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE status = 'normal'
+        AND (like_count > 0 OR comment_count > 0 OR share_count > 0)
+        <if test="dynamicType != null and dynamicType != ''">
+            AND dynamic_type = #{dynamicType}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+        ORDER BY (like_count + comment_count * 2 + share_count * 3) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取活跃用户动态 -->
+    <select id="selectActiveUserDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT sd.<include refid="Base_Column_List"/>
+        FROM t_social_dynamic sd
+        INNER JOIN (
+            SELECT user_id, COUNT(*) as dynamic_count
+            FROM t_social_dynamic
+            WHERE status = 'normal'
+            AND create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+            GROUP BY user_id
+            HAVING COUNT(*) >= #{minDynamics}
+        ) active_users ON sd.user_id = active_users.user_id
+        WHERE sd.status = 'normal'
+        ORDER BY sd.create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取最新分享动态 -->
+    <select id="selectLatestShareDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE dynamic_type = 'share'
+        AND status = 'normal'
+        AND share_target_type IS NOT NULL
+        <if test="shareTargetType != null and shareTargetType != ''">
+            AND share_target_type = #{shareTargetType}
+        </if>
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 搜索关联的分享动态 -->
+    <select id="selectRelatedShareDynamics" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE dynamic_type = 'share'
+        AND share_target_type = #{targetType}
+        AND share_target_id = #{targetId}
+        AND status = 'normal'
+        ORDER BY create_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 统计查询 =================== -->
+
+    <!-- 统计用户动态数量 -->
+    <select id="countUserDynamics" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_social_dynamic
+        WHERE user_id = #{userId}
+        AND status = 'normal'
+        <if test="dynamicType != null and dynamicType != ''">
+            AND dynamic_type = #{dynamicType}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- 统计动态总互动数 -->
+    <select id="sumDynamicInteractions" resultType="java.util.Map">
+        SELECT 
+            SUM(like_count) as total_likes,
+            SUM(comment_count) as total_comments,
+            SUM(share_count) as total_shares,
+            SUM(like_count + comment_count + share_count) as total_interactions
+        FROM t_social_dynamic
+        WHERE status = 'normal'
+        <if test="userId != null">
+            AND user_id = #{userId}
+        </if>
+        <if test="dynamicType != null and dynamicType != ''">
+            AND dynamic_type = #{dynamicType}
+        </if>
+        <if test="startTime != null">
+            AND create_time >= #{startTime}
+        </if>
+        <if test="endTime != null">
+            AND create_time &lt;= #{endTime}
+        </if>
+    </select>
+
+    <!-- =================== 数据维护 =================== -->
+
+    <!-- 批量更新用户信息（冗余字段同步） -->
+    <update id="updateUserInfo">
+        UPDATE t_social_dynamic
+        SET user_nickname = #{userNickname},
+            user_avatar = #{userAvatar},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 批量更新动态状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_social_dynamic
+        SET status = #{status},
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="dynamicIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 清理已删除的动态 -->
+    <delete id="cleanDeletedDynamics">
+        DELETE FROM t_social_dynamic
+        WHERE status = 'deleted'
+        AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </delete>
+
+    <!-- 重新计算互动统计 -->
+    <update id="recalculateInteractionStats">
+        UPDATE t_social_dynamic sd
+        LEFT JOIN (
+            SELECT target_id, COUNT(*) as actual_like_count
+            FROM t_like
+            WHERE target_type = 'DYNAMIC'
+            AND status = 'active'
+            GROUP BY target_id
+        ) likes ON sd.id = likes.target_id
+        LEFT JOIN (
+            SELECT target_id, COUNT(*) as actual_comment_count
+            FROM t_comment
+            WHERE comment_type = 'DYNAMIC'
+            AND status = 'NORMAL'
+            GROUP BY target_id
+        ) comments ON sd.id = comments.target_id
+        SET sd.like_count = COALESCE(likes.actual_like_count, 0),
+            sd.comment_count = COALESCE(comments.actual_comment_count, 0),
+            sd.update_time = NOW()
+        WHERE sd.status = 'normal'
+        <if test="dynamicId != null">
+            AND sd.id = #{dynamicId}
+        </if>
+    </update>
+
+    <!-- 归档历史动态 -->
+    <select id="selectHistoryDynamicsForArchive" resultType="com.gig.collide.social.domain.entity.SocialDynamic">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_social_dynamic
+        WHERE create_time &lt; #{beforeTime}
+        AND status IN ('normal', 'hidden')
+        ORDER BY create_time ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+</mapper>

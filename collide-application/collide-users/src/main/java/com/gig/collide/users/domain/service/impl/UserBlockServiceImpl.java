@@ -1,8 +1,7 @@
 package com.gig.collide.users.domain.service.impl;
 
-import com.gig.collide.api.user.request.block.UserBlockQueryRequest;
+import com.gig.collide.api.user.request.UserBlockQueryRequest;
 import com.gig.collide.base.response.PageResponse;
-import com.gig.collide.api.user.constant.BlockStatusConstant;
 import com.gig.collide.users.domain.entity.UserBlock;
 import com.gig.collide.users.domain.service.UserBlockService;
 import com.gig.collide.users.infrastructure.mapper.UserBlockMapper;
@@ -33,17 +32,18 @@ public class UserBlockServiceImpl implements UserBlockService {
         
         // 检查是否已经拉黑
         UserBlock existingBlock = userBlockMapper.findByUserAndBlocked(userId, blockedUserId);
-        if (existingBlock != null && BlockStatusConstant.isActiveStatus(existingBlock.getStatus())) {
+        if (existingBlock != null && "active".equals(existingBlock.getStatus())) {
             log.warn("用户{}已经拉黑了用户{}", userId, blockedUserId);
             return existingBlock;
         }
-
+        
+        // 创建新的拉黑记录
         UserBlock userBlock = new UserBlock();
         userBlock.setUserId(userId);
         userBlock.setBlockedUserId(blockedUserId);
         userBlock.setUserUsername(userUsername);
         userBlock.setBlockedUsername(blockedUsername);
-        userBlock.setStatus(BlockStatusConstant.ACTIVE);
+        userBlock.setStatus("active");
         userBlock.setReason(reason);
         userBlock.setCreateTime(LocalDateTime.now());
         userBlock.setUpdateTime(LocalDateTime.now());
@@ -72,7 +72,7 @@ public class UserBlockServiceImpl implements UserBlockService {
 
     @Override
     public boolean isBlocked(Long userId, Long blockedUserId) {
-        Integer count = userBlockMapper.checkBlockStatus(userId, blockedUserId, BlockStatusConstant.ACTIVE);
+        Integer count = userBlockMapper.checkBlockStatus(userId, blockedUserId, "active");
         return count != null && count > 0;
     }
 
@@ -91,8 +91,8 @@ public class UserBlockServiceImpl implements UserBlockService {
         log.info("查询用户拉黑列表：用户ID={}, 页码={}, 页大小={}", userId, currentPage, pageSize);
         
         int offset = (currentPage - 1) * pageSize;
-        List<UserBlock> blocks = userBlockMapper.findByUserId(userId, BlockStatusConstant.ACTIVE, offset, pageSize);
-        Long total = userBlockMapper.countByUserId(userId, BlockStatusConstant.ACTIVE);
+        List<UserBlock> blocks = userBlockMapper.findByUserId(userId, "active", offset, pageSize);
+        Long total = userBlockMapper.countByUserId(userId, "active");
         
         return PageResponse.of(blocks, total, pageSize, currentPage);
     }
@@ -102,8 +102,8 @@ public class UserBlockServiceImpl implements UserBlockService {
         log.info("查询用户被拉黑列表：用户ID={}, 页码={}, 页大小={}", blockedUserId, currentPage, pageSize);
         
         int offset = (currentPage - 1) * pageSize;
-        List<UserBlock> blocks = userBlockMapper.findByBlockedUserId(blockedUserId, BlockStatusConstant.ACTIVE, offset, pageSize);
-        Long total = userBlockMapper.countByBlockedUserId(blockedUserId, BlockStatusConstant.ACTIVE);
+        List<UserBlock> blocks = userBlockMapper.findByBlockedUserId(blockedUserId, "active", offset, pageSize);
+        Long total = userBlockMapper.countByBlockedUserId(blockedUserId, "active");
         
         return PageResponse.of(blocks, total, pageSize, currentPage);
     }
@@ -143,12 +143,12 @@ public class UserBlockServiceImpl implements UserBlockService {
 
     @Override
     public Long countUserBlocks(Long userId) {
-        return userBlockMapper.countByUserId(userId, BlockStatusConstant.ACTIVE);
+        return userBlockMapper.countByUserId(userId, "active");
     }
 
     @Override
     public Long countUserBlocked(Long blockedUserId) {
-        return userBlockMapper.countByBlockedUserId(blockedUserId, BlockStatusConstant.ACTIVE);
+        return userBlockMapper.countByBlockedUserId(blockedUserId, "active");
     }
 
     @Override

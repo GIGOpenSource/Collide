@@ -13,7 +13,7 @@
     <groupId>com.gig.collide</groupId>
     <artifactId>collide-task</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <description>Collide 任务模块 - 每日签到系统，金币奖励，连续签到</description>
+    <description>Collide 任务模块 - 每日任务、周常任务、成就任务管理</description>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

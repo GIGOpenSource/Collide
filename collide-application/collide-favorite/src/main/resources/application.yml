@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: @application.name@
+  config:
+    import: classpath:base.yml,classpath:datasource.yml,classpath:cache.yml,classpath:rpc.yml
+  oss:
+    enabled: true
+    bucket: mds
+    endPoint: http://192.168.1.107:9000
+    accessKey: minioadmin
+    accessSecret: minioadmin
+
+server:
+  port: 9610
+
+# MyBatis Plus配置
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  type-aliases-package: com.gig.collide.favorite.domain.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# 收藏模块专用配置
+collide:
+  favorite:
+    # 默认收藏封面
+    default-cover: "https://example.com/default-favorite-cover.jpg"
+    # 热门收藏阈值
+    popular-threshold: 100
+    # 收藏数据清理天数
+    cleanup-days: 365
+    # 批量操作最大数量
+    batch-max-size: 100
+    # 收藏推荐开关
+    recommendation-enabled: true

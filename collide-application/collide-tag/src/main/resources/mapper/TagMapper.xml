@@ -1,327 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
 <mapper namespace="com.gig.collide.tag.infrastructure.mapper.TagMapper">
 
-    <!-- 基础结果映射 -->
-    <resultMap id="BaseResultMap" type="com.gig.collide.tag.domain.entity.Tag">
-        <id column="id" property="id"/>
-        <result column="tag_name" property="tagName"/>
-        <result column="tag_description" property="tagDescription"/>
-        <result column="tag_icon" property="tagIcon"/>
-        <result column="weight" property="weight"/>
-        <result column="hotness" property="hotness"/>
-        <result column="follow_count" property="followCount"/>
-        <result column="content_count" property="contentCount"/>
-        <result column="status" property="status"/>
-        <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
-    </resultMap>
-
-    <!-- 基础列定义 -->
-    <sql id="Base_Column_List">
-        id, tag_name, tag_description, tag_icon, weight, hotness, 
-        follow_count, content_count, status, create_time, update_time
-    </sql>
-
-    <!-- 条件查询SQL片段 -->
-    <sql id="Base_Where_Clause">
-        <where>
-            <if test="tagName != null and tagName.trim() != ''">
-                AND tag_name LIKE CONCAT('%', #{tagName}, '%')
-            </if>
-            <if test="status != null">
-                AND status = #{status}
-            </if>
-            <if test="minWeight != null">
-                AND weight >= #{minWeight}
-            </if>
-            <if test="maxWeight != null">
-                AND weight <= #{maxWeight}
-            </if>
-            <if test="minFollowCount != null">
-                AND follow_count >= #{minFollowCount}
-            </if>
-            <if test="maxFollowCount != null">
-                AND follow_count <= #{maxFollowCount}
-            </if>
-            <if test="minContentCount != null">
-                AND content_count >= #{minContentCount}
-            </if>
-            <if test="maxContentCount != null">
-                AND content_count <= #{maxContentCount}
-            </if>
-        </where>
-    </sql>
-
-    <!-- 排序SQL片段 -->
-    <sql id="Order_By_Clause">
-        <choose>
-            <when test="sortField != null and sortField.trim() != ''">
-                ORDER BY 
-                <choose>
-                    <when test="sortField == 'weight'">weight</when>
-                    <when test="sortField == 'hotness'">hotness</when>
-                    <when test="sortField == 'follow_count'">follow_count</when>
-                    <when test="sortField == 'content_count'">content_count</when>
-                    <when test="sortField == 'create_time'">create_time</when>
-                    <otherwise>hotness</otherwise>
-                </choose>
-                <choose>
-                    <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
-                    <otherwise>DESC</otherwise>
-                </choose>
-            </when>
-            <otherwise>ORDER BY hotness DESC, weight DESC</otherwise>
-        </choose>
-    </sql>
-
-    <!-- =================== 基础查询 =================== -->
-
-    <!-- 根据标签名称查询标签 -->
-    <select id="findByTagName" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE tag_name = #{tagName}
-        LIMIT 1
+    <!-- 根据类型查询标签列表 -->
+    <select id="selectByTagType" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT * FROM t_tag 
+        WHERE tag_type = #{tagType} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
     </select>
 
-    <!-- 查询所有启用的标签 -->
-    <select id="findAllActiveTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = 1
-        ORDER BY weight DESC, hotness DESC
-    </select>
-
-    <!-- 根据权重范围查询标签 -->
-    <select id="findTagsByWeightRange" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = 1
-        <if test="minWeight != null">
-            AND weight >= #{minWeight}
-        </if>
-        <if test="maxWeight != null">
-            AND weight <= #{maxWeight}
-        </if>
-        ORDER BY weight DESC, hotness DESC
-        <if test="limit != null and limit > 0">
+    <!-- 按名称模糊搜索标签 -->
+    <select id="searchByName" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT * FROM t_tag 
+        WHERE name LIKE CONCAT('%', #{keyword}, '%') 
+        AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        <if test="limit != null">
             LIMIT #{limit}
         </if>
     </select>
 
-    <!-- 根据状态查询标签 -->
-    <select id="findTagsByStatus" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = #{status}
-        ORDER BY hotness DESC, weight DESC
-        <if test="limit != null and limit > 0">
+    <!-- 获取热门标签（按使用次数排序） -->
+    <select id="selectHotTags" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT * FROM t_tag 
+        WHERE status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        <if test="limit != null">
             LIMIT #{limit}
         </if>
     </select>
 
-    <!-- =================== 热度和排行查询 =================== -->
-
-    <!-- 查询热门标签 -->
-    <select id="findHotTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = 1
-        ORDER BY hotness DESC, follow_count DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
-    </select>
-
-    <!-- 按关注数排序查询标签 -->
-    <select id="findTagsByFollowCount" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = 1
-        ORDER BY follow_count DESC, hotness DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
-    </select>
-
-    <!-- 按内容数排序查询标签 -->
-    <select id="findTagsByContentCount" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE status = 1
-        ORDER BY content_count DESC, hotness DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
-    </select>
-
-    <!-- 查询推荐标签 -->
-    <select id="findRecommendTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>,
-               (follow_count * 0.6 + content_count * 0.4) * (weight / 100.0) as recommend_score
-        FROM t_tag
-        WHERE status = 1
-        ORDER BY recommend_score DESC, hotness DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
-    </select>
-
-    <!-- =================== 搜索查询 =================== -->
-
-    <!-- 模糊搜索标签 -->
-    <select id="searchTags" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE tag_name LIKE CONCAT('%', #{keyword}, '%')
-           OR tag_description LIKE CONCAT('%', #{keyword}, '%')
-        <if test="status != null">
-            AND status = #{status}
-        </if>
-        ORDER BY 
-            CASE WHEN tag_name = #{keyword} THEN 1 ELSE 2 END,
-            CASE WHEN tag_name LIKE CONCAT(#{keyword}, '%') THEN 1 ELSE 2 END,
-            hotness DESC
-        <if test="limit != null and limit > 0">
-            LIMIT #{limit}
-        </if>
-    </select>
-
-    <!-- 根据ID列表查询标签 -->
-    <select id="findTagsByIds" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        WHERE id IN
-        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-            #{tagId}
-        </foreach>
-        ORDER BY FIELD(id, 
-        <foreach collection="tagIds" item="tagId" separator=",">
-            #{tagId}
-        </foreach>)
-    </select>
-
-    <!-- =================== 条件查询 =================== -->
-
-    <!-- 根据条件查询标签 -->
-    <select id="findTagsByCondition" resultMap="BaseResultMap">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_tag
-        <include refid="Base_Where_Clause"/>
-        <include refid="Order_By_Clause"/>
-        <if test="offset != null and pageSize != null">
-            LIMIT #{offset}, #{pageSize}
-        </if>
-    </select>
-
-    <!-- 根据条件统计标签数量 -->
-    <select id="countTagsByCondition" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM t_tag
-        <include refid="Base_Where_Clause"/>
-    </select>
-
-    <!-- =================== 统计查询 =================== -->
-
-    <!-- 统计启用标签数量 -->
-    <select id="countActiveTags" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM t_tag
-        WHERE status = 1
-    </select>
-
-    <!-- 统计总关注数 -->
-    <select id="sumTotalFollowCount" resultType="java.lang.Long">
-        SELECT COALESCE(SUM(follow_count), 0)
-        FROM t_tag
-        WHERE status = 1
-    </select>
-
-    <!-- 统计总内容数 -->
-    <select id="sumTotalContentCount" resultType="java.lang.Long">
-        SELECT COALESCE(SUM(content_count), 0)
-        FROM t_tag
-        WHERE status = 1
-    </select>
-
-    <!-- 获取平均热度值 -->
-    <select id="getAverageHotness" resultType="java.lang.Double">
-        SELECT COALESCE(AVG(hotness), 0.0)
-        FROM t_tag
-        WHERE status = 1 AND hotness > 0
-    </select>
-
-    <!-- =================== 数据更新 =================== -->
-
-    <!-- 更新标签热度值 -->
-    <update id="updateTagHotness">
-        UPDATE t_tag
-        SET hotness = #{hotness},
-            update_time = NOW()
+    <!-- 增加标签使用次数 -->
+    <update id="increaseUsageCount">
+        UPDATE t_tag 
+        SET usage_count = usage_count + 1, update_time = NOW()
         WHERE id = #{tagId}
     </update>
-
-    <!-- 增加标签关注数 -->
-    <update id="incrementFollowCount">
-        UPDATE t_tag
-        SET follow_count = follow_count + #{increment},
-            update_time = NOW()
-        WHERE id = #{tagId}
-    </update>
-
-    <!-- 减少标签关注数 -->
-    <update id="decrementFollowCount">
-        UPDATE t_tag
-        SET follow_count = GREATEST(0, follow_count - #{decrement}),
-            update_time = NOW()
-        WHERE id = #{tagId}
-    </update>
-
-    <!-- 增加标签内容数 -->
-    <update id="incrementContentCount">
-        UPDATE t_tag
-        SET content_count = content_count + #{increment},
-            update_time = NOW()
-        WHERE id = #{tagId}
-    </update>
-
-    <!-- 减少标签内容数 -->
-    <update id="decrementContentCount">
-        UPDATE t_tag
-        SET content_count = GREATEST(0, content_count - #{decrement}),
-            update_time = NOW()
-        WHERE id = #{tagId}
-    </update>
-
-    <!-- 批量更新标签状态 -->
-    <update id="batchUpdateStatus">
-        UPDATE t_tag
-        SET status = #{status},
-            update_time = NOW()
-        WHERE id IN
-        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
-            #{tagId}
-        </foreach>
-    </update>
-
-    <!-- =================== 验证查询 =================== -->
 
     <!-- 检查标签名称是否存在 -->
-    <select id="existsByTagName" resultType="java.lang.Boolean">
-        SELECT COUNT(*) > 0
-        FROM t_tag
-        WHERE tag_name = #{tagName}
-        <if test="excludeId != null">
-            AND id != #{excludeId}
-        </if>
+    <select id="countByNameAndType" resultType="int">
+        SELECT COUNT(*) FROM t_tag 
+        WHERE name = #{name} AND tag_type = #{tagType}
     </select>
 
-    <!-- 检查标签是否存在且启用 -->
-    <select id="existsActiveTag" resultType="java.lang.Boolean">
-        SELECT COUNT(*) > 0
-        FROM t_tag
-        WHERE id = #{tagId} AND status = 1
-    </select>
-
-</mapper>
+</mapper> 
