@@ -1,20 +1,22 @@
-package com.gig.collide.content.domain.service;
+package com.gig.collide.api.content;
 
-import com.gig.collide.content.domain.entity.ContentChapter;
+import com.gig.collide.api.content.request.ChapterCreateRequest;
+import com.gig.collide.api.content.response.ChapterResponse;
+import com.gig.collide.base.response.PageResponse;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * 内容章节业务服务接口 - C端简洁版
+ * 内容章节外观服务接口 - C端简洁版
  * 专注于C端必需的章节查询功能，移除复杂的管理接口
  * 基于单表无连表设计
- * 
+ *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
  * @since 2024-01-31
  */
-public interface ContentChapterService {
+public interface ContentChapterFacadeService {
 
     // =================== 基础查询功能 ===================
 
@@ -24,7 +26,7 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 章节列表
      */
-    List<ContentChapter> getChaptersByContentId(Long contentId);
+    List<ChapterResponse> getChaptersByContentId(Long contentId);
 
     /**
      * 根据内容ID查询已发布章节列表
@@ -32,7 +34,7 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 已发布章节列表
      */
-    List<ContentChapter> getPublishedChaptersByContentId(Long contentId);
+    List<ChapterResponse> getPublishedChaptersByContentId(Long contentId);
 
     /**
      * 根据内容ID分页查询章节
@@ -40,9 +42,9 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @param currentPage 当前页码
      * @param pageSize 页面大小
-     * @return 章节列表
+     * @return 分页章节列表
      */
-    List<ContentChapter> getChaptersByContentIdPaged(Long contentId, Integer currentPage, Integer pageSize);
+    PageResponse<ChapterResponse> getChaptersByContentIdPaged(Long contentId, Integer currentPage, Integer pageSize);
 
     /**
      * 根据内容ID和章节号查询章节
@@ -51,7 +53,7 @@ public interface ContentChapterService {
      * @param chapterNum 章节号
      * @return 章节详情
      */
-    ContentChapter getChapterByContentIdAndNum(Long contentId, Integer chapterNum);
+    ChapterResponse getChapterByContentIdAndNum(Long contentId, Integer chapterNum);
 
     /**
      * 查询内容的下一章节
@@ -60,7 +62,7 @@ public interface ContentChapterService {
      * @param currentChapterNum 当前章节号
      * @return 下一章节
      */
-    ContentChapter getNextChapter(Long contentId, Integer currentChapterNum);
+    ChapterResponse getNextChapter(Long contentId, Integer currentChapterNum);
 
     /**
      * 查询内容的上一章节
@@ -69,7 +71,7 @@ public interface ContentChapterService {
      * @param currentChapterNum 当前章节号
      * @return 上一章节
      */
-    ContentChapter getPreviousChapter(Long contentId, Integer currentChapterNum);
+    ChapterResponse getPreviousChapter(Long contentId, Integer currentChapterNum);
 
     /**
      * 查询内容的第一章节
@@ -77,7 +79,7 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 第一章节
      */
-    ContentChapter getFirstChapter(Long contentId);
+    ChapterResponse getFirstChapter(Long contentId);
 
     /**
      * 查询内容的最后一章节
@@ -85,7 +87,7 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 最后一章节
      */
-    ContentChapter getLastChapter(Long contentId);
+    ChapterResponse getLastChapter(Long contentId);
 
     /**
      * 根据状态查询章节列表
@@ -93,7 +95,7 @@ public interface ContentChapterService {
      * @param status 章节状态
      * @return 章节列表
      */
-    List<ContentChapter> getChaptersByStatus(String status);
+    List<ChapterResponse> getChaptersByStatus(String status);
 
     /**
      * 根据章节标题搜索
@@ -101,9 +103,9 @@ public interface ContentChapterService {
      * @param titleKeyword 标题关键词
      * @param currentPage 当前页码
      * @param pageSize 页面大小
-     * @return 章节列表
+     * @return 分页搜索结果
      */
-    List<ContentChapter> searchChaptersByTitle(String titleKeyword, Integer currentPage, Integer pageSize);
+    PageResponse<ChapterResponse> searchChaptersByTitle(String titleKeyword, Integer currentPage, Integer pageSize);
 
     /**
      * 根据内容ID和字数范围查询章节
@@ -113,7 +115,7 @@ public interface ContentChapterService {
      * @param maxWordCount 最大字数
      * @return 章节列表
      */
-    List<ContentChapter> getChaptersByWordCountRange(Long contentId, Integer minWordCount, Integer maxWordCount);
+    List<ChapterResponse> getChaptersByWordCountRange(Long contentId, Integer minWordCount, Integer maxWordCount);
 
     /**
      * 查询字数最多的章节
@@ -121,7 +123,7 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 字数最多的章节
      */
-    ContentChapter getMaxWordCountChapter(Long contentId);
+    ChapterResponse getMaxWordCountChapter(Long contentId);
 
     /**
      * 查询指定内容的最新章节
@@ -129,16 +131,16 @@ public interface ContentChapterService {
      * @param contentId 内容ID
      * @return 最新章节
      */
-    ContentChapter getLatestChapterByContentId(Long contentId);
+    ChapterResponse getLatestChapterByContentId(Long contentId);
 
     /**
      * 查询最新更新的章节
      * 
      * @param currentPage 当前页码
      * @param pageSize 页面大小
-     * @return 章节列表
+     * @return 分页最新章节列表
      */
-    List<ContentChapter> getLatestChapters(Integer currentPage, Integer pageSize);
+    PageResponse<ChapterResponse> getLatestChapters(Integer currentPage, Integer pageSize);
 
     // =================== 统计功能 ===================
 

@@ -12,97 +12,108 @@
         publish_time, create_time, update_time
     </sql>
 
-    <!-- 根据作者ID查询内容列表 -->
+    <!-- 根据作者ID查询内容列表 - 使用复合索引 idx_author_status_publish -->
     <select id="selectByAuthorId" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE author_id = #{authorId}
         AND status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY publish_time DESC
+        <!-- 使用索引: idx_author_status_publish (author_id, status, publish_time DESC) -->
     </select>
 
-    <!-- 根据分类ID查询内容列表 -->
+    <!-- 根据分类ID查询内容列表 - 使用复合索引 idx_category_status_publish -->
     <select id="selectByCategoryId" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE category_id = #{categoryId}
         AND status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY publish_time DESC
+        <!-- 使用索引: idx_category_status_publish (category_id, status, publish_time DESC) -->
     </select>
 
-    <!-- 根据内容类型查询内容列表 -->
+    <!-- 根据内容类型查询内容列表 - 使用复合索引 idx_type_status_publish -->
     <select id="selectByContentType" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE content_type = #{contentType}
         AND status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY publish_time DESC
+        <!-- 使用索引: idx_type_status_publish (content_type, status, publish_time DESC) -->
     </select>
 
-    <!-- 根据状态查询内容列表 -->
+    <!-- 根据状态查询内容列表 - 使用复合索引 idx_content_status_publish -->
     <select id="selectByStatus" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = #{status}
         ORDER BY create_time DESC
+        <!-- 使用索引: idx_content_status_publish (status, review_status, publish_time DESC) -->
     </select>
 
-    <!-- 根据审核状态查询内容列表 -->
+    <!-- 根据审核状态查询内容列表 - 使用复合索引 idx_review_status -->
     <select id="selectByReviewStatus" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE review_status = #{reviewStatus}
+        AND status = 'PUBLISHED'
         ORDER BY create_time DESC
+        <!-- 使用索引: idx_review_status (review_status, status) -->
     </select>
 
-    <!-- 分页查询已发布且审核通过的内容 -->
+    <!-- 分页查询已发布且审核通过的内容 - 使用复合索引 idx_content_status_publish -->
     <select id="selectPublishedContent" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY publish_time DESC
         LIMIT #{offset}, #{limit}
+        <!-- 使用索引: idx_content_status_publish (status, review_status, publish_time DESC) -->
     </select>
 
-    <!-- 根据标题模糊搜索内容 -->
+    <!-- 根据标题模糊搜索内容 - 使用函数索引 idx_title_search -->
     <select id="searchByTitle" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
-        WHERE title LIKE CONCAT('%', #{title}, '%')
+        WHERE LOWER(title) LIKE CONCAT('%', LOWER(#{title}), '%')
         AND status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY view_count DESC, publish_time DESC
         LIMIT #{offset}, #{limit}
+        <!-- 使用索引: idx_title_search ((LOWER(title))) + idx_hot_content (view_count DESC, like_count DESC, publish_time DESC) -->
     </select>
 
-    <!-- 根据标签搜索内容 -->
+    <!-- 根据标签搜索内容 - 使用函数索引 idx_tags_search -->
     <select id="searchByTags" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
-        WHERE tags LIKE CONCAT('%', #{tags}, '%')
+        WHERE JSON_EXTRACT(tags, '$') LIKE CONCAT('%', #{tags}, '%')
         AND status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY view_count DESC, publish_time DESC
         LIMIT #{offset}, #{limit}
+        <!-- 使用索引: idx_tags_search ((JSON_EXTRACT(tags, '$'))) + idx_hot_content (view_count DESC, like_count DESC, publish_time DESC) -->
     </select>
 
-    <!-- 查询热门内容（按查看数排序） -->
+    <!-- 查询热门内容（按查看数排序） - 使用复合索引 idx_hot_content -->
     <select id="selectHotContent" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
-        ORDER BY view_count DESC, like_count DESC
+        ORDER BY view_count DESC, like_count DESC, publish_time DESC
         LIMIT #{limit}
+        <!-- 使用索引: idx_hot_content (view_count DESC, like_count DESC, publish_time DESC) -->
     </select>
 
-    <!-- 查询最新内容（按发布时间排序） -->
+    <!-- 查询最新内容（按发布时间排序） - 使用复合索引 idx_content_status_publish -->
     <select id="selectLatestContent" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
         ORDER BY publish_time DESC
         LIMIT #{limit}
+        <!-- 使用索引: idx_content_status_publish (status, review_status, publish_time DESC) -->
     </select>
 
-    <!-- 查询高评分内容 -->
+    <!-- 查询高评分内容 - 使用复合索引 idx_score_stats -->
     <select id="selectTopRatedContent" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
@@ -110,20 +121,23 @@
         AND score_count > 0 AND (score_total / score_count) >= #{minScore}
         ORDER BY (score_total / score_count) DESC, score_count DESC
         LIMIT #{limit}
+        <!-- 使用索引: idx_score_stats (score_count DESC, score_total DESC) -->
     </select>
 
-    <!-- 更新查看数 -->
+    <!-- 更新查看数 - 使用复合索引 idx_hot_content -->
     <update id="updateViewCount">
         UPDATE t_content
         SET view_count = view_count + #{increment}
         WHERE id = #{id}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
-    <!-- 更新点赞数 -->
+    <!-- 更新点赞数 - 使用复合索引 idx_hot_content -->
     <update id="updateLikeCount">
         UPDATE t_content
         SET like_count = like_count + #{increment}
         WHERE id = #{id}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
     <!-- 更新评论数 -->
@@ -131,6 +145,7 @@
         UPDATE t_content
         SET comment_count = comment_count + #{increment}
         WHERE id = #{id}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
     <!-- 更新收藏数 -->
@@ -138,16 +153,18 @@
         UPDATE t_content
         SET favorite_count = favorite_count + #{increment}
         WHERE id = #{id}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
-    <!-- 更新评分统计 -->
+    <!-- 更新评分统计 - 使用复合索引 idx_score_stats -->
     <update id="updateScoreStats">
         UPDATE t_content
         SET score_count = #{scoreCount}, score_total = #{scoreTotal}
         WHERE id = #{id}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
-    <!-- 批量更新内容状态 -->
+    <!-- 批量更新内容状态 - 使用复合索引 idx_content_status_publish -->
     <update id="batchUpdateStatus">
         UPDATE t_content
         SET status = #{status}
@@ -155,72 +172,183 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+        <!-- 使用主键索引进行批量更新 -->
     </update>
 
-    <!-- 批量更新审核状态 -->
-    <update id="batchUpdateReviewStatus">
+
+
+    <!-- 增加浏览量 - 使用复合索引 idx_hot_content -->
+    <update id="increaseViewCount">
         UPDATE t_content
-        SET review_status = #{reviewStatus}
-        WHERE id IN
-        <foreach collection="ids" item="id" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+        SET view_count = view_count + #{increment}
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
     </update>
 
-    <!-- 统计内容总数 -->
-    <select id="countTotal" resultType="java.lang.Long">
-        SELECT COUNT(*)
-        FROM t_content
-    </select>
+    <!-- 增加点赞数 - 使用复合索引 idx_hot_content -->
+    <update id="increaseLikeCount">
+        UPDATE t_content
+        SET like_count = like_count + #{increment}
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
 
-    <!-- 根据条件统计内容数量 -->
-    <select id="countByCondition" resultType="java.lang.Long">
-        SELECT COUNT(*)
+    <!-- 增加评论数 -->
+    <update id="increaseCommentCount">
+        UPDATE t_content
+        SET comment_count = comment_count + #{increment}
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 增加收藏数 -->
+    <update id="increaseFavoriteCount">
+        UPDATE t_content
+        SET favorite_count = favorite_count + #{increment}
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 减少浏览量 -->
+    <update id="decreaseViewCount">
+        UPDATE t_content
+        SET view_count = GREATEST(view_count - #{decrement}, 0)
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 减少点赞数 -->
+    <update id="decreaseLikeCount">
+        UPDATE t_content
+        SET like_count = GREATEST(like_count - #{decrement}, 0)
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 减少评论数 -->
+    <update id="decreaseCommentCount">
+        UPDATE t_content
+        SET comment_count = GREATEST(comment_count - #{decrement}, 0)
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 减少收藏数 -->
+    <update id="decreaseFavoriteCount">
+        UPDATE t_content
+        SET favorite_count = GREATEST(favorite_count - #{decrement}, 0)
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 移除评分 -->
+    <update id="removeScore">
+        UPDATE t_content
+        SET score_count = GREATEST(score_count - 1, 0),
+            score_total = GREATEST(score_total - #{score}, 0)
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+    <!-- 添加评分 - 使用复合索引 idx_score_stats -->
+    <update id="addScore">
+        UPDATE t_content
+        SET score_count = score_count + 1, score_total = score_total + #{score}
+        WHERE id = #{contentId}
+        <!-- 使用主键索引，无需额外索引 -->
+    </update>
+
+
+
+    <!-- 更新作者信息 -->
+    <update id="updateAuthorInfo">
+        UPDATE t_content
+        SET author_nickname = #{nickname}, author_avatar = #{avatar}
+        WHERE author_id = #{authorId}
+        <!-- 使用索引: idx_author_status_publish (author_id, status, publish_time DESC) -->
+    </update>
+
+    <!-- 更新分类信息 -->
+    <update id="updateCategoryInfo">
+        UPDATE t_content
+        SET category_name = #{categoryName}
+        WHERE category_id = #{categoryId}
+        <!-- 使用索引: idx_category_status_publish (category_id, status, publish_time DESC) -->
+    </update>
+
+    <!-- 推荐内容 - 使用复合索引优化 -->
+    <select id="findRecommendedContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
         FROM t_content
-        WHERE 1=1
-        <if test="authorId != null">
-            AND author_id = #{authorId}
-        </if>
-        <if test="categoryId != null">
-            AND category_id = #{categoryId}
-        </if>
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
         <if test="contentType != null and contentType != ''">
             AND content_type = #{contentType}
         </if>
+        <if test="excludeAuthorId != null">
+            AND author_id != #{excludeAuthorId}
+        </if>
+        ORDER BY view_count DESC, like_count DESC, publish_time DESC
+        <!-- 使用索引: idx_hot_content (view_count DESC, like_count DESC, publish_time DESC) -->
+    </select>
+
+    <!-- 相似内容 - 使用复合索引 idx_category_status_publish -->
+    <select id="findSimilarContents" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE category_id = #{categoryId}
+        AND content_type = #{contentType}
+        AND id != #{contentId}
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        ORDER BY view_count DESC, publish_time DESC
+        LIMIT #{limit}
+        <!-- 使用索引: idx_category_status_publish (category_id, status, publish_time DESC) -->
+    </select>
+
+    <!-- 需要章节管理的内容 -->
+    <select id="findNeedsChapterManagement" resultType="com.gig.collide.content.domain.entity.Content">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content
+        WHERE author_id = #{authorId}
+        AND content_type IN ('NOVEL', 'COMIC')
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        ORDER BY publish_time DESC
+        <!-- 使用索引: idx_author_status_publish (author_id, status, publish_time DESC) -->
+    </select>
+
+    <!-- 按作者统计 - 使用复合索引 idx_author_status_publish -->
+    <select id="countByAuthor" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE author_id = #{authorId}
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
-        <if test="reviewStatus != null and reviewStatus != ''">
-            AND review_status = #{reviewStatus}
-        </if>
+        <!-- 使用索引: idx_author_status_publish (author_id, status, publish_time DESC) -->
     </select>
 
-    <!-- 获取作者的内容统计 -->
-    <select id="getAuthorContentStats" resultType="java.util.Map">
-        SELECT
-            content_type,
-            COUNT(*) as content_count,
-            SUM(view_count) as total_views,
-            SUM(like_count) as total_likes,
-            SUM(favorite_count) as total_favorites,
-            AVG(CASE WHEN score_count > 0 THEN score_total / score_count ELSE 0 END) as avg_score
-        FROM t_content
-        WHERE author_id = #{authorId}
-        GROUP BY content_type
-    </select>
-
-    <!-- 获取分类的内容统计 -->
-    <select id="getCategoryContentStats" resultType="java.util.Map">
-        SELECT
-            content_type,
-            COUNT(*) as content_count,
-            SUM(view_count) as total_views,
-            SUM(like_count) as total_likes,
-            SUM(favorite_count) as total_favorites,
-            AVG(CASE WHEN score_count > 0 THEN score_total / score_count ELSE 0 END) as avg_score
+    <!-- 按分类统计 - 使用复合索引 idx_category_status_publish -->
+    <select id="countByCategory" resultType="java.lang.Long">
+        SELECT COUNT(*)
         FROM t_content
         WHERE category_id = #{categoryId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <!-- 使用索引: idx_category_status_publish (category_id, status, publish_time DESC) -->
+    </select>
+
+    <!-- 内容类型统计 -->
+    <select id="getContentTypeStats" resultType="java.util.Map">
+        SELECT
+            content_type,
+            COUNT(*) as count,
+            SUM(view_count) as total_views,
+            SUM(like_count) as total_likes,
+            SUM(favorite_count) as total_favorites
+        FROM t_content
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
         GROUP BY content_type
+        <!-- 使用索引: idx_type_status_publish (content_type, status, publish_time DESC) -->
     </select>
 
 </mapper>

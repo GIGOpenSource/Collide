@@ -7,39 +7,43 @@
         id, content_id, chapter_num, title, content, word_count, status, create_time, update_time
     </sql>
 
-    <!-- 根据内容ID查询章节列表（按章节号排序） -->
+    <!-- 根据内容ID查询章节列表（按章节号排序） - 使用复合索引 idx_content_status -->
     <select id="selectByContentId" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId}
         ORDER BY chapter_num ASC
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 根据内容ID查询已发布章节列表 -->
+    <!-- 根据内容ID查询已发布章节列表 - 使用复合索引 idx_content_status -->
     <select id="selectPublishedByContentId" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND status = 'PUBLISHED'
         ORDER BY chapter_num ASC
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 根据内容ID分页查询章节 -->
+    <!-- 根据内容ID分页查询章节 - 使用复合索引 idx_content_status -->
     <select id="selectByContentIdPaged" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId}
         ORDER BY chapter_num ASC
         LIMIT #{offset}, #{limit}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 根据内容ID和章节号查询章节 -->
+    <!-- 根据内容ID和章节号查询章节 - 使用复合索引 idx_chapter_range -->
     <select id="selectByContentIdAndChapterNum" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND chapter_num = #{chapterNum}
+        <!-- 使用索引: idx_chapter_range (content_id, chapter_num ASC, status) -->
     </select>
 
-    <!-- 查询内容的下一章节 -->
+    <!-- 查询内容的下一章节 - 使用复合索引 idx_chapter_range -->
     <select id="selectNextChapter" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
@@ -48,43 +52,77 @@
         AND status = 'PUBLISHED'
         ORDER BY chapter_num ASC
         LIMIT 1
+        <!-- 使用索引: idx_chapter_range (content_id, chapter_num ASC, status) -->
     </select>
 
-    <!-- 查询内容的上一章节 -->
+    <!-- 查询内容的上一章节 - 使用复合索引 idx_chapter_range -->
     <select id="selectPreviousChapter" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} 
-        AND chapter_num &lt; #{currentChapterNum}
+        AND chapter_num < #{currentChapterNum}
         AND status = 'PUBLISHED'
         ORDER BY chapter_num DESC
         LIMIT 1
+        <!-- 使用索引: idx_chapter_range (content_id, chapter_num ASC, status) -->
     </select>
 
-    <!-- 查询内容的第一章节 -->
+    <!-- 查询内容的第一章节 - 使用复合索引 idx_content_status -->
     <select id="selectFirstChapter" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND status = 'PUBLISHED'
         ORDER BY chapter_num ASC
         LIMIT 1
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 查询内容的最后一章节 -->
+    <!-- 查询内容的最后一章节 - 使用复合索引 idx_content_status -->
     <select id="selectLastChapter" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND status = 'PUBLISHED'
         ORDER BY chapter_num DESC
         LIMIT 1
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 根据状态查询章节列表 -->
+    <!-- 根据状态查询章节列表 - 使用复合索引 idx_status_time -->
     <select id="selectByStatus" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE status = #{status}
         ORDER BY create_time DESC
+        <!-- 使用索引: idx_status_time (status, create_time DESC) -->
+    </select>
+
+    <!-- 根据章节标题搜索 - 使用函数索引 idx_title_search -->
+    <select id="selectByTitleLike" resultType="com.gig.collide.content.domain.entity.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        WHERE LOWER(title) LIKE CONCAT('%', LOWER(#{titleKeyword}), '%')
+        ORDER BY create_time DESC
+        <!-- 使用索引: idx_title_search ((LOWER(title))) -->
+    </select>
+
+    <!-- 根据内容ID和字数范围查询章节 - 使用复合索引 idx_word_count -->
+    <select id="selectByContentIdAndWordCountRange" resultType="com.gig.collide.content.domain.entity.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        WHERE content_id = #{contentId} 
+        AND word_count BETWEEN #{minWordCount} AND #{maxWordCount}
+        ORDER BY word_count DESC
+        <!-- 使用索引: idx_word_count (content_id, word_count DESC) -->
+    </select>
+
+    <!-- 查询字数最多的章节 - 使用复合索引 idx_word_count -->
+    <select id="selectMaxWordCountChapter" resultType="com.gig.collide.content.domain.entity.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        WHERE content_id = #{contentId}
+        ORDER BY word_count DESC
+        LIMIT 1
+        <!-- 使用索引: idx_word_count (content_id, word_count DESC) -->
     </select>
 
     <!-- 批量更新章节状态 -->
@@ -95,12 +133,14 @@
         <foreach collection="ids" item="id" open="(" separator="," close=")">
             #{id}
         </foreach>
+        <!-- 使用主键索引进行批量更新 -->
     </update>
 
     <!-- 删除内容的所有章节 -->
     <delete id="deleteByContentId">
         DELETE FROM t_content_chapter
         WHERE content_id = #{contentId}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </delete>
 
     <!-- 统计内容的章节总数 -->
@@ -108,6 +148,7 @@
         SELECT COUNT(*)
         FROM t_content_chapter
         WHERE content_id = #{contentId}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
     <!-- 统计内容的已发布章节数 -->
@@ -115,13 +156,15 @@
         SELECT COUNT(*)
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND status = 'PUBLISHED'
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 统计内容的总字数 -->
+    <!-- 统计内容的总字数 - 使用复合索引 idx_word_count -->
     <select id="countTotalWordsByContentId" resultType="java.lang.Long">
         SELECT COALESCE(SUM(word_count), 0)
         FROM t_content_chapter
         WHERE content_id = #{contentId} AND status = 'PUBLISHED'
+        <!-- 使用索引: idx_word_count (content_id, word_count DESC) -->
     </select>
 
     <!-- 获取内容的章节统计信息 -->
@@ -137,15 +180,27 @@
             MAX(create_time) as latest_chapter_time
         FROM t_content_chapter
         WHERE content_id = #{contentId}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
-    <!-- 查询最新更新的章节 -->
+    <!-- 查询最新更新的章节 - 使用复合索引 idx_status_time -->
     <select id="selectLatestChapters" resultType="com.gig.collide.content.domain.entity.ContentChapter">
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE status = 'PUBLISHED'
         ORDER BY create_time DESC
         LIMIT #{limit}
+        <!-- 使用索引: idx_status_time (status, create_time DESC) -->
+    </select>
+
+    <!-- 查询指定内容的最新章节 - 使用复合索引 idx_content_status -->
+    <select id="selectLatestChapterByContentId" resultType="com.gig.collide.content.domain.entity.ContentChapter">
+        SELECT <include refid="baseColumns"/>
+        FROM t_content_chapter
+        WHERE content_id = #{contentId}
+        ORDER BY create_time DESC
+        LIMIT 1
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </select>
 
     <!-- 重新排序章节号（用于章节删除后的重新编号） -->
@@ -158,6 +213,9 @@
             AND t2.create_time &lt; t1.create_time
         )
         WHERE content_id = #{contentId}
+        <!-- 使用索引: idx_content_status (content_id, status, chapter_num ASC) -->
     </update>
+
+
 
 </mapper>

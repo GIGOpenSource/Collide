@@ -5,11 +5,12 @@ import com.gig.collide.content.domain.entity.ContentPayment;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 内容付费配置表数据映射接口
- * 管理内容的付费策略、价格配置和销售统计
+ * 专注于C端必需的付费配置查询功能
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -17,6 +18,8 @@ import java.util.*;
  */
 @Mapper
 public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
+
+    // =================== C端必需的基础查询方法 ===================
 
     /**
      * 根据内容ID查询付费配置
@@ -82,22 +85,34 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     List<ContentPayment> selectByStatus(@Param("status") String status);
 
     /**
-     * 更新销售统计
+     * 查询有折扣的内容配置
      */
-    int updateSalesStats(@Param("contentId") Long contentId,
-                        @Param("salesIncrement") Long salesIncrement,
-                        @Param("revenueIncrement") Long revenueIncrement);
+    List<ContentPayment> selectDiscountedContent(@Param("offset") Long offset,
+                                                @Param("limit") Integer limit);
+
+    // =================== C端必需的推荐方法 ===================
 
     /**
-     * 批量更新状态
+     * 查询热门付费内容（按销量排序）
      */
-    int batchUpdateStatus(@Param("contentIds") List<Long> contentIds,
-                         @Param("status") String status);
+    List<ContentPayment> selectHotPaidContent(@Param("limit") Integer limit);
 
     /**
-     * 删除内容的付费配置
+     * 查询高价值内容（按单价排序）
      */
-    int deleteByContentId(@Param("contentId") Long contentId);
+    List<ContentPayment> selectHighValueContent(@Param("limit") Integer limit);
+
+    /**
+     * 查询性价比内容（按销量/价格比排序）
+     */
+    List<ContentPayment> selectValueForMoneyContent(@Param("limit") Integer limit);
+
+    /**
+     * 查询新上线的付费内容
+     */
+    List<ContentPayment> selectNewPaidContent(@Param("limit") Integer limit);
+
+    // =================== C端必需的统计方法 ===================
 
     /**
      * 统计各付费类型的数量
@@ -125,32 +140,6 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     List<ContentPayment> getRevenueRanking(@Param("limit") Integer limit);
 
     /**
-     * 查询热门付费内容（按销量排序）
-     */
-    List<ContentPayment> selectHotPaidContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询高价值内容（按单价排序）
-     */
-    List<ContentPayment> selectHighValueContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询性价比内容（按销量/价格比排序）
-     */
-    List<ContentPayment> selectValueForMoneyContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询新上线的付费内容
-     */
-    List<ContentPayment> selectNewPaidContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询有折扣的内容配置
-     */
-    List<ContentPayment> selectDiscountedContent(@Param("offset") Long offset,
-                                                @Param("limit") Integer limit);
-
-    /**
      * 获取总销售统计
      */
     Map<String, Object> getTotalSalesStats();
@@ -164,4 +153,24 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
      * 获取付费转化率统计
      */
     Map<String, Object> getConversionStats();
+
+    // =================== C端必需的管理方法 ===================
+
+    /**
+     * 更新销售统计
+     */
+    int updateSalesStats(@Param("contentId") Long contentId,
+                        @Param("salesIncrement") Long salesIncrement,
+                        @Param("revenueIncrement") Long revenueIncrement);
+
+    /**
+     * 批量更新状态
+     */
+    int batchUpdateStatus(@Param("contentIds") List<Long> contentIds,
+                         @Param("status") String status);
+
+    /**
+     * 删除内容的付费配置
+     */
+    int deleteByContentId(@Param("contentId") Long contentId);
 }

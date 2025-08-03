@@ -70,6 +70,38 @@ public interface ContentPaymentFacadeService {
      */
     Result<Map<String, Object>> batchSetPaymentConfig(List<Long> contentIds, ContentPaymentConfigRequest request);
 
+    // =================== C端必需的价格和权限验证方法 ===================
+
+    /**
+     * 获取内容价格信息
+     * 获取指定内容的价格详情
+     *
+     * @param contentId 内容ID
+     * @param userId 用户ID（用于个性化价格）
+     * @return 价格信息
+     */
+    Result<Map<String, Object>> getContentPriceInfo(Long contentId, Long userId);
+
+    /**
+     * 批量获取价格信息
+     * 批量获取多个内容的价格信息
+     *
+     * @param contentIds 内容ID列表
+     * @param userId 用户ID
+     * @return 价格信息映射
+     */
+    Result<Map<Long, Map<String, Object>>> batchGetContentPriceInfo(List<Long> contentIds, Long userId);
+
+    /**
+     * 计算用户实际支付价格
+     * 考虑VIP折扣、活动优惠等因素
+     *
+     * @param userId 用户ID
+     * @param contentId 内容ID
+     * @return 实际价格
+     */
+    Result<Long> calculateActualPrice(Long userId, Long contentId);
+
     // =================== 付费内容查询 ===================
 
     /**
@@ -122,38 +154,6 @@ public interface ContentPaymentFacadeService {
      * @return 折扣内容列表
      */
     Result<PageResponse<PaidContentResponse>> getDiscountedContentList(Integer page, Integer size);
-
-    // =================== 价格策略 ===================
-
-    /**
-     * 获取内容价格信息
-     * 获取指定内容的价格详情
-     *
-     * @param contentId 内容ID
-     * @param userId 用户ID（用于个性化价格）
-     * @return 价格信息
-     */
-    Result<Map<String, Object>> getContentPriceInfo(Long contentId, Long userId);
-
-    /**
-     * 批量获取价格信息
-     * 批量获取多个内容的价格信息
-     *
-     * @param contentIds 内容ID列表
-     * @param userId 用户ID
-     * @return 价格信息映射
-     */
-    Result<Map<Long, Map<String, Object>>> batchGetContentPriceInfo(List<Long> contentIds, Long userId);
-
-    /**
-     * 计算用户实际支付价格
-     * 考虑VIP折扣、活动优惠等因素
-     *
-     * @param userId 用户ID
-     * @param contentId 内容ID
-     * @return 实际价格
-     */
-    Result<Long> calculateActualPrice(Long userId, Long contentId);
 
     // =================== 推荐功能 ===================
 

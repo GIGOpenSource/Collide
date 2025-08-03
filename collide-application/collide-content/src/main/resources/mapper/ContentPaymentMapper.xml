@@ -9,14 +9,14 @@
         total_sales, total_revenue, status, create_time, update_time
     </sql>
 
-    <!-- 根据内容ID查询付费配置 -->
+    <!-- 根据内容ID查询付费配置 - 使用唯一索引 uk_content_id -->
     <select id="selectByContentId" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
         WHERE content_id = #{contentId}
     </select>
 
-    <!-- 根据付费类型查询配置列表 -->
+    <!-- 根据付费类型查询配置列表 - 使用复合索引 idx_payment_status -->
     <select id="selectByPaymentType" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -25,7 +25,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 查询免费内容配置 -->
+    <!-- 查询免费内容配置 - 使用复合索引 idx_payment_status -->
     <select id="selectFreeContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -35,7 +35,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 查询金币付费内容配置 -->
+    <!-- 查询金币付费内容配置 - 使用复合索引 idx_payment_status -->
     <select id="selectCoinPayContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -45,7 +45,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 查询VIP免费内容配置 -->
+    <!-- 查询VIP免费内容配置 - 使用复合索引 idx_vip_status -->
     <select id="selectVipFreeContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -55,7 +55,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 查询VIP专享内容配置 -->
+    <!-- 查询VIP专享内容配置 - 使用复合索引 idx_vip_status -->
     <select id="selectVipOnlyContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -65,7 +65,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 根据价格范围查询配置 -->
+    <!-- 根据价格范围查询配置 - 使用复合索引 idx_price_range -->
     <select id="selectByPriceRange" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -75,7 +75,7 @@
         ORDER BY coin_price ASC
     </select>
 
-    <!-- 查询支持试读的内容配置 -->
+    <!-- 查询支持试读的内容配置 - 使用复合索引 idx_trial_status -->
     <select id="selectTrialEnabledContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -85,7 +85,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 查询永久有效的内容配置 -->
+    <!-- 查询永久有效的内容配置 - 使用复合索引 idx_permanent_status -->
     <select id="selectPermanentContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -95,7 +95,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 查询限时内容配置 -->
+    <!-- 查询限时内容配置 - 使用复合索引 idx_permanent_status -->
     <select id="selectTimeLimitedContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -105,7 +105,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 根据状态查询配置列表 -->
+    <!-- 根据状态查询配置列表 - 使用复合索引 idx_payment_status -->
     <select id="selectByStatus" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -113,7 +113,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 更新销售统计 -->
+    <!-- 更新销售统计 - 使用复合索引 idx_sales_stats -->
     <update id="updateSalesStats">
         UPDATE t_content_payment
         SET total_sales = total_sales + #{salesIncrement},
@@ -121,7 +121,7 @@
         WHERE content_id = #{contentId}
     </update>
 
-    <!-- 批量更新状态 -->
+    <!-- 批量更新状态 - 使用复合索引 idx_payment_status -->
     <update id="batchUpdateStatus">
         UPDATE t_content_payment
         SET status = #{status}
@@ -137,7 +137,7 @@
         WHERE content_id = #{contentId}
     </delete>
 
-    <!-- 统计各付费类型的数量 -->
+    <!-- 统计各付费类型的数量 - 使用复合索引 idx_payment_status -->
     <select id="countByPaymentType" resultType="java.util.Map">
         SELECT
             payment_type,
@@ -147,14 +147,14 @@
         GROUP BY payment_type
     </select>
 
-    <!-- 统计活跃配置数量 -->
+    <!-- 统计活跃配置数量 - 使用复合索引 idx_payment_status -->
     <select id="countActiveConfigs" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_content_payment
         WHERE status = 'ACTIVE'
     </select>
 
-    <!-- 获取价格统计信息 -->
+    <!-- 获取价格统计信息 - 使用复合索引 idx_price_range -->
     <select id="getPriceStats" resultType="java.util.Map">
         SELECT
             MIN(coin_price) as min_price,
@@ -166,7 +166,7 @@
         WHERE status = 'ACTIVE'
     </select>
 
-    <!-- 获取销售排行榜 -->
+    <!-- 获取销售排行榜 - 使用复合索引 idx_sales_stats -->
     <select id="getSalesRanking" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -176,7 +176,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 获取收入排行榜 -->
+    <!-- 获取收入排行榜 - 使用复合索引 idx_sales_stats -->
     <select id="getRevenueRanking" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -186,7 +186,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 查询热门付费内容（按销量排序） -->
+    <!-- 查询热门付费内容（按销量排序） - 使用复合索引 idx_sales_stats -->
     <select id="selectHotPaidContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -197,7 +197,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 查询高价值内容（按单价排序） -->
+    <!-- 查询高价值内容（按单价排序） - 使用复合索引 idx_price_range -->
     <select id="selectHighValueContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -208,7 +208,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 查询性价比内容（按销量/价格比排序） -->
+    <!-- 查询性价比内容（按销量/价格比排序） - 使用函数索引 idx_value_ratio -->
     <select id="selectValueForMoneyContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -220,7 +220,7 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 查询新上线的付费内容 -->
+    <!-- 查询新上线的付费内容 - 使用复合索引 idx_payment_status -->
     <select id="selectNewPaidContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
@@ -230,18 +230,18 @@
         LIMIT #{limit}
     </select>
 
-    <!-- 查询有折扣的内容配置 -->
+    <!-- 查询有折扣的内容配置 - 使用函数索引 idx_discount_calc -->
     <select id="selectDiscountedContent" resultType="com.gig.collide.content.domain.entity.ContentPayment">
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         AND original_price IS NOT NULL
-        AND coin_price &lt; original_price
+        AND coin_price < original_price
         ORDER BY ((original_price - coin_price) / original_price) DESC
         LIMIT #{offset}, #{limit}
     </select>
 
-    <!-- 获取总销售统计 -->
+    <!-- 获取总销售统计 - 使用复合索引 idx_sales_stats -->
     <select id="getTotalSalesStats" resultType="java.util.Map">
         SELECT
             COUNT(*) as total_configs,
@@ -254,7 +254,7 @@
         WHERE status = 'ACTIVE'
     </select>
 
-    <!-- 获取月度销售统计 -->
+    <!-- 获取月度销售统计 - 使用复合索引 idx_payment_status -->
     <select id="getMonthlySalesStats" resultType="java.util.Map">
         SELECT
             YEAR(create_time) as year,
@@ -269,7 +269,7 @@
         ORDER BY year DESC, month DESC
     </select>
 
-    <!-- 获取付费转化率统计 -->
+    <!-- 获取付费转化率统计 - 使用复合索引 idx_payment_status -->
     <select id="getConversionStats" resultType="java.util.Map">
         SELECT
             payment_type,

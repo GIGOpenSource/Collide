@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 内容业务逻辑接口 - 简洁版
- * 基于content-simple.sql的设计，实现核心内容管理业务
+ * 内容服务接口
+ * 提供内容的基础CRUD、查询、统计等功能
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0 (内容付费版)
+ * @since 2024-01-31
  */
 public interface ContentService {
 
@@ -166,6 +166,43 @@ public interface ContentService {
      * @return 高评分内容
      */
     Page<Content> getContentsByScore(Page<Content> page, Double minScore, String contentType);
+
+    // =================== C端必需的基础查询方法 ===================
+
+    /**
+     * 根据内容类型查询内容列表
+     * 
+     * @param contentType 内容类型
+     * @return 内容列表
+     */
+    List<Content> getContentsByContentType(String contentType);
+
+    /**
+     * 根据状态查询内容列表
+     * 
+     * @param status 内容状态
+     * @return 内容列表
+     */
+    List<Content> getContentsByStatus(String status);
+
+    /**
+     * 获取已发布内容列表
+     * 
+     * @param page 页码
+     * @param size 每页大小
+     * @return 已发布内容列表
+     */
+    List<Content> getPublishedContents(Integer page, Integer size);
+
+    /**
+     * 根据标签搜索内容
+     * 
+     * @param tags 标签
+     * @param page 页码
+     * @param size 每页大小
+     * @return 搜索结果
+     */
+    List<Content> searchContentsByTags(String tags, Integer page, Integer size);
 
     // =================== 统计功能 ===================
 

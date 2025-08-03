@@ -5,11 +5,12 @@ import com.gig.collide.content.domain.entity.ContentChapter;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 内容章节表数据映射接口
- * 用于小说、漫画等多章节内容的管理
+ * 专注于C端必需的章节查询功能
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -17,6 +18,8 @@ import java.util.*;
  */
 @Mapper
 public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
+
+    // =================== C端必需的基础查询方法 ===================
 
     /**
      * 根据内容ID查询章节列表（按章节号排序）
@@ -69,19 +72,38 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     List<ContentChapter> selectByStatus(@Param("status") String status);
 
     /**
-     * 批量更新章节状态
+     * 根据章节标题搜索
      */
-    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
+    List<ContentChapter> selectByTitleLike(@Param("titleKeyword") String titleKeyword);
 
     /**
-     * 删除内容的所有章节
+     * 根据内容ID和字数范围查询章节
      */
-    int deleteByContentId(@Param("contentId") Long contentId);
+    List<ContentChapter> selectByContentIdAndWordCountRange(@Param("contentId") Long contentId,
+                                                           @Param("minWordCount") Integer minWordCount,
+                                                           @Param("maxWordCount") Integer maxWordCount);
+
+    /**
+     * 查询字数最多的章节
+     */
+    ContentChapter selectMaxWordCountChapter(@Param("contentId") Long contentId);
+
+    /**
+     * 查询指定内容的最新章节
+     */
+    ContentChapter selectLatestChapterByContentId(@Param("contentId") Long contentId);
+
+    /**
+     * 查询最新更新的章节
+     */
+    List<ContentChapter> selectLatestChapters(@Param("limit") Integer limit);
+
+    // =================== C端必需的统计方法 ===================
 
     /**
      * 统计内容的章节总数
      */
-    Long countByContentId(@Param("contentId") Long contentId, @Param("status") String status);
+    Long countByContentId(@Param("contentId") Long contentId);
 
     /**
      * 统计内容的已发布章节数
@@ -96,136 +118,22 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     /**
      * 获取内容的章节统计信息
      */
-    Object getChapterStats(@Param("contentId") Long contentId);
+    Map<String, Object> getChapterStats(@Param("contentId") Long contentId);
+
+    // =================== C端必需的管理方法 ===================
 
     /**
-     * 查询最新更新的章节
+     * 批量更新章节状态
      */
-    List<ContentChapter> selectLatestChapters(@Param("limit") Integer limit);
+    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
+
+    /**
+     * 删除内容的所有章节
+     */
+    int deleteByContentId(@Param("contentId") Long contentId);
 
     /**
      * 重新排序章节号（用于章节删除后的重新编号）
      */
     int reorderChapterNumbers(@Param("contentId") Long contentId);
-
-    // =================== 补充缺失的方法 ===================
-
-    /**
-     * 分页查询章节
-     */
-    List<ContentChapter> findByContentId(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<ContentChapter> page,
-                                        @Param("contentId") Long contentId,
-                                        @Param("status") String status);
-
-    /**
-     * 查询章节列表
-     */
-    List<ContentChapter> getChaptersByContentId(@Param("contentId") Long contentId,
-                                               @Param("status") String status);
-
-    /**
-     * 查询下一章节
-     */
-    ContentChapter findNextChapter(@Param("contentId") Long contentId,
-                                  @Param("currentChapterNum") Integer currentChapterNum);
-
-    /**
-     * 查询上一章节
-     */
-    ContentChapter findPreviousChapter(@Param("contentId") Long contentId,
-                                      @Param("currentChapterNum") Integer currentChapterNum);
-
-    /**
-     * 按标题搜索章节
-     */
-    List<ContentChapter> searchByTitle(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<ContentChapter> page,
-                                      @Param("contentId") Long contentId,
-                                      @Param("keyword") String keyword,
-                                      @Param("status") String status);
-
-    /**
-     * 发布章节
-     */
-    int publishChapter(@Param("chapterId") Long chapterId);
-
-    /**
-     * 批量发布章节
-     */
-    int batchPublishChapters(@Param("contentId") Long contentId,
-                            @Param("chapterNums") List<Integer> chapterNums);
-
-    /**
-     * 设置为草稿
-     */
-    int setChapterToDraft(@Param("chapterId") Long chapterId);
-
-    /**
-     * 获取最大章节号
-     */
-    Integer getMaxChapterNum(@Param("contentId") Long contentId);
-
-    /**
-     * 检查章节号是否存在
-     */
-    boolean existsByContentIdAndChapterNum(@Param("contentId") Long contentId,
-                                          @Param("chapterNum") Integer chapterNum);
-
-    /**
-     * 向后移动章节
-     */
-    int moveChapterBackward(@Param("contentId") Long contentId,
-                           @Param("fromNum") Integer fromNum,
-                           @Param("toNum") Integer toNum);
-
-    /**
-     * 向前移动章节
-     */
-    int moveChapterForward(@Param("contentId") Long contentId,
-                          @Param("fromNum") Integer fromNum,
-                          @Param("toNum") Integer toNum);
-
-    /**
-     * 查找缺失的章节号
-     */
-    List<Integer> findMissingChapterNums(@Param("contentId") Long contentId,
-                                        @Param("maxNum") Integer maxNum);
-
-    /**
-     * 查找重复的章节号
-     */
-    List<Integer> findDuplicateChapterNums(@Param("contentId") Long contentId);
-
-    /**
-     * 获取总字数
-     */
-    Long getTotalWordCount(@Param("contentId") Long contentId,
-                          @Param("status") String status);
-
-    /**
-     * 获取发布章节统计
-     */
-    Map<String, Object> getPublishedChapterStats(@Param("contentId") Long contentId);
-
-    /**
-     * 批量删除章节
-     */
-    int batchDeleteChapters(@Param("contentId") Long contentId,
-                           @Param("chapterNums") List<Integer> chapterNums);
-
-    /**
-     * 按字数范围查找
-     */
-    List<ContentChapter> findByWordCountRange(@Param("contentId") Long contentId,
-                                             @Param("minWordCount") Integer minWordCount,
-                                             @Param("maxWordCount") Integer maxWordCount);
-
-    /**
-     * 查找草稿章节
-     */
-    List<ContentChapter> findDraftChapters(@Param("contentId") Long contentId);
-
-    /**
-     * 查找已发布章节
-     */
-    List<ContentChapter> findPublishedChapters(@Param("contentId") Long contentId);
 }

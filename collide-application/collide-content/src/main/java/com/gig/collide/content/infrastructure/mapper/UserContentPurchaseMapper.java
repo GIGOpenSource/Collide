@@ -6,11 +6,12 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 用户内容购买记录表数据映射接口
- * 支持购买权限验证、购买历史查询和统计分析
+ * 专注于C端必需的购买记录查询功能
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -18,6 +19,8 @@ import java.util.*;
  */
 @Mapper
 public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchase> {
+
+    // =================== C端必需的基础查询方法 ===================
 
     /**
      * 检查用户是否已购买指定内容
@@ -83,21 +86,40 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
     List<UserContentPurchase> selectExpiredPurchases();
 
     /**
-     * 更新访问统计
+     * 查询高消费金额的购买记录
      */
-    int updateAccessStats(@Param("id") Long id,
-                         @Param("accessCount") Integer accessCount,
-                         @Param("lastAccessTime") LocalDateTime lastAccessTime);
+    List<UserContentPurchase> selectHighValuePurchases(@Param("minAmount") Long minAmount,
+                                                      @Param("limit") Integer limit);
 
     /**
-     * 批量更新购买记录状态
+     * 查询用户的高价值购买记录
      */
-    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
+    List<UserContentPurchase> selectUserHighValuePurchases(@Param("userId") Long userId,
+                                                          @Param("minAmount") Long minAmount);
 
     /**
-     * 批量处理过期记录
+     * 查询访问次数最多的购买记录
      */
-    int batchExpirePurchases(@Param("beforeTime") LocalDateTime beforeTime);
+    List<UserContentPurchase> selectMostAccessedPurchases(@Param("limit") Integer limit);
+
+    /**
+     * 查询用户最近访问的购买记录
+     */
+    List<UserContentPurchase> selectUserRecentAccessedPurchases(@Param("userId") Long userId,
+                                                               @Param("limit") Integer limit);
+
+    /**
+     * 查询用户最近购买的内容
+     */
+    List<UserContentPurchase> selectRecentPurchases(@Param("userId") Long userId,
+                                                   @Param("limit") Integer limit);
+
+    /**
+     * 查询用户购买但未访问的内容
+     */
+    List<UserContentPurchase> selectUnreadPurchases(@Param("userId") Long userId);
+
+    // =================== C端必需的统计方法 ===================
 
     /**
      * 统计用户的购买总数
@@ -148,16 +170,29 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
      * 获取日期范围内的购买统计
      */
     List<Map<String, Object>> getPurchaseStatsByDateRange(@Param("startDate") LocalDateTime startDate,
-                                            @Param("endDate") LocalDateTime endDate);
+                                                          @Param("endDate") LocalDateTime endDate);
 
     /**
-     * 查询用户最近购买的内容
+     * 获取折扣统计信息
      */
-    List<UserContentPurchase> selectRecentPurchases(@Param("userId") Long userId,
-                                                   @Param("limit") Integer limit);
+    Map<String, Object> getDiscountStats(@Param("userId") Long userId);
+
+    // =================== C端必需的管理方法 ===================
 
     /**
-     * 查询用户购买但未访问的内容
+     * 更新访问统计
      */
-    List<UserContentPurchase> selectUnreadPurchases(@Param("userId") Long userId);
+    int updateAccessStats(@Param("id") Long id,
+                         @Param("accessCount") Integer accessCount,
+                         @Param("lastAccessTime") LocalDateTime lastAccessTime);
+
+    /**
+     * 批量更新购买记录状态
+     */
+    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
+
+    /**
+     * 批量处理过期记录
+     */
+    int batchExpirePurchases(@Param("beforeTime") LocalDateTime beforeTime);
 }

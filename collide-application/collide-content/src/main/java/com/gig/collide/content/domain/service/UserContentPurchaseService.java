@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 用户内容购买记录业务逻辑接口
- * 管理用户的内容购买、权限验证和统计分析
- *
+ * 用户内容购买服务接口
+ * 管理用户的内容购买、权限验证和购买历史
+ * 
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
  * @since 2024-01-31
@@ -107,6 +107,51 @@ public interface UserContentPurchaseService {
      * 查询用户购买但未访问的内容
      */
     List<UserContentPurchase> getUserUnreadPurchases(Long userId);
+
+    // =================== C端必需的购买记录查询方法 ===================
+
+    /**
+     * 查询高消费金额的购买记录
+     * 
+     * @param minAmount 最小金额
+     * @param limit 数量限制
+     * @return 高价值购买记录列表
+     */
+    List<UserContentPurchase> getHighValuePurchases(Long minAmount, Integer limit);
+
+    /**
+     * 查询用户的高价值购买记录
+     * 
+     * @param userId 用户ID
+     * @param minAmount 最小金额
+     * @return 用户高价值购买记录列表
+     */
+    List<UserContentPurchase> getUserHighValuePurchases(Long userId, Long minAmount);
+
+    /**
+     * 查询访问次数最多的购买记录
+     * 
+     * @param limit 数量限制
+     * @return 访问次数最多的购买记录列表
+     */
+    List<UserContentPurchase> getMostAccessedPurchases(Integer limit);
+
+    /**
+     * 查询用户最近访问的购买记录
+     * 
+     * @param userId 用户ID
+     * @param limit 数量限制
+     * @return 用户最近访问的购买记录列表
+     */
+    List<UserContentPurchase> getUserRecentAccessedPurchases(Long userId, Integer limit);
+
+    /**
+     * 获取折扣统计信息
+     * 
+     * @param userId 用户ID
+     * @return 折扣统计信息
+     */
+    Map<String, Object> getDiscountStats(Long userId);
 
     // =================== 访问记录管理 ===================
 

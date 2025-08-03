@@ -9,7 +9,7 @@ import java.util.*;
 
 /**
  * 内容表数据映射接口
- * 基于无连表设计原则，避免复杂JOIN查询
+ * 专注于C端必需的内容查询功能
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -17,6 +17,8 @@ import java.util.*;
  */
 @Mapper
 public interface ContentMapper extends BaseMapper<Content> {
+
+    // =================== C端必需的基础查询方法 ===================
 
     /**
      * 根据作者ID查询内容列表
@@ -79,6 +81,62 @@ public interface ContentMapper extends BaseMapper<Content> {
     List<Content> selectTopRatedContent(@Param("minScore") Double minScore,
                                        @Param("limit") Integer limit);
 
+    // =================== C端必需的统计增加方法 ===================
+
+    /**
+     * 增加浏览量
+     */
+    int increaseViewCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+
+    /**
+     * 增加点赞数
+     */
+    int increaseLikeCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+
+    /**
+     * 增加评论数
+     */
+    int increaseCommentCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+
+    /**
+     * 增加收藏数
+     */
+    int increaseFavoriteCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+
+    /**
+     * 添加评分
+     */
+    int addScore(@Param("contentId") Long contentId, @Param("score") Integer score);
+
+    // =================== C端必需的统计减少方法 ===================
+
+    /**
+     * 减少浏览量
+     */
+    int decreaseViewCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
+
+    /**
+     * 减少点赞数
+     */
+    int decreaseLikeCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
+
+    /**
+     * 减少评论数
+     */
+    int decreaseCommentCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
+
+    /**
+     * 减少收藏数
+     */
+    int decreaseFavoriteCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
+
+    /**
+     * 移除评分
+     */
+    int removeScore(@Param("contentId") Long contentId, @Param("score") Integer score);
+
+    // =================== C端必需的统计更新方法 ===================
+
     /**
      * 更新查看数
      */
@@ -106,136 +164,7 @@ public interface ContentMapper extends BaseMapper<Content> {
                         @Param("scoreCount") Long scoreCount,
                         @Param("scoreTotal") Long scoreTotal);
 
-    /**
-     * 批量更新内容状态
-     */
-    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
-
-    /**
-     * 批量更新审核状态
-     */
-    int batchUpdateReviewStatus(@Param("ids") List<Long> ids, @Param("reviewStatus") String reviewStatus);
-
-    /**
-     * 统计内容总数
-     */
-    Long countTotal();
-
-    /**
-     * 根据条件统计内容数量
-     */
-    Long countByCondition(@Param("authorId") Long authorId,
-                         @Param("categoryId") Long categoryId,
-                         @Param("contentType") String contentType,
-                         @Param("status") String status,
-                         @Param("reviewStatus") String reviewStatus);
-
-    /**
-     * 获取作者的内容统计
-     */
-    List<Object> getAuthorContentStats(@Param("authorId") Long authorId);
-
-    /**
-     * 获取分类的内容统计
-     */
-    List<Object> getCategoryContentStats(@Param("categoryId") Long categoryId);
-
-    // =================== 补充缺失的方法 ===================
-
-    /**
-     * 条件查询
-     */
-    List<Content> findWithConditions(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                    @Param("title") String title,
-                                    @Param("contentType") String contentType,
-                                    @Param("authorId") Long authorId,
-                                    @Param("categoryId") Long categoryId,
-                                    @Param("status") String status,
-                                    @Param("reviewStatus") String reviewStatus,
-                                    @Param("param1") Object param1,
-                                    @Param("param2") Object param2,
-                                    @Param("param3") Object param3,
-                                    @Param("param4") Object param4,
-                                    @Param("param5") Object param5,
-                                    @Param("orderBy") String orderBy,
-                                    @Param("orderDirection") String orderDirection);
-
-    /**
-     * 按作者查询
-     */
-    List<Content> findByAuthor(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                              @Param("authorId") Long authorId,
-                              @Param("contentType") String contentType,
-                              @Param("status") String status);
-
-    /**
-     * 按分类查询
-     */
-    List<Content> findByCategory(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                @Param("categoryId") Long categoryId,
-                                @Param("contentType") String contentType,
-                                @Param("status") String status);
-
-    /**
-     * 搜索内容
-     */
-    List<Content> searchContents(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                @Param("keyword") String keyword,
-                                @Param("contentType") String contentType,
-                                @Param("status") String status);
-
-    /**
-     * 热门内容
-     */
-    List<Content> findPopularContents(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                     @Param("contentType") String contentType,
-                                     @Param("timeRange") Integer timeRange,
-                                     @Param("param1") Object param1,
-                                     @Param("param2") Object param2);
-
-    /**
-     * 最新内容
-     */
-    List<Content> findLatestContents(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                    @Param("contentType") String contentType,
-                                    @Param("status") String status);
-
-    /**
-     * 按评分查询
-     */
-    List<Content> findByScore(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                             @Param("minScore") Double minScore,
-                             @Param("contentType") String contentType);
-
-    /**
-     * 增加浏览量
-     */
-    int increaseViewCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
-
-    /**
-     * 增加点赞数
-     */
-    int increaseLikeCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
-
-    /**
-     * 增加评论数
-     */
-    int increaseCommentCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
-
-    /**
-     * 增加收藏数
-     */
-    int increaseFavoriteCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
-
-    /**
-     * 添加评分
-     */
-    int addScore(@Param("contentId") Long contentId, @Param("score") Integer score);
-
-    /**
-     * 获取内容统计
-     */
-    Map<String, Object> getContentStatistics(@Param("contentId") Long contentId);
+    // =================== C端必需的数据同步方法 ===================
 
     /**
      * 更新作者信息
@@ -249,6 +178,8 @@ public interface ContentMapper extends BaseMapper<Content> {
      */
     int updateCategoryInfo(@Param("categoryId") Long categoryId,
                           @Param("categoryName") String categoryName);
+
+    // =================== C端必需的高级查询方法 ===================
 
     /**
      * 推荐内容
