@@ -100,35 +100,38 @@ public class AuthServiceImpl implements AuthService {
     public Result<Object> loginOrRegister(LoginOrRegisterParam loginParam) {
         log.info("登录或注册请求，用户名：{}", loginParam.getUsername());
         
-        // 先尝试登录
-        Result<UserResponse> loginResult = userFacadeService.login(loginParam.getUsername(), loginParam.getPassword());
-        
-        if (loginResult.getSuccess() && loginResult.getData() != null) {
-            // 登录成功
-            UserResponse userInfo = loginResult.getData();
-            String token = createUserSession(userInfo);
-            
-            log.info("用户登录成功，用户ID：{}", userInfo.getId());
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("user", userInfo);
-            response.put("token", token);
-            response.put("message", "登录成功");
-            response.put("isNewUser", false);
-            
-            return createSuccessResult(response);
-        }
-        
-        // 登录失败，检查是否用户不存在，如果是则自动注册（使用高性能版本）
+        // 第一步：先检查用户是否存在（使用高性能版本）
         Result<UserResponse> existingUser = userFacadeService.getUserByUsernameBasic(loginParam.getUsername());
         
-        if (!existingUser.getSuccess() || existingUser.getData() == null) {
-            // 用户不存在，自动注册
-            return performAutoRegisterAndLogin(loginParam);
+        if (existingUser.getSuccess() && existingUser.getData() != null) {
+            // 用户存在，执行登录逻辑
+            log.info("用户{}已存在，执行登录", loginParam.getUsername());
+            
+            Result<UserResponse> loginResult = userFacadeService.login(loginParam.getUsername(), loginParam.getPassword());
+            
+            if (loginResult.getSuccess() && loginResult.getData() != null) {
+                // 登录成功
+                UserResponse userInfo = loginResult.getData();
+                String token = createUserSession(userInfo);
+                
+                log.info("用户登录成功，用户ID：{}", userInfo.getId());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("user", userInfo);
+                response.put("token", token);
+                response.put("message", "登录成功");
+                response.put("isNewUser", false);
+                
+                return createSuccessResult(response);
+            } else {
+                // 用户存在但密码错误
+                log.warn("用户{}密码错误：{}", loginParam.getUsername(), loginResult.getMessage());
+                return createErrorResult("PASSWORD_ERROR", "密码错误");
+            }
         } else {
-            // 用户存在但密码错误
-            log.warn("用户{}密码错误", loginParam.getUsername());
-            return createErrorResult("PASSWORD_ERROR", "密码错误");
+            // 用户不存在，执行注册逻辑
+            log.info("用户{}不存在，执行自动注册", loginParam.getUsername());
+            return performAutoRegisterAndLogin(loginParam);
         }
     }
 
@@ -256,6 +259,40 @@ public class AuthServiceImpl implements AuthService {
         
         if (!registerResult.getSuccess()) {
             log.error("用户自动注册失败：{}", registerResult.getMessage());
+            
+            // 检查是否是因为用户已存在导致的注册失败（并发情况）
+            if (registerResult.getMessage() != null && 
+                (registerResult.getMessage().contains("已存在") || 
+                 registerResult.getMessage().contains("duplicate") ||
+                 registerResult.getCode() != null && registerResult.getCode().equals("USER_ALREADY_EXISTS"))) {
+                
+                log.info("并发情况下用户{}已被注册，尝试登录", loginParam.getUsername());
+                
+                // 用户已存在，尝试登录
+                Result<UserResponse> loginResult = userFacadeService.login(loginParam.getUsername(), loginParam.getPassword());
+                
+                if (loginResult.getSuccess() && loginResult.getData() != null) {
+                    // 登录成功
+                    UserResponse userInfo = loginResult.getData();
+                    String token = createUserSession(userInfo);
+                    
+                    log.info("并发情况下用户登录成功，用户ID：{}", userInfo.getId());
+                    
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("user", userInfo);
+                    response.put("token", token);
+                    response.put("message", "登录成功");
+                    response.put("isNewUser", false);
+                    
+                    return createSuccessResult(response);
+                } else {
+                    // 用户存在但密码错误
+                    log.warn("并发情况下用户{}密码错误", loginParam.getUsername());
+                    return createErrorResult("PASSWORD_ERROR", "密码错误");
+                }
+            }
+            
+            // 其他注册失败原因
             return createErrorResult("AUTO_REGISTER_FAILED", registerResult.getMessage());
         }
 
