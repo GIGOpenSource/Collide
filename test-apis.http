@@ -1,0 +1,147 @@
+### Collide 新架构 API 测试文件
+### 使用 VS Code REST Client 扩展或 IntelliJ HTTP Client 测试
+
+### ========================================
+### 社交服务 API 测试
+### ========================================
+
+### 1. 用户注册
+POST http://localhost:8081/api/social/users/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "nickname": "测试用户",
+  "email": "test@example.com",
+  "password": "123456"
+}
+
+### 2. 用户登录
+POST http://localhost:8081/api/social/users/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "123456"
+}
+
+### 3. 获取用户信息
+GET http://localhost:8081/api/social/users/1
+
+### 4. 发布内容
+POST http://localhost:8081/api/social/contents
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "title": "我的第一条动态",
+  "content": "这是一条测试动态，用于验证新架构的功能！",
+  "contentType": "post",
+  "tags": ["测试", "新架构"]
+}
+
+### 5. 获取内容详情
+GET http://localhost:8081/api/social/contents/1?currentUserId=1
+
+### 6. 关注用户
+POST http://localhost:8081/api/social/follow
+Content-Type: application/json
+
+{
+  "followerId": 1,
+  "followingId": 2
+}
+
+### 7. 点赞内容
+POST http://localhost:8081/api/social/like
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "contentId": 1
+}
+
+### ========================================
+### 商务服务 API 测试
+### ========================================
+
+### 1. 创建金币充值包
+POST http://localhost:8082/api/commerce/goods
+Content-Type: application/json
+
+{
+  "name": "100金币充值包",
+  "description": "充值100金币到您的账户",
+  "goodsType": "coin",
+  "price": 10.00,
+  "coinAmount": 100,
+  "categoryId": 1,
+  "sellerId": 1,
+  "coverUrl": "/images/coin_100.png"
+}
+
+### 2. 创建付费内容商品
+POST http://localhost:8082/api/commerce/goods
+Content-Type: application/json
+
+{
+  "name": "Java高级教程",
+  "description": "深入学习Java高级特性",
+  "goodsType": "content",
+  "coinPrice": 50,
+  "contentId": 1,
+  "categoryId": 2,
+  "sellerId": 1,
+  "coverUrl": "/images/java_tutorial.png"
+}
+
+### 3. 获取商品列表
+GET http://localhost:8082/api/commerce/goods?goodsType=coin&page=1&size=10
+
+### 4. 获取商品详情
+GET http://localhost:8082/api/commerce/goods/1?userId=1
+
+### 5. 获取用户钱包
+GET http://localhost:8082/api/commerce/users/1/wallet
+
+### 6. 创建订单
+POST http://localhost:8082/api/commerce/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "goodsId": 1,
+  "quantity": 1
+}
+
+### 7. 支付订单
+POST http://localhost:8082/api/commerce/orders/1/pay
+Content-Type: application/json
+
+{
+  "paymentMethod": "alipay"
+}
+
+### 8. 一键购买
+POST http://localhost:8082/api/commerce/quick-purchase
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "goodsId": 2,
+  "quantity": 1,
+  "paymentMethod": "coin"
+}
+
+### 9. 获取购买页面数据
+GET http://localhost:8082/api/commerce/goods/1/purchase?userId=1
+
+### ========================================
+### 健康检查
+### ========================================
+
+### 社交服务健康检查
+GET http://localhost:8081/actuator/health
+
+### 商务服务健康检查
+GET http://localhost:8082/actuator/health
