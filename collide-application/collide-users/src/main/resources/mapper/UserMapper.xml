@@ -13,10 +13,24 @@
         FROM t_user
         WHERE id = #{id} AND status != 'deleted'
     </select>
+    
+    <!-- 根据ID查询用户（基础信息，性能优化版） -->
+    <select id="findByIdBasic" parameterType="long" resultType="com.gig.collide.users.domain.entity.User">
+        SELECT id, username, nickname, avatar, role, status, invite_code, inviter_id, invited_count, create_time, update_time
+        FROM t_user
+        WHERE id = #{id} AND status != 'deleted'
+    </select>
 
     <!-- 根据用户名查询用户核心信息 -->
     <select id="findByUsername" parameterType="string" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
+        FROM t_user
+        WHERE username = #{username} AND status != 'deleted'
+    </select>
+    
+    <!-- 根据用户名查询用户（仅登录必要字段，性能优化版） -->
+    <select id="findByUsernameForLogin" parameterType="string" resultType="com.gig.collide.users.domain.entity.User">
+        SELECT id, username, password_hash, role, status, last_login_time, login_count
         FROM t_user
         WHERE username = #{username} AND status != 'deleted'
     </select>
@@ -156,6 +170,14 @@
         SET password_hash = #{passwordHash}, update_time = NOW()
         WHERE id = #{userId}
     </update>
+    
+    <!-- 用户登录验证（性能优化版） -->
+    <select id="loginAndUpdateTime" parameterType="map" resultType="com.gig.collide.users.domain.entity.User">
+        SELECT id, username, nickname, avatar, role, status, invite_code, inviter_id, invited_count,
+               last_login_time, login_count, create_time, update_time
+        FROM t_user
+        WHERE username = #{username} AND password_hash = #{passwordHash} AND status != 'deleted'
+    </select>
 
     <!-- 获取用户密码哈希值（用于验证） -->
     <select id="getPasswordHash" parameterType="long" resultType="string">

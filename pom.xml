@@ -32,9 +32,7 @@
         <module>collide-common</module>
         <module>collide-gateway</module>
         <module>collide-auth</module>
-<!--        <module>collide-admin</module>-->
         <module>collide-application</module>
-        <module>collide-application/collide-task</module>
     </modules>
 
     <dependencyManagement>
