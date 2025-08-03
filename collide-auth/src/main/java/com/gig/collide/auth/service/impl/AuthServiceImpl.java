@@ -98,7 +98,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public Result<Object> loginOrRegister(LoginOrRegisterParam loginParam) {
-        log.info("登录或注册请求，用户名：{}", loginParam.getUsername());
+        return loginOrRegisterWithRetry(loginParam, 0);
+    }
+
+    /**
+     * 登录或注册（带重试机制）
+     */
+    private Result<Object> loginOrRegisterWithRetry(LoginOrRegisterParam loginParam, int retryCount) {
+        final int MAX_RETRY = 2; // 最大重试次数，避免无限递归
+        
+        log.info("登录或注册请求，用户名：{}，重试次数：{}", loginParam.getUsername(), retryCount);
+        
+        if (retryCount > MAX_RETRY) {
+            log.error("登录或注册重试次数超限，用户名：{}", loginParam.getUsername());
+            return createErrorResult("MAX_RETRY_EXCEEDED", "操作失败，请稍后重试");
+        }
         
         // 第一步：检查用户是否存在（复用register的逻辑）
         Result<UserResponse> existingUser = userFacadeService.getUserByUsernameBasic(loginParam.getUsername());
@@ -130,33 +144,28 @@ public class AuthServiceImpl implements AuthService {
             // 用户不存在，执行注册逻辑（复用register的逻辑）
             log.info("用户{}不存在，执行注册", loginParam.getUsername());
             
-            // 构建注册请求
-            UserCreateRequest userCreateRequest = new UserCreateRequest();
-            userCreateRequest.setUsername(loginParam.getUsername());
-            userCreateRequest.setPassword(loginParam.getPassword());
-            userCreateRequest.setNickname(loginParam.getUsername());
-            userCreateRequest.setRole("user");
-            userCreateRequest.setInviteCode(loginParam.getInviteCode());
+            return performRegisterAndLogin(loginParam, retryCount);
+        }
+    }
+    
+    /**
+     * 执行注册和登录
+     */
+    private Result<Object> performRegisterAndLogin(LoginOrRegisterParam loginParam, int retryCount) {
+        // 构建注册请求
+        UserCreateRequest userCreateRequest = new UserCreateRequest();
+        userCreateRequest.setUsername(loginParam.getUsername());
+        userCreateRequest.setPassword(loginParam.getPassword());
+        userCreateRequest.setNickname(loginParam.getUsername());
+        userCreateRequest.setRole("user");
+        userCreateRequest.setInviteCode(loginParam.getInviteCode());
 
+        try {
             // 执行注册
             Result<Void> registerResult = userFacadeService.createUser(userCreateRequest);
             
             if (!registerResult.getSuccess()) {
-                log.error("用户注册失败：{}", registerResult.getMessage());
-                
-                // 检查是否是并发导致的用户已存在
-                String errorMessage = registerResult.getMessage();
-                if (errorMessage != null && (errorMessage.contains("已存在") || 
-                                           errorMessage.contains("duplicate") || 
-                                           errorMessage.contains("Duplicate entry") ||
-                                           errorMessage.contains("uk_username"))) {
-                    log.info("并发情况：用户{}在注册过程中被创建，尝试登录", loginParam.getUsername());
-                    
-                    // 递归调用自己，这次应该会走登录分支
-                    return loginOrRegister(loginParam);
-                }
-                
-                return createErrorResult("USER_REGISTER_FAILED", registerResult.getMessage());
+                return handleRegisterFailure(loginParam, registerResult, retryCount);
             }
 
             log.info("用户注册成功，用户名：{}", loginParam.getUsername());
@@ -172,7 +181,69 @@ public class AuthServiceImpl implements AuthService {
             }
             
             return autoLoginResult;
+            
+        } catch (Exception e) {
+            // 捕获可能的运行时异常（如数据库约束异常）
+            log.error("注册过程异常，用户名：{}", loginParam.getUsername(), e);
+            
+            // 检查是否是重复用户异常
+            String errorMessage = e.getMessage();
+            if (isDuplicateUserError(errorMessage)) {
+                log.info("捕获到并发注册异常，用户{}可能已被创建，尝试登录", loginParam.getUsername());
+                
+                // 短暂等待，让数据库事务提交
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                }
+                
+                // 重试整个流程
+                return loginOrRegisterWithRetry(loginParam, retryCount + 1);
+            }
+            
+            return createErrorResult("REGISTER_EXCEPTION", "注册失败: " + e.getMessage());
         }
+    }
+    
+    /**
+     * 处理注册失败
+     */
+    private Result<Object> handleRegisterFailure(LoginOrRegisterParam loginParam, Result<Void> registerResult, int retryCount) {
+        log.error("用户注册失败：{}", registerResult.getMessage());
+        
+        String errorMessage = registerResult.getMessage();
+        if (isDuplicateUserError(errorMessage)) {
+            log.info("注册失败：用户{}已存在（并发情况），尝试登录", loginParam.getUsername());
+            
+            // 短暂等待，让数据库事务提交
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+            
+            // 重试整个流程
+            return loginOrRegisterWithRetry(loginParam, retryCount + 1);
+        }
+        
+        return createErrorResult("USER_REGISTER_FAILED", registerResult.getMessage());
+    }
+    
+    /**
+     * 判断是否是重复用户错误
+     */
+    private boolean isDuplicateUserError(String errorMessage) {
+        if (errorMessage == null) {
+            return false;
+        }
+        
+        return errorMessage.contains("已存在") || 
+               errorMessage.contains("duplicate") || 
+               errorMessage.contains("Duplicate entry") ||
+               errorMessage.contains("uk_username") ||
+               errorMessage.contains("UNIQUE constraint failed") ||
+               errorMessage.contains("duplicate key");
     }
 
     @Override
