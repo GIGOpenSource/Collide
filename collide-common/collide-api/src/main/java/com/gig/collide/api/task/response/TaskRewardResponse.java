@@ -8,11 +8,10 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * 任务奖励响应DTO - 优化版
- * 使用数字常量替代字符串枚举，提升传输效率
+ * 任务奖励响应DTO
  * 
  * @author GIG Team
- * @version 3.0.0 (优化版)
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 @Data
@@ -26,8 +25,8 @@ public class TaskRewardResponse {
     @Schema(description = "任务模板ID")
     private Long taskId;
 
-    @Schema(description = "奖励类型: 1-金币, 2-道具, 3-VIP, 4-经验, 5-徽章")
-    private Integer rewardType;
+    @Schema(description = "奖励类型")
+    private String rewardType;
 
     @Schema(description = "奖励名称")
     private String rewardName;
@@ -44,8 +43,8 @@ public class TaskRewardResponse {
     @Schema(description = "是否主要奖励")
     private Boolean isMainReward;
 
-    @Schema(description = "发放状态: 1-待发放, 2-已发放, 3-发放失败, 4-已过期")
-    private Integer status;
+    @Schema(description = "发放状态")
+    private String status;
 
     @Schema(description = "发放时间")
     private LocalDateTime grantTime;

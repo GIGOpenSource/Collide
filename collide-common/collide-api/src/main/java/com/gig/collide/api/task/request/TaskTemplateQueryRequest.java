@@ -9,11 +9,10 @@ import jakarta.validation.constraints.Max;
 import java.time.LocalDate;
 
 /**
- * 任务模板查询请求DTO - 优化版
- * 使用数字常量替代字符串枚举，提升查询性能
+ * 任务模板查询请求DTO
  * 
  * @author GIG Team
- * @version 3.0.0 (优化版)  
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 @Data
@@ -24,17 +23,14 @@ public class TaskTemplateQueryRequest {
     @Schema(description = "任务名称（模糊搜索）")
     private String taskName;
 
-    @Schema(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务", 
-            allowableValues = {"1", "2", "3", "4"})
-    private Integer taskType;
+    @Schema(description = "任务类型", allowableValues = {"daily", "weekly", "achievement"})
+    private String taskType;
 
-    @Schema(description = "任务分类: 1-登录, 2-内容, 3-社交, 4-消费, 5-邀请", 
-            allowableValues = {"1", "2", "3", "4", "5"})
-    private Integer taskCategory;
+    @Schema(description = "任务分类", allowableValues = {"login", "content", "social", "consume"})
+    private String taskCategory;
 
-    @Schema(description = "任务动作: 1-登录, 2-发布内容, 3-点赞, 4-评论, 5-分享, 6-购买, 7-邀请用户", 
-            allowableValues = {"1", "2", "3", "4", "5", "6", "7"})
-    private Integer taskAction;
+    @Schema(description = "任务动作")
+    private String taskAction;
 
     @Schema(description = "是否启用")
     private Boolean isActive;

@@ -8,11 +8,10 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
- * 用户任务查询请求DTO - 优化版
- * 使用数字常量替代字符串枚举，提升查询性能
+ * 用户任务查询请求DTO
  * 
  * @author GIG Team
- * @version 3.0.0 (优化版)
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 @Data
@@ -28,13 +27,11 @@ public class UserTaskQueryRequest {
     @Schema(description = "任务ID")
     private Long taskId;
 
-    @Schema(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务", 
-            allowableValues = {"1", "2", "3", "4"})
-    private Integer taskType;
+    @Schema(description = "任务类型", allowableValues = {"daily", "weekly", "achievement"})
+    private String taskType;
 
-    @Schema(description = "任务分类: 1-登录, 2-内容, 3-社交, 4-消费, 5-邀请", 
-            allowableValues = {"1", "2", "3", "4", "5"})
-    private Integer taskCategory;
+    @Schema(description = "任务分类", allowableValues = {"login", "content", "social", "consume"})
+    private String taskCategory;
 
     @Schema(description = "是否已完成")
     private Boolean isCompleted;

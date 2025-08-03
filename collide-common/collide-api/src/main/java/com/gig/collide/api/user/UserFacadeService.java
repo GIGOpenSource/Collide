@@ -40,12 +40,6 @@ public interface UserFacadeService {
      * 根据用户名查询用户
      */
     Result<UserResponse> getUserByUsername(String username);
-    
-    /**
-     * 根据用户名查询用户基础信息（性能优化版）
-     * 仅返回登录和认证必要的字段，减少数据传输量
-     */
-    Result<UserResponse> getUserByUsernameBasic(String username);
 
     /**
      * 获取个人用户信息

@@ -8,11 +8,10 @@ import jakarta.validation.constraints.*;
 import java.time.LocalDate;
 
 /**
- * 任务模板创建请求DTO - 优化版
- * 使用数字常量替代字符串枚举，提升性能和类型安全
+ * 任务模板创建请求DTO
  * 
  * @author GIG Team
- * @version 3.0.0 (优化版)
+ * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 @Data
@@ -30,26 +29,19 @@ public class TaskTemplateCreateRequest {
     @Schema(description = "任务描述", requiredMode = Schema.RequiredMode.REQUIRED)
     private String taskDesc;
 
-    @NotNull(message = "任务类型不能为空")
-    @Min(value = 1, message = "任务类型必须为有效值")
-    @Max(value = 4, message = "任务类型必须为有效值")
-    @Schema(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务", 
-            allowableValues = {"1", "2", "3", "4"}, requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer taskType;
+    @NotBlank(message = "任务类型不能为空")
+    @Pattern(regexp = "^(daily|weekly|achievement)$", message = "任务类型只能是: daily、weekly、achievement")
+    @Schema(description = "任务类型", allowableValues = {"daily", "weekly", "achievement"}, requiredMode = Schema.RequiredMode.REQUIRED)
+    private String taskType;
 
-    @NotNull(message = "任务分类不能为空")
-    @Min(value = 1, message = "任务分类必须为有效值") 
-    @Max(value = 5, message = "任务分类必须为有效值")
-    @Schema(description = "任务分类: 1-登录, 2-内容, 3-社交, 4-消费, 5-邀请", 
-            allowableValues = {"1", "2", "3", "4", "5"}, requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer taskCategory;
+    @NotBlank(message = "任务分类不能为空")
+    @Pattern(regexp = "^(login|content|social|consume)$", message = "任务分类只能是: login、content、social、consume")
+    @Schema(description = "任务分类", allowableValues = {"login", "content", "social", "consume"}, requiredMode = Schema.RequiredMode.REQUIRED)
+    private String taskCategory;
 
-    @NotNull(message = "任务动作不能为空")
-    @Min(value = 1, message = "任务动作必须为有效值")
-    @Max(value = 7, message = "任务动作必须为有效值")
-    @Schema(description = "任务动作: 1-登录, 2-发布内容, 3-点赞, 4-评论, 5-分享, 6-购买, 7-邀请用户", 
-            allowableValues = {"1", "2", "3", "4", "5", "6", "7"}, requiredMode = Schema.RequiredMode.REQUIRED)
-    private Integer taskAction;
+    @NotBlank(message = "任务动作不能为空")
+    @Schema(description = "任务动作", requiredMode = Schema.RequiredMode.REQUIRED)
+    private String taskAction;
 
     @NotNull(message = "目标完成次数不能为空")
     @Min(value = 1, message = "目标完成次数必须大于0")
