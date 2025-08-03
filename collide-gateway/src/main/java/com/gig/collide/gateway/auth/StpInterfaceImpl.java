@@ -2,7 +2,6 @@ package com.gig.collide.gateway.auth;
 
 import cn.dev33.satoken.stp.StpInterface;
 import cn.dev33.satoken.stp.StpUtil;
-import com.gig.collide.api.user.constant.UserStatusConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -46,7 +45,7 @@ public class StpInterfaceImpl implements StpInterface {
                 String status = (String) userInfo.get("status");
                 
                 // 检查用户状态
-                if (!UserStatusConstant.isValidStatusString(status)) {
+                if (!"active".equals(status)) {
                     log.warn("用户 {} 状态异常: {}", loginId, status);
                     return permissions; // 返回空权限列表
                 }
@@ -106,7 +105,7 @@ public class StpInterfaceImpl implements StpInterface {
                 String status = (String) userInfo.get("status");
                 
                 // 检查用户状态
-                if (!UserStatusConstant.isValidStatusString(status)) {
+                if (!"active".equals(status)) {
                     log.warn("用户 {} 状态异常: {}，不分配任何角色", loginId, status);
                     return roles; // 返回空角色列表
                 }
