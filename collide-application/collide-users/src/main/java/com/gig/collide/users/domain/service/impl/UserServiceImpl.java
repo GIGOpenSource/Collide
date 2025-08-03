@@ -83,6 +83,13 @@ public class UserServiceImpl implements UserService {
     public User getUserByUsername(String username) {
         return userMapper.findByUsername(username);
     }
+    
+    /**
+     * 根据用户名查询用户（高性能版，仅返回基础信息）
+     */
+    public User getUserByUsernameBasic(String username) {
+        return userMapper.findByUsernameForLogin(username);
+    }
 
     @Override
     public PageResponse<User> queryUsers(UserQueryRequest request) {
@@ -124,6 +131,21 @@ public class UserServiceImpl implements UserService {
             // 更新登录时间
             userMapper.updateLastLoginTime(user.getId());
             return user;
+        }
+        return null;
+    }
+    
+    /**
+     * 高性能登录验证（仅查询必要字段）
+     */
+    public User loginOptimized(String username, String password) {
+        // 优化版：先只查询登录必要字段
+        User loginUser = userMapper.findByUsernameForLogin(username);
+        if (loginUser != null && passwordEncoder.matches(password, loginUser.getPasswordHash())) {
+            // 密码验证成功，更新登录时间并返回完整用户信息
+            userMapper.updateLastLoginTime(loginUser.getId());
+            // 返回完整的用户信息用于缓存
+            return userMapper.findByIdBasic(loginUser.getId());
         }
         return null;
     }

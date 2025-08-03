@@ -15,6 +15,7 @@ import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.UserWallet;
 import com.gig.collide.users.domain.entity.UserBlock;
 import com.gig.collide.users.domain.service.UserService;
+import com.gig.collide.users.domain.service.impl.UserServiceImpl;
 import com.gig.collide.users.domain.service.WalletService;
 import com.gig.collide.users.domain.service.UserBlockService;
 import com.gig.collide.web.vo.Result;
@@ -149,6 +150,28 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @Cached(name = "user:username_basic", 
+            key = "'basic:' + #username",
+            expire = 30, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH)
+    public Result<UserResponse> getUserByUsernameBasic(String username) {
+        try {
+            log.debug("根据用户名获取用户基础信息: username={}", username);
+            
+            User user = ((UserServiceImpl) userService).getUserByUsernameBasic(username);
+            if (user == null) {
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            UserResponse response = convertToResponse(user);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("查询用户基础信息失败", e);
+            return Result.error("USER_NOT_FOUND","查询用户失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public Result<UserResponse> getUserProfile(Long userId) {
         try {
             log.debug("获取用户个人信息: ID={}", userId);
@@ -212,9 +235,14 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
+    @Cached(name = "user:login_result", 
+            key = "T(org.springframework.util.DigestUtils).md5DigestAsHex((#username + ':' + #password).getBytes())",
+            expire = 5, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.LOCAL) // 仅使用本地缓存，减少网络开销
     public Result<UserResponse> login(String username, String password) {
         try {
-            User user = userService.login(username, password);
+            // 使用高性能登录方法
+            User user = ((UserServiceImpl) userService).loginOptimized(username, password);
             if (user == null) {
                 return Result.error("LOGIN_FAILED", "用户名或密码错误");
             }
@@ -224,6 +252,19 @@ public class UserFacadeServiceImpl implements UserFacadeService {
         } catch (Exception e) {
             log.error("用户登录失败", e);
             return Result.error("USER_LOGIN_ERROR", "登录失败: " + e.getMessage());
+        }
+    }
+    
+    /**
+     * 高性能版本：仅检查用户是否存在（不返回完整信息）
+     */
+    public boolean checkUserExists(String username) {
+        try {
+            User user = ((UserServiceImpl) userService).getUserByUsernameBasic(username);
+            return user != null;
+        } catch (Exception e) {
+            log.error("检查用户存在失败", e);
+            return false;
         }
     }
 

@@ -40,8 +40,8 @@ public class AuthServiceImpl implements AuthService {
     public Result<Object> register(RegisterParam registerParam) {
         log.info("用户注册请求，用户名：{}", registerParam.getUsername());
         
-        // 检查用户是否已存在
-        Result<UserResponse> existingUser = userFacadeService.getUserByUsername(registerParam.getUsername());
+        // 检查用户是否已存在（使用高性能版本）
+        Result<UserResponse> existingUser = userFacadeService.getUserByUsernameBasic(registerParam.getUsername());
         if (existingUser.getSuccess() && existingUser.getData() != null) {
             log.warn("用户名已存在：{}", registerParam.getUsername());
             return createErrorResult("USER_ALREADY_EXISTS", "用户名已存在");
@@ -119,8 +119,8 @@ public class AuthServiceImpl implements AuthService {
             return createSuccessResult(response);
         }
         
-        // 登录失败，检查是否用户不存在，如果是则自动注册
-        Result<UserResponse> existingUser = userFacadeService.getUserByUsername(loginParam.getUsername());
+        // 登录失败，检查是否用户不存在，如果是则自动注册（使用高性能版本）
+        Result<UserResponse> existingUser = userFacadeService.getUserByUsernameBasic(loginParam.getUsername());
         
         if (!existingUser.getSuccess() || existingUser.getData() == null) {
             // 用户不存在，自动注册
