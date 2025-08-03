@@ -54,7 +54,6 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     private UserBlockService userBlockService;
 
     @Override
-    @CacheInvalidate(name = UserCacheConstant.USER_LIST_CACHE)
     public Result<Void> createUser(UserCreateRequest request) {
         try {
             log.info("创建用户请求: {}", request.getUsername());
@@ -70,6 +69,12 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             
             log.info("用户创建成功: ID={}", savedUser.getId());
             return Result.success(null);
+        } catch (org.springframework.dao.DuplicateKeyException e) {
+            log.warn("用户已存在: {}", request.getUsername());
+            return Result.error("USER_ALREADY_EXISTS", "用户名已存在");
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.warn("数据完整性约束违反: {}", request.getUsername(), e);
+            return Result.error("USER_ALREADY_EXISTS", "用户名已存在");
         } catch (Exception e) {
             log.error("创建用户失败", e);
             return Result.error("USER_CREATE_ERROR", "创建用户失败: " + e.getMessage());
@@ -150,10 +155,6 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    @Cached(name = "user:username_basic", 
-            key = "'basic:' + #username",
-            expire = 30, timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
     public Result<UserResponse> getUserByUsernameBasic(String username) {
         try {
             log.debug("根据用户名获取用户基础信息: username={}", username);
@@ -235,10 +236,6 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     }
 
     @Override
-    @Cached(name = "user:login_result", 
-            key = "T(org.springframework.util.DigestUtils).md5DigestAsHex((#username + ':' + #password).getBytes())",
-            expire = 5, timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.LOCAL) // 仅使用本地缓存，减少网络开销
     public Result<UserResponse> login(String username, String password) {
         try {
             // 使用高性能登录方法
