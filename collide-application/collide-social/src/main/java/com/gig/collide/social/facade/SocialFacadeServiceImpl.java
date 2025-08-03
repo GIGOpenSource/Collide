@@ -250,6 +250,13 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
         try {
             log.debug("查询用户动态: 用户={}, 页码={}, 大小={}", userId, currentPage, pageSize);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (!userResult.getSuccess() || userResult.getData() == null) {
+                log.warn("用户不存在，无法查询用户动态: userId={}", userId);
+                return createErrorPageResponse();
+            }
+            
             IPage<SocialDynamic> page = socialDynamicService.queryDynamics(
                 currentPage, 
                 pageSize,
@@ -279,7 +286,16 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
         try {
             log.info("点赞动态: 动态={}, 用户={}", dynamicId, userId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (!userResult.getSuccess() || userResult.getData() == null) {
+                log.warn("用户不存在，无法点赞动态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             socialDynamicService.likeDynamic(dynamicId, userId);
+            log.info("动态点赞成功: dynamicId={}, userId={}, userNickname={}", 
+                    dynamicId, userId, userResult.getData().getNickname());
             return Result.success(null);
         } catch (Exception e) {
             log.error("点赞动态失败", e);
@@ -296,7 +312,16 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
         try {
             log.info("取消点赞: 动态={}, 用户={}", dynamicId, userId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (!userResult.getSuccess() || userResult.getData() == null) {
+                log.warn("用户不存在，无法取消点赞: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             socialDynamicService.unlikeDynamic(dynamicId, userId);
+            log.info("取消点赞成功: dynamicId={}, userId={}, userNickname={}", 
+                    dynamicId, userId, userResult.getData().getNickname());
             return Result.success(null);
         } catch (Exception e) {
             log.error("取消点赞失败", e);
@@ -312,7 +337,16 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
         try {
             log.info("评论动态: 动态={}, 用户={}", dynamicId, userId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (!userResult.getSuccess() || userResult.getData() == null) {
+                log.warn("用户不存在，无法评论动态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             socialDynamicService.commentDynamic(dynamicId, userId, content);
+            log.info("评论动态成功: dynamicId={}, userId={}, userNickname={}", 
+                    dynamicId, userId, userResult.getData().getNickname());
             return Result.success(null);
         } catch (Exception e) {
             log.error("评论动态失败", e);
@@ -389,6 +423,13 @@ public class SocialFacadeServiceImpl implements SocialFacadeService {
     public PageResponse<Object> getUserInteractions(Long userId, Integer currentPage, Integer pageSize) {
         try {
             log.debug("查询用户互动记录: 用户={}, 页码={}, 大小={}", userId, currentPage, pageSize);
+
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (!userResult.getSuccess() || userResult.getData() == null) {
+                log.warn("用户不存在，无法查询用户互动记录: userId={}", userId);
+                return createErrorObjectPageResponse();
+            }
 
             // 1. 查询用户点赞别人的记录 (LIKE_GIVE)
             List<SocialInteractionResponse> likeGiveList = getLikeGiveInteractions(userId);

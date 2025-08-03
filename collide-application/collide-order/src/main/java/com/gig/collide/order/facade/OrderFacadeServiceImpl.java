@@ -7,6 +7,8 @@ import com.gig.collide.api.order.request.OrderCreateRequest;
 import com.gig.collide.api.order.request.OrderQueryRequest;
 import com.gig.collide.api.order.response.OrderResponse;
 import com.gig.collide.api.user.WalletFacadeService;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.order.domain.entity.Order;
@@ -39,6 +41,9 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     
     @DubboReference(version = "2.0.0", timeout = 5000, check = false)
     private WalletFacadeService walletFacadeService;
+    
+    @DubboReference(version = "1.0.0", timeout = 10000, check = false)
+    private UserFacadeService userFacadeService;
 
     @Override
     public Result<OrderResponse> createOrder(OrderCreateRequest request) {
@@ -46,6 +51,13 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
             log.info("REST创建订单: userId={}, goodsId={}, goodsType={}, paymentMode={}", 
                 request.getUserId(), request.getGoodsId(), request.getGoodsType(), request.getPaymentMode());
             request.validateParams();
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法创建订单: userId={}", request.getUserId());
+                return Result.failure("USER_NOT_FOUND", "用户不存在");
+            }
             
             Order order = convertToEntity(request);
             
@@ -56,7 +68,8 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
             // 返回创建的订单信息
             OrderResponse response = convertToResponse(order);
             
-            log.info("订单创建成功: orderId={}, orderNo={}", orderId, order.getOrderNo());
+            log.info("订单创建成功: orderId={}, orderNo={}, 用户={}", 
+                    orderId, order.getOrderNo(), userResult.getData().getNickname());
             return Result.success(response);
             
         } catch (Exception e) {
@@ -119,6 +132,16 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     public PageResponse<OrderResponse> queryOrders(OrderQueryRequest request) {
         try {
             request.validateParams();
+            
+            // 验证用户是否存在（如果指定了用户ID）
+            if (request.getUserId() != null) {
+                Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+                if (userResult == null || !userResult.getSuccess()) {
+                    log.warn("用户不存在，无法查询订单: userId={}", request.getUserId());
+                    return createErrorPageResponse();
+                }
+            }
+            
             Page<Order> page = new Page<>(request.getCurrentPage(), request.getPageSize());
             IPage<Order> result;
             
@@ -131,16 +154,28 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
             return convertToPageResponse(result);
         } catch (Exception e) {
             log.error("查询订单失败", e);
-            return PageResponse.empty();
+            return createErrorPageResponse();
         }
     }
 
     // 其他方法的简化实现...
     @Override
     public PageResponse<OrderResponse> getUserOrders(Long userId, String status, Integer currentPage, Integer pageSize) {
-        Page<Order> page = new Page<>(currentPage, pageSize);
-        IPage<Order> result = orderService.getOrdersByUserId(page, userId, status);
-        return convertToPageResponse(result);
+        try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法查询用户订单: userId={}", userId);
+                return createErrorPageResponse();
+            }
+            
+            Page<Order> page = new Page<>(currentPage, pageSize);
+            IPage<Order> result = orderService.getOrdersByUserId(page, userId, status);
+            return convertToPageResponse(result);
+        } catch (Exception e) {
+            log.error("查询用户订单失败: userId={}", userId, e);
+            return createErrorPageResponse();
+        }
     }
 
     @Override
@@ -411,9 +446,18 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     @Override
     public Result<Map<String, Object>> getUserOrderStatistics(Long userId) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户订单统计: userId={}", userId);
+                return Result.failure("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Map<String, Object> stats = orderService.getUserOrderStatistics(userId);
+            log.debug("用户订单统计查询成功: 用户={}({})", userId, userResult.getData().getNickname());
             return Result.success(stats);
         } catch (Exception e) {
+            log.error("获取用户订单统计失败: userId={}", userId, e);
             return Result.failure("获取统计失败");
         }
     }
@@ -461,10 +505,20 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     @Override
     public Result<List<OrderResponse>> getUserRecentOrders(Long userId, Integer limit) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户最近订单: userId={}", userId);
+                return Result.failure("USER_NOT_FOUND", "用户不存在");
+            }
+            
             List<Order> orders = orderService.getUserRecentOrders(userId, limit);
             List<OrderResponse> responses = orders.stream().map(this::convertToResponse).collect(Collectors.toList());
+            log.debug("用户最近订单查询成功: 用户={}({}), 订单数={}", 
+                    userId, userResult.getData().getNickname(), responses.size());
             return Result.success(responses);
         } catch (Exception e) {
+            log.error("获取用户最近订单失败: userId={}", userId, e);
             return Result.failure("获取最近订单失败");
         }
     }
@@ -472,16 +526,40 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
     // 专用查询
     @Override
     public PageResponse<OrderResponse> getUserCoinOrders(Long userId, Integer currentPage, Integer pageSize) {
-        Page<Order> page = new Page<>(currentPage, pageSize);
-        IPage<Order> result = orderService.getUserCoinOrders(page, userId);
-        return convertToPageResponse(result);
+        try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法查询用户金币订单: userId={}", userId);
+                return createErrorPageResponse();
+            }
+            
+            Page<Order> page = new Page<>(currentPage, pageSize);
+            IPage<Order> result = orderService.getUserCoinOrders(page, userId);
+            return convertToPageResponse(result);
+        } catch (Exception e) {
+            log.error("查询用户金币订单失败: userId={}", userId, e);
+            return createErrorPageResponse();
+        }
     }
 
     @Override
     public PageResponse<OrderResponse> getUserRechargeOrders(Long userId, Integer currentPage, Integer pageSize) {
-        Page<Order> page = new Page<>(currentPage, pageSize);
-        IPage<Order> result = orderService.getUserRechargeOrders(page, userId);
-        return convertToPageResponse(result);
+        try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法查询用户充值订单: userId={}", userId);
+                return createErrorPageResponse();
+            }
+            
+            Page<Order> page = new Page<>(currentPage, pageSize);
+            IPage<Order> result = orderService.getUserRechargeOrders(page, userId);
+            return convertToPageResponse(result);
+        } catch (Exception e) {
+            log.error("查询用户充值订单失败: userId={}", userId, e);
+            return createErrorPageResponse();
+        }
     }
 
     @Override
@@ -645,5 +723,12 @@ public class OrderFacadeServiceImpl implements OrderFacadeService {
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
         return PageResponse.of(responses, (int) page.getTotal(), (int) page.getSize(), (int) page.getCurrent());
+    }
+    
+    /**
+     * 创建错误的分页响应
+     */
+    private PageResponse<OrderResponse> createErrorPageResponse() {
+        return PageResponse.of(List.of(), 0, 20, 1);
     }
 }

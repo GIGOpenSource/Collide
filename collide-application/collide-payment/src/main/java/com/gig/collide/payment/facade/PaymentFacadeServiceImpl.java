@@ -13,6 +13,7 @@ import com.gig.collide.payment.infrastructure.cache.PaymentCacheConstant;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.api.order.OrderFacadeService;
 import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.alicp.jetcache.anno.Cached;
 import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheType;
@@ -60,6 +61,13 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
             log.info("创建支付订单: 用户={}, 订单={}, 金额={}", request.getUserId(), request.getOrderId(), request.getAmount());
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法创建支付订单: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Payment payment = new Payment();
             BeanUtils.copyProperties(request, payment);
             
@@ -67,7 +75,8 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
             PaymentResponse response = convertToResponse(createdPayment);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("支付订单创建成功: 支付单号={}, 耗时={}ms", response.getPaymentNo(), duration);
+            log.info("支付订单创建成功: 支付单号={}, 用户={}, 耗时={}ms", 
+                    response.getPaymentNo(), userResult.getData().getNickname(), duration);
             
             return Result.success(response);
         } catch (Exception e) {
@@ -131,6 +140,15 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
         try {
             log.debug("分页查询支付记录: 用户={}, 页码={}", request.getUserId(), request.getCurrentPage());
             long startTime = System.currentTimeMillis();
+            
+            // 验证用户是否存在（如果指定了用户ID）
+            if (request.getUserId() != null) {
+                Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+                if (userResult == null || !userResult.getSuccess()) {
+                    log.warn("用户不存在，无法查询支付记录: userId={}", request.getUserId());
+                    return Result.error("USER_NOT_FOUND", "用户不存在");
+                }
+            }
             
             IPage<Payment> page = paymentService.queryPayments(
                 request.getUserId(),
@@ -241,10 +259,18 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
     public Result<List<PaymentResponse>> getUserPayments(Long userId, Integer limit) {
         try {
             log.debug("获取用户支付记录: 用户={}, 限制数量={}", userId, limit);
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户支付记录: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             List<Payment> payments = paymentService.getUserPayments(userId, limit);
             
             if (CollectionUtils.isEmpty(payments)) {
-                log.debug("用户暂无支付记录: 用户={}", userId);
+                log.debug("用户暂无支付记录: 用户={}({})", userId, userResult.getData().getNickname());
                 return Result.success(List.of());
             }
             
@@ -252,7 +278,8 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
                     .map(this::convertToResponse)
                     .collect(Collectors.toList());
             
-            log.debug("用户支付记录查询成功: 用户={}, 记录数={}", userId, responses.size());
+            log.debug("用户支付记录查询成功: 用户={}({}), 记录数={}", 
+                    userId, userResult.getData().getNickname(), responses.size());
             return Result.success(responses);
         } catch (Exception e) {
             log.error("获取用户支付记录失败: 用户={}", userId, e);
@@ -308,9 +335,17 @@ public class PaymentFacadeServiceImpl implements PaymentFacadeService {
     public Result<PaymentResponse> getPaymentStatistics(Long userId) {
         try {
             log.debug("获取用户支付统计: 用户={}", userId);
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户支付统计: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Payment statistics = paymentService.getUserPaymentStatistics(userId);
             PaymentResponse response = convertToResponse(statistics);
-            log.debug("用户支付统计查询成功: 用户={}", userId);
+            log.debug("用户支付统计查询成功: 用户={}({})", userId, userResult.getData().getNickname());
             return Result.success(response);
         } catch (Exception e) {
             log.error("获取支付统计信息失败: 用户={}", userId, e);

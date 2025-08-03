@@ -10,6 +10,7 @@ import com.gig.collide.like.domain.service.LikeService;
 import com.gig.collide.like.infrastructure.cache.LikeCacheConstant;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.content.ContentFacadeService;
 import com.gig.collide.api.comment.CommentFacadeService;
 import com.alicp.jetcache.anno.Cached;
@@ -65,17 +66,25 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
                     request.getUserId(), request.getLikeType(), request.getTargetId());
             long startTime = System.currentTimeMillis();
 
-            // 1. 请求参数转换为实体
+            // 1. 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法添加点赞: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
+            // 2. 请求参数转换为实体
             Like like = convertToEntity(request);
             
-            // 2. 调用业务服务添加点赞
+            // 3. 调用业务服务添加点赞
             Like savedLike = likeService.addLike(like);
             
-            // 3. 实体转换为响应对象
+            // 4. 实体转换为响应对象
             LikeResponse response = convertToResponse(savedLike);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("点赞添加成功: ID={}, 耗时={}ms", savedLike.getId(), duration);
+            log.info("点赞添加成功: ID={}, 用户={}({}), 耗时={}ms", 
+                    savedLike.getId(), request.getUserId(), userResult.getData().getNickname(), duration);
             return Result.success(response);
             
         } catch (IllegalArgumentException e) {
@@ -98,6 +107,13 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
                     request.getUserId(), request.getLikeType(), request.getTargetId());
             long startTime = System.currentTimeMillis();
 
+            // 1. 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法取消点赞: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             boolean success = likeService.cancelLike(
                     request.getUserId(), 
                     request.getLikeType(), 
@@ -106,12 +122,13 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
             
             long duration = System.currentTimeMillis() - startTime;
             if (success) {
-                log.info("点赞取消成功: 用户={}, 目标={}, 耗时={}ms", 
-                        request.getUserId(), request.getTargetId(), duration);
+                log.info("点赞取消成功: 用户={}({}), 目标={}, 耗时={}ms", 
+                        request.getUserId(), userResult.getData().getNickname(), 
+                        request.getTargetId(), duration);
                 return Result.success(null);
             } else {
-                log.warn("点赞取消失败: 用户={}, 目标={}, 原因=未找到记录", 
-                        request.getUserId(), request.getTargetId());
+                log.warn("点赞取消失败: 用户={}({}), 目标={}, 原因=未找到记录", 
+                        request.getUserId(), userResult.getData().getNickname(), request.getTargetId());
                 return Result.error("LIKE_CANCEL_FAILED", "取消点赞失败，可能未找到对应的点赞记录");
             }
         } catch (Exception e) {
@@ -130,22 +147,31 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
                     request.getUserId(), request.getLikeType(), request.getTargetId());
             long startTime = System.currentTimeMillis();
 
-            // 1. 请求参数转换为实体
+            // 1. 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法切换点赞状态: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
+            // 2. 请求参数转换为实体
             Like like = convertToggleRequestToEntity(request);
             
-            // 2. 调用业务逻辑切换点赞状态
+            // 3. 调用业务逻辑切换点赞状态
             Like resultLike = likeService.toggleLike(like);
             
             long duration = System.currentTimeMillis() - startTime;
             if (resultLike != null) {
                 // 点赞操作，返回点赞记录
                 LikeResponse response = convertToResponse(resultLike);
-                log.info("点赞切换成功(添加): ID={}, 耗时={}ms", resultLike.getId(), duration);
+                log.info("点赞切换成功(添加): ID={}, 用户={}({}), 耗时={}ms", 
+                        resultLike.getId(), request.getUserId(), userResult.getData().getNickname(), duration);
                 return Result.success(response);
             } else {
                 // 取消点赞操作，返回空响应
-                log.info("点赞切换成功(取消): 用户={}, 目标={}, 耗时={}ms", 
-                        request.getUserId(), request.getTargetId(), duration);
+                log.info("点赞切换成功(取消): 用户={}({}), 目标={}, 耗时={}ms", 
+                        request.getUserId(), userResult.getData().getNickname(), 
+                        request.getTargetId(), duration);
                 return Result.success(null);
             }
         } catch (IllegalArgumentException e) {
@@ -167,8 +193,16 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
         try {
             log.debug("检查点赞状态: 用户={}, 类型={}, 目标={}", userId, likeType, targetId);
 
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法检查点赞状态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             boolean isLiked = likeService.checkLikeStatus(userId, likeType, targetId);
-            log.debug("点赞状态查询完成: 用户={}, 目标={}, 已点赞={}", userId, targetId, isLiked);
+            log.debug("点赞状态查询完成: 用户={}({}), 目标={}, 已点赞={}", 
+                    userId, userResult.getData().getNickname(), targetId, isLiked);
             return Result.success(isLiked);
         } catch (Exception e) {
             log.error("检查点赞状态失败: 用户={}, 目标={}", userId, targetId, e);
@@ -184,6 +218,15 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
             log.info("分页查询点赞记录: 页码={}, 页大小={}, 用户={}, 类型={}", 
                     request.getCurrentPage(), request.getPageSize(), request.getUserId(), request.getLikeType());
             long startTime = System.currentTimeMillis();
+
+            // 智能验证：只有指定用户ID时才验证（支持管理员查询所有点赞记录）
+            if (request.getUserId() != null) {
+                Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+                if (userResult == null || !userResult.getSuccess()) {
+                    log.warn("用户不存在，无法查询点赞记录: userId={}", request.getUserId());
+                    return Result.error("USER_NOT_FOUND", "用户不存在");
+                }
+            }
 
             // 调用业务逻辑进行分页查询
             IPage<Like> likePage = likeService.queryLikes(
@@ -236,8 +279,16 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
         try {
             log.debug("获取用户点赞数量: 用户={}, 类型={}", userId, likeType);
 
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户点赞数量: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             Long count = likeService.getUserLikeCount(userId, likeType);
-            log.debug("用户点赞数量查询完成: 用户={}, 数量={}", userId, count);
+            log.debug("用户点赞数量查询完成: 用户={}({}), 数量={}", 
+                    userId, userResult.getData().getNickname(), count);
             return Result.success(count);
         } catch (Exception e) {
             log.error("获取用户点赞数量失败: 用户={}, 类型={}", userId, likeType, e);
@@ -254,11 +305,19 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
                     userId, likeType, targetIds != null ? targetIds.size() : 0);
             long startTime = System.currentTimeMillis();
 
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法批量检查点赞状态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             Map<Long, Boolean> statusMap = likeService.batchCheckLikeStatus(userId, likeType, targetIds);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("批量点赞状态查询完成: 用户={}, 检查数量={}, 耗时={}ms", 
-                    userId, targetIds != null ? targetIds.size() : 0, duration);
+            log.info("批量点赞状态查询完成: 用户={}({}), 检查数量={}, 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), 
+                    targetIds != null ? targetIds.size() : 0, duration);
             return Result.success(statusMap);
         } catch (Exception e) {
             log.error("批量检查点赞状态失败: 用户={}, 类型={}", userId, likeType, e);

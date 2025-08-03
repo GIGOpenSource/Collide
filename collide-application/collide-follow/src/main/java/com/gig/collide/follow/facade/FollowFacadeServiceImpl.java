@@ -9,11 +9,14 @@ import com.gig.collide.follow.domain.entity.Follow;
 import com.gig.collide.follow.domain.service.FollowService;
 import com.gig.collide.follow.infrastructure.cache.FollowCacheConstant;
 import com.gig.collide.web.vo.Result;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.alicp.jetcache.anno.Cached;
 import com.alicp.jetcache.anno.CacheInvalidate;
 import com.alicp.jetcache.anno.CacheType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 
@@ -37,6 +40,9 @@ import java.util.stream.Collectors;
 public class FollowFacadeServiceImpl implements FollowFacadeService {
 
     private final FollowService followService;
+    
+    @DubboReference(version = "1.0.0", timeout = 10000, check = false)
+    private UserFacadeService userFacadeService;
 
     @Override
     @CacheInvalidate(name = FollowCacheConstant.FOLLOW_RELATION_CACHE)
@@ -49,6 +55,20 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             log.info("RPC关注用户: followerId={}, followeeId={}", request.getFollowerId(), request.getFolloweeId());
             long startTime = System.currentTimeMillis();
 
+            // 验证关注者是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(request.getFollowerId());
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在，无法创建关注关系: followerId={}", request.getFollowerId());
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            // 验证被关注者是否存在
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(request.getFolloweeId());
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在，无法创建关注关系: followeeId={}", request.getFolloweeId());
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+
             // 转换请求对象为实体
             Follow follow = convertCreateRequestToEntity(request);
             
@@ -59,8 +79,11 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             FollowResponse response = convertToResponse(savedFollow);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("关注用户成功: ID={}, followerId={}, followeeId={}, 耗时={}ms", 
-                    savedFollow.getId(), request.getFollowerId(), request.getFolloweeId(), duration);
+            log.info("关注用户成功: ID={}, 关注者={}({}), 被关注者={}({}), 耗时={}ms", 
+                    savedFollow.getId(), 
+                    request.getFollowerId(), followerResult.getData().getNickname(),
+                    request.getFolloweeId(), followeeResult.getData().getNickname(),
+                    duration);
             return Result.success(response);
         } catch (IllegalArgumentException e) {
             log.warn("关注参数验证失败: followerId={}, followeeId={}, 错误={}", 
@@ -88,6 +111,20 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             log.info("RPC取消关注: followerId={}, followeeId={}", request.getFollowerId(), request.getFolloweeId());
             long startTime = System.currentTimeMillis();
 
+            // 验证关注者是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(request.getFollowerId());
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在，无法取消关注: followerId={}", request.getFollowerId());
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            // 验证被关注者是否存在
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(request.getFolloweeId());
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在，无法取消关注: followeeId={}", request.getFolloweeId());
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+
             boolean success = followService.unfollowUser(
                     request.getFollowerId(), 
                     request.getFolloweeId(),
@@ -97,12 +134,15 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             
             long duration = System.currentTimeMillis() - startTime;
             if (success) {
-                log.info("取消关注成功: followerId={}, followeeId={}, 耗时={}ms", 
-                        request.getFollowerId(), request.getFolloweeId(), duration);
+                log.info("取消关注成功: 关注者={}({}), 被关注者={}({}), 耗时={}ms", 
+                        request.getFollowerId(), followerResult.getData().getNickname(),
+                        request.getFolloweeId(), followeeResult.getData().getNickname(),
+                        duration);
                 return Result.success(null);
             } else {
-                log.warn("取消关注失败: followerId={}, followeeId={}", 
-                        request.getFollowerId(), request.getFolloweeId());
+                log.warn("取消关注失败: 关注者={}({}), 被关注者={}({})", 
+                        request.getFollowerId(), followerResult.getData().getNickname(),
+                        request.getFolloweeId(), followeeResult.getData().getNickname());
                 return Result.error("UNFOLLOW_FAILED", "取消关注失败");
             }
         } catch (Exception e) {
@@ -118,10 +158,26 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
         try {
             log.debug("检查关注状态: followerId={}, followeeId={}", followerId, followeeId);
             
+            // 验证关注者是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(followerId);
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在，无法检查关注状态: followerId={}", followerId);
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            // 验证被关注者是否存在
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(followeeId);
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在，无法检查关注状态: followeeId={}", followeeId);
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+            
             boolean isFollowing = followService.checkFollowStatus(followerId, followeeId);
             
-            log.debug("关注状态检查完成: followerId={}, followeeId={}, 结果={}", 
-                    followerId, followeeId, isFollowing);
+            log.debug("关注状态检查完成: 关注者={}({}), 被关注者={}({}), 结果={}", 
+                    followerId, followerResult.getData().getNickname(),
+                    followeeId, followeeResult.getData().getNickname(),
+                    isFollowing);
             return Result.success(isFollowing);
         } catch (Exception e) {
             log.error("检查关注状态失败: followerId={}, followeeId={}", followerId, followeeId, e);
@@ -195,11 +251,18 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             log.debug("获取关注列表: followerId={}, pageNum={}, pageSize={}", followerId, pageNum, pageSize);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(followerId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取关注列表: followerId={}", followerId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             IPage<Follow> followPage = followService.getFollowing(followerId, pageNum, pageSize);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("关注列表查询成功: followerId={}, 总数={}, 耗时={}ms", 
-                    followerId, followPage.getTotal(), duration);
+            log.debug("关注列表查询成功: 用户={}({}), 总数={}, 耗时={}ms", 
+                    followerId, userResult.getData().getNickname(), followPage.getTotal(), duration);
             return Result.success(buildPageResult(followPage));
         } catch (Exception e) {
             log.error("获取关注列表失败: followerId={}", followerId, e);
@@ -215,11 +278,18 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             log.debug("获取粉丝列表: followeeId={}, pageNum={}, pageSize={}", followeeId, pageNum, pageSize);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(followeeId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取粉丝列表: followeeId={}", followeeId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             IPage<Follow> followPage = followService.getFollowers(followeeId, pageNum, pageSize);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("粉丝列表查询成功: followeeId={}, 总数={}, 耗时={}ms", 
-                    followeeId, followPage.getTotal(), duration);
+            log.debug("粉丝列表查询成功: 用户={}({}), 总数={}, 耗时={}ms", 
+                    followeeId, userResult.getData().getNickname(), followPage.getTotal(), duration);
             return Result.success(buildPageResult(followPage));
         } catch (Exception e) {
             log.error("获取粉丝列表失败: followeeId={}", followeeId, e);
@@ -234,9 +304,17 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
         try {
             log.debug("获取关注数量: followerId={}", followerId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(followerId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取关注数量: followerId={}", followerId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Long count = followService.getFollowingCount(followerId);
             
-            log.debug("关注数量查询成功: followerId={}, count={}", followerId, count);
+            log.debug("关注数量查询成功: 用户={}({}), count={}", 
+                    followerId, userResult.getData().getNickname(), count);
             return Result.success(count);
         } catch (Exception e) {
             log.error("获取关注数量失败: followerId={}", followerId, e);
@@ -251,9 +329,17 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
         try {
             log.debug("获取粉丝数量: followeeId={}", followeeId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(followeeId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取粉丝数量: followeeId={}", followeeId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Long count = followService.getFollowersCount(followeeId);
             
-            log.debug("粉丝数量查询成功: followeeId={}, count={}", followeeId, count);
+            log.debug("粉丝数量查询成功: 用户={}({}), count={}", 
+                    followeeId, userResult.getData().getNickname(), count);
             return Result.success(count);
         } catch (Exception e) {
             log.error("获取粉丝数量失败: followeeId={}", followeeId, e);
@@ -269,10 +355,18 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
             log.debug("获取关注统计: userId={}", userId);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取关注统计: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Map<String, Object> statistics = followService.getFollowStatistics(userId);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("关注统计查询成功: userId={}, 耗时={}ms", userId, duration);
+            log.debug("关注统计查询成功: 用户={}({}), 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), duration);
             return Result.success(statistics);
         } catch (Exception e) {
             log.error("获取关注统计失败: userId={}", userId, e);
@@ -289,11 +383,19 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
                     followerId, followeeIds != null ? followeeIds.size() : 0);
             long startTime = System.currentTimeMillis();
             
+            // 验证关注者是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(followerId);
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在，无法批量检查关注状态: followerId={}", followerId);
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+            
             Map<Long, Boolean> statusMap = followService.batchCheckFollowStatus(followerId, followeeIds);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("批量关注状态检查成功: followerId={}, 检查数量={}, 耗时={}ms", 
-                    followerId, followeeIds != null ? followeeIds.size() : 0, duration);
+            log.info("批量关注状态检查成功: 关注者={}({}), 检查数量={}, 耗时={}ms", 
+                    followerId, followerResult.getData().getNickname(),
+                    followeeIds != null ? followeeIds.size() : 0, duration);
             return Result.success(statusMap);
         } catch (Exception e) {
             log.error("批量检查关注状态失败: followerId={}, 目标数量={}", 

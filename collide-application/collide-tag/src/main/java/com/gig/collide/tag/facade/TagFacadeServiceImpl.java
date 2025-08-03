@@ -6,6 +6,8 @@ import com.gig.collide.api.tag.request.TagCreateRequest;
 import com.gig.collide.api.tag.request.TagQueryRequest;
 import com.gig.collide.api.tag.request.TagUpdateRequest;
 import com.gig.collide.api.tag.response.TagResponse;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.tag.domain.entity.Tag;
 import com.gig.collide.tag.domain.service.TagService;
@@ -38,6 +40,9 @@ public class TagFacadeServiceImpl implements TagFacadeService {
 
     @Autowired
     private TagService tagService;
+
+    @Autowired
+    private UserFacadeService userFacadeService;
 
     @Override
     @CacheInvalidate(name = TagCacheConstant.TAG_LIST_CACHE)
@@ -234,6 +239,13 @@ public class TagFacadeServiceImpl implements TagFacadeService {
         try {
             log.debug("获取用户兴趣标签: userId={}", userId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取兴趣标签: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             List<Tag> tags = tagService.getUserInterestTags(userId);
             List<TagResponse> responses = tags.stream()
                     .map(this::convertToResponse)
@@ -253,9 +265,24 @@ public class TagFacadeServiceImpl implements TagFacadeService {
         try {
             log.info("添加用户兴趣标签: userId={}, tagId={}, score={}", userId, tagId, interestScore);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法添加兴趣标签: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            // 验证标签是否存在
+            Tag tag = tagService.getTagById(tagId);
+            if (tag == null) {
+                log.warn("标签不存在，无法添加兴趣标签: tagId={}", tagId);
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
             BigDecimal score = interestScore != null ? BigDecimal.valueOf(interestScore) : null;
             tagService.addUserInterestTag(userId, tagId, score);
             
+            log.info("用户兴趣标签添加成功: userId={}, tagId={}, tagName={}", userId, tagId, tag.getName());
             return Result.success(null);
         } catch (Exception e) {
             log.error("添加用户兴趣标签失败", e);
@@ -270,8 +297,20 @@ public class TagFacadeServiceImpl implements TagFacadeService {
         try {
             log.info("移除用户兴趣标签: userId={}, tagId={}", userId, tagId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法移除兴趣标签: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            // 获取标签信息（用于日志）
+            Tag tag = tagService.getTagById(tagId);
+            String tagName = tag != null ? tag.getName() : "未知标签";
+            
             tagService.removeUserInterestTag(userId, tagId);
             
+            log.info("用户兴趣标签移除成功: userId={}, tagId={}, tagName={}", userId, tagId, tagName);
             return Result.success(null);
         } catch (Exception e) {
             log.error("移除用户兴趣标签失败", e);
@@ -285,9 +324,25 @@ public class TagFacadeServiceImpl implements TagFacadeService {
         try {
             log.info("更新用户兴趣分数: userId={}, tagId={}, score={}", userId, tagId, interestScore);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法更新兴趣分数: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            // 验证标签是否存在
+            Tag tag = tagService.getTagById(tagId);
+            if (tag == null) {
+                log.warn("标签不存在，无法更新兴趣分数: tagId={}", tagId);
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
             BigDecimal score = BigDecimal.valueOf(interestScore);
             tagService.updateUserInterestScore(userId, tagId, score);
             
+            log.info("用户兴趣分数更新成功: userId={}, tagId={}, tagName={}, newScore={}", 
+                    userId, tagId, tag.getName(), interestScore);
             return Result.success(null);
         } catch (Exception e) {
             log.error("更新用户兴趣分数失败", e);

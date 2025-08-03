@@ -5,6 +5,8 @@ import com.gig.collide.api.comment.request.CommentCreateRequest;
 import com.gig.collide.api.comment.request.CommentQueryRequest;
 import com.gig.collide.api.comment.request.CommentUpdateRequest;
 import com.gig.collide.api.comment.response.CommentResponse;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.comment.domain.entity.Comment;
 import com.gig.collide.comment.domain.service.CommentService;
@@ -33,11 +35,28 @@ import java.util.stream.Collectors;
 public class CommentFacadeServiceImpl implements CommentFacadeService {
 
     private final CommentService commentService;
+    private final UserFacadeService userFacadeService;
 
     @Override
     public Result<CommentResponse> createComment(CommentCreateRequest request) {
         try {
             log.info("创建评论请求：{}", request);
+            
+            // 验证评论用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("评论用户不存在，评论创建失败: userId={}", request.getUserId());
+                return Result.error("COMMENTER_NOT_FOUND", "评论用户不存在");
+            }
+            
+            // 验证回复目标用户是否存在（如果有回复）
+            if (request.getReplyToUserId() != null && request.getReplyToUserId() > 0) {
+                Result<UserResponse> replyUserResult = userFacadeService.getUserById(request.getReplyToUserId());
+                if (replyUserResult == null || !replyUserResult.getSuccess()) {
+                    log.warn("回复目标用户不存在，评论创建失败: replyToUserId={}", request.getReplyToUserId());
+                    return Result.error("REPLY_TARGET_USER_NOT_FOUND", "回复目标用户不存在");
+                }
+            }
             
             // 转换为实体
             Comment comment = convertToEntity(request);
@@ -47,6 +66,11 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
             // 转换为响应
             CommentResponse response = convertToResponse(created);
+            
+            log.info("评论创建成功: commentId={}, userId={}, userNickname={}", 
+                    created.getId(), 
+                    request.getUserId(), 
+                    userResult.getData().getNickname());
             
             return Result.success(response);
         } catch (Exception e) {
@@ -94,9 +118,18 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             log.info("删除评论，ID：{}，用户：{}", commentId, userId);
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法删除评论: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             boolean success = commentService.deleteComment(commentId, userId);
             
             if (success) {
+                log.info("评论删除成功: commentId={}, userId={}, userNickname={}", 
+                        commentId, userId, userResult.getData().getNickname());
                 return Result.success(null);
             } else {
                 return Result.error("COMMENT_DELETE_ERROR", "评论删除失败");
@@ -196,6 +229,13 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     public Result<PageResponse<CommentResponse>> getUserComments(Long userId, String commentType,
                                                                String status, Integer pageNum, Integer pageSize) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户评论: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             var page = commentService.getUserComments(userId, commentType, status,
                 pageNum, pageSize, "create_time", "DESC");
             
@@ -210,6 +250,13 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     @Override
     public Result<PageResponse<CommentResponse>> getUserReplies(Long userId, Integer pageNum, Integer pageSize) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取用户回复: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             var page = commentService.getUserReplies(userId, pageNum, pageSize,
                 "create_time", "DESC");
             
@@ -224,9 +271,18 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     @Override
     public Result<Void> updateCommentStatus(Long commentId, String status, Long operatorId) {
         try {
+            // 验证操作员用户是否存在
+            Result<UserResponse> operatorResult = userFacadeService.getUserById(operatorId);
+            if (operatorResult == null || !operatorResult.getSuccess()) {
+                log.warn("操作员用户不存在，无法更新评论状态: operatorId={}", operatorId);
+                return Result.error("OPERATOR_NOT_FOUND", "操作员用户不存在");
+            }
+            
             boolean success = commentService.updateCommentStatus(commentId, status, operatorId);
             
             if (success) {
+                log.info("评论状态更新成功: commentId={}, status={}, operatorId={}, operatorNickname={}", 
+                        commentId, status, operatorId, operatorResult.getData().getNickname());
                 return Result.success(null);
             } else {
                 return Result.error("COMMENT_UPDATE_ERROR", "评论状态更新失败");
@@ -240,7 +296,16 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     @Override
     public Result<Integer> batchUpdateCommentStatus(List<Long> commentIds, String status, Long operatorId) {
         try {
+            // 验证操作员用户是否存在
+            Result<UserResponse> operatorResult = userFacadeService.getUserById(operatorId);
+            if (operatorResult == null || !operatorResult.getSuccess()) {
+                log.warn("操作员用户不存在，无法批量更新评论状态: operatorId={}", operatorId);
+                return Result.error("OPERATOR_NOT_FOUND", "操作员用户不存在");
+            }
+            
             int count = commentService.batchUpdateCommentStatus(commentIds, status, operatorId);
+            log.info("批量评论状态更新成功: commentCount={}, status={}, operatorId={}, operatorNickname={}", 
+                    count, status, operatorId, operatorResult.getData().getNickname());
             return Result.success(count);
         } catch (Exception e) {
             log.error("批量更新评论状态失败", e);
@@ -294,6 +359,13 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     @Override
     public Result<Long> countUserComments(Long userId, String commentType, String status) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法统计用户评论数: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             long count = commentService.countUserComments(userId, commentType, status);
             return Result.success(count);
         } catch (Exception e) {
@@ -316,7 +388,15 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
     @Override
     public Result<Integer> updateUserInfo(Long userId, String nickname, String avatar) {
         try {
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法更新用户信息: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             int count = commentService.updateUserInfo(userId, nickname, avatar);
+            log.info("用户信息更新成功: userId={}, nickname={}, updatedCount={}", userId, nickname, count);
             return Result.success(count);
         } catch (Exception e) {
             log.error("更新用户信息失败", e);

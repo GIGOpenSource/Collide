@@ -12,8 +12,11 @@ import com.gig.collide.favorite.domain.entity.Favorite;
 import com.gig.collide.favorite.domain.service.FavoriteService;
 import com.gig.collide.favorite.infrastructure.cache.FavoriteCacheConstant;
 import com.gig.collide.web.vo.Result;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +40,9 @@ import java.util.stream.Collectors;
 public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
 
     private final FavoriteService favoriteService;
+    
+    @DubboReference(version = "1.0.0", timeout = 10000, check = false)
+    private UserFacadeService userFacadeService;
 
     @Override
     @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATUS_CACHE)
@@ -50,6 +56,13 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
                     request.getUserId(), request.getFavoriteType(), request.getTargetId());
             long startTime = System.currentTimeMillis();
 
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法添加收藏: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             // 转换请求对象为实体
             Favorite favorite = convertCreateRequestToEntity(request);
             
@@ -60,7 +73,11 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             FavoriteResponse response = convertToResponse(savedFavorite);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("收藏添加成功: ID={}, 耗时={}ms", savedFavorite.getId(), duration);
+            log.info("收藏添加成功: ID={}, 用户={}({}), 类型={}, 目标={}, 耗时={}ms", 
+                    savedFavorite.getId(), 
+                    request.getUserId(), userResult.getData().getNickname(),
+                    request.getFavoriteType(), request.getTargetId(),
+                    duration);
             
             return Result.success(response);
         } catch (IllegalArgumentException e) {
@@ -89,6 +106,13 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
                     request.getUserId(), request.getFavoriteType(), request.getTargetId());
             long startTime = System.currentTimeMillis();
 
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法取消收藏: userId={}", request.getUserId());
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
             boolean success = favoriteService.removeFavorite(
                     request.getUserId(), 
                     request.getFavoriteType(),
@@ -100,12 +124,14 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             long duration = System.currentTimeMillis() - startTime;
             
             if (success) {
-                log.info("收藏取消成功: 用户={}, 目标={}, 耗时={}ms",
-                        request.getUserId(), request.getTargetId(), duration);
+                log.info("收藏取消成功: 用户={}({}), 类型={}, 目标={}, 耗时={}ms",
+                        request.getUserId(), userResult.getData().getNickname(),
+                        request.getFavoriteType(), request.getTargetId(), duration);
                 return Result.success(null);
             } else {
-                log.warn("收藏取消失败: 用户={}, 目标={}, 耗时={}ms",
-                        request.getUserId(), request.getTargetId(), duration);
+                log.warn("收藏取消失败: 用户={}({}), 类型={}, 目标={}, 耗时={}ms",
+                        request.getUserId(), userResult.getData().getNickname(),
+                        request.getFavoriteType(), request.getTargetId(), duration);
                 return Result.error("UNFAVORITE_FAILED", "取消收藏失败");
             }
         } catch (Exception e) {
@@ -122,11 +148,18 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             log.debug("检查收藏状态: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法检查收藏状态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             boolean isFavorited = favoriteService.checkFavoriteStatus(userId, favoriteType, targetId);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("收藏状态查询完成: 用户={}, 目标={}, 已收藏={}, 耗时={}ms",
-                    userId, targetId, isFavorited, duration);
+            log.debug("收藏状态查询完成: 用户={}({}), 类型={}, 目标={}, 已收藏={}, 耗时={}ms",
+                    userId, userResult.getData().getNickname(), favoriteType, targetId, isFavorited, duration);
             
             return Result.success(isFavorited);
         } catch (Exception e) {
@@ -143,16 +176,25 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             log.debug("获取收藏详情: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取收藏详情: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Favorite favorite = favoriteService.getFavoriteDetail(userId, favoriteType, targetId);
             if (favorite == null) {
-                log.warn("收藏记录不存在: 用户={}, 目标={}", userId, targetId);
+                log.warn("收藏记录不存在: 用户={}({}), 目标={}", 
+                        userId, userResult.getData().getNickname(), targetId);
                 return Result.error("FAVORITE_NOT_FOUND", "收藏记录不存在");
             }
             
             FavoriteResponse response = convertToResponse(favorite);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("收藏详情查询完成: ID={}, 耗时={}ms", favorite.getId(), duration);
+            log.debug("收藏详情查询完成: ID={}, 用户={}({}), 耗时={}ms", 
+                    favorite.getId(), userId, userResult.getData().getNickname(), duration);
             
             return Result.success(response);
         } catch (Exception e) {
@@ -206,11 +248,19 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             log.debug("获取用户收藏列表: 用户={}, 类型={}, 页码={}, 大小={}", userId, favoriteType, pageNum, pageSize);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取收藏列表: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             IPage<Favorite> favoritePage = favoriteService.getUserFavorites(userId, favoriteType, pageNum, pageSize);
             PageResponse<FavoriteResponse> pageResponse = convertToPageResponse(favoritePage);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("用户收藏列表查询完成: 用户={}, 总数={}, 耗时={}ms", userId, pageResponse.getTotal(), duration);
+            log.debug("用户收藏列表查询完成: 用户={}({}), 类型={}, 总数={}, 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), favoriteType, pageResponse.getTotal(), duration);
             
             return Result.success(pageResponse);
         } catch (Exception e) {
@@ -249,10 +299,18 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             log.debug("获取用户收藏数量: 用户={}, 类型={}", userId, favoriteType);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取收藏数量: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Long count = favoriteService.getUserFavoriteCount(userId, favoriteType);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("用户收藏数量查询完成: 用户={}, 类型={}, 数量={}, 耗时={}ms", userId, favoriteType, count, duration);
+            log.debug("用户收藏数量查询完成: 用户={}({}), 类型={}, 数量={}, 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), favoriteType, count, duration);
             
             return Result.success(count);
         } catch (Exception e) {
@@ -289,10 +347,18 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
             log.debug("获取用户收藏统计: 用户={}", userId);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取收藏统计: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Map<String, Object> statistics = favoriteService.getUserFavoriteStatistics(userId);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("用户收藏统计查询完成: 用户={}, 耗时={}ms", userId, duration);
+            log.debug("用户收藏统计查询完成: 用户={}({}), 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), duration);
             
             return Result.success(statistics);
         } catch (Exception e) {
@@ -310,12 +376,19 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
                     userId, favoriteType, targetIds != null ? targetIds.size() : 0);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法批量检查收藏状态: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Map<Long, Boolean> statusMap = favoriteService.batchCheckFavoriteStatus(userId, favoriteType, targetIds);
             
             long duration = System.currentTimeMillis() - startTime;
             if (statusMap != null) {
-                log.info("批量收藏状态检查完成: 用户={}, 检查数量={}, 耗时={}ms",
-                        userId, statusMap.size(), duration);
+                log.info("批量收藏状态检查完成: 用户={}({}), 类型={}, 检查数量={}, 耗时={}ms",
+                        userId, userResult.getData().getNickname(), favoriteType, statusMap.size(), duration);
             }
             
             return Result.success(statusMap);
@@ -335,12 +408,19 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
                     userId, titleKeyword, favoriteType, pageNum, pageSize);
             long startTime = System.currentTimeMillis();
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法搜索收藏: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             IPage<Favorite> favoritePage = favoriteService.searchFavoritesByTitle(userId, titleKeyword, favoriteType, pageNum, pageSize);
             PageResponse<FavoriteResponse> pageResponse = convertToPageResponse(favoritePage);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.info("收藏搜索完成: 用户={}, 关键词={}, 结果数={}, 耗时={}ms",
-                    userId, titleKeyword, pageResponse.getTotal(), duration);
+            log.info("收藏搜索完成: 用户={}({}), 关键词={}, 类型={}, 结果数={}, 耗时={}ms",
+                    userId, userResult.getData().getNickname(), titleKeyword, favoriteType, pageResponse.getTotal(), duration);
             
             return Result.success(pageResponse);
         } catch (Exception e) {

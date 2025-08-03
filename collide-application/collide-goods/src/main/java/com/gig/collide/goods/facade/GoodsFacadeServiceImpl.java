@@ -10,8 +10,11 @@ import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.goods.domain.entity.Goods;
 import com.gig.collide.goods.domain.service.GoodsService;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -37,6 +40,9 @@ import java.util.stream.Collectors;
 public class GoodsFacadeServiceImpl implements GoodsFacadeService {
 
     private final GoodsService goodsService;
+    
+    @DubboReference(version = "1.0.0", timeout = 10000, check = false)
+    private UserFacadeService userFacadeService;
 
     // =================== 基础CRUD操作 ===================
 
@@ -49,20 +55,28 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             // 验证请求参数
             request.validateTypeSpecificFields();
             
+            // 验证商家用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(request.getSellerId());
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("商家用户不存在，无法创建商品: sellerId={}", request.getSellerId());
+                return Result.failure("SELLER_NOT_FOUND", "商家用户不存在");
+            }
+            
             // 转换为实体对象
             Goods goods = convertToEntity(request);
             
             // 创建商品
             Long goodsId = goodsService.createGoods(goods);
             
-            log.info("商品创建成功: id={}, name={}", goodsId, request.getName());
+            log.info("商品创建成功: id={}, name={}, 商家={}({})", 
+                    goodsId, request.getName(), request.getSellerId(), userResult.getData().getNickname());
             return Result.success();
             
         } catch (IllegalArgumentException e) {
             log.warn("商品创建参数错误: {}", e.getMessage());
             return Result.failure("参数错误: " + e.getMessage());
         } catch (Exception e) {
-            log.error("商品创建失败: name={}", request.getName(), e);
+            log.error("商品创建失败: name={}, sellerId={}", request.getName(), request.getSellerId(), e);
             return Result.failure("商品创建失败: " + e.getMessage());
         }
     }
@@ -231,9 +245,18 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 return PageResponse.empty();
             }
             
+            // 验证商家用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(sellerId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("商家用户不存在，无法查询商品: sellerId={}", sellerId);
+                return PageResponse.empty();
+            }
+            
             Page<Goods> page = new Page<>(currentPage, pageSize);
             IPage<Goods> result = goodsService.getGoodsBySeller(page, sellerId, "active");
             
+            log.debug("商家商品查询完成: 商家={}({}), 商品数量={}", 
+                    sellerId, userResult.getData().getNickname(), result.getTotal());
             return convertToPageResponse(result);
             
         } catch (Exception e) {
@@ -798,6 +821,13 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("REST根据内容创建商品: contentId={}, title={}, authorId={}, coinPrice={}", 
                 contentId, contentTitle, authorId, coinPrice);
 
+            // 验证作者用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(authorId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("作者用户不存在，无法创建内容商品: authorId={}", authorId);
+                return Result.failure("AUTHOR_NOT_FOUND", "作者用户不存在");
+            }
+
             // 检查是否已存在该内容的商品
             Goods existingGoods = goodsService.getGoodsByContentId(contentId);
             if (existingGoods != null) {
@@ -820,9 +850,9 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             // 设置内容相关信息
             goods.setContentId(contentId);
 
-            // 设置商家信息（作者）
+            // 设置商家信息（作者）- 使用验证后的真实用户信息
             goods.setSellerId(authorId);
-            goods.setSellerName(authorNickname);
+            goods.setSellerName(userResult.getData().getNickname());
 
             // 设置图片和库存
             goods.setCoverUrl(coverUrl);
@@ -849,7 +879,14 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                                          Long categoryId, String categoryName, Long authorId,
                                          String authorNickname, String coverUrl) {
         try {
-            log.info("REST同步内容信息到商品: contentId={}, title={}", contentId, contentTitle);
+            log.info("REST同步内容信息到商品: contentId={}, title={}, authorId={}", contentId, contentTitle, authorId);
+
+            // 验证作者用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(authorId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("作者用户不存在，无法同步内容到商品: authorId={}", authorId);
+                return Result.failure("AUTHOR_NOT_FOUND", "作者用户不存在");
+            }
 
             // 查找对应的商品
             Goods goods = goodsService.getGoodsByContentId(contentId);
@@ -858,26 +895,27 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 return Result.failure("未找到对应的商品记录");
             }
 
-            // 更新商品信息
+            // 更新商品信息 - 使用验证后的真实用户信息
             goods.setName(contentTitle);
             goods.setDescription(contentDesc != null ? contentDesc : contentTitle);
             goods.setCategoryId(categoryId);
             goods.setCategoryName(categoryName);
             goods.setSellerId(authorId);
-            goods.setSellerName(authorNickname);
+            goods.setSellerName(userResult.getData().getNickname());
             goods.setCoverUrl(coverUrl);
 
             // 保存更新
             boolean success = goodsService.updateGoods(goods);
             if (success) {
-                log.info("内容信息同步成功: contentId={}, goodsId={}", contentId, goods.getId());
+                log.info("内容信息同步成功: contentId={}, goodsId={}, 作者={}({})", 
+                        contentId, goods.getId(), authorId, userResult.getData().getNickname());
                 return Result.success();
             } else {
                 return Result.failure("同步失败");
             }
 
         } catch (Exception e) {
-            log.error("同步内容信息到商品失败: contentId={}", contentId, e);
+            log.error("同步内容信息到商品失败: contentId={}, authorId={}", contentId, authorId, e);
             return Result.failure("同步失败: " + e.getMessage());
         }
     }

@@ -15,6 +15,7 @@ import com.gig.collide.content.domain.entity.ContentChapter;
 import com.gig.collide.content.domain.service.ContentService;
 import com.gig.collide.content.domain.service.ContentChapterService;
 import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.category.CategoryFacadeService;
 import com.gig.collide.api.like.LikeFacadeService;
 import com.gig.collide.api.favorite.FavoriteFacadeService;
@@ -167,6 +168,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
         try {
             log.info("删除内容请求: ID={}, 操作人={}", contentId, operatorId);
             
+            // 验证操作者是否存在
+            try {
+                var operatorResult = userFacadeService.getUserById(operatorId);
+                if (!operatorResult.getSuccess()) {
+                    log.warn("操作者不存在，无法删除内容: operatorId={}", operatorId);
+                    return Result.error("OPERATOR_NOT_FOUND", "操作者不存在");
+                }
+                log.debug("操作者验证通过: {}", operatorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("操作者验证失败: operatorId={}, error={}", operatorId, e.getMessage());
+                return Result.error("OPERATOR_VALIDATION_FAILED", "操作者验证失败");
+            }
+            
             boolean deleted = contentService.deleteContent(contentId, operatorId);
             
             if (deleted) {
@@ -300,6 +314,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
         try {
             log.info("发布内容: ID={}, 作者={}", contentId, authorId);
             
+            // 验证作者是否存在
+            try {
+                var authorResult = userFacadeService.getUserById(authorId);
+                if (!authorResult.getSuccess()) {
+                    log.warn("作者不存在，无法发布内容: authorId={}", authorId);
+                    return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+                }
+                log.debug("作者验证通过: {}", authorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("作者验证失败: authorId={}, error={}", authorId, e.getMessage());
+                return Result.error("AUTHOR_VALIDATION_FAILED", "作者验证失败");
+            }
+            
             Content publishedContent = contentService.publishContent(contentId, authorId);
             ContentResponse response = convertToResponse(publishedContent);
             
@@ -319,6 +346,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     public Result<Void> offlineContent(Long contentId, Long operatorId) {
         try {
             log.info("下线内容: ID={}, 操作人={}", contentId, operatorId);
+            
+            // 验证操作者是否存在
+            try {
+                var operatorResult = userFacadeService.getUserById(operatorId);
+                if (!operatorResult.getSuccess()) {
+                    log.warn("操作者不存在，无法下线内容: operatorId={}", operatorId);
+                    return Result.error("OPERATOR_NOT_FOUND", "操作者不存在");
+                }
+                log.debug("操作者验证通过: {}", operatorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("操作者验证失败: operatorId={}, error={}", operatorId, e.getMessage());
+                return Result.error("OPERATOR_VALIDATION_FAILED", "操作者验证失败");
+            }
             
             boolean offlined = contentService.offlineContent(contentId, operatorId);
             
@@ -414,6 +454,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     public Result<ChapterResponse> publishChapter(Long chapterId, Long authorId) {
         try {
             log.info("发布章节: ID={}, 作者={}", chapterId, authorId);
+            
+            // 验证作者是否存在
+            try {
+                var authorResult = userFacadeService.getUserById(authorId);
+                if (!authorResult.getSuccess()) {
+                    log.warn("作者不存在，无法发布章节: authorId={}", authorId);
+                    return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+                }
+                log.debug("作者验证通过: {}", authorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("作者验证失败: authorId={}, error={}", authorId, e.getMessage());
+                return Result.error("AUTHOR_VALIDATION_FAILED", "作者验证失败");
+            }
             
             ContentChapter publishedChapter = contentChapterService.publishChapter(chapterId, authorId);
             ChapterResponse response = convertToResponse(publishedChapter);
@@ -584,6 +637,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     public Result<PageResponse<ContentResponse>> getContentsByAuthor(Long authorId, String contentType, 
                                                                    String status, Integer currentPage, Integer pageSize) {
         try {
+            // 验证作者是否存在
+            try {
+                var authorResult = userFacadeService.getUserById(authorId);
+                if (!authorResult.getSuccess()) {
+                    log.warn("作者不存在，无法查询内容: authorId={}", authorId);
+                    return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+                }
+                log.debug("作者验证通过: {}", authorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("作者验证失败: authorId={}, error={}", authorId, e.getMessage());
+                return Result.error("AUTHOR_VALIDATION_FAILED", "作者验证失败");
+            }
+            
             Page<Content> page = new Page<>(currentPage, pageSize);
             Page<Content> contentPage = contentService.getContentsByAuthor(page, authorId, contentType, status);
             
@@ -684,6 +750,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     @Override
     public Result<Integer> updateAuthorInfo(Long authorId, String nickname, String avatar) {
         try {
+            // 验证作者是否存在
+            try {
+                var authorResult = userFacadeService.getUserById(authorId);
+                if (!authorResult.getSuccess()) {
+                    log.warn("作者不存在，无法更新信息: authorId={}", authorId);
+                    return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+                }
+                log.debug("作者验证通过: {}", authorResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("作者验证失败: authorId={}, error={}", authorId, e.getMessage());
+                return Result.error("AUTHOR_VALIDATION_FAILED", "作者验证失败");
+            }
+            
             Integer count = contentService.updateAuthorInfo(authorId, nickname, avatar);
             return Result.success(count);
         } catch (Exception e) {
@@ -707,6 +786,19 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
     public Result<ContentResponse> reviewContent(Long contentId, String reviewStatus, 
                                                 Long reviewerId, String reviewComment) {
         try {
+            // 验证审核者是否存在
+            try {
+                var reviewerResult = userFacadeService.getUserById(reviewerId);
+                if (!reviewerResult.getSuccess()) {
+                    log.warn("审核者不存在，无法审核内容: reviewerId={}", reviewerId);
+                    return Result.error("REVIEWER_NOT_FOUND", "审核者不存在");
+                }
+                log.debug("审核者验证通过: {}", reviewerResult.getData().getNickname());
+            } catch (Exception e) {
+                log.warn("审核者验证失败: reviewerId={}, error={}", reviewerId, e.getMessage());
+                return Result.error("REVIEWER_VALIDATION_FAILED", "审核者验证失败");
+            }
+            
             Content reviewedContent = contentService.reviewContent(contentId, reviewStatus, reviewerId, reviewComment);
             ContentResponse response = convertToResponse(reviewedContent);
             return Result.success(response);

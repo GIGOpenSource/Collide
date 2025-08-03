@@ -17,6 +17,7 @@ import com.gig.collide.users.domain.entity.UserBlock;
 import com.gig.collide.users.domain.service.UserService;
 import com.gig.collide.users.domain.service.impl.UserServiceImpl;
 import com.gig.collide.users.domain.service.WalletService;
+import com.gig.collide.users.domain.service.WalletManagementService;
 import com.gig.collide.users.domain.service.UserBlockService;
 import com.gig.collide.web.vo.Result;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,9 @@ public class UserFacadeServiceImpl implements UserFacadeService {
 
     @Autowired
     private WalletService walletService;
+
+    @Autowired
+    private WalletManagementService walletManagementService;
 
     @Autowired
     private UserBlockService userBlockService;
@@ -317,18 +321,20 @@ public class UserFacadeServiceImpl implements UserFacadeService {
             cacheType = CacheType.BOTH)
     public Result<WalletResponse> getUserWallet(Long userId) {
         try {
-            log.debug("获取用户钱包: userId={}", userId);
+            log.debug("Dubbo服务调用：获取用户钱包信息，userId={}", userId);
             
-            UserWallet wallet = walletService.getWalletByUserId(userId);
+            // 使用钱包管理服务确保钱包存在（包含容错处理）
+            UserWallet wallet = walletManagementService.ensureWalletExists(userId);
             if (wallet == null) {
-                // 自动创建钱包
-                wallet = walletService.createWallet(userId);
+                return Result.error("WALLET_GET_ERROR", "获取用户钱包失败：钱包创建失败");
             }
+            
             WalletResponse response = convertToWalletResponse(wallet);
             return Result.success(response);
+            
         } catch (Exception e) {
-            log.error("获取用户钱包失败", e);
-            return Result.error("WALLET_GET_ERROR", "获取用户钱包失败: " + e.getMessage());
+            log.error("获取用户钱包Dubbo服务异常：userId={}", userId, e);
+            return Result.error("WALLET_GET_ERROR", "获取用户钱包服务异常: " + e.getMessage());
         }
     }
 
@@ -355,41 +361,60 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     @Override
     public Result<Boolean> checkWalletBalance(Long userId, java.math.BigDecimal amount) {
         try {
-            boolean sufficient = walletService.checkBalance(userId, amount);
-            return Result.success(sufficient);
+            log.debug("Dubbo服务调用：检查用户钱包余额，userId={}，amount={}", userId, amount);
+            
+            WalletManagementService.WalletBalanceCheckResult result = 
+                walletManagementService.checkBalance(userId, amount);
+            
+            if (result.isValid()) {
+                return Result.success(result.isSufficient());
+            } else {
+                return Result.error("WALLET_CHECK_ERROR", result.getMessage());
+            }
+            
         } catch (Exception e) {
-            log.error("检查钱包余额失败", e);
-            return Result.error("WALLET_CHECK_ERROR", "检查钱包余额失败: " + e.getMessage());
+            log.error("检查钱包余额Dubbo服务异常：userId={}，amount={}", userId, amount, e);
+            return Result.error("WALLET_CHECK_ERROR", "检查钱包余额服务异常: " + e.getMessage());
         }
     }
 
     @Override
     public Result<Void> deductWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description) {
         try {
-            boolean success = walletService.deductBalance(userId, amount, businessId, description);
-            if (success) {
+            log.info("Dubbo服务调用：扣减用户钱包余额，userId={}，amount={}，businessId={}", userId, amount, businessId);
+            
+            WalletManagementService.WalletOperationResult result = 
+                walletManagementService.safeDeductBalance(userId, amount, businessId, description);
+            
+            if (result.isSuccess()) {
                 return Result.success(null);
             } else {
-                return Result.error("WALLET_DEDUCT_ERROR", "扣款失败：余额不足或钱包状态异常");
+                return Result.error(result.getCode(), result.getMessage());
             }
+            
         } catch (Exception e) {
-            log.error("钱包扣款失败", e);
-            return Result.error("WALLET_DEDUCT_ERROR", "钱包扣款失败: " + e.getMessage());
+            log.error("钱包扣款Dubbo服务异常：userId={}，amount={}", userId, amount, e);
+            return Result.error("WALLET_DEDUCT_ERROR", "钱包扣款服务异常: " + e.getMessage());
         }
     }
 
     @Override
     public Result<Void> addWalletBalance(Long userId, java.math.BigDecimal amount, String businessId, String description) {
         try {
-            boolean success = walletService.addBalance(userId, amount, businessId, description);
-            if (success) {
+            log.info("Dubbo服务调用：增加用户钱包余额，userId={}，amount={}，businessId={}", userId, amount, businessId);
+            
+            WalletManagementService.WalletOperationResult result = 
+                walletManagementService.safeAddBalance(userId, amount, businessId, description);
+            
+            if (result.isSuccess()) {
                 return Result.success(null);
             } else {
-                return Result.error("WALLET_ADD_ERROR", "充值失败：钱包状态异常");
+                return Result.error(result.getCode(), result.getMessage());
             }
+            
         } catch (Exception e) {
-            log.error("钱包充值失败", e);
-            return Result.error("WALLET_ADD_ERROR", "钱包充值失败: " + e.getMessage());
+            log.error("钱包充值Dubbo服务异常：userId={}，amount={}", userId, amount, e);
+            return Result.error("WALLET_ADD_ERROR", "钱包充值服务异常: " + e.getMessage());
         }
     }
 

@@ -1,9 +1,12 @@
 package com.gig.collide.task.domain.service.impl;
 
 import com.gig.collide.api.task.constant.RewardTypeConstant;
+import com.gig.collide.api.user.UserFacadeService;
 import com.gig.collide.task.domain.entity.UserRewardRecord;
 import com.gig.collide.task.domain.service.TaskWalletSyncService;
+import com.gig.collide.web.vo.Result;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,15 +27,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
 
-    // 注入用户钱包服务的Dubbo引用
-    // TODO: 需要根据实际的用户模块钱包服务接口进行调整
-    /*
-    @DubboReference
-    private UserWalletFacadeService userWalletFacadeService;
-    */
+    /**
+     * 用户门面服务 Dubbo 引用
+     * 用于调用用户钱包相关功能
+     */
+    @Autowired
+    private UserFacadeService userFacadeService;
 
-    // 临时模拟钱包服务调用，实际需要替换为真实的Dubbo服务调用
-    private final Map<Long, Long> mockUserCoinBalance = new HashMap<>();
+    // 操作日志记录
     private final List<Map<String, Object>> syncOperationLog = new ArrayList<>();
 
     @Override
@@ -134,11 +136,22 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
     @Override
     public Long getCurrentCoinBalance(Long userId) {
         try {
-            // TODO: 调用真实的钱包服务查询余额
-            // return userWalletFacadeService.getCoinBalance(userId);
+            log.debug("查询用户金币余额: userId={}", userId);
             
-            // 临时模拟实现
-            return mockUserCoinBalance.getOrDefault(userId, 0L);
+            // 调用用户钱包服务获取钱包信息
+            Result<com.gig.collide.api.user.response.WalletResponse> result = userFacadeService.getUserWallet(userId);
+            
+            if (result != null && result.isSuccess() && result.getData() != null) {
+                java.math.BigDecimal balance = result.getData().getBalance();
+                Long coinBalance = balance != null ? balance.longValue() : 0L;
+                log.debug("获取用户金币余额成功: userId={}, balance={}", userId, coinBalance);
+                return coinBalance;
+            } else {
+                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                log.warn("获取用户金币余额失败: userId={}, error={}", userId, errorMsg);
+                return 0L;
+            }
+            
         } catch (Exception e) {
             log.error("查询用户金币余额异常: userId={}, error={}", userId, e.getMessage(), e);
             return 0L;
@@ -148,15 +161,22 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
     @Override
     public Long getTotalEarnedCoins(Long userId) {
         try {
-            // TODO: 调用真实的钱包服务查询累计金币
-            // return userWalletFacadeService.getTotalEarnedCoins(userId);
+            log.debug("查询用户累计金币收入: userId={}", userId);
             
-            // 临时模拟实现
-            return syncOperationLog.stream()
-                    .filter(log -> Objects.equals(log.get("userId"), userId) &&
-                                 Boolean.TRUE.equals(log.get("success")))
-                    .mapToLong(log -> ((Integer) log.get("amount")).longValue())
-                    .sum();
+            // 调用用户钱包服务获取钱包信息
+            Result<com.gig.collide.api.user.response.WalletResponse> result = userFacadeService.getUserWallet(userId);
+            
+            if (result != null && result.isSuccess() && result.getData() != null) {
+                java.math.BigDecimal totalIncome = result.getData().getTotalIncome();
+                Long totalEarned = totalIncome != null ? totalIncome.longValue() : 0L;
+                log.debug("获取用户累计金币收入成功: userId={}, totalEarned={}", userId, totalEarned);
+                return totalEarned;
+            } else {
+                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                log.warn("获取用户累计金币收入失败: userId={}, error={}", userId, errorMsg);
+                return 0L;
+            }
+            
         } catch (Exception e) {
             log.error("查询用户累计金币异常: userId={}, error={}", userId, e.getMessage(), e);
             return 0L;
@@ -249,19 +269,28 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
     @Override
     public boolean callWalletServiceGrantCoin(Long userId, Integer amount, String source) {
         try {
-            // TODO: 调用真实的钱包服务
-            /*
-            Result<Boolean> result = userWalletFacadeService.grantCoin(userId, amount, source);
-            return result != null && result.isSuccess() && Boolean.TRUE.equals(result.getData());
-            */
+            log.info("调用用户钱包服务发放金币: userId={}, amount={}, source={}", userId, amount, source);
             
-            // 临时模拟实现 - 直接更新模拟的余额
-            Long currentBalance = mockUserCoinBalance.getOrDefault(userId, 0L);
-            mockUserCoinBalance.put(userId, currentBalance + amount);
+            // 构建业务ID，用于钱包操作的流水记录
+            String businessId = "TASK_REWARD_" + System.currentTimeMillis();
+            String description = "任务奖励发放: " + source;
             
-            log.info("模拟钱包服务调用成功: userId={}, amount={}, newBalance={}", 
-                    userId, amount, currentBalance + amount);
-            return true;
+            // 调用用户钱包服务的 addWalletBalance 方法
+            Result<Void> result = userFacadeService.addWalletBalance(
+                userId, 
+                java.math.BigDecimal.valueOf(amount), 
+                businessId, 
+                description
+            );
+            
+            if (result != null && result.isSuccess()) {
+                log.info("钱包服务调用成功: userId={}, amount={}, businessId={}", userId, amount, businessId);
+                return true;
+            } else {
+                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                log.error("钱包服务调用失败: userId={}, amount={}, error={}", userId, amount, errorMsg);
+                return false;
+            }
             
         } catch (Exception e) {
             log.error("调用钱包服务异常: userId={}, amount={}, error={}", userId, amount, e.getMessage(), e);
@@ -272,11 +301,21 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
     @Override
     public boolean isWalletServiceAvailable() {
         try {
-            // TODO: 实际检查钱包服务健康状态
-            // return userWalletFacadeService.isHealthy();
+            // 通过检查余额来验证钱包服务是否可用
+            // 使用一个测试用户ID (1L) 和很小的金额进行检查
+            Result<Boolean> result = userFacadeService.checkWalletBalance(1L, java.math.BigDecimal.valueOf(0.01));
             
-            // 临时模拟实现
-            return true;
+            // 只要服务能响应（无论余额是否充足），就认为服务可用
+            boolean available = result != null;
+            
+            if (available) {
+                log.debug("钱包服务健康检查通过");
+            } else {
+                log.warn("钱包服务健康检查失败：服务无响应");
+            }
+            
+            return available;
+            
         } catch (Exception e) {
             log.error("检查钱包服务可用性异常: error={}", e.getMessage(), e);
             return false;

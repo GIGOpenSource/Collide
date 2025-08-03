@@ -6,6 +6,8 @@ import com.gig.collide.api.message.request.MessageCreateRequest;
 import com.gig.collide.api.message.request.MessageQueryRequest;
 import com.gig.collide.api.message.response.MessageResponse;
 import com.gig.collide.api.message.response.MessageSessionResponse;
+import com.gig.collide.api.user.UserFacadeService;
+import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.message.domain.entity.Message;
 import com.gig.collide.message.domain.entity.MessageSession;
@@ -38,6 +40,7 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
 
     private final MessageService messageService;
     private final MessageSessionService messageSessionService;
+    private final UserFacadeService userFacadeService;
 
     private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -55,6 +58,20 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
             
             if (request.getSenderId().equals(request.getReceiverId())) {
                 return Result.error("INVALID_PARAM", "不能给自己发送消息");
+            }
+            
+            // 验证发送者是否存在
+            Result<UserResponse> senderResult = userFacadeService.getUserById(request.getSenderId());
+            if (senderResult == null || !senderResult.getSuccess()) {
+                log.warn("发送者不存在，消息发送失败: senderId={}", request.getSenderId());
+                return Result.error("SENDER_NOT_FOUND", "发送者不存在");
+            }
+            
+            // 验证接收者是否存在
+            Result<UserResponse> receiverResult = userFacadeService.getUserById(request.getReceiverId());
+            if (receiverResult == null || !receiverResult.getSuccess()) {
+                log.warn("接收者不存在，消息发送失败: receiverId={}", request.getReceiverId());
+                return Result.error("RECEIVER_NOT_FOUND", "接收者不存在");
             }
             
             // 转换为实体对象
@@ -77,7 +94,10 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
             // 转换为响应对象
             MessageResponse response = convertToResponse(savedMessage);
             
-            log.info("门面发送消息成功: ID={}", savedMessage.getId());
+            log.info("门面发送消息成功: ID={}, 发送者={}, 接收者={}", 
+                    savedMessage.getId(), 
+                    senderResult.getData().getUsername(), 
+                    receiverResult.getData().getUsername());
             return Result.success(response);
             
         } catch (Exception e) {
@@ -236,6 +256,13 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取会话列表: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Page<MessageSession> page = messageSessionService.getUserSessions(
                 userId, false, null, "last_message_time", "DESC", currentPage, pageSize
             );
@@ -258,6 +285,13 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取未读消息数: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Long count = messageService.getUnreadCount(userId);
             return Result.success(count != null ? count : 0L);
             
@@ -274,6 +308,20 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
             
             if (userId == null || otherUserId == null) {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+            
+            // 验证当前用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("当前用户不存在，无法获取未读消息数: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "当前用户不存在");
+            }
+            
+            // 验证对方用户是否存在
+            Result<UserResponse> otherUserResult = userFacadeService.getUserById(otherUserId);
+            if (otherUserResult == null || !otherUserResult.getSuccess()) {
+                log.warn("对方用户不存在，无法获取未读消息数: otherUserId={}", otherUserId);
+                return Result.error("OTHER_USER_NOT_FOUND", "对方用户不存在");
             }
             
             Long count = messageService.getUnreadCountWithUser(userId, otherUserId);
@@ -372,6 +420,13 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
             
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法搜索消息: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
             Page<Message> page = messageService.searchMessages(userId, keyword, currentPage, pageSize);
             PageResponse<MessageResponse> response = convertToPageResponse(page);
             return Result.success(response);
@@ -389,6 +444,13 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
             
             if (userId == null) {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取消息统计: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
             Map<String, Object> statistics = messageService.getMessageStatistics(userId);

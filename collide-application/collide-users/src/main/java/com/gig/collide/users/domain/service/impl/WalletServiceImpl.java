@@ -128,10 +128,44 @@ public class WalletServiceImpl implements WalletService {
         log.info("用户{}扣款，金额：{}，业务ID：{}，描述：{}", userId, amount, businessId, description);
         
         try {
+            // 1. 参数验证
+            if (userId == null || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                log.error("扣款失败：参数无效，userId={}，amount={}", userId, amount);
+                return false;
+            }
+
+            // 2. 获取钱包信息
+            UserWallet wallet = getWalletByUserId(userId);
+            if (wallet == null) {
+                log.error("扣款失败：钱包不存在，用户ID：{}", userId);
+                return false;
+            }
+
+            // 3. 检查钱包状态
+            if (!"active".equals(wallet.getStatus())) {
+                log.error("扣款失败：钱包状态异常，用户ID：{}，状态：{}", userId, wallet.getStatus());
+                return false;
+            }
+
+            // 4. 检查余额是否充足
+            if (!wallet.hasSufficientBalance(amount)) {
+                log.error("扣款失败：余额不足，用户ID：{}，需要金额：{}，可用余额：{}", 
+                         userId, amount, wallet.getAvailableBalance());
+                return false;
+            }
+
+            // 5. 执行扣款操作
             int result = walletMapper.deductBalance(userId, amount);
-            return result > 0;
+            if (result > 0) {
+                log.info("扣款成功：用户{}，金额：{}，业务ID：{}", userId, amount, businessId);
+                return true;
+            } else {
+                log.error("扣款失败：数据库操作返回0行，用户ID：{}，金额：{}", userId, amount);
+                return false;
+            }
+            
         } catch (Exception e) {
-            log.error("扣款失败：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage());
+            log.error("扣款异常：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage(), e);
             return false;
         }
     }
@@ -142,10 +176,41 @@ public class WalletServiceImpl implements WalletService {
         log.info("用户{}充值，金额：{}，业务ID：{}，描述：{}", userId, amount, businessId, description);
         
         try {
+            // 1. 参数验证
+            if (userId == null || amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                log.error("充值失败：参数无效，userId={}，amount={}", userId, amount);
+                return false;
+            }
+
+            // 2. 获取或创建钱包（容错处理）
+            UserWallet wallet = getWalletByUserId(userId);
+            if (wallet == null) {
+                log.info("钱包不存在，自动创建钱包，用户ID：{}", userId);
+                wallet = createWallet(userId);
+                if (wallet == null) {
+                    log.error("充值失败：钱包创建失败，用户ID：{}", userId);
+                    return false;
+                }
+            }
+
+            // 3. 检查钱包状态
+            if (!"active".equals(wallet.getStatus())) {
+                log.error("充值失败：钱包状态异常，用户ID：{}，状态：{}", userId, wallet.getStatus());
+                return false;
+            }
+
+            // 4. 执行充值操作
             int result = walletMapper.addBalance(userId, amount);
-            return result > 0;
+            if (result > 0) {
+                log.info("充值成功：用户{}，金额：{}，业务ID：{}", userId, amount, businessId);
+                return true;
+            } else {
+                log.error("充值失败：数据库操作返回0行，用户ID：{}，金额：{}", userId, amount);
+                return false;
+            }
+            
         } catch (Exception e) {
-            log.error("充值失败：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage());
+            log.error("充值异常：用户{}，金额：{}，错误：{}", userId, amount, e.getMessage(), e);
             return false;
         }
     }
