@@ -1,0 +1,506 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.category.infrastructure.mapper.CategoryMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="Base_Column_List">
+        id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
+    </sql>
+
+    <!-- =================== MySQL 8.4.1 优化的基础查询 =================== -->
+
+    <!-- 根据父分类ID获取子分类列表 - 优化版 -->
+    <!-- 使用索引: idx_parent_status_sort -->
+    <select id="selectChildCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE parent_id = #{parentId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 分页获取分类列表 - 优化版 -->
+    <!-- 使用索引: idx_parent_status_sort 或 idx_status_content_desc_sort -->
+    <select id="selectCategoriesPage" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category 
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'content_count'">
+                <!-- MySQL 8.4.1 降序索引优化 -->
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据名称搜索分类 - MySQL 8.4.1 优化版 -->
+    <!-- 使用索引: idx_name_prefix_status_content 或 idx_name_lower_status -->
+    <select id="searchCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            <!-- 优先使用前缀匹配，性能更好 -->
+            <choose>
+                <when test="keyword.length() >= 2">
+                    AND (
+                        name LIKE CONCAT(#{keyword}, '%') 
+                        OR name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </when>
+                <otherwise>
+                    AND name LIKE CONCAT(#{keyword}, '%')
+                </otherwise>
+            </choose>
+        </if>
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>  
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'content_count'">
+                <!-- 使用降序索引优化 -->
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                <!-- 默认按相关性排序 -->
+                ORDER BY 
+                    CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
+                    content_count DESC,
+                    sort ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- =================== MySQL 8.4.1 优化的层级查询 =================== -->
+
+    <!-- 获取分类路径 - 优化版 -->
+    <select id="selectCategoryPath" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE id = #{categoryId}
+    </select>
+
+    <!-- 获取分类的所有祖先 - 批量查询优化 -->
+    <select id="selectCategoryAncestors" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE id IN
+        <foreach collection="ancestorIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <if test="includeInactive != null and !includeInactive">
+            AND status = 'active'
+        </if>
+        ORDER BY sort ASC
+    </select>
+
+    <!-- 获取分类的所有后代 - 批量查询优化 -->
+    <select id="selectCategoryDescendants" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE id IN
+        <foreach collection="descendantIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        <if test="includeInactive != null and !includeInactive">
+            AND status = 'active'
+        </if>
+        ORDER BY parent_id ASC, sort ASC
+    </select>
+
+    <!-- 获取分类树形结构数据 - MySQL 8.4.1 优化版 -->
+    <!-- 使用索引: idx_parent_status_sort -->
+    <select id="selectCategoryTree" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <choose>
+            <when test="rootId != null and rootId != 0">
+                <!-- 获取指定根分类及其直接子分类 -->
+                AND (id = #{rootId} OR parent_id = #{rootId})
+            </when>
+            <otherwise>
+                <!-- 获取所有根分类 -->
+                AND parent_id = 0
+            </otherwise>
+        </choose>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY parent_id ASC, name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY parent_id ASC, content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY parent_id ASC, create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY parent_id ASC, update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY parent_id ASC, sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 获取所有分类 - 用于构建完整树形结构 -->
+    <select id="selectAllCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        <if test="status != null and status != ''">
+            WHERE status = #{status}
+        </if>
+        ORDER BY parent_id ASC, sort ASC
+    </select>
+
+    <!-- =================== MySQL 8.4.1 优化的统计查询 =================== -->
+
+    <!-- 统计分类数量 - 索引优化 -->
+    <select id="countCategories" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_category
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 统计子分类数量 - 使用索引 idx_parent_status_sort -->
+    <select id="countChildCategories" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_category
+        WHERE parent_id = #{parentId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 获取分类统计信息 - MySQL 8.4.1 聚合优化 -->
+    <select id="selectCategoryStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as total_count,
+            COUNT(CASE WHEN status = 'active' THEN 1 END) as active_count,
+            COUNT(CASE WHEN status = 'inactive' THEN 1 END) as inactive_count,
+            COALESCE(SUM(content_count), 0) as total_content_count,
+            COALESCE(AVG(content_count), 0) as avg_content_count,
+            COALESCE(MAX(content_count), 0) as max_content_count,
+            COALESCE(MIN(content_count), 0) as min_content_count
+        FROM t_category
+        WHERE 1=1
+        <if test="categoryId != null">
+            AND (id = #{categoryId} OR parent_id = #{categoryId})
+        </if>
+    </select>
+
+    <!-- =================== MySQL 8.4.1 优化的更新操作 =================== -->
+
+    <!-- 更新分类内容数量 - 原子操作优化 -->
+    <update id="updateContentCount">
+        UPDATE t_category
+        SET content_count = GREATEST(0, COALESCE(content_count, 0) + #{increment}),
+            update_time = CURRENT_TIMESTAMP(3)
+        WHERE id = #{categoryId}
+    </update>
+
+    <!-- 批量更新分类状态 - 批量优化 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_category
+        SET status = #{status},
+            update_time = CURRENT_TIMESTAMP(3)
+        WHERE id IN
+        <foreach collection="categoryIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量更新排序值 - MySQL 8.4.1 批量优化 -->
+    <update id="batchUpdateSort">
+        UPDATE t_category
+        SET sort = CASE id
+        <foreach collection="sortMappings" index="categoryId" item="sortValue">
+            WHEN #{categoryId} THEN #{sortValue}
+        </foreach>
+        END,
+        update_time = CURRENT_TIMESTAMP(3)
+        WHERE id IN
+        <foreach collection="sortMappings" index="categoryId" item="sortValue" open="(" close=")" separator=",">
+            #{categoryId}
+        </foreach>
+    </update>
+
+    <!-- 更新分类的父分类 - 添加验证 -->
+    <update id="updateParentCategory">
+        UPDATE t_category
+        SET parent_id = #{newParentId},
+            update_time = CURRENT_TIMESTAMP(3)
+        WHERE id = #{categoryId}
+        AND id != #{newParentId}  <!-- 防止自引用 -->
+    </update>
+
+    <!-- =================== MySQL 8.4.1 优化的高级查询 =================== -->
+
+    <!-- 检查分类名称是否存在 - 使用唯一索引 -->
+    <select id="existsCategoryName" resultType="java.lang.Boolean">
+        SELECT EXISTS(
+            SELECT 1 FROM t_category
+            WHERE name = #{name}
+            AND parent_id = #{parentId}
+            <if test="excludeId != null">
+                AND id != #{excludeId}
+            </if>
+        )
+    </select>
+
+    <!-- 获取热门分类 - MySQL 8.4.1 降序索引优化 -->
+    <!-- 使用索引: idx_status_content_desc_sort -->
+    <select id="selectPopularCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY content_count DESC, sort ASC
+    </select>
+
+    <!-- 获取叶子分类 - MySQL 8.4.1 反连接优化 -->
+    <!-- 使用索引: idx_parent_for_leaf_query -->
+    <select id="selectLeafCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT c.<include refid="Base_Column_List"/>
+        FROM t_category c
+        WHERE NOT EXISTS (
+            SELECT 1 FROM t_category child 
+            WHERE child.parent_id = c.id
+            <if test="status != null and status != ''">
+                AND child.status = #{status}
+            </if>
+        )
+        <if test="parentId != null">
+            AND c.parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND c.status = #{status}
+        </if>
+        ORDER BY c.sort ASC
+    </select>
+
+    <!-- 获取分类建议 - MySQL 8.4.1 智能排序优化 -->
+    <!-- 使用索引: idx_name_prefix_status_content -->
+    <select id="selectCategorySuggestions" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE 1=1
+        <if test="keyword != null and keyword != ''">
+            AND name LIKE CONCAT(#{keyword}, '%')  <!-- 前缀匹配优先 -->
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        ORDER BY 
+            LENGTH(name) ASC,  <!-- 短名称优先 -->
+            content_count DESC,
+            sort ASC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取根分类列表 - 使用索引优化 -->
+    <!-- 使用索引: idx_parent_status_sort -->
+    <select id="selectRootCategories" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE parent_id = 0
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- =================== MySQL 8.4.1 优化的数据同步 =================== -->
+
+    <!-- 重新计算分类内容数量 - 使用窗口函数优化 -->
+    <update id="recalculateContentCount">
+        <choose>
+            <when test="categoryId != null">
+                <!-- 重新计算指定分类的内容数量 -->
+                UPDATE t_category
+                SET content_count = (
+                    SELECT COUNT(*)
+                    FROM t_content
+                    WHERE category_id = #{categoryId}
+                    AND status = 'PUBLISHED'
+                ),
+                update_time = CURRENT_TIMESTAMP(3)
+                WHERE id = #{categoryId}
+            </when>
+            <otherwise>
+                <!-- MySQL 8.4.1 窗口函数优化 - 批量更新 -->
+                UPDATE t_category c
+                JOIN (
+                    SELECT 
+                        category_id,
+                        COUNT(*) as new_count
+                    FROM t_content
+                    WHERE status = 'PUBLISHED'
+                    GROUP BY category_id
+                ) cnt ON c.id = cnt.category_id
+                SET c.content_count = cnt.new_count,
+                    c.update_time = CURRENT_TIMESTAMP(3)
+            </otherwise>
+        </choose>
+    </update>
+
+    <!-- 同步分类层级关系 - MySQL 8.4.1 CTE 优化 -->
+    <update id="syncCategoryHierarchy">
+        <!-- 修复循环引用 -->
+        UPDATE t_category c1
+        SET parent_id = 0,
+            update_time = CURRENT_TIMESTAMP(3)
+        WHERE EXISTS (
+            SELECT 1 FROM t_category c2
+            WHERE c1.parent_id = c2.id 
+            AND c2.parent_id = c1.id
+            AND c1.id != c2.id
+        )
+    </update>
+
+    <!-- =================== MySQL 8.4.1 优化的范围查询 =================== -->
+
+    <!-- 根据内容数量范围查询分类 - 使用范围索引 -->
+    <!-- 使用索引: idx_content_count_status_sort -->
+    <select id="selectCategoriesByContentCountRange" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE content_count BETWEEN 
+            COALESCE(#{minContentCount}, 0) AND 
+            COALESCE(#{maxContentCount}, 999999999)
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>           
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据排序值范围查询分类 - 使用范围索引 -->
+    <!-- 使用索引: idx_sort_parent_status -->
+    <select id="selectCategoriesBySortRange" resultType="com.gig.collide.category.domain.entity.Category">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_category
+        WHERE sort BETWEEN 
+            COALESCE(#{minSort}, 0) AND 
+            COALESCE(#{maxSort}, 999999)
+        <if test="parentId != null">
+            AND parent_id = #{parentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <choose>
+            <when test="orderBy == 'name'">
+                ORDER BY name ${orderDirection}
+            </when>
+            <when test="orderBy == 'content_count'">
+                ORDER BY content_count ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'create_time'">
+                ORDER BY create_time ${orderDirection}, sort ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time ${orderDirection}, sort ASC
+            </when>
+            <otherwise>
+                ORDER BY sort ${orderDirection}
+            </otherwise>
+        </choose>
+    </select>
+
+</mapper>

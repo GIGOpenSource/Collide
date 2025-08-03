@@ -1,8 +1,6 @@
 package com.gig.collide.category.controller;
 
 import com.gig.collide.api.category.CategoryFacadeService;
-import com.gig.collide.api.category.request.CategoryCreateRequest;
-import com.gig.collide.api.category.request.CategoryUpdateRequest;
 import com.gig.collide.api.category.request.CategoryQueryRequest;
 import com.gig.collide.api.category.response.CategoryResponse;
 import com.gig.collide.base.response.PageResponse;
@@ -11,16 +9,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
-import jakarta.validation.Valid;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 分类REST控制器 - 简洁版
- * 提供分类管理的HTTP接口
+ * 分类REST控制器 - C端简化版
+ * 专注于客户端使用的简单查询功能，移除复杂的管理功能
  * 
  * @author Collide
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (C端简化版)
  * @since 2024-01-01
  */
 @Slf4j
@@ -31,36 +27,15 @@ public class CategoryController {
 
     private final CategoryFacadeService categoryFacadeService;
 
-    // =================== 分类管理 ===================
+    // =================== 基础查询 ===================
 
     /**
-     * 创建分类
+     * 获取分类详情
      */
-    @PostMapping
-    public Result<CategoryResponse> createCategory(@Valid @RequestBody CategoryCreateRequest request) {
-        log.info("REST - 创建分类：{}", request);
-        return categoryFacadeService.createCategory(request);
-    }
-
-    /**
-     * 更新分类
-     */
-    @PutMapping("/{categoryId}")
-    public Result<CategoryResponse> updateCategory(@PathVariable Long categoryId,
-                                                 @Valid @RequestBody CategoryUpdateRequest request) {
-        log.info("REST - 更新分类，ID：{}，请求：{}", categoryId, request);
-        request.setId(categoryId);
-        return categoryFacadeService.updateCategory(request);
-    }
-
-    /**
-     * 删除分类
-     */
-    @DeleteMapping("/{categoryId}")
-    public Result<Void> deleteCategory(@PathVariable Long categoryId,
-                                     @RequestParam Long operatorId) {
-        log.info("REST - 删除分类，ID：{}，操作人：{}", categoryId, operatorId);
-        return categoryFacadeService.deleteCategory(categoryId, operatorId);
+    @GetMapping("/{categoryId}")
+    public Result<CategoryResponse> getCategoryById(@PathVariable Long categoryId) {
+        log.info("REST - 获取分类详情，ID：{}", categoryId);
+        return categoryFacadeService.getCategoryById(categoryId);
     }
 
     /**
@@ -102,16 +77,6 @@ public class CategoryController {
     }
 
     /**
-     * 获取分类详情
-     */
-    @GetMapping("/{categoryId}")
-    public Result<CategoryResponse> getCategoryById(@PathVariable Long categoryId,
-                                                  @RequestParam(defaultValue = "false") Boolean includeInactive) {
-        log.info("REST - 获取分类详情，ID：{}", categoryId);
-        return categoryFacadeService.getCategoryById(categoryId, includeInactive);
-    }
-
-    /**
      * 获取分类列表（默认接口，支持分页）
      */
     @GetMapping
@@ -140,7 +105,22 @@ public class CategoryController {
         return result.getData();
     }
 
-    // =================== 层级分类 ===================
+    /**
+     * 搜索分类
+     */
+    @GetMapping("/search")
+    public PageResponse<CategoryResponse> searchCategories(
+            @RequestParam String keyword,
+            @RequestParam(required = false) Long parentId,
+            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        
+        log.info("REST - 搜索分类，关键词：{}", keyword);
+        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, currentPage, pageSize);
+        return result.getData();
+    }
+
+    // =================== 层级查询 ===================
 
     /**
      * 获取根分类列表
@@ -179,11 +159,10 @@ public class CategoryController {
     @GetMapping("/tree")
     public Result<List<CategoryResponse>> getCategoryTree(
             @RequestParam(required = false) Long rootId,
-            @RequestParam(defaultValue = "5") Integer maxDepth,
-            @RequestParam(defaultValue = "false") Boolean includeInactive) {
+            @RequestParam(defaultValue = "5") Integer maxDepth) {
         
         log.info("REST - 获取分类树，根ID：{}", rootId);
-        return categoryFacadeService.getCategoryTree(rootId, maxDepth, includeInactive);
+        return categoryFacadeService.getCategoryTree(rootId, maxDepth);
     }
 
     /**
@@ -195,111 +174,7 @@ public class CategoryController {
         return categoryFacadeService.getCategoryPath(categoryId);
     }
 
-    /**
-     * 获取分类祖先
-     */
-    @GetMapping("/{categoryId}/ancestors")
-    public Result<List<CategoryResponse>> getCategoryAncestors(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "false") Boolean includeInactive) {
-        
-        log.info("REST - 获取分类祖先，ID：{}", categoryId);
-        return categoryFacadeService.getCategoryAncestors(categoryId, includeInactive);
-    }
-
-    /**
-     * 获取分类后代
-     */
-    @GetMapping("/{categoryId}/descendants")
-    public Result<List<CategoryResponse>> getCategoryDescendants(
-            @PathVariable Long categoryId,
-            @RequestParam(defaultValue = "5") Integer maxDepth,
-            @RequestParam(defaultValue = "false") Boolean includeInactive) {
-        
-        log.info("REST - 获取分类后代，ID：{}", categoryId);
-        return categoryFacadeService.getCategoryDescendants(categoryId, maxDepth, includeInactive);
-    }
-
-    // =================== 状态管理 ===================
-
-    /**
-     * 更新分类状态
-     */
-    @PutMapping("/{categoryId}/status")
-    public Result<Void> updateCategoryStatus(@PathVariable Long categoryId,
-                                           @RequestParam String status,
-                                           @RequestParam Long operatorId) {
-        
-        log.info("REST - 更新分类状态，ID：{}，状态：{}", categoryId, status);
-        return categoryFacadeService.updateCategoryStatus(categoryId, status, operatorId);
-    }
-
-    /**
-     * 激活分类
-     */
-    @PutMapping("/{categoryId}/activate")
-    public Result<Void> activateCategory(@PathVariable Long categoryId,
-                                       @RequestParam Long operatorId) {
-        
-        log.info("REST - 激活分类，ID：{}", categoryId);
-        return categoryFacadeService.activateCategory(categoryId, operatorId);
-    }
-
-    /**
-     * 停用分类
-     */
-    @PutMapping("/{categoryId}/deactivate")
-    public Result<Void> deactivateCategory(@PathVariable Long categoryId,
-                                         @RequestParam Long operatorId) {
-        
-        log.info("REST - 停用分类，ID：{}", categoryId);
-        return categoryFacadeService.deactivateCategory(categoryId, operatorId);
-    }
-
-    /**
-     * 批量更新分类状态
-     */
-    @PutMapping("/batch/status")
-    public Result<Integer> batchUpdateCategoryStatus(@RequestBody List<Long> categoryIds,
-                                                   @RequestParam String status,
-                                                   @RequestParam Long operatorId) {
-        
-        log.info("REST - 批量更新分类状态，数量：{}，状态：{}", categoryIds.size(), status);
-        return categoryFacadeService.batchUpdateCategoryStatus(categoryIds, status, operatorId);
-    }
-
     // =================== 统计功能 ===================
-
-    /**
-     * 更新分类内容数量
-     */
-    @PutMapping("/{categoryId}/content-count")
-    public Result<Long> updateContentCount(@PathVariable Long categoryId,
-                                         @RequestParam Long increment) {
-        
-        log.info("REST - 更新内容数量，分类ID：{}，增量：{}", categoryId, increment);
-        return categoryFacadeService.updateContentCount(categoryId, increment);
-    }
-
-    /**
-     * 获取分类统计信息
-     */
-    @GetMapping("/{categoryId}/statistics")
-    public Result<Map<String, Object>> getCategoryStatistics(@PathVariable Long categoryId) {
-        log.info("REST - 获取分类统计，ID：{}", categoryId);
-        return categoryFacadeService.getCategoryStatistics(categoryId);
-    }
-
-    /**
-     * 统计分类数量
-     */
-    @GetMapping("/count")
-    public Result<Long> countCategories(@RequestParam(required = false) Long parentId,
-                                      @RequestParam(defaultValue = "active") String status) {
-        
-        log.info("REST - 统计分类数量，父分类：{}，状态：{}", parentId, status);
-        return categoryFacadeService.countCategories(parentId, status);
-    }
 
     /**
      * 获取热门分类
@@ -315,23 +190,6 @@ public class CategoryController {
         return result.getData();
     }
 
-    // =================== 搜索功能 ===================
-
-    /**
-     * 搜索分类
-     */
-    @GetMapping("/search")
-    public PageResponse<CategoryResponse> searchCategories(
-            @RequestParam String keyword,
-            @RequestParam(required = false) Long parentId,
-            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
-        
-        log.info("REST - 搜索分类，关键词：{}", keyword);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, currentPage, pageSize);
-        return result.getData();
-    }
-
     /**
      * 获取分类建议
      */
@@ -344,36 +202,14 @@ public class CategoryController {
         return categoryFacadeService.getCategorySuggestions(keyword, limit);
     }
 
-    // =================== 其他接口（暂时返回未实现） ===================
-
     /**
-     * 调整分类排序
+     * 统计分类数量
      */
-    @PutMapping("/{categoryId}/sort")
-    public Result<Void> adjustCategorySort(@PathVariable Long categoryId,
-                                         @RequestParam Integer newSort,
-                                         @RequestParam Long operatorId) {
-        return Result.error("NOT_IMPLEMENTED", "功能开发中");
-    }
-
-    /**
-     * 移动分类
-     */
-    @PutMapping("/{categoryId}/move")
-    public Result<Void> moveCategory(@PathVariable Long categoryId,
-                                   @RequestParam Long newParentId,
-                                   @RequestParam Long operatorId) {
-        return Result.error("NOT_IMPLEMENTED", "功能开发中");
-    }
-
-    /**
-     * 获取叶子分类
-     */
-    @GetMapping("/leaf")
-    public Result<PageResponse<CategoryResponse>> getLeafCategories(
-            @RequestParam(required = false) Long parentId,
-            @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
-        return Result.error("NOT_IMPLEMENTED", "功能开发中");
+    @GetMapping("/count")
+    public Result<Long> countCategories(@RequestParam(required = false) Long parentId,
+                                      @RequestParam(defaultValue = "active") String status) {
+        
+        log.info("REST - 统计分类数量，父分类：{}，状态：{}", parentId, status);
+        return categoryFacadeService.countCategories(parentId, status);
     }
 }

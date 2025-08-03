@@ -141,13 +141,13 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
             // 调用用户钱包服务获取钱包信息
             Result<com.gig.collide.api.user.response.WalletResponse> result = userFacadeService.getUserWallet(userId);
             
-            if (result != null && result.isSuccess() && result.getData() != null) {
+            if (result != null && result.getSuccess() && result.getData() != null) {
                 java.math.BigDecimal balance = result.getData().getBalance();
                 Long coinBalance = balance != null ? balance.longValue() : 0L;
                 log.debug("获取用户金币余额成功: userId={}, balance={}", userId, coinBalance);
                 return coinBalance;
             } else {
-                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                String errorMsg = result != null ? result.getCode() + ": " + result.getMessage() : "未知错误";
                 log.warn("获取用户金币余额失败: userId={}, error={}", userId, errorMsg);
                 return 0L;
             }
@@ -166,13 +166,13 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
             // 调用用户钱包服务获取钱包信息
             Result<com.gig.collide.api.user.response.WalletResponse> result = userFacadeService.getUserWallet(userId);
             
-            if (result != null && result.isSuccess() && result.getData() != null) {
+            if (result != null && result.getSuccess() && result.getData() != null) {
                 java.math.BigDecimal totalIncome = result.getData().getTotalIncome();
                 Long totalEarned = totalIncome != null ? totalIncome.longValue() : 0L;
                 log.debug("获取用户累计金币收入成功: userId={}, totalEarned={}", userId, totalEarned);
                 return totalEarned;
             } else {
-                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                String errorMsg = result != null ? result.getCode() + ": " + result.getMessage() : "未知错误";
                 log.warn("获取用户累计金币收入失败: userId={}, error={}", userId, errorMsg);
                 return 0L;
             }
@@ -283,11 +283,11 @@ public class TaskWalletSyncServiceImpl implements TaskWalletSyncService {
                 description
             );
             
-            if (result != null && result.isSuccess()) {
+            if (result != null && result.getSuccess()) {
                 log.info("钱包服务调用成功: userId={}, amount={}, businessId={}", userId, amount, businessId);
                 return true;
             } else {
-                String errorMsg = result != null ? result.getResponseCode() + ": " + result.getMessage() : "未知错误";
+                String errorMsg = result != null ? result.getCode() + ": " + result.getMessage() : "未知错误";
                 log.error("钱包服务调用失败: userId={}, amount={}, error={}", userId, amount, errorMsg);
                 return false;
             }

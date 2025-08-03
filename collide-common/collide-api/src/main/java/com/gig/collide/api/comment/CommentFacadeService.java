@@ -2,26 +2,24 @@ package com.gig.collide.api.comment;
 
 import com.gig.collide.api.comment.request.CommentCreateRequest;
 import com.gig.collide.api.comment.request.CommentUpdateRequest;
-import com.gig.collide.api.comment.request.CommentQueryRequest;
 import com.gig.collide.api.comment.response.CommentResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * 评论门面服务接口 - 简洁版
- * 基于comment-simple.sql的设计，支持多级评论和回复功能
+ * 评论门面服务接口 - C端简洁版
+ * 只保留客户端使用的核心接口，移除复杂的管理接口
  * 支持评论类型：CONTENT、DYNAMIC
  * 
  * @author Collide
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (C端简洁版)
  * @since 2024-01-01
  */
 public interface CommentFacadeService {
 
-    // =================== 评论管理 ===================
+    // =================== 评论基础操作 ===================
 
     /**
      * 创建评论
@@ -34,7 +32,7 @@ public interface CommentFacadeService {
 
     /**
      * 更新评论
-     * 支持评论内容和状态更新
+     * 支持评论内容更新
      * 
      * @param request 更新请求
      * @return 更新后的评论
@@ -55,21 +53,11 @@ public interface CommentFacadeService {
      * 根据ID获取评论详情
      * 
      * @param commentId 评论ID
-     * @param includeDeleted 是否包含已删除评论
      * @return 评论详情
      */
-    Result<CommentResponse> getCommentById(Long commentId, Boolean includeDeleted);
+    Result<CommentResponse> getCommentById(Long commentId);
 
-    /**
-     * 分页查询评论
-     * 支持按多种条件查询
-     * 
-     * @param request 查询请求
-     * @return 评论列表
-     */
-    Result<PageResponse<CommentResponse>> queryComments(CommentQueryRequest request);
-
-    // =================== 目标对象评论 ===================
+    // =================== 目标对象评论查询 ===================
 
     /**
      * 获取目标对象的评论列表
@@ -109,20 +97,19 @@ public interface CommentFacadeService {
     Result<PageResponse<CommentResponse>> getCommentTree(Long targetId, String commentType, 
                                                         Integer maxDepth, Integer currentPage, Integer pageSize);
 
-    // =================== 用户评论 ===================
+    // =================== 用户评论查询 ===================
 
     /**
      * 获取用户的评论列表
      * 
      * @param userId 用户ID
      * @param commentType 评论类型（可选）
-     * @param status 状态（可选）
      * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 评论列表
      */
     Result<PageResponse<CommentResponse>> getUserComments(Long userId, String commentType, 
-                                                         String status, Integer currentPage, Integer pageSize);
+                                                         Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户收到的回复
@@ -133,47 +120,6 @@ public interface CommentFacadeService {
      * @return 回复列表
      */
     Result<PageResponse<CommentResponse>> getUserReplies(Long userId, Integer currentPage, Integer pageSize);
-
-    // =================== 状态管理 ===================
-
-    /**
-     * 更新评论状态
-     * 支持NORMAL、HIDDEN、DELETED状态
-     * 
-     * @param commentId 评论ID
-     * @param status 新状态
-     * @param operatorId 操作人ID
-     * @return 更新结果
-     */
-    Result<Void> updateCommentStatus(Long commentId, String status, Long operatorId);
-
-    /**
-     * 批量更新评论状态
-     * 
-     * @param commentIds 评论ID列表
-     * @param status 新状态
-     * @param operatorId 操作人ID
-     * @return 更新成功数量
-     */
-    Result<Integer> batchUpdateCommentStatus(List<Long> commentIds, String status, Long operatorId);
-
-    /**
-     * 隐藏评论
-     * 
-     * @param commentId 评论ID
-     * @param operatorId 操作人ID
-     * @return 操作结果
-     */
-    Result<Void> hideComment(Long commentId, Long operatorId);
-
-    /**
-     * 恢复评论
-     * 
-     * @param commentId 评论ID
-     * @param operatorId 操作人ID
-     * @return 操作结果
-     */
-    Result<Void> restoreComment(Long commentId, Long operatorId);
 
     // =================== 统计功能 ===================
 
@@ -200,41 +146,18 @@ public interface CommentFacadeService {
      * 
      * @param targetId 目标对象ID
      * @param commentType 评论类型
-     * @param status 状态（可选）
      * @return 评论数量
      */
-    Result<Long> countTargetComments(Long targetId, String commentType, String status);
+    Result<Long> countTargetComments(Long targetId, String commentType);
 
     /**
      * 统计用户评论数
      * 
      * @param userId 用户ID
      * @param commentType 评论类型（可选）
-     * @param status 状态（可选）
      * @return 评论数量
      */
-    Result<Long> countUserComments(Long userId, String commentType, String status);
-
-    /**
-     * 获取评论统计信息
-     * 
-     * @param commentId 评论ID
-     * @return 统计信息
-     */
-    Result<Map<String, Object>> getCommentStatistics(Long commentId);
-
-    // =================== 数据同步 ===================
-
-    /**
-     * 更新用户信息（冗余字段）
-     * 当用户信息变更时，同步更新评论表中的冗余信息
-     * 
-     * @param userId 用户ID
-     * @param nickname 新昵称
-     * @param avatar 新头像
-     * @return 更新成功的记录数
-     */
-    Result<Integer> updateUserInfo(Long userId, String nickname, String avatar);
+    Result<Long> countUserComments(Long userId, String commentType);
 
     // =================== 高级功能 ===================
 
@@ -277,15 +200,4 @@ public interface CommentFacadeService {
      */
     Result<PageResponse<CommentResponse>> getLatestComments(Long targetId, String commentType, 
                                                           Integer currentPage, Integer pageSize);
-
-    /**
-     * 批量删除目标对象的评论
-     * 当内容被删除时，清理相关评论
-     * 
-     * @param targetId 目标对象ID
-     * @param commentType 评论类型
-     * @param operatorId 操作人ID
-     * @return 删除成功数量
-     */
-    Result<Integer> batchDeleteTargetComments(Long targetId, String commentType, Long operatorId);
 } 
