@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.task.infrastructure.mapper.TaskTemplateMapper">
+
+    <!-- 任务模板表基础字段映射 -->
+    <sql id="baseColumns">
+        id, task_name, task_type, task_desc, reward_coins, bonus_rule, 
+        is_repeatable, sort_order, status, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询任务模板 -->
+    <select id="findById" parameterType="long" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
+        SELECT <include refid="baseColumns" />
+        FROM t_task_template
+        WHERE id = #{id}
+    </select>
+
+    <!-- 根据任务类型查询任务模板列表 -->
+    <select id="findByTaskType" parameterType="string" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
+        SELECT <include refid="baseColumns" />
+        FROM t_task_template
+        WHERE task_type = #{taskType}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 查询所有可用的任务模板 -->
+    <select id="findAvailableTaskTemplates" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
+        SELECT <include refid="baseColumns" />
+        FROM t_task_template
+        WHERE status = 1
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 根据状态查询任务模板 -->
+    <select id="findByStatus" parameterType="int" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
+        SELECT <include refid="baseColumns" />
+        FROM t_task_template
+        WHERE status = #{status}
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <!-- 检查任务模板是否存在 -->
+    <select id="checkTaskTemplateExists" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM t_task_template
+        WHERE id = #{id}
+    </select>
+
+    <!-- 统计任务模板数量 -->
+    <select id="countTaskTemplates" resultType="long">
+        SELECT COUNT(*)
+        FROM t_task_template
+        <where>
+            <if test="taskType != null and taskType != ''">
+                AND task_type = #{taskType}
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 获取每日签到任务模板 -->
+    <select id="getDailyCheckinTemplate" resultType="com.gig.collide.task.domain.entity.TaskTemplate">
+        SELECT <include refid="baseColumns" />
+        FROM t_task_template
+        WHERE task_type = 'DAILY_CHECKIN' 
+          AND status = 1
+        ORDER BY sort_order ASC
+        LIMIT 1
+    </select>
+
+</mapper>
