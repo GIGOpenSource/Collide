@@ -4,66 +4,76 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * 用户任务响应DTO - 签到记录专用版
- * 对应 t_user_checkin_record 表结构
+ * 用户任务记录响应DTO - 优化版
+ * 使用数字常量替代字符串枚举，提升传输效率
  * 
  * @author GIG Team
- * @version 1.0.0
+ * @version 3.0.0 (优化版)
  * @since 2024-01-16
  */
 @Data
 @Accessors(chain = true)
-@Schema(description = "用户任务响应")
-public class UserTaskResponse implements Serializable {
+@Schema(description = "用户任务记录响应")
+public class UserTaskResponse {
 
-    private static final long serialVersionUID = 1L;
-
-    @Schema(description = "记录ID", example = "1001")
+    @Schema(description = "记录ID")
     private Long id;
 
-    @Schema(description = "用户ID", example = "1001")
+    @Schema(description = "用户ID")
     private Long userId;
 
-    @Schema(description = "任务模板ID", example = "1")
-    private Long taskTemplateId;
+    @Schema(description = "任务ID")
+    private Long taskId;
 
-    @Schema(description = "任务名称", example = "每日签到")
+    @Schema(description = "任务日期")
+    private LocalDate taskDate;
+
+    @Schema(description = "任务名称")
     private String taskName;
 
-    @Schema(description = "签到日期", example = "2024-01-16")
-    private LocalDate checkinDate;
+    @Schema(description = "任务描述")
+    private String taskDesc;
 
-    @Schema(description = "获得金币数量", example = "10")
-    private Integer rewardCoins;
+    @Schema(description = "任务类型: 1-每日任务, 2-周常任务, 3-月度任务, 4-成就任务")
+    private Integer taskType;
 
-    @Schema(description = "连续签到天数", example = "5")
-    private Integer continuousDays;
+    @Schema(description = "任务分类: 1-登录, 2-内容, 3-社交, 4-消费, 5-邀请")
+    private Integer taskCategory;
 
-    @Schema(description = "是否获得连续奖励", example = "false")
-    private Boolean isBonus;
+    @Schema(description = "目标完成次数")
+    private Integer targetCount;
 
-    @Schema(description = "签到IP地址", example = "192.168.1.100")
-    private String checkinIp;
+    @Schema(description = "当前完成次数")
+    private Integer currentCount;
 
-    @Schema(description = "签到时间")
-    private LocalDateTime checkinTime;
+    @Schema(description = "是否已完成")
+    private Boolean isCompleted;
 
-    @Schema(description = "记录创建时间")
+    @Schema(description = "是否已领取奖励")
+    private Boolean isRewarded;
+
+    @Schema(description = "完成时间")
+    private LocalDateTime completeTime;
+
+    @Schema(description = "奖励领取时间")
+    private LocalDateTime rewardTime;
+
+    @Schema(description = "任务进度百分比")
+    private Double progressPercentage;
+
+    @Schema(description = "剩余需完成次数")
+    private Integer remainingCount;
+
+    @Schema(description = "是否可以领取奖励")
+    private Boolean canClaimReward;
+
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
-    /**
-     * 获取奖励描述
-     */
-    public String getRewardDesc() {
-        if (isBonus != null && isBonus) {
-            return String.format("获得%d金币（连续%d天奖励）", rewardCoins, continuousDays);
-        } else {
-            return String.format("获得%d金币", rewardCoins);
-        }
-    }
+    @Schema(description = "更新时间")
+    private LocalDateTime updateTime;
 }

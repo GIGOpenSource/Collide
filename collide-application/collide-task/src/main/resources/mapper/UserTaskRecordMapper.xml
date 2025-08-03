@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.gig.collide.task.infrastructure.mapper.UserTaskRecordMapper">
+
+    <!-- 
+    ==========================================
+    用户任务记录映射文件 - 优化版
+    基于优化后的task-simple.sql表结构
+    使用数字常量和复合索引优化查询性能
+    ==========================================
+    -->
+
+    <!-- 查询用户指定日期的任务记录（利用用户日期复合索引） -->
+    <select id="findUserTasksByDate" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} AND task_date = #{taskDate}
+        <if test="taskType != null">
+            AND task_type = #{taskType}
+        </if>
+        ORDER BY task_type, create_time ASC
+    </select>
+
+    <!-- 查询用户今日任务记录 -->
+    <select id="findUserTodayTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} AND task_date = CURDATE()
+        ORDER BY task_type, create_time ASC
+    </select>
+
+    <!-- 查询用户指定类型的任务记录 -->
+    <select id="findUserTasksByType" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} AND task_type = #{taskType}
+        <if test="taskDate != null">
+            AND task_date = #{taskDate}
+        </if>
+        ORDER BY task_date DESC, create_time ASC
+    </select>
+
+    <!-- 条件查询用户任务记录（优化版 - 使用数字常量） -->
+    <select id="findWithConditions" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="taskId != null">
+                AND task_id = #{taskId}
+            </if>
+            <if test="taskType != null">
+                AND task_type = #{taskType}
+            </if>
+            <if test="taskCategory != null">
+                AND task_category = #{taskCategory}
+            </if>
+            <if test="isCompleted != null">
+                AND is_completed = #{isCompleted}
+            </if>
+            <if test="isRewarded != null">
+                AND is_rewarded = #{isRewarded}
+            </if>
+            <if test="startDate != null">
+                AND task_date &gt;= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND task_date &lt;= #{endDate}
+            </if>
+        </where>
+        <choose>
+            <when test="orderBy != null and orderBy != ''">
+                ORDER BY ${orderBy} ${orderDirection}
+            </when>
+            <otherwise>
+                ORDER BY task_date DESC, create_time ASC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 查询用户可领取奖励的任务 -->
+    <select id="findUserClaimableTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} 
+          AND is_completed = 1 
+          AND is_rewarded = 0
+        <if test="taskDate != null">
+            AND task_date = #{taskDate}
+        </if>
+        ORDER BY complete_time ASC
+    </select>
+
+    <!-- 查询用户未完成的任务（优化版 - 使用数字常量） -->
+    <select id="findUserIncompleteTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} AND is_completed = 0
+        <if test="taskDate != null">
+            AND task_date = #{taskDate}
+        </if>
+        <if test="taskType != null">
+            AND task_type = #{taskType}
+        </if>
+        ORDER BY task_date DESC, create_time ASC
+    </select>
+
+    <!-- 统计用户任务完成情况 -->
+    <select id="getUserTaskStatistics" resultType="java.util.Map">
+        SELECT 
+            COUNT(*) as totalTasks,
+            SUM(is_completed) as completedTasks,
+            SUM(is_rewarded) as rewardedTasks,
+            COUNT(*) - SUM(is_completed) as incompleteTasks
+        FROM t_user_task_record 
+        WHERE user_id = #{userId}
+        <if test="taskDate != null">
+            AND task_date = #{taskDate}
+        </if>
+    </select>
+
+    <!-- 统计用户指定类型任务完成数 -->
+    <select id="countCompletedTasksByType" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_user_task_record 
+        WHERE user_id = #{userId} 
+          AND task_type = #{taskType} 
+          AND is_completed = 1
+        <if test="startDate != null">
+            AND task_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND task_date &lt;= #{endDate}
+        </if>
+    </select>
+
+    <!-- 统计用户连续登录天数（使用数字常量1=login优化） -->
+    <select id="countConsecutiveLoginDays" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+            SELECT task_date FROM t_user_task_record 
+            WHERE user_id = #{userId} 
+              AND task_category = 1 
+              AND is_completed = 1
+              AND task_date &lt;= #{endDate}
+            ORDER BY task_date DESC
+        ) t
+        WHERE @row_number := CASE 
+            WHEN @prev_date = DATE_SUB(task_date, INTERVAL @row_number DAY) 
+            THEN @row_number + 1 
+            ELSE 1 
+        END
+        AND @prev_date := task_date
+    </select>
+
+    <!-- 统计用户未领取奖励数量 -->
+    <select id="countUnclaimedRewards" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_user_task_record 
+        WHERE user_id = #{userId} AND is_completed = 1 AND is_rewarded = 0
+    </select>
+
+    <!-- 统计用户历史任务完成总数 -->
+    <select id="countTotalCompletedTasks" resultType="java.lang.Long">
+        SELECT COUNT(*) FROM t_user_task_record 
+        WHERE user_id = #{userId} AND is_completed = 1
+    </select>
+
+    <!-- 统计用户各类型任务完成情况 -->
+    <select id="countTasksByTypeAndStatus" resultType="java.util.Map">
+        SELECT 
+            task_type,
+            COUNT(*) as totalCount,
+            SUM(is_completed) as completedCount,
+            SUM(is_rewarded) as rewardedCount
+        FROM t_user_task_record 
+        WHERE user_id = #{userId}
+        <if test="startDate != null">
+            AND task_date &gt;= #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND task_date &lt;= #{endDate}
+        </if>
+        GROUP BY task_type
+    </select>
+
+    <!-- 更新任务进度 -->
+    <update id="updateTaskProgress">
+        UPDATE t_user_task_record 
+        SET current_count = LEAST(current_count + #{incrementCount}, target_count),
+            is_completed = CASE WHEN current_count + #{incrementCount} >= target_count THEN 1 ELSE is_completed END,
+            complete_time = CASE WHEN current_count + #{incrementCount} >= target_count AND complete_time IS NULL THEN NOW() ELSE complete_time END,
+            update_time = NOW()
+        WHERE user_id = #{userId} AND task_id = #{taskId} AND task_date = #{taskDate}
+    </update>
+
+    <!-- 批量标记任务为已完成 -->
+    <update id="batchMarkTasksCompleted">
+        UPDATE t_user_task_record 
+        SET is_completed = 1, 
+            complete_time = CASE WHEN complete_time IS NULL THEN NOW() ELSE complete_time END,
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="recordIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 批量标记奖励为已领取 -->
+    <update id="batchMarkRewardsReceived">
+        UPDATE t_user_task_record 
+        SET is_rewarded = 1, 
+            reward_time = CASE WHEN reward_time IS NULL THEN NOW() ELSE reward_time END,
+            update_time = NOW()
+        WHERE id IN
+        <foreach collection="recordIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 重置每日任务进度（使用数字常量1=daily） -->
+    <update id="resetDailyTaskProgress">
+        UPDATE t_user_task_record 
+        SET current_count = 0, 
+            is_completed = 0, 
+            is_rewarded = 0,
+            complete_time = NULL,
+            reward_time = NULL,
+            update_time = NOW()
+        WHERE user_id = #{userId} 
+          AND task_date = #{taskDate}
+          AND task_type = 1
+    </update>
+
+    <!-- 查询用户任务进度排行 -->
+    <select id="getUserTaskRanking" resultType="java.util.Map">
+        SELECT 
+            user_id,
+            COUNT(*) as completedCount,
+            SUM(current_count) as totalProgress
+        FROM t_user_task_record 
+        WHERE task_type = #{taskType} 
+          AND task_date = #{taskDate}
+          AND is_completed = 1
+        GROUP BY user_id
+        ORDER BY completedCount DESC, totalProgress DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 查询活跃用户 -->
+    <select id="findActiveUsers" resultType="java.lang.Long">
+        SELECT DISTINCT user_id FROM t_user_task_record 
+        WHERE task_date &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+          AND is_completed = 1
+        GROUP BY user_id
+        HAVING COUNT(*) &gt;= #{minCompletedTasks}
+    </select>
+
+    <!-- 查询过期未完成的任务记录（使用数字常量1=daily） -->
+    <select id="findExpiredIncompleteTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE task_date &lt; #{currentDate} 
+          AND is_completed = 0
+          AND task_type = 1
+    </select>
+
+    <!-- 查询需要重置的每日任务记录（使用数字常量1=daily） -->
+    <select id="findDailyTasksToReset" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE task_date = #{resetDate} AND task_type = 1
+    </select>
+
+    <!-- 搜索用户任务记录（优化版 - 使用数字常量） -->
+    <select id="searchUserTasks" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="keyword != null and keyword != ''">
+                AND task_name LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="taskType != null">
+                AND task_type = #{taskType}
+            </if>
+            <if test="isCompleted != null">
+                AND is_completed = #{isCompleted}
+            </if>
+        </where>
+        ORDER BY task_date DESC, create_time ASC
+    </select>
+
+    <!-- 清理过期的任务记录（使用数字常量1=daily） -->
+    <delete id="cleanExpiredRecords">
+        DELETE FROM t_user_task_record 
+        WHERE create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+          AND task_type = 1
+          AND task_date &lt; DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+    </delete>
+
+    <!-- 删除用户的历史任务记录 -->
+    <delete id="deleteUserHistoryRecords">
+        DELETE FROM t_user_task_record 
+        WHERE user_id = #{userId} AND task_date &lt; #{beforeDate}
+    </delete>
+
+    <!-- 检查用户今日是否已有指定任务记录 -->
+    <select id="existsTodayTaskRecord" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_task_record 
+        WHERE user_id = #{userId} 
+          AND task_id = #{taskId} 
+          AND task_date = #{taskDate}
+    </select>
+
+    <!-- 检查用户是否可以领取指定任务奖励 -->
+    <select id="canClaimTaskReward" resultType="boolean">
+        SELECT COUNT(*) > 0 FROM t_user_task_record 
+        WHERE user_id = #{userId} 
+          AND task_id = #{taskId} 
+          AND task_date = #{taskDate}
+          AND is_completed = 1 
+          AND is_rewarded = 0
+    </select>
+
+    <!-- 获取用户特定任务的当前进度 -->
+    <select id="getUserTaskProgress" resultType="com.gig.collide.task.domain.entity.UserTaskRecord">
+        SELECT * FROM t_user_task_record 
+        WHERE user_id = #{userId} 
+          AND task_id = #{taskId} 
+          AND task_date = #{taskDate}
+        LIMIT 1
+    </select>
+
+</mapper>
