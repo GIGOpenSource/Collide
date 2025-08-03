@@ -63,6 +63,11 @@ public interface SocialInteractionService {
     boolean shareContent(Long userId, Long contentId, Integer shareType, String sharePlatform, String shareComment);
 
     /**
+     * 检查是否已分享
+     */
+    boolean isShared(Long userId, Long contentId);
+
+    /**
      * 获取内容的分享记录
      */
     IPage<SocialShare> getContentShares(Long contentId, int pageNum, int pageSize);
@@ -106,5 +111,6 @@ public interface SocialInteractionService {
         private boolean liked;
         private boolean favorited;
         private boolean commented;
+        private boolean shared;
     }
 }

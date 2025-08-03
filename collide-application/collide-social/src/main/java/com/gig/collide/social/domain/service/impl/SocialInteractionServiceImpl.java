@@ -160,6 +160,11 @@ public class SocialInteractionServiceImpl implements SocialInteractionService {
     }
 
     @Override
+    public boolean isShared(Long userId, Long contentId) {
+        return interactionMapper.countShare(userId, contentId) > 0;
+    }
+
+    @Override
     public IPage<SocialShare> getContentShares(Long contentId, int pageNum, int pageSize) {
         Page<SocialShare> page = new Page<>(pageNum, pageSize);
         return interactionMapper.selectContentShares(page, contentId);

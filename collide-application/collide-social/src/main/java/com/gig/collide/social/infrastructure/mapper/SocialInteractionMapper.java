@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.social.domain.entity.*;
+import com.gig.collide.social.domain.service.SocialInteractionService;
 import org.apache.ibatis.annotations.*;
 
 /**
@@ -50,6 +51,9 @@ public interface SocialInteractionMapper {
 
     // ========== 分享相关 ==========
     
+    @Select("SELECT COUNT(*) FROM t_social_share WHERE user_id = #{userId} AND content_id = #{contentId}")
+    int countShare(@Param("userId") Long userId, @Param("contentId") Long contentId);
+
     @Insert("INSERT INTO t_social_share (user_id, content_id, content_owner_id, share_type, share_platform, share_comment, create_time) " +
             "VALUES (#{userId}, #{contentId}, #{contentOwnerId}, #{shareType}, #{sharePlatform}, #{shareComment}, NOW())")
     int insertShare(@Param("userId") Long userId, @Param("contentId") Long contentId, 
@@ -76,12 +80,14 @@ public interface SocialInteractionMapper {
         "SELECT ",
         "  EXISTS(SELECT 1 FROM t_social_like WHERE user_id = #{userId} AND content_id = #{contentId}) as liked,",
         "  EXISTS(SELECT 1 FROM t_social_favorite WHERE user_id = #{userId} AND content_id = #{contentId}) as favorited,",
-        "  EXISTS(SELECT 1 FROM t_social_comment WHERE user_id = #{userId} AND content_id = #{contentId} AND status = 1) as commented"
+        "  EXISTS(SELECT 1 FROM t_social_comment WHERE user_id = #{userId} AND content_id = #{contentId} AND status = 1) as commented,",
+        "  EXISTS(SELECT 1 FROM t_social_share WHERE user_id = #{userId} AND content_id = #{contentId}) as shared"
     })
     @Results({
         @Result(property = "liked", column = "liked"),
         @Result(property = "favorited", column = "favorited"),
-        @Result(property = "commented", column = "commented")
+        @Result(property = "commented", column = "commented"),
+        @Result(property = "shared", column = "shared")
     })
     SocialInteractionService.UserInteractionStatus getUserInteractionStatus(@Param("userId") Long userId, @Param("contentId") Long contentId);
 }

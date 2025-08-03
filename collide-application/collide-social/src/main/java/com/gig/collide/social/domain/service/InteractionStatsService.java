@@ -64,6 +64,11 @@ public interface InteractionStatsService {
      * 重新计算内容统计数据
      */
     void recalculateContentStats(Long contentId);
+    
+    /**
+     * 诊断统计数据一致性
+     */
+    void diagnoseContentStats(Long contentId);
 
     /**
      * 内容统计信息类
