@@ -1,152 +1,183 @@
 package com.gig.collide.tag.infrastructure.cache;
 
-import java.util.concurrent.TimeUnit;
-
 /**
- * 标签模块缓存常量配置
+ * 标签模块缓存常量
  * 
  * @author GIG Team
- * @version 2.0.0
- * @since 2024-01-01
+ * @version 1.0.0
  */
 public class TagCacheConstant {
 
-    // =================== 缓存名称常量 ===================
-    
+    // =================== 标签相关缓存 ===================
+
     /**
-     * 标签详情缓存
+     * 标签详情缓存名称
      */
     public static final String TAG_DETAIL_CACHE = "tag:detail";
-    
-    /**
-     * 标签列表缓存
-     */
-    public static final String TAG_LIST_CACHE = "tag:list";
-    
-    /**
-     * 标签类型缓存
-     */
-    public static final String TAG_TYPE_CACHE = "tag:type";
-    
-    /**
-     * 热门标签缓存
-     */
-    public static final String TAG_HOT_CACHE = "tag:hot";
-    
-    /**
-     * 搜索结果缓存
-     */
-    public static final String TAG_SEARCH_CACHE = "tag:search";
-    
-    /**
-     * 用户兴趣标签缓存
-     */
-    public static final String TAG_USER_INTEREST_CACHE = "tag:user:interest";
-    
-    /**
-     * 内容标签缓存
-     */
-    public static final String TAG_CONTENT_CACHE = "tag:content";
 
-    // =================== 缓存过期时间常量 ===================
-    
     /**
-     * 标签详情缓存过期时间 - 120分钟
+     * 标签详情缓存KEY
      */
-    public static final int TAG_DETAIL_EXPIRE = 120;
-    
-    /**
-     * 标签列表缓存过期时间 - 30分钟
-     */
-    public static final int TAG_LIST_EXPIRE = 30;
-    
-    /**
-     * 标签类型缓存过期时间 - 60分钟
-     */
-    public static final int TAG_TYPE_EXPIRE = 60;
-    
-    /**
-     * 热门标签缓存过期时间 - 15分钟
-     */
-    public static final int TAG_HOT_EXPIRE = 15;
-    
-    /**
-     * 搜索结果缓存过期时间 - 10分钟
-     */
-    public static final int TAG_SEARCH_EXPIRE = 10;
-    
-    /**
-     * 用户兴趣标签缓存过期时间 - 30分钟
-     */
-    public static final int TAG_USER_INTEREST_EXPIRE = 30;
-    
-    /**
-     * 内容标签缓存过期时间 - 45分钟
-     */
-    public static final int TAG_CONTENT_EXPIRE = 45;
+    public static final String TAG_DETAIL_KEY = "#tagId";
 
-    // =================== 缓存时间单位 ===================
-    
     /**
-     * 默认时间单位 - 分钟
+     * 标签详情缓存过期时间（分钟）
      */
-    public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
+    public static final int TAG_DETAIL_CACHE_EXPIRE = 30;
 
-    // =================== 缓存键模板 ===================
-    
     /**
-     * 标签详情缓存键模板
+     * 热门标签缓存名称
      */
-    public static final String TAG_DETAIL_KEY = "'tag:detail:' + #tagId";
-    
-    /**
-     * 标签列表缓存键模板
-     */
-    public static final String TAG_LIST_KEY = "'tag:list:' + #request.currentPage + ':' + #request.pageSize + ':' + (#request.tagType ?: 'all') + ':' + (#request.status ?: 'all')";
-    
-    /**
-     * 标签类型缓存键模板
-     */
-    public static final String TAG_TYPE_KEY = "'tag:type:' + #tagType";
-    
-    /**
-     * 热门标签缓存键模板
-     */
-    public static final String TAG_HOT_KEY = "'tag:hot:' + (#limit ?: '10')";
-    
-    /**
-     * 搜索结果缓存键模板
-     */
-    public static final String TAG_SEARCH_KEY = "'tag:search:' + #keyword + ':' + (#limit ?: '10')";
-    
-    /**
-     * 用户兴趣标签缓存键模板
-     */
-    public static final String TAG_USER_INTEREST_KEY = "'tag:user:interest:' + #userId";
-    
-    /**
-     * 内容标签缓存键模板
-     */
-    public static final String TAG_CONTENT_KEY = "'tag:content:' + #contentId";
+    public static final String HOT_TAGS_CACHE = "tag:hot";
 
-    // =================== 缓存失效键模板 ===================
-    
     /**
-     * 标签相关缓存失效键模板
+     * 热门标签缓存KEY
      */
-    public static final String TAG_INVALIDATE_KEY = "'tag:*:' + #tagId + '*'";
-    
-    /**
-     * 用户兴趣标签缓存失效键模板
-     */
-    public static final String TAG_USER_INTEREST_INVALIDATE_KEY = "'tag:user:interest:' + #userId + '*'";
-    
-    /**
-     * 内容标签缓存失效键模板
-     */
-    public static final String TAG_CONTENT_INVALIDATE_KEY = "'tag:content:' + #contentId + '*'";
+    public static final String HOT_TAGS_KEY = "#limit";
 
-    private TagCacheConstant() {
-        // 工具类，禁止实例化
-    }
+    /**
+     * 热门标签缓存过期时间（分钟）
+     */
+    public static final int HOT_TAGS_CACHE_EXPIRE = 10;
+
+    /**
+     * 推荐标签缓存名称
+     */
+    public static final String RECOMMEND_TAGS_CACHE = "tag:recommend";
+
+    /**
+     * 推荐标签缓存KEY
+     */
+    public static final String RECOMMEND_TAGS_KEY = "#limit";
+
+    /**
+     * 推荐标签缓存过期时间（分钟）
+     */
+    public static final int RECOMMEND_TAGS_CACHE_EXPIRE = 15;
+
+    // =================== 用户标签相关缓存 ===================
+
+    /**
+     * 用户关注标签缓存名称
+     */
+    public static final String USER_FOLLOWED_TAGS_CACHE = "user:tag:followed";
+
+    /**
+     * 用户关注标签缓存KEY
+     */
+    public static final String USER_FOLLOWED_TAGS_KEY = "#userId";
+
+    /**
+     * 用户关注标签缓存过期时间（分钟）
+     */
+    public static final int USER_FOLLOWED_TAGS_CACHE_EXPIRE = 20;
+
+    /**
+     * 用户关注标签数量缓存名称
+     */
+    public static final String USER_TAG_COUNT_CACHE = "user:tag:count";
+
+    /**
+     * 用户关注标签数量缓存KEY
+     */
+    public static final String USER_TAG_COUNT_KEY = "#userId";
+
+    /**
+     * 用户关注标签数量缓存过期时间（分钟）
+     */
+    public static final int USER_TAG_COUNT_CACHE_EXPIRE = 30;
+
+    /**
+     * 用户标签推荐缓存名称
+     */
+    public static final String USER_TAG_RECOMMEND_CACHE = "user:tag:recommend";
+
+    /**
+     * 用户标签推荐缓存KEY
+     */
+    public static final String USER_TAG_RECOMMEND_KEY = "#userId + '_' + #limit";
+
+    /**
+     * 用户标签推荐缓存过期时间（分钟）
+     */
+    public static final int USER_TAG_RECOMMEND_CACHE_EXPIRE = 30;
+
+    // =================== 内容标签相关缓存 ===================
+
+    /**
+     * 内容标签缓存名称
+     */
+    public static final String CONTENT_TAGS_CACHE = "content:tags";
+
+    /**
+     * 内容标签缓存KEY
+     */
+    public static final String CONTENT_TAGS_KEY = "#contentId";
+
+    /**
+     * 内容标签缓存过期时间（分钟）
+     */
+    public static final int CONTENT_TAGS_CACHE_EXPIRE = 15;
+
+    /**
+     * 标签内容缓存名称
+     */
+    public static final String TAG_CONTENTS_CACHE = "tag:contents";
+
+    /**
+     * 标签内容缓存KEY
+     */
+    public static final String TAG_CONTENTS_KEY = "#tagId + '_' + #limit";
+
+    /**
+     * 标签内容缓存过期时间（分钟）
+     */
+    public static final int TAG_CONTENTS_CACHE_EXPIRE = 10;
+
+    /**
+     * 用户内容推荐缓存名称
+     */
+    public static final String USER_CONTENT_RECOMMEND_CACHE = "user:content:recommend";
+
+    /**
+     * 用户内容推荐缓存KEY
+     */
+    public static final String USER_CONTENT_RECOMMEND_KEY = "#userId + '_' + #limit";
+
+    /**
+     * 用户内容推荐缓存过期时间（分钟）
+     */
+    public static final int USER_CONTENT_RECOMMEND_CACHE_EXPIRE = 20;
+
+    // =================== 统计相关缓存 ===================
+
+    /**
+     * 标签统计缓存名称
+     */
+    public static final String TAG_STATISTICS_CACHE = "tag:statistics";
+
+    /**
+     * 标签统计缓存KEY
+     */
+    public static final String TAG_STATISTICS_KEY = "#tagId";
+
+    /**
+     * 标签统计缓存过期时间（分钟）
+     */
+    public static final int TAG_STATISTICS_CACHE_EXPIRE = 60;
+
+    /**
+     * 用户标签统计缓存名称
+     */
+    public static final String USER_TAG_STATISTICS_CACHE = "user:tag:statistics";
+
+    /**
+     * 用户标签统计缓存KEY
+     */
+    public static final String USER_TAG_STATISTICS_KEY = "#userId";
+
+    /**
+     * 用户标签统计缓存过期时间（分钟）
+     */
+    public static final int USER_TAG_STATISTICS_CACHE_EXPIRE = 60;
 }

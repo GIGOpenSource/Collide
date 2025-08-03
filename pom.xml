@@ -164,52 +164,15 @@
             </dependency>
 
             <!-- ===================== 业务模块 ===================== -->
-            <!-- 社交功能 -->
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-follow</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-like</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-favorite</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.gig.collide</groupId>
                 <artifactId>collide-social</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
-            <!-- 内容管理 -->
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-content</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-comment</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-category</artifactId>
-                <version>${project.version}</version>
-            </dependency>
             <dependency>
                 <groupId>com.gig.collide</groupId>
                 <artifactId>collide-tag</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-search</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -242,13 +205,6 @@
             <dependency>
                 <groupId>com.gig.collide</groupId>
                 <artifactId>collide-ads</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <!-- 业务聚合 -->
-            <dependency>
-                <groupId>com.gig.collide</groupId>
-                <artifactId>collide-app</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
