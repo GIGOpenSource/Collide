@@ -1,69 +1,76 @@
 package com.gig.collide.api.tag.request;
 
-import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
+import com.gig.collide.base.request.PageRequest;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.AllArgsConstructor;
 
 import java.io.Serializable;
 
 /**
- * 标签查询请求 - 简洁版
- * 基于tag-simple.sql的字段，支持多种查询条件
+ * 标签查询请求
  * 
  * @author GIG Team
- * @version 2.0.0
+ * @version 1.0.0
  */
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString
-public class TagQueryRequest implements Serializable {
+public class TagQueryRequest extends PageRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 标签名称（模糊搜索）
+     * 标签名称（模糊查询）
      */
-    private String name;
+    @Size(max = 50, message = "标签名称长度不能超过50个字符")
+    private String tagName;
 
     /**
-     * 标签类型：content、interest、system
+     * 标签状态：1-启用 0-禁用
      */
-    private String tagType;
+    private Integer status;
 
     /**
-     * 分类ID
+     * 最小权重
      */
-    private Long categoryId;
+    private Integer minWeight;
 
     /**
-     * 状态：active、inactive
+     * 最大权重
      */
-    private String status;
-
-    // =================== 分页参数 ===================
+    private Integer maxWeight;
 
     /**
-     * 页码，从1开始
+     * 最小关注数
      */
-    @Min(value = 1, message = "页码必须大于0")
-    private Integer currentPage = 1;
+    private Long minFollowCount;
 
     /**
-     * 页面大小
+     * 最大关注数
      */
-    @Min(value = 1, message = "页面大小必须大于0")
-    private Integer pageSize = 20;
+    private Long maxFollowCount;
 
     /**
-     * 排序字段：create_time、update_time、usage_count、name
+     * 最小内容数
      */
-    private String orderBy = "create_time";
+    private Long minContentCount;
 
     /**
-     * 排序方向：ASC、DESC
+     * 最大内容数
      */
-    private String orderDirection = "DESC";
-} 
+    private Long maxContentCount;
+
+    /**
+     * 排序字段：weight, hotness, follow_count, content_count, create_time
+     */
+    private String sortField;
+
+    /**
+     * 排序方向：ASC, DESC
+     */
+    private String sortDirection = "DESC";
+}

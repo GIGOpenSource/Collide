@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserStatsMapper">
+
+    <!-- 用户统计基础字段映射 - 更新后的t_user_stats表 -->
+    <sql id="baseColumns">
+        id, user_id, follower_count, following_count, content_count, like_count, 
+        login_count, last_login_time, activity_score, influence_score, 
+        create_time, update_time
+    </sql>
+
+    <!-- 根据用户ID查询统计数据 -->
+    <select id="selectByUserId" parameterType="long" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 根据ID查询统计数据 -->
+    <select id="selectById" parameterType="long" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE id = #{id}
+    </select>
+
+    <!-- 批量根据用户ID查询统计数据 -->
+    <select id="selectByUserIds" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE user_id IN
+        <foreach item="userId" collection="userIds" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 获取粉丝数排行榜 - 建议添加idx_follower_count索引 -->
+    <select id="getTopFollowerUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE follower_count > 0
+        ORDER BY follower_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取内容数排行榜 - 建议添加idx_content_count索引 -->
+    <select id="getTopContentUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE content_count > 0
+        ORDER BY content_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取最活跃用户排行榜 - 建议添加idx_activity_score索引 -->
+    <select id="getMostActiveUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE activity_score > 0
+        ORDER BY activity_score DESC, last_login_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取影响力用户排行榜 - 建议添加idx_influence_score索引 -->
+    <select id="getTopInfluenceUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE influence_score > 0
+        ORDER BY influence_score DESC, follower_count DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取点赞数排行榜 - 建议添加idx_like_count索引 -->
+    <select id="getTopLikeUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE like_count > 0
+        ORDER BY like_count DESC, create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取登录次数排行榜 - 建议添加idx_login_count索引 -->
+    <select id="getTopLoginUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE login_count > 0
+        ORDER BY login_count DESC, last_login_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取最近活跃用户 - 建议添加idx_last_login_time索引 -->
+    <select id="getRecentActiveUsers" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        WHERE last_login_time IS NOT NULL
+          AND last_login_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        ORDER BY last_login_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 分页查询统计数据（支持条件查询） -->
+    <select id="findStatsByCondition" resultType="com.gig.collide.users.domain.entity.UserStats">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_stats
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="minFollowerCount != null">
+                AND follower_count >= #{minFollowerCount}
+            </if>
+            <if test="maxFollowerCount != null">
+                AND follower_count &lt;= #{maxFollowerCount}
+            </if>
+            <if test="minContentCount != null">
+                AND content_count >= #{minContentCount}
+            </if>
+            <if test="maxContentCount != null">
+                AND content_count &lt;= #{maxContentCount}
+            </if>
+            <if test="minActivityScore != null">
+                AND activity_score >= #{minActivityScore}
+            </if>
+            <if test="maxActivityScore != null">
+                AND activity_score &lt;= #{maxActivityScore}
+            </if>
+            <if test="lastLoginStart != null">
+                AND last_login_time >= #{lastLoginStart}
+            </if>
+            <if test="lastLoginEnd != null">
+                AND last_login_time &lt;= #{lastLoginEnd}
+            </if>
+        </where>
+        ORDER BY 
+        <choose>
+            <when test="orderBy == 'follower_count'">follower_count DESC</when>
+            <when test="orderBy == 'content_count'">content_count DESC</when>
+            <when test="orderBy == 'activity_score'">activity_score DESC</when>
+            <when test="orderBy == 'influence_score'">influence_score DESC</when>
+            <when test="orderBy == 'last_login_time'">last_login_time DESC</when>
+            <otherwise>create_time DESC</otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 统计数据数量（支持条件查询） -->
+    <select id="countStatsByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_stats
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="minFollowerCount != null">
+                AND follower_count >= #{minFollowerCount}
+            </if>
+            <if test="maxFollowerCount != null">
+                AND follower_count &lt;= #{maxFollowerCount}
+            </if>
+            <if test="minContentCount != null">
+                AND content_count >= #{minContentCount}
+            </if>
+            <if test="maxContentCount != null">
+                AND content_count &lt;= #{maxContentCount}
+            </if>
+            <if test="minActivityScore != null">
+                AND activity_score >= #{minActivityScore}
+            </if>
+            <if test="maxActivityScore != null">
+                AND activity_score &lt;= #{maxActivityScore}
+            </if>
+            <if test="lastLoginStart != null">
+                AND last_login_time >= #{lastLoginStart}
+            </if>
+            <if test="lastLoginEnd != null">
+                AND last_login_time &lt;= #{lastLoginEnd}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入统计数据 -->
+    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.UserStats" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user_stats (
+            user_id, follower_count, following_count, content_count, like_count,
+            login_count, last_login_time, activity_score, influence_score,
+            create_time, update_time
+        ) VALUES (
+            #{userId}, #{followerCount}, #{followingCount}, #{contentCount}, #{likeCount},
+            #{loginCount}, #{lastLoginTime}, #{activityScore}, #{influenceScore},
+            NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 更新统计数据 -->
+    <update id="updateById" parameterType="com.gig.collide.users.domain.entity.UserStats">
+        UPDATE t_user_stats
+        <set>
+            <if test="followerCount != null">follower_count = #{followerCount},</if>
+            <if test="followingCount != null">following_count = #{followingCount},</if>
+            <if test="contentCount != null">content_count = #{contentCount},</if>
+            <if test="likeCount != null">like_count = #{likeCount},</if>
+            <if test="loginCount != null">login_count = #{loginCount},</if>
+            <if test="lastLoginTime != null">last_login_time = #{lastLoginTime},</if>
+            <if test="activityScore != null">activity_score = #{activityScore},</if>
+            <if test="influenceScore != null">influence_score = #{influenceScore},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 增加粉丝数 -->
+    <update id="incrementFollowerCount">
+        UPDATE t_user_stats
+        SET follower_count = follower_count + #{increment}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加关注数 -->
+    <update id="incrementFollowingCount">
+        UPDATE t_user_stats
+        SET following_count = following_count + #{increment}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加内容数 -->
+    <update id="incrementContentCount">
+        UPDATE t_user_stats
+        SET content_count = content_count + #{increment}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加点赞数 -->
+    <update id="incrementLikeCount">
+        UPDATE t_user_stats
+        SET like_count = like_count + #{increment}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 增加登录次数并更新最后登录时间 -->
+    <update id="incrementLoginCount">
+        UPDATE t_user_stats
+        SET login_count = login_count + 1,
+            last_login_time = NOW(),
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新活跃度分数 -->
+    <update id="updateActivityScore">
+        UPDATE t_user_stats
+        SET activity_score = #{activityScore}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新影响力分数 -->
+    <update id="updateInfluenceScore">
+        UPDATE t_user_stats
+        SET influence_score = #{influenceScore}, 
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 重置用户统计数据 -->
+    <update id="resetUserStats">
+        UPDATE t_user_stats
+        SET follower_count = 0,
+            following_count = 0,
+            content_count = 0,
+            like_count = 0,
+            activity_score = 0.0,
+            influence_score = 0.0,
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 批量更新统计数据 -->
+    <update id="batchUpdateStats" parameterType="java.util.List">
+        <foreach collection="statsList" item="stats" separator=";">
+            UPDATE t_user_stats
+            SET follower_count = #{stats.followerCount},
+                following_count = #{stats.followingCount},
+                content_count = #{stats.contentCount},
+                like_count = #{stats.likeCount},
+                activity_score = #{stats.activityScore},
+                influence_score = #{stats.influenceScore},
+                update_time = NOW()
+            WHERE user_id = #{stats.userId}
+        </foreach>
+    </update>
+
+    <!-- 删除统计数据 -->
+    <delete id="deleteByUserId">
+        DELETE FROM t_user_stats
+        WHERE user_id = #{userId}
+    </delete>
+
+    <!-- 根据ID删除统计数据 -->
+    <delete id="deleteById">
+        DELETE FROM t_user_stats
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

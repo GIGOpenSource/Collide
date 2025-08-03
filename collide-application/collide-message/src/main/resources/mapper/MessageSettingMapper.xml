@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.message.infrastructure.mapper.MessageSettingMapper">
+
+    <!-- 基础 ResultMap -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.message.domain.entity.MessageSetting">
+        <id column="id" property="id"/>
+        <result column="user_id" property="userId"/>
+        <result column="allow_stranger_msg" property="allowStrangerMsg"/>
+        <result column="auto_read_receipt" property="autoReadReceipt"/>
+        <result column="message_notification" property="messageNotification"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <!-- 根据用户ID查询消息设置 -->
+    <select id="findByUserId" resultMap="BaseResultMap">
+        SELECT * FROM t_message_setting
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 更新陌生人消息设置 -->
+    <update id="updateStrangerMessageSetting">
+        UPDATE t_message_setting 
+        SET allow_stranger_msg = #{allowStrangerMsg},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新已读回执设置 -->
+    <update id="updateReadReceiptSetting">
+        UPDATE t_message_setting 
+        SET auto_read_receipt = #{autoReadReceipt},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新消息通知设置 -->
+    <update id="updateNotificationSetting">
+        UPDATE t_message_setting 
+        SET message_notification = #{messageNotification},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 批量更新用户设置 -->
+    <update id="updateUserSettings">
+        UPDATE t_message_setting 
+        SET 
+        <trim suffixOverrides=",">
+            <if test="allowStrangerMsg != null">
+                allow_stranger_msg = #{allowStrangerMsg},
+            </if>
+            <if test="autoReadReceipt != null">
+                auto_read_receipt = #{autoReadReceipt},
+            </if>
+            <if test="messageNotification != null">
+                message_notification = #{messageNotification},
+            </if>
+            update_time = NOW()
+        </trim>
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 创建或更新用户设置 -->
+    <insert id="insertOrUpdate">
+        INSERT INTO t_message_setting (
+            user_id, allow_stranger_msg, auto_read_receipt, 
+            message_notification, create_time, update_time
+        ) VALUES (
+            #{userId}, 
+            IFNULL(#{allowStrangerMsg}, 1), 
+            IFNULL(#{autoReadReceipt}, 1),
+            IFNULL(#{messageNotification}, 1), 
+            NOW(), NOW()
+        )
+        ON DUPLICATE KEY UPDATE
+            allow_stranger_msg = IFNULL(#{allowStrangerMsg}, allow_stranger_msg),
+            auto_read_receipt = IFNULL(#{autoReadReceipt}, auto_read_receipt),
+            message_notification = IFNULL(#{messageNotification}, message_notification),
+            update_time = NOW()
+    </insert>
+
+</mapper>

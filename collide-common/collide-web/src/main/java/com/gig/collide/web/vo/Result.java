@@ -64,15 +64,31 @@ public class Result<T> implements Serializable {
         this.message = singleResponse.getResponseMessage();
     }
 
+    public static <T> Result<T> success() {
+        return new Result<>(true, SUCCESS.name(), "操作成功", null);
+    }
+
     public static <T> Result<T> success(T data) {
-        return new Result<>(true, SUCCESS.name(), SUCCESS.name(), data);
+        return new Result<>(true, SUCCESS.name(), "操作成功", data);
+    }
+
+    public static <T> Result<T> success(String message, T data) {
+        return new Result<>(true, SUCCESS.name(), message, data);
     }
 
     public static <T> Result<T> fail(String errorCode, String errorMsg) {
         return new Result<>(false, errorCode, errorMsg, null);
     }
 
-    public static <T> Result<T> error(String errorCode,String errorMsg) {
+    public static <T> Result<T> failure(String errorMsg) {
+        return new Result<>(false, "FAILURE", errorMsg, null);
+    }
+
+    public static <T> Result<T> failure(String errorCode, String errorMsg) {
+        return new Result<>(false, errorCode, errorMsg, null);
+    }
+
+    public static <T> Result<T> error(String errorCode, String errorMsg) {
         return fail(errorCode, errorMsg);
     }
 }

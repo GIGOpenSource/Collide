@@ -2,9 +2,11 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.users.infrastructure.mapper.UserWalletMapper">
 
-    <!-- 基础字段 -->
+    <!-- 钱包基础字段 - 支持现金和金币双重钱包 -->
     <sql id="Base_Column_List">
-        id, user_id, balance, frozen_amount, total_income, total_expense, status, create_time, update_time
+        id, user_id, balance, frozen_amount, total_income, total_expense, 
+        coin_balance, coin_total_earned, coin_total_spent, 
+        status, create_time, update_time
     </sql>
 
     <!-- 根据用户ID查询钱包 -->
@@ -84,5 +86,238 @@
         WHERE user_id = #{userId}
           AND status = 'active'
     </update>
+
+    <!-- =================== 金币钱包操作 =================== -->
+    
+    <!-- 更新金币余额 -->
+    <update id="updateCoinBalance">
+        UPDATE t_user_wallet
+        SET coin_balance = coin_balance 
+        <if test="isAdd">
+            + #{amount}
+        </if>
+        <if test="!isAdd">
+            - #{amount}
+        </if>,
+        update_time = NOW()
+        WHERE user_id = #{userId}
+        <if test="!isAdd">
+            AND coin_balance >= #{amount}
+        </if>
+        AND status = 'active'
+    </update>
+
+    <!-- 更新金币总收入 -->
+    <update id="updateCoinTotalEarned">
+        UPDATE t_user_wallet
+        SET coin_total_earned = coin_total_earned + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新金币总支出 -->
+    <update id="updateCoinTotalSpent">
+        UPDATE t_user_wallet
+        SET coin_total_spent = coin_total_spent + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 金币消费（原子操作） -->
+    <update id="deductCoinBalance">
+        UPDATE t_user_wallet
+        SET coin_balance = coin_balance - #{amount},
+            coin_total_spent = coin_total_spent + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND coin_balance >= #{amount}
+          AND status = 'active'
+    </update>
+
+    <!-- 金币充值（原子操作） -->
+    <update id="addCoinBalance">
+        UPDATE t_user_wallet
+        SET coin_balance = coin_balance + #{amount},
+            coin_total_earned = coin_total_earned + #{amount},
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND status = 'active'
+    </update>
+
+    <!-- =================== 钱包管理操作 =================== -->
+
+    <!-- 冻结钱包 -->
+    <update id="freezeWallet">
+        UPDATE t_user_wallet
+        SET status = 'frozen', update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 解冻钱包 -->
+    <update id="unfreezeWallet">
+        UPDATE t_user_wallet
+        SET status = 'active', update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 更新钱包状态 -->
+    <update id="updateWalletStatus">
+        UPDATE t_user_wallet
+        SET status = #{status}, update_time = NOW()
+        WHERE user_id = #{userId}
+    </update>
+
+    <!-- 检查钱包是否存在 -->
+    <select id="checkWalletExists" parameterType="long" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM t_user_wallet
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 获取钱包余额 -->
+    <select id="getWalletBalance" parameterType="long" resultType="java.math.BigDecimal">
+        SELECT balance
+        FROM t_user_wallet
+        WHERE user_id = #{userId} AND status != 'deleted'
+    </select>
+
+    <!-- 获取金币余额 - 使用uk_user_id唯一索引 -->
+    <select id="getCoinBalance" parameterType="long" resultType="long">
+        SELECT coin_balance
+        FROM t_user_wallet
+        WHERE user_id = #{userId} AND status = 'active'
+    </select>
+
+    <!-- 获取金币余额排行榜 - 使用idx_coin_balance索引 -->
+    <select id="getCoinBalanceRanking" resultType="com.gig.collide.users.domain.entity.UserWallet">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_wallet
+        WHERE status = 'active' AND coin_balance > 0
+        ORDER BY coin_balance DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取现金余额排行榜 -->
+    <select id="getBalanceRanking" resultType="com.gig.collide.users.domain.entity.UserWallet">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_wallet
+        WHERE status = 'active' AND balance > 0
+        ORDER BY balance DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 按金币余额范围查询 - 使用idx_coin_balance索引 -->
+    <select id="findWalletsByCoinBalanceRange" resultType="com.gig.collide.users.domain.entity.UserWallet">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_wallet
+        WHERE status = 'active'
+          AND coin_balance BETWEEN #{minCoinBalance} AND #{maxCoinBalance}
+        ORDER BY coin_balance DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 统计各状态钱包数量 - 使用idx_status索引 -->
+    <select id="getWalletStatusStatistics" resultType="map">
+        SELECT status, COUNT(*) as count
+        FROM t_user_wallet
+        GROUP BY status
+        ORDER BY count DESC
+    </select>
+
+    <!-- 批量根据用户ID查询钱包 -->
+    <select id="selectByUserIds" resultType="com.gig.collide.users.domain.entity.UserWallet">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_wallet
+        WHERE user_id IN
+        <foreach item="userId" collection="userIds" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 分页查询钱包（支持条件查询） - 优化索引使用 -->
+    <select id="findWalletsByCondition" resultType="com.gig.collide.users.domain.entity.UserWallet">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_user_wallet
+        <where>
+            <!-- 优先使用idx_status索引 -->
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+            <if test="status == null or status == ''">
+                status = 'active'
+            </if>
+            <!-- 使用idx_coin_balance索引 -->
+            <if test="minCoinBalance != null">
+                AND coin_balance >= #{minCoinBalance}
+            </if>
+            <if test="maxCoinBalance != null">
+                AND coin_balance &lt;= #{maxCoinBalance}
+            </if>
+            <!-- 其他条件 -->
+            <if test="minBalance != null">
+                AND balance >= #{minBalance}
+            </if>
+            <if test="maxBalance != null">
+                AND balance &lt;= #{maxBalance}
+            </if>
+        </where>
+        ORDER BY 
+        <choose>
+            <!-- 利用idx_coin_balance索引进行排序 -->
+            <when test="orderBy == 'coin_balance'">coin_balance DESC</when>
+            <when test="orderBy == 'balance'">balance DESC</when>
+            <otherwise>create_time DESC</otherwise>
+        </choose>
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 统计钱包数量（支持条件查询） - 优化索引使用 -->
+    <select id="countWalletsByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_wallet
+        <where>
+            <!-- 优先使用idx_status索引 -->
+            <if test="status != null and status != ''">
+                status = #{status}
+            </if>
+            <if test="status == null or status == ''">
+                status = 'active'
+            </if>
+            <!-- 使用idx_coin_balance索引 -->
+            <if test="minCoinBalance != null">
+                AND coin_balance >= #{minCoinBalance}
+            </if>
+            <if test="maxCoinBalance != null">
+                AND coin_balance &lt;= #{maxCoinBalance}
+            </if>
+            <!-- 其他条件 -->
+            <if test="minBalance != null">
+                AND balance >= #{minBalance}
+            </if>
+            <if test="maxBalance != null">
+                AND balance &lt;= #{maxBalance}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入钱包记录 -->
+    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.UserWallet" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user_wallet (
+            user_id, balance, frozen_amount, total_income, total_expense,
+            coin_balance, coin_total_earned, coin_total_spent,
+            status, create_time, update_time
+        ) VALUES (
+            #{userId}, #{balance}, #{frozenAmount}, #{totalIncome}, #{totalExpense},
+            #{coinBalance}, #{coinTotalEarned}, #{coinTotalSpent},
+            #{status}, NOW(), NOW()
+        )
+    </insert>
+
+    <!-- 删除钱包（物理删除，谨慎使用） -->
+    <delete id="deleteByUserId">
+        DELETE FROM t_user_wallet
+        WHERE user_id = #{userId}
+    </delete>
 
 </mapper>

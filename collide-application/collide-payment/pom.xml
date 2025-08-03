@@ -5,12 +5,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>collide-application</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-payment</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>支付模块（去连表设计 v2.0.0）</description>
@@ -31,47 +31,47 @@
 
         <!-- Collide 标准化组件 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-base</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-config</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-api</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-datasource</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-rpc</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-web</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-cache</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-lock</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-mq</artifactId>
         </dependency>
 

@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.task.infrastructure.mapper.UserCheckinRecordMapper">
+
+    <!-- 用户签到记录表基础字段映射 -->
+    <sql id="baseColumns">
+        id, user_id, task_template_id, checkin_date, reward_coins, continuous_days, 
+        is_bonus, checkin_ip, checkin_time, create_time
+    </sql>
+
+    <!-- 根据用户ID和日期查询签到记录 -->
+    <select id="findByUserIdAndDate" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
+    </select>
+
+    <!-- 检查用户今日是否已签到 -->
+    <select id="checkTodayCheckin" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId} AND checkin_date = #{checkinDate}
+    </select>
+
+    <!-- 获取用户最近的签到记录 -->
+    <select id="getLatestCheckinRecord" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+        ORDER BY checkin_date DESC
+        LIMIT 1
+    </select>
+
+    <!-- 计算用户连续签到天数 -->
+    <select id="calculateContinuousCheckinDays" parameterType="long" resultType="int">
+        SELECT 
+            CASE 
+                WHEN latest_date IS NULL THEN 0
+                WHEN latest_date = CURDATE() THEN 
+                    (SELECT continuous_days FROM t_user_checkin_record 
+                     WHERE user_id = #{userId} AND checkin_date = CURDATE())
+                WHEN DATE_ADD(latest_date, INTERVAL 1 DAY) = CURDATE() THEN
+                    (SELECT continuous_days FROM t_user_checkin_record 
+                     WHERE user_id = #{userId} AND checkin_date = latest_date) 
+                ELSE 0
+            END as continuous_days
+        FROM (
+            SELECT MAX(checkin_date) as latest_date
+            FROM t_user_checkin_record
+            WHERE user_id = #{userId}
+        ) t
+    </select>
+
+    <!-- 分页查询用户签到记录 -->
+    <select id="findUserCheckinRecords" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        <where>
+            user_id = #{userId}
+            <if test="taskTemplateId != null">
+                AND task_template_id = #{taskTemplateId}
+            </if>
+            <if test="startDate != null">
+                AND checkin_date >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND checkin_date &lt;= #{endDate}
+            </if>
+            <if test="minContinuousDays != null">
+                AND continuous_days >= #{minContinuousDays}
+            </if>
+            <if test="maxContinuousDays != null">
+                AND continuous_days &lt;= #{maxContinuousDays}
+            </if>
+        </where>
+        ORDER BY checkin_date DESC
+        <if test="offset != null and size != null">
+            LIMIT #{offset}, #{size}
+        </if>
+    </select>
+
+    <!-- 统计用户签到记录数量 -->
+    <select id="countUserCheckinRecords" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_checkin_record
+        <where>
+            user_id = #{userId}
+            <if test="taskTemplateId != null">
+                AND task_template_id = #{taskTemplateId}
+            </if>
+            <if test="startDate != null">
+                AND checkin_date >= #{startDate}
+            </if>
+            <if test="endDate != null">
+                AND checkin_date &lt;= #{endDate}
+            </if>
+            <if test="minContinuousDays != null">
+                AND continuous_days >= #{minContinuousDays}
+            </if>
+            <if test="maxContinuousDays != null">
+                AND continuous_days &lt;= #{maxContinuousDays}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询用户指定月份的签到记录 -->
+    <select id="findMonthlyCheckinRecords" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+          AND YEAR(checkin_date) = #{year}
+          AND MONTH(checkin_date) = #{month}
+        ORDER BY checkin_date ASC
+    </select>
+
+    <!-- 统计用户总签到次数 -->
+    <select id="countUserTotalCheckins" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计用户本月签到次数 -->
+    <select id="countUserMonthlyCheckins" resultType="int">
+        SELECT COUNT(*)
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+          AND YEAR(checkin_date) = #{year}
+          AND MONTH(checkin_date) = #{month}
+    </select>
+
+    <!-- 查询用户历史最长连续签到天数 -->
+    <select id="getMaxContinuousCheckinDays" parameterType="long" resultType="int">
+        SELECT COALESCE(MAX(continuous_days), 0)
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计用户累计获得金币 -->
+    <select id="getTotalRewardCoins" parameterType="long" resultType="long">
+        SELECT COALESCE(SUM(reward_coins), 0)
+        FROM t_user_checkin_record
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 批量查询用户签到记录 -->
+    <select id="findByUserIds" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        WHERE user_id IN
+        <foreach collection="userIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        <if test="checkinDate != null">
+            AND checkin_date = #{checkinDate}
+        </if>
+        ORDER BY checkin_date DESC, user_id ASC
+    </select>
+
+    <!-- 查询指定日期的所有签到记录 -->
+    <select id="findByCheckinDate" resultType="com.gig.collide.task.domain.entity.UserCheckinRecord">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_checkin_record
+        WHERE checkin_date = #{checkinDate}
+        ORDER BY checkin_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{offset}, #{size}
+        </if>
+    </select>
+
+    <!-- 统计指定日期的签到用户数 -->
+    <select id="countCheckinUsersByDate" parameterType="date" resultType="long">
+        SELECT COUNT(DISTINCT user_id)
+        FROM t_user_checkin_record
+        WHERE checkin_date = #{checkinDate}
+    </select>
+
+</mapper>

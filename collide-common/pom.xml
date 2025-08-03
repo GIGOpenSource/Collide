@@ -5,12 +5,12 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>Collide</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-common</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>Collide 公共模块聚合</description>

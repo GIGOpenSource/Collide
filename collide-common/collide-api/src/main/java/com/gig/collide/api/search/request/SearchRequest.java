@@ -32,7 +32,7 @@ public class SearchRequest implements Serializable {
     /**
      * 分页参数
      */
-    private Integer pageNum = 1;
+    private Integer currentPage = 1;
     private Integer pageSize = 20;
 
     /**

@@ -4,107 +4,240 @@
 
 <mapper namespace="com.gig.collide.order.infrastructure.mapper.OrderMapper">
 
-    <!-- 基础字段列表 -->
+    <!-- 基础字段列表 - 支持双支付模式 -->
     <sql id="baseColumns">
         id, order_no, user_id, user_nickname,
-        goods_id, goods_name, goods_price, goods_cover,
-        quantity, total_amount, discount_amount, final_amount,
+        goods_id, goods_name, goods_type, goods_cover, goods_category_name,
+        coin_amount, content_id, content_title, subscription_duration, subscription_type,
+        quantity, payment_mode, cash_amount, coin_cost,
+        total_amount, discount_amount, final_amount,
         status, pay_status, pay_method, pay_time,
         create_time, update_time
     </sql>
 
-    <!-- 根据订单号查询订单 -->
-    <select id="findByOrderNo" parameterType="string" resultType="com.gig.collide.order.domain.entity.Order">
-        SELECT <include refid="baseColumns" />
-        FROM t_order
-        WHERE order_no = #{orderNo}
-          AND status != 'deleted'
-    </select>
-
-    <!-- 分页查询用户订单 -->
-    <select id="findUserOrders" resultType="com.gig.collide.order.domain.entity.Order">
+    <!-- 根据用户ID分页查询订单 -->
+    <select id="selectByUserId" resultType="com.gig.collide.order.domain.entity.Order">
         SELECT <include refid="baseColumns" />
         FROM t_order
         WHERE user_id = #{userId}
-          AND status != 'deleted'
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-          <if test="payStatus != null and payStatus != ''">
-              AND pay_status = #{payStatus}
-          </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据商品ID查询订单列表 -->
-    <select id="findByGoodsId" resultType="com.gig.collide.order.domain.entity.Order">
+    <!-- 根据订单号查询订单 -->
+    <select id="selectByOrderNo" resultType="com.gig.collide.order.domain.entity.Order">
         SELECT <include refid="baseColumns" />
         FROM t_order
-        WHERE goods_id = #{goodsId}
-          AND status != 'deleted'
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
+        WHERE order_no = #{orderNo}
+    </select>
+
+    <!-- 根据商品类型分页查询订单 -->
+    <select id="selectByGoodsType" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE goods_type = #{goodsType}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
         ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据支付模式分页查询订单 -->
+    <select id="selectByPaymentMode" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE payment_mode = #{paymentMode}
+        <if test="payStatus != null and payStatus != ''">
+            AND pay_status = #{payStatus}
+        </if>
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据商家ID查询订单（需要关联商品表） -->
+    <select id="selectBySellerId" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT o.*
+        FROM t_order o
+        INNER JOIN t_goods g ON o.goods_id = g.id
+        WHERE g.seller_id = #{sellerId}
+        <if test="status != null and status != ''">
+            AND o.status = #{status}
+        </if>
+        ORDER BY o.create_time DESC
+    </select>
+
+    <!-- 查询待支付超时订单 -->
+    <select id="selectTimeoutOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE status = 'pending'
+        AND pay_status = 'unpaid'
+        AND create_time &lt; #{timeoutTime}
+        ORDER BY create_time ASC
     </select>
 
     <!-- 查询指定时间范围内的订单 -->
-    <select id="findByTimeRange" resultType="com.gig.collide.order.domain.entity.Order">
+    <select id="selectByTimeRange" resultType="com.gig.collide.order.domain.entity.Order">
         SELECT <include refid="baseColumns" />
         FROM t_order
         WHERE create_time BETWEEN #{startTime} AND #{endTime}
-          AND status != 'deleted'
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
         ORDER BY create_time DESC
     </select>
 
-    <!-- 更新订单状态 -->
-    <update id="updateOrderStatus">
+    <!-- 查询用户的金币消费订单 -->
+    <select id="selectUserCoinOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE user_id = #{userId}
+        AND payment_mode = 'coin'
+        AND pay_status = 'paid'
+        ORDER BY pay_time DESC
+    </select>
+
+    <!-- 查询用户的充值订单 -->
+    <select id="selectUserRechargeOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE user_id = #{userId}
+        AND goods_type = 'coin'
+        AND pay_status = 'paid'
+        ORDER BY pay_time DESC
+    </select>
+
+    <!-- 统计用户订单数量 -->
+    <select id="selectUserOrderStatistics" resultType="map">
+        SELECT 
+            COUNT(*) as total_orders,
+            COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed_orders,
+            COUNT(CASE WHEN status = 'cancelled' THEN 1 END) as cancelled_orders,
+            COUNT(CASE WHEN pay_status = 'paid' THEN 1 END) as paid_orders,
+            COALESCE(SUM(CASE WHEN payment_mode = 'cash' AND pay_status = 'paid' THEN final_amount END), 0) as total_cash_spent,
+            COALESCE(SUM(CASE WHEN payment_mode = 'coin' AND pay_status = 'paid' THEN coin_cost END), 0) as total_coins_spent
+        FROM t_order
+        WHERE user_id = #{userId}
+    </select>
+
+    <!-- 统计商品销售情况 -->
+    <select id="selectGoodsSalesStatistics" resultType="map">
+        SELECT 
+            COUNT(*) as order_count,
+            SUM(quantity) as total_quantity,
+            COUNT(CASE WHEN pay_status = 'paid' THEN 1 END) as paid_count,
+            SUM(CASE WHEN pay_status = 'paid' THEN quantity END) as paid_quantity,
+            COALESCE(SUM(CASE WHEN payment_mode = 'cash' AND pay_status = 'paid' THEN final_amount END), 0) as total_revenue
+        FROM t_order
+        WHERE goods_id = #{goodsId}
+    </select>
+
+    <!-- 按商品类型统计订单 -->
+    <select id="selectOrderStatisticsByType" resultType="map">
+        SELECT 
+            goods_type,
+            payment_mode,
+            status,
+            COUNT(*) as order_count,
+            SUM(quantity) as total_quantity,
+            COALESCE(SUM(CASE WHEN payment_mode = 'cash' THEN final_amount END), 0) as cash_amount,
+            COALESCE(SUM(CASE WHEN payment_mode = 'coin' THEN coin_cost END), 0) as coin_amount
+        FROM t_order
+        WHERE pay_status = 'paid'
+        GROUP BY goods_type, payment_mode, status
+        ORDER BY goods_type, payment_mode, status
+    </select>
+
+    <!-- 查询热门商品（按订单数量） -->
+    <select id="selectHotGoods" resultType="map">
+        SELECT 
+            goods_id,
+            goods_name,
+            goods_type,
+            COUNT(*) as order_count,
+            SUM(quantity) as total_quantity,
+            COALESCE(SUM(CASE WHEN payment_mode = 'cash' AND pay_status = 'paid' THEN final_amount END), 0) as total_revenue
+        FROM t_order
+        WHERE pay_status = 'paid'
+        GROUP BY goods_id, goods_name, goods_type
+        ORDER BY order_count DESC, total_quantity DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 查询用户最近购买记录 -->
+    <select id="selectUserRecentOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE user_id = #{userId}
+        AND pay_status = 'paid'
+        ORDER BY pay_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 批量更新订单状态 -->
+    <update id="batchUpdateStatus">
         UPDATE t_order
-        SET status = #{status},
+        SET status = #{newStatus},
             update_time = NOW()
-        WHERE id = #{orderId}
-          AND status != 'deleted'
+        WHERE id IN
+        <foreach collection="orderIds" item="id" open="(" close=")" separator=",">
+            #{id}
+        </foreach>
     </update>
 
     <!-- 更新订单支付信息 -->
-    <update id="updatePayInfo">
+    <update id="updatePaymentInfo">
         UPDATE t_order
         SET pay_status = #{payStatus},
             pay_method = #{payMethod},
             pay_time = #{payTime},
-            status = CASE 
-                WHEN #{payStatus} = 'paid' THEN 'paid'
-                ELSE status
-            END,
             update_time = NOW()
         WHERE id = #{orderId}
-          AND status != 'deleted'
     </update>
 
-    <!-- 统计用户订单数量 -->
-    <select id="countUserOrders" resultType="long">
+    <!-- 查询日营收统计 -->
+    <select id="selectDailyRevenue" resultType="map">
+        SELECT 
+            DATE(pay_time) as order_date,
+            COUNT(*) as order_count,
+            COALESCE(SUM(CASE WHEN payment_mode = 'cash' THEN final_amount END), 0) as cash_revenue,
+            COALESCE(SUM(CASE WHEN payment_mode = 'coin' THEN coin_cost END), 0) as coin_revenue
+        FROM t_order
+        WHERE pay_status = 'paid'
+        AND DATE(pay_time) BETWEEN #{startDate} AND #{endDate}
+        GROUP BY DATE(pay_time)
+        ORDER BY order_date DESC
+    </select>
+
+    <!-- 搜索订单 -->
+    <select id="searchOrders" resultType="com.gig.collide.order.domain.entity.Order">
+        SELECT <include refid="baseColumns" />
+        FROM t_order
+        WHERE order_no LIKE CONCAT('%', #{keyword}, '%')
+        OR goods_name LIKE CONCAT('%', #{keyword}, '%')
+        OR user_nickname LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 根据商品ID统计订单数 -->
+    <select id="countByGoodsId" resultType="long">
+        SELECT COUNT(*)
+        FROM t_order
+        WHERE goods_id = #{goodsId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+    </select>
+
+    <!-- 根据用户ID统计订单数 -->
+    <select id="countByUserId" resultType="long">
         SELECT COUNT(*)
         FROM t_order
         WHERE user_id = #{userId}
-          AND status != 'deleted'
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
-    </select>
-
-    <!-- 统计商品销量 -->
-    <select id="countGoodsSales" resultType="long">
-        SELECT COALESCE(SUM(quantity), 0)
-        FROM t_order
-        WHERE goods_id = #{goodsId}
-          AND pay_status = 'paid'
-          AND status != 'deleted'
-          <if test="status != null and status != ''">
-              AND status = #{status}
-          </if>
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
     </select>
 
 </mapper>

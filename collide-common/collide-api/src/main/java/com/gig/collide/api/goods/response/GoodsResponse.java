@@ -1,165 +1,235 @@
 package com.gig.collide.api.goods.response;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 商品统一响应对象 - 简洁版
- * 基于goods-simple.sql的字段结构，包含所有冗余信息
- * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * 商品响应DTO
+ * 统一的商品信息响应格式
+ *
+ * @author GIG Team
+ * @version 2.0.0 (扩展版)
+ * @since 2024-01-31
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
-public class GoodsResponse implements Serializable {
+@Data
+@Accessors(chain = true)
+@Schema(description = "商品响应信息")
+public class GoodsResponse {
 
-    /**
-     * 商品ID
-     */
+    @Schema(description = "商品ID")
     private Long id;
 
-    /**
-     * 商品名称
-     */
+    @Schema(description = "商品名称")
     private String name;
 
-    /**
-     * 商品描述
-     */
+    @Schema(description = "商品描述")
     private String description;
 
-    /**
-     * 分类ID
-     */
+    @Schema(description = "分类ID")
     private Long categoryId;
 
-    /**
-     * 分类名称（冗余）
-     */
+    @Schema(description = "分类名称")
     private String categoryName;
 
-    /**
-     * 商品价格
-     */
+    @Schema(description = "商品类型", allowableValues = {"coin", "goods", "subscription", "content"})
+    private String goodsType;
+
+    @Schema(description = "商品类型说明")
+    private String goodsTypeDesc;
+
+    @Schema(description = "现金价格")
     private BigDecimal price;
 
-    /**
-     * 原价
-     */
+    @Schema(description = "原价")
     private BigDecimal originalPrice;
 
-    /**
-     * 库存数量
-     */
+    @Schema(description = "金币价格（内容类型专用）")
+    private Long coinPrice;
+
+    @Schema(description = "金币数量（金币类商品专用）")
+    private Long coinAmount;
+
+    @Schema(description = "有效价格（根据类型显示现金或金币价格）")
+    private Object effectivePrice;
+
+    @Schema(description = "价格单位", allowableValues = {"元", "金币"})
+    private String priceUnit;
+
+    @Schema(description = "关联内容ID")
+    private Long contentId;
+
+    @Schema(description = "内容标题")
+    private String contentTitle;
+
+    @Schema(description = "订阅时长（天数）")
+    private Integer subscriptionDuration;
+
+    @Schema(description = "订阅类型")
+    private String subscriptionType;
+
+    @Schema(description = "库存数量（-1表示无限库存）")
     private Integer stock;
 
-    /**
-     * 商品封面图
-     */
+    @Schema(description = "库存状态", allowableValues = {"充足", "紧张", "无限库存"})
+    private String stockStatus;
+
+    @Schema(description = "商品封面图")
     private String coverUrl;
 
-    /**
-     * 商品图片，JSON数组格式
-     */
-    private String images;
+    @Schema(description = "商品图片列表")
+    private List<String> images;
 
-    // =================== 商家信息（冗余字段） ===================
-
-    /**
-     * 商家ID
-     */
+    @Schema(description = "商家ID")
     private Long sellerId;
 
-    /**
-     * 商家名称（冗余）
-     */
+    @Schema(description = "商家名称")
     private String sellerName;
 
-    // =================== 状态和统计 ===================
-
-    /**
-     * 状态：active、inactive、sold_out
-     */
+    @Schema(description = "商品状态", allowableValues = {"active", "inactive", "sold_out"})
     private String status;
 
-    /**
-     * 销量（冗余统计）
-     */
+    @Schema(description = "商品状态说明")
+    private String statusDesc;
+
+    @Schema(description = "销量")
     private Long salesCount;
 
-    /**
-     * 浏览量（冗余统计）
-     */
+    @Schema(description = "浏览量")
     private Long viewCount;
 
-    // =================== 时间信息 ===================
+    @Schema(description = "是否为虚拟商品")
+    private Boolean isVirtual;
 
-    /**
-     * 创建时间
-     */
+    @Schema(description = "是否可购买")
+    private Boolean canPurchase;
+
+    @Schema(description = "支付方式", allowableValues = {"现金", "金币"})
+    private String paymentMethod;
+
+    @Schema(description = "创建时间")
     private LocalDateTime createTime;
 
-    /**
-     * 更新时间
-     */
+    @Schema(description = "更新时间")
     private LocalDateTime updateTime;
 
-    // =================== 计算属性 ===================
-
     /**
-     * 是否有折扣
+     * 获取库存状态描述
      */
-    @JsonIgnore
-    public boolean hasDiscount() {
-        return originalPrice != null && price != null && 
-               originalPrice.compareTo(price) > 0;
-    }
-
-    /**
-     * 折扣金额
-     */
-    @JsonIgnore
-    public BigDecimal getDiscountAmount() {
-        if (hasDiscount()) {
-            return originalPrice.subtract(price);
+    public String getStockStatus() {
+        if (stock == null) {
+            return "未知";
         }
-        return BigDecimal.ZERO;
+        if (stock == -1) {
+            return "无限库存";
+        }
+        if (stock <= 0) {
+            return "缺货";
+        }
+        if (stock <= 10) {
+            return "紧张";
+        }
+        return "充足";
     }
 
     /**
-     * 是否有库存
+     * 获取商品类型描述
      */
-    @JsonIgnore
-    public boolean hasStock() {
-        return stock != null && stock > 0;
+    public String getGoodsTypeDesc() {
+        if (goodsType == null) {
+            return "未知";
+        }
+        switch (goodsType.toLowerCase()) {
+            case "coin":
+                return "金币充值包";
+            case "goods":
+                return "实体商品";
+            case "subscription":
+                return "订阅服务";
+            case "content":
+                return "付费内容";
+            default:
+                return "未知类型";
+        }
     }
 
     /**
-     * 是否为活跃状态
+     * 获取状态描述
      */
-    @JsonIgnore
-    public boolean isActive() {
-        return "active".equals(status);
+    public String getStatusDesc() {
+        if (status == null) {
+            return "未知";
+        }
+        switch (status.toLowerCase()) {
+            case "active":
+                return "正常销售";
+            case "inactive":
+                return "已下架";
+            case "sold_out":
+                return "售罄";
+            default:
+                return "未知状态";
+        }
     }
 
     /**
-     * 是否售罄
+     * 获取支付方式
      */
-    @JsonIgnore
-    public boolean isSoldOut() {
-        return "sold_out".equals(status) || (stock != null && stock <= 0);
+    public String getPaymentMethod() {
+        if ("content".equals(goodsType)) {
+            return "金币";
+        }
+        return "现金";
+    }
+
+    /**
+     * 获取价格单位
+     */
+    public String getPriceUnit() {
+        if ("content".equals(goodsType)) {
+            return "金币";
+        }
+        return "元";
+    }
+
+    /**
+     * 获取有效价格
+     */
+    public Object getEffectivePrice() {
+        if ("content".equals(goodsType)) {
+            return coinPrice;
+        }
+        return price;
+    }
+
+    /**
+     * 是否为虚拟商品
+     */
+    public Boolean getIsVirtual() {
+        if (goodsType == null) {
+            return false;
+        }
+        return "coin".equals(goodsType) || "subscription".equals(goodsType) || "content".equals(goodsType);
+    }
+
+    /**
+     * 是否可购买
+     */
+    public Boolean getCanPurchase() {
+        // 检查状态
+        if (!"active".equals(status)) {
+            return false;
+        }
+        
+        // 检查库存
+        if (stock != null && stock == 0) {
+            return false;
+        }
+        
+        return true;
     }
 }

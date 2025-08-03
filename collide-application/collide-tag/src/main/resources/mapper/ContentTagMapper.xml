@@ -1,27 +1,521 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.gig.collide.tag.infrastructure.mapper.ContentTagMapper">
 
-    <!-- 获取内容的标签列表 -->
-    <select id="selectByContentId" resultType="com.gig.collide.tag.domain.entity.ContentTag">
-        SELECT * FROM t_content_tag 
+    <!-- 基础结果映射 -->
+    <resultMap id="BaseResultMap" type="com.gig.collide.tag.domain.entity.ContentTag">
+        <id column="id" property="id"/>
+        <result column="content_id" property="contentId"/>
+        <result column="tag_id" property="tagId"/>
+        <result column="tag_time" property="tagTime"/>
+    </resultMap>
+
+    <!-- 内容标签详情结果映射（含标签信息） -->
+    <resultMap id="WithTagDetailsResultMap" type="com.gig.collide.tag.domain.entity.ContentTag">
+        <id column="id" property="id"/>
+        <result column="content_id" property="contentId"/>
+        <result column="tag_id" property="tagId"/>
+        <result column="tag_time" property="tagTime"/>
+        <!-- 可以扩展包含标签详情，但当前实体设计简单，暂不包含 -->
+    </resultMap>
+
+    <!-- 基础列定义 -->
+    <sql id="Base_Column_List">
+        ct.id, ct.content_id, ct.tag_id, ct.tag_time
+    </sql>
+
+    <!-- 标签详情列定义 -->
+    <sql id="Tag_Column_List">
+        t.id as tag_detail_id, t.tag_name, t.tag_description, t.tag_icon, 
+        t.weight, t.hotness, t.follow_count, t.content_count, t.status
+    </sql>
+
+    <!-- 条件查询SQL片段 -->
+    <sql id="Base_Where_Clause">
+        <where>
+            <if test="tagId != null">
+                AND ct.tag_id = #{tagId}
+            </if>
+            <if test="contentId != null">
+                AND ct.content_id = #{contentId}
+            </if>
+            <if test="tagStartDate != null">
+                AND DATE(ct.tag_time) >= #{tagStartDate}
+            </if>
+            <if test="tagEndDate != null">
+                AND DATE(ct.tag_time) <= #{tagEndDate}
+            </if>
+            <if test="tagStatus != null">
+                AND t.status = #{tagStatus}
+            </if>
+        </where>
+    </sql>
+
+    <!-- 排序SQL片段 -->
+    <sql id="Order_By_Clause">
+        <choose>
+            <when test="sortField != null and sortField.trim() != ''">
+                ORDER BY 
+                <choose>
+                    <when test="sortField == 'tag_time'">ct.tag_time</when>
+                    <when test="sortField == 'tag_name'">t.tag_name</when>
+                    <when test="sortField == 'tag_weight'">t.weight</when>
+                    <otherwise>ct.tag_time</otherwise>
+                </choose>
+                <choose>
+                    <when test="sortDirection != null and sortDirection.toUpperCase() == 'ASC'">ASC</when>
+                    <otherwise>DESC</otherwise>
+                </choose>
+            </when>
+            <otherwise>ORDER BY ct.tag_time DESC</otherwise>
+        </choose>
+    </sql>
+
+    <!-- =================== 内容标签查询 =================== -->
+
+    <!-- 查询内容是否包含指定标签 -->
+    <select id="hasContentTag" resultType="java.lang.Boolean">
+        SELECT COUNT(*) > 0
+        FROM t_content_tag ct
+        WHERE ct.content_id = #{contentId} AND ct.tag_id = #{tagId}
+    </select>
+
+    <!-- 获取内容的标签ID列表 -->
+    <select id="getContentTagIds" resultType="java.lang.Long">
+        SELECT ct.tag_id
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.content_id = #{contentId} AND t.status = 1
+        ORDER BY t.weight DESC, ct.tag_time DESC
+    </select>
+
+    <!-- 获取内容的标签详情列表 -->
+    <select id="getContentTagsWithDetails" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.content_id = #{contentId} AND t.status = 1
+        ORDER BY t.weight DESC, ct.tag_time DESC
+    </select>
+
+    <!-- 统计内容的标签数量 -->
+    <select id="countContentTags" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.content_id = #{contentId} AND t.status = 1
+    </select>
+
+    <!-- =================== 标签内容查询 =================== -->
+
+    <!-- 根据单个标签查询内容ID列表 -->
+    <select id="getContentsByTag" resultType="java.lang.Long">
+        SELECT ct.content_id
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.tag_id = #{tagId} AND t.status = 1
+        ORDER BY ct.tag_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据多个标签查询内容ID列表（AND关系） -->
+    <select id="getContentsByTagsAnd" resultType="java.lang.Long">
+        SELECT ct.content_id
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE t.status = 1 
+          AND ct.tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+        GROUP BY ct.content_id
+        HAVING COUNT(DISTINCT ct.tag_id) = #{tagIds.size}
+        ORDER BY MAX(ct.tag_time) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据多个标签查询内容ID列表（OR关系） -->
+    <select id="getContentsByTagsOr" resultType="java.lang.Long">
+        SELECT ct.content_id, 
+               COUNT(DISTINCT ct.tag_id) as tag_match_count,
+               MAX(ct.tag_time) as latest_tag_time
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE t.status = 1 
+          AND ct.tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+        GROUP BY ct.content_id
+        ORDER BY tag_match_count DESC, latest_tag_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 统计标签下的内容数量 -->
+    <select id="countContentsByTag" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT ct.content_id)
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.tag_id = #{tagId} AND t.status = 1
+    </select>
+
+    <!-- 获取标签的最新内容 -->
+    <select id="getTagLatestContents" resultType="java.lang.Long">
+        SELECT ct.content_id
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.tag_id = #{tagId} 
+          AND t.status = 1
+          AND ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        ORDER BY ct.tag_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取标签的热门内容（基于时间新鲜度） -->
+    <select id="getTagHotContents" resultType="java.lang.Long">
+        SELECT ct.content_id,
+               CASE 
+                   WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 1 THEN 2.0
+                   WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 6 THEN 1.8
+                   WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 24 THEN 1.5
+                   WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 72 THEN 1.2
+                   WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 168 THEN 1.0
+                   ELSE 0.8
+               END as time_score
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.tag_id = #{tagId} 
+          AND t.status = 1
+          AND ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        ORDER BY time_score DESC, ct.tag_time DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 基于用户标签的内容推荐 =================== -->
+
+    <!-- 根据用户关注的标签推荐内容 -->
+    <select id="getRecommendContentsByUserTags" resultType="java.lang.Long">
+        SELECT ct.content_id,
+               SUM(t.weight / 100.0 * 
+                   CASE 
+                       WHEN TIMESTAMPDIFF(DAY, ct.tag_time, NOW()) = 0 THEN 1.0
+                       WHEN TIMESTAMPDIFF(DAY, ct.tag_time, NOW()) <= 3 THEN 0.9
+                       WHEN TIMESTAMPDIFF(DAY, ct.tag_time, NOW()) <= 7 THEN 0.8
+                       WHEN TIMESTAMPDIFF(DAY, ct.tag_time, NOW()) <= 14 THEN 0.6
+                       WHEN TIMESTAMPDIFF(DAY, ct.tag_time, NOW()) <= 30 THEN 0.4
+                       ELSE 0.2
+                   END
+               ) as recommend_score
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        INNER JOIN t_user_tag_follow utf ON utf.tag_id = ct.tag_id
+        WHERE utf.user_id = #{userId} 
+          AND t.status = 1
+        <if test="excludeContentIds != null and excludeContentIds.size() > 0">
+          AND ct.content_id NOT IN
+          <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+              #{contentId}
+          </foreach>
+        </if>
+        GROUP BY ct.content_id
+        ORDER BY recommend_score DESC, MAX(ct.tag_time) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 根据用户关注的标签推荐热门内容 -->
+    <select id="getRecommendHotContentsByUserTags" resultType="java.lang.Long">
+        SELECT ct.content_id,
+               SUM(t.weight / 100.0 * t.hotness / 1000.0 * 
+                   CASE 
+                       WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 1 THEN 2.0
+                       WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 6 THEN 1.8
+                       WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 24 THEN 1.5
+                       WHEN TIMESTAMPDIFF(HOUR, ct.tag_time, NOW()) <= 72 THEN 1.2
+                       ELSE 1.0
+                   END
+               ) as hot_score
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        INNER JOIN t_user_tag_follow utf ON utf.tag_id = ct.tag_id
+        WHERE utf.user_id = #{userId} 
+          AND t.status = 1
+          AND ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        <if test="excludeContentIds != null and excludeContentIds.size() > 0">
+          AND ct.content_id NOT IN
+          <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+              #{contentId}
+          </foreach>
+        </if>
+        GROUP BY ct.content_id
+        ORDER BY hot_score DESC, MAX(ct.tag_time) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 基于内容标签相似度推荐相关内容 -->
+    <select id="getRelatedContentsByTags" resultType="java.lang.Long">
+        SELECT ct2.content_id,
+               COUNT(DISTINCT ct2.tag_id) as common_tag_count
+        FROM t_content_tag ct1
+        INNER JOIN t_content_tag ct2 ON ct1.tag_id = ct2.tag_id
+        INNER JOIN t_tag t ON ct1.tag_id = t.id
+        WHERE ct1.content_id = #{contentId}
+          AND ct2.content_id != #{contentId}
+          AND t.status = 1
+        GROUP BY ct2.content_id
+        ORDER BY common_tag_count DESC, MAX(ct2.tag_time) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 条件查询 =================== -->
+
+    <!-- 根据条件分页查询内容标签关系 -->
+    <select id="findContentTagsByCondition" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        <include refid="Base_Where_Clause"/>
+        <include refid="Order_By_Clause"/>
+        <if test="offset != null and pageSize != null">
+            LIMIT #{offset}, #{pageSize}
+        </if>
+    </select>
+
+    <!-- 根据条件统计内容标签关系数量 -->
+    <select id="countContentTagsByCondition" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        <include refid="Base_Where_Clause"/>
+    </select>
+
+    <!-- =================== 批量操作 =================== -->
+
+    <!-- 批量检查内容是否包含指定标签 -->
+    <select id="batchCheckContentTags" resultType="java.lang.Long">
+        SELECT ct.tag_id
+        FROM t_content_tag ct
+        WHERE ct.content_id = #{contentId}
+          AND ct.tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </select>
+
+    <!-- 批量删除内容的标签 -->
+    <delete id="batchDeleteContentTags">
+        DELETE FROM t_content_tag
         WHERE content_id = #{contentId}
-        ORDER BY create_time DESC
+          AND tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </delete>
+
+    <!-- 批量插入内容标签关系 -->
+    <insert id="batchInsertContentTags">
+        INSERT INTO t_content_tag (content_id, tag_id, tag_time)
+        VALUES
+        <foreach collection="contentTags" item="contentTag" separator=",">
+            (#{contentTag.contentId}, #{contentTag.tagId}, #{contentTag.tagTime})
+        </foreach>
+    </insert>
+
+    <!-- 替换内容的所有标签 -->
+    <delete id="replaceContentTags">
+        <!-- 先删除原有标签 -->
+        DELETE FROM t_content_tag WHERE content_id = #{contentId};
+        <!-- 插入新标签 - 这里需要在业务层处理 -->
+    </delete>
+
+    <!-- =================== 统计分析 =================== -->
+
+    <!-- 获取标签的内容时间分布 -->
+    <select id="getTagContentTimeDistribution" resultType="java.util.Map">
+        SELECT 
+            DATE(ct.tag_time) as tag_date,
+            COUNT(*) as content_count
+        FROM t_content_tag ct
+        WHERE ct.tag_id = #{tagId}
+          AND ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        GROUP BY DATE(ct.tag_time)
+        ORDER BY tag_date DESC
     </select>
 
-    <!-- 获取标签的内容列表 -->
-    <select id="selectByTagId" resultType="com.gig.collide.tag.domain.entity.ContentTag">
-        SELECT * FROM t_content_tag 
+    <!-- 统计每日新增内容标签数 -->
+    <select id="getDailyContentTagStats" resultType="java.util.Map">
+        SELECT 
+            DATE(ct.tag_time) as tag_date,
+            COUNT(*) as tag_count,
+            COUNT(DISTINCT ct.content_id) as content_count
+        FROM t_content_tag ct
+        <if test="tagId != null">
+            WHERE ct.tag_id = #{tagId}
+              AND ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        </if>
+        <if test="tagId == null">
+            WHERE ct.tag_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+        </if>
+        GROUP BY DATE(ct.tag_time)
+        ORDER BY tag_date DESC
+    </select>
+
+    <!-- 获取内容标签的权重分布 -->
+    <select id="getContentTagWeightDistribution" resultType="java.util.Map">
+        SELECT 
+            CASE 
+                WHEN t.weight >= 80 THEN '高权重(80-100)'
+                WHEN t.weight >= 60 THEN '中高权重(60-79)'
+                WHEN t.weight >= 40 THEN '中权重(40-59)'
+                WHEN t.weight >= 20 THEN '中低权重(20-39)'
+                ELSE '低权重(1-19)'
+            END as weight_range,
+            COUNT(*) as tag_count
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        <if test="contentId != null">
+            WHERE ct.content_id = #{contentId} AND t.status = 1
+        </if>
+        <if test="contentId == null">
+            WHERE t.status = 1
+        </if>
+        GROUP BY weight_range
+        ORDER BY MIN(t.weight) DESC
+    </select>
+
+    <!-- 获取标签共现分析 -->
+    <select id="getTagCooccurrenceAnalysis" resultType="java.util.Map">
+        SELECT 
+            ct2.tag_id as cooccurrence_tag_id,
+            COUNT(*) as cooccurrence_count
+        FROM t_content_tag ct1
+        INNER JOIN t_content_tag ct2 ON ct1.content_id = ct2.content_id
+        INNER JOIN t_tag t ON ct2.tag_id = t.id
+        WHERE ct1.tag_id = #{tagId}
+          AND ct2.tag_id != #{tagId}
+          AND t.status = 1
+        GROUP BY ct2.tag_id
+        ORDER BY cooccurrence_count DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 智能推荐支持 =================== -->
+
+    <!-- 为内容推荐标签（基于相似内容的标签） -->
+    <select id="getRecommendTagsForContent" resultType="java.lang.Long">
+        SELECT ct2.tag_id,
+               COUNT(*) * t.weight / 100.0 as recommend_score
+        FROM t_content_tag ct1
+        INNER JOIN t_content_tag ct2 ON ct1.content_id != ct2.content_id
+        INNER JOIN t_content_tag ct3 ON ct1.tag_id = ct3.tag_id AND ct2.content_id = ct3.content_id
+        INNER JOIN t_tag t ON ct2.tag_id = t.id
+        WHERE ct1.content_id = #{contentId}
+          AND t.status = 1
+        <if test="excludeTagIds != null and excludeTagIds.size() > 0">
+          AND ct2.tag_id NOT IN
+          <foreach collection="excludeTagIds" item="tagId" open="(" separator="," close=")">
+              #{tagId}
+          </foreach>
+        </if>
+        GROUP BY ct2.tag_id
+        ORDER BY recommend_score DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 获取用户可能感兴趣的内容（基于行为相似的用户） -->
+    <select id="getRecommendContentsBySimilarUsers" resultType="java.lang.Long">
+        SELECT ct.content_id,
+               COUNT(DISTINCT utf.user_id) * AVG(t.weight / 100.0) as interest_score
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        INNER JOIN t_user_tag_follow utf ON utf.tag_id = ct.tag_id
+        WHERE utf.user_id IN
+        <foreach collection="similarUserIds" item="userId" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+        AND t.status = 1
+        <if test="excludeContentIds != null and excludeContentIds.size() > 0">
+          AND ct.content_id NOT IN
+          <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
+              #{contentId}
+          </foreach>
+        </if>
+        GROUP BY ct.content_id
+        ORDER BY interest_score DESC, MAX(ct.tag_time) DESC
+        <if test="limit != null and limit > 0">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- =================== 数据清理 =================== -->
+
+    <!-- 清理无效的内容标签（针对已删除的标签） -->
+    <delete id="cleanupInvalidContentTags">
+        DELETE ct FROM t_content_tag ct
+        LEFT JOIN t_tag t ON ct.tag_id = t.id
+        WHERE t.id IS NULL
+        <if test="contentId != null">
+            AND ct.content_id = #{contentId}
+        </if>
+    </delete>
+
+    <!-- 删除内容的所有标签 -->
+    <delete id="deleteAllContentTags">
+        DELETE FROM t_content_tag
+        WHERE content_id = #{contentId}
+    </delete>
+
+    <!-- 删除标签的所有内容关联 -->
+    <delete id="deleteAllTagContents">
+        DELETE FROM t_content_tag
         WHERE tag_id = #{tagId}
-        ORDER BY create_time DESC
+    </delete>
+
+    <!-- =================== 性能优化查询 =================== -->
+
+    <!-- 批量获取多个内容的标签 -->
+    <select id="batchGetContentTags" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_content_tag ct
+        INNER JOIN t_tag t ON ct.tag_id = t.id
+        WHERE ct.content_id IN
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+        AND t.status = 1
+        ORDER BY ct.content_id, t.weight DESC, ct.tag_time DESC
     </select>
 
-    <!-- 检查内容是否已有此标签 -->
-    <select id="countByContentIdAndTagId" resultType="int">
-        SELECT COUNT(*) FROM t_content_tag 
-        WHERE content_id = #{contentId} AND tag_id = #{tagId}
+    <!-- 批量获取多个标签的内容数量 -->
+    <select id="batchGetTagContentCounts" resultType="java.util.Map">
+        SELECT 
+            ct.tag_id,
+            COUNT(DISTINCT ct.content_id) as content_count
+        FROM t_content_tag ct
+        WHERE ct.tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+        GROUP BY ct.tag_id
     </select>
 
-</mapper> 
+</mapper>

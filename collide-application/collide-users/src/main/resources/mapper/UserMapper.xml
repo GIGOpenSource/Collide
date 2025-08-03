@@ -1,45 +1,63 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserMapper">
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserCoreMapper">
 
-    <!-- 基础字段映射 -->
+    <!-- 用户核心表基础字段映射 - 6表架构 -->
     <sql id="baseColumns">
-        id, username, nickname, avatar, email, phone, password_hash, role, status,
-        bio, birthday, gender, location, follower_count, following_count, content_count, like_count,
-        vip_expire_time, last_login_time, login_count, invite_code, inviter_id, invited_count,
-        create_time, update_time
+        id, username, email, phone, password_hash, status, invite_code, inviter_id, create_time, update_time
     </sql>
 
-    <!-- 根据ID查询用户 -->
-    <select id="findById" parameterType="long" resultType="com.gig.collide.users.domain.entity.User">
+    <!-- 根据ID查询用户核心信息 -->
+    <select id="findById" parameterType="long" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
         FROM t_user
         WHERE id = #{id} AND status != 'deleted'
     </select>
 
-    <!-- 根据用户名查询用户 -->
-    <select id="findByUsername" parameterType="string" resultType="com.gig.collide.users.domain.entity.User">
+    <!-- 根据用户名查询用户核心信息 -->
+    <select id="findByUsername" parameterType="string" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
         FROM t_user
         WHERE username = #{username} AND status != 'deleted'
     </select>
 
-    <!-- 根据邮箱查询用户 -->
-    <select id="findByEmail" parameterType="string" resultType="com.gig.collide.users.domain.entity.User">
+    <!-- 根据邮箱查询用户核心信息 -->
+    <select id="findByEmail" parameterType="string" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
         FROM t_user
         WHERE email = #{email} AND status != 'deleted'
     </select>
 
-    <!-- 根据手机号查询用户 -->
-    <select id="findByPhone" parameterType="string" resultType="com.gig.collide.users.domain.entity.User">
+    <!-- 根据手机号查询用户核心信息 -->
+    <select id="findByPhone" parameterType="string" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
         FROM t_user
         WHERE phone = #{phone} AND status != 'deleted'
     </select>
 
-    <!-- 分页查询用户列表 -->
-    <select id="findUsersByCondition" resultType="com.gig.collide.users.domain.entity.User">
+    <!-- 检查用户名是否存在 -->
+    <select id="checkUsernameExists" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM t_user
+        WHERE username = #{username} AND status != 'deleted'
+    </select>
+
+    <!-- 检查邮箱是否存在 -->
+    <select id="checkEmailExists" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM t_user
+        WHERE email = #{email} AND status != 'deleted'
+    </select>
+
+    <!-- 检查手机号是否存在 -->
+    <select id="checkPhoneExists" parameterType="string" resultType="boolean">
+        SELECT COUNT(*) > 0
+        FROM t_user
+        WHERE phone = #{phone} AND status != 'deleted'
+    </select>
+
+    <!-- 分页查询用户核心信息列表 -->
+    <select id="findUsersByCondition" resultType="com.gig.collide.users.domain.entity.UserCore">
         SELECT <include refid="baseColumns" />
         FROM t_user
         <where>
@@ -47,27 +65,24 @@
             <if test="username != null and username != ''">
                 AND username LIKE CONCAT('%', #{username}, '%')
             </if>
-            <if test="nickname != null and nickname != ''">
-                AND nickname LIKE CONCAT('%', #{nickname}, '%')
-            </if>
             <if test="email != null and email != ''">
                 AND email = #{email}
             </if>
             <if test="phone != null and phone != ''">
                 AND phone = #{phone}
             </if>
-            <if test="role != null and role != ''">
-                AND role = #{role}
-            </if>
             <if test="status != null and status != ''">
                 AND status = #{status}
             </if>
+            <if test="inviterId != null">
+                AND inviter_id = #{inviterId}
+            </if>
         </where>
         ORDER BY create_time DESC
-        LIMIT #{offset}, #{size}
+        LIMIT #{size} OFFSET #{offset}
     </select>
 
-    <!-- 统计用户数量 -->
+    <!-- 统计用户核心信息数量 -->
     <select id="countUsersByCondition" resultType="long">
         SELECT COUNT(*)
         FROM t_user
@@ -76,50 +91,53 @@
             <if test="username != null and username != ''">
                 AND username LIKE CONCAT('%', #{username}, '%')
             </if>
-            <if test="nickname != null and nickname != ''">
-                AND nickname LIKE CONCAT('%', #{nickname}, '%')
-            </if>
             <if test="email != null and email != ''">
                 AND email = #{email}
             </if>
             <if test="phone != null and phone != ''">
                 AND phone = #{phone}
             </if>
-            <if test="role != null and role != ''">
-                AND role = #{role}
-            </if>
             <if test="status != null and status != ''">
                 AND status = #{status}
+            </if>
+            <if test="inviterId != null">
+                AND inviter_id = #{inviterId}
             </if>
         </where>
     </select>
 
-    <!-- 插入用户 -->
-    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.User" useGeneratedKeys="true" keyProperty="id">
+    <!-- 批量根据ID查询用户核心信息 -->
+    <select id="findUsersByIds" resultType="com.gig.collide.users.domain.entity.UserCore">
+        SELECT <include refid="baseColumns" />
+        FROM t_user
+        WHERE id IN
+        <foreach item="id" collection="userIds" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        AND status != 'deleted'
+        ORDER BY create_time DESC
+    </select>
+
+    <!-- 插入用户核心信息 -->
+    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.UserCore" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_user (
-            username, nickname, avatar, email, phone, password_hash, role, status,
-            bio, birthday, gender, location, invite_code, inviter_id
+            username, email, phone, password_hash, status, invite_code, inviter_id, create_time, update_time
         ) VALUES (
-            #{username}, #{nickname}, #{avatar}, #{email}, #{phone}, #{passwordHash}, #{role}, #{status},
-            #{bio}, #{birthday}, #{gender}, #{location}, #{inviteCode}, #{inviterId}
+            #{username}, #{email}, #{phone}, #{passwordHash}, #{status}, #{inviteCode}, #{inviterId}, NOW(), NOW()
         )
     </insert>
 
-    <!-- 更新用户信息 -->
-    <update id="updateById" parameterType="com.gig.collide.users.domain.entity.User">
+    <!-- 更新用户核心信息 -->
+    <update id="updateById" parameterType="com.gig.collide.users.domain.entity.UserCore">
         UPDATE t_user
         <set>
-            <if test="nickname != null">nickname = #{nickname},</if>
-            <if test="avatar != null">avatar = #{avatar},</if>
-            <if test="email != null">email = #{email},</if>
-            <if test="phone != null">phone = #{phone},</if>
-            <if test="bio != null">bio = #{bio},</if>
-            <if test="birthday != null">birthday = #{birthday},</if>
-            <if test="gender != null">gender = #{gender},</if>
-            <if test="location != null">location = #{location},</if>
-            <if test="role != null">role = #{role},</if>
-            <if test="status != null">status = #{status},</if>
-            <if test="vipExpireTime != null">vip_expire_time = #{vipExpireTime},</if>
+            <if test="username != null and username != ''">username = #{username},</if>
+            <if test="email != null and email != ''">email = #{email},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="passwordHash != null and passwordHash != ''">password_hash = #{passwordHash},</if>
+            <if test="status != null and status != ''">status = #{status},</if>
+            <if test="inviteCode != null and inviteCode != ''">invite_code = #{inviteCode},</if>
+            <if test="inviterId != null">inviter_id = #{inviterId},</if>
             update_time = NOW()
         </set>
         WHERE id = #{id}
@@ -132,38 +150,19 @@
         WHERE id = #{userId}
     </update>
 
-    <!-- 更新最后登录时间 -->
-    <update id="updateLastLoginTime">
+    <!-- 更新用户密码 -->
+    <update id="updatePassword">
         UPDATE t_user
-        SET last_login_time = NOW(),
-            login_count = login_count + 1,
-            update_time = NOW()
+        SET password_hash = #{passwordHash}, update_time = NOW()
         WHERE id = #{userId}
     </update>
 
-    <!-- 更新用户统计数据 -->
-    <update id="updateUserStats">
-        UPDATE t_user
-        <set>
-            <if test="statsType == 'follower'">
-                follower_count = follower_count + #{increment},
-            </if>
-            <if test="statsType == 'following'">
-                following_count = following_count + #{increment},
-            </if>
-            <if test="statsType == 'content'">
-                content_count = content_count + #{increment},
-            </if>
-            <if test="statsType == 'like'">
-                like_count = like_count + #{increment},
-            </if>
-            <if test="statsType == 'invited'">
-                invited_count = invited_count + #{increment},
-            </if>
-            update_time = NOW()
-        </set>
-        WHERE id = #{userId}
-    </update>
+    <!-- 获取用户密码哈希值（用于验证） -->
+    <select id="getPasswordHash" parameterType="long" resultType="string">
+        SELECT password_hash
+        FROM t_user
+        WHERE id = #{userId} AND status != 'deleted'
+    </select>
 
     <!-- 删除用户（逻辑删除） -->
     <update id="deleteById">

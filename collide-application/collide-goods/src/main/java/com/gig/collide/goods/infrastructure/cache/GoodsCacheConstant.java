@@ -3,286 +3,198 @@ package com.gig.collide.goods.infrastructure.cache;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 商品模块缓存常量定义 - 缓存增强版
- * 对齐like模块设计风格，提供统一的缓存配置
+ * 商品模块缓存常量配置
+ * 统一管理缓存键名、过期时间等配置
  *
  * @author GIG Team
  * @version 2.0.0 (缓存增强版)
- * @since 2024-01-16
+ * @since 2024-01-31
  */
 public class GoodsCacheConstant {
 
-    // =================== 商品详情缓存 ===================
-
+    // =================== 缓存名称定义 ===================
+    
     /**
-     * 商品详情缓存名称
+     * 商品详情缓存
      */
     public static final String GOODS_DETAIL_CACHE = "goods:detail";
-
+    
     /**
-     * 商品详情缓存Key
-     */
-    public static final String GOODS_DETAIL_BY_ID_KEY = "'goods:detail:id:' + #goodsId";
-
-    /**
-     * 商品详情缓存过期时间（分钟）
-     */
-    public static final int GOODS_DETAIL_EXPIRE = 30;
-
-    // =================== 商品列表缓存 ===================
-
-    /**
-     * 商品列表缓存名称
+     * 商品列表缓存
      */
     public static final String GOODS_LIST_CACHE = "goods:list";
-
+    
     /**
-     * 商品分页列表缓存Key
+     * 热门商品缓存
      */
-    public static final String GOODS_LIST_KEY = "'goods:list:' + #request.pageNum + ':' + #request.pageSize + ':' + #request.sellerId + ':' + #request.categoryId + ':' + #request.status";
-
+    public static final String GOODS_HOT_CACHE = "goods:hot";
+    
     /**
-     * 商品列表缓存过期时间（分钟）
-     */
-    public static final int GOODS_LIST_EXPIRE = 15;
-
-    // =================== 商品分类缓存 ===================
-
-    /**
-     * 商品分类缓存名称
-     */
-    public static final String GOODS_CATEGORY_CACHE = "goods:category";
-
-    /**
-     * 分类下商品列表缓存Key
-     */
-    public static final String CATEGORY_GOODS_KEY = "'goods:category:' + #categoryId + ':' + #pageNum + ':' + #pageSize";
-
-    /**
-     * 商品分类缓存过期时间（分钟）
-     */
-    public static final int GOODS_CATEGORY_EXPIRE = 60;
-
-    // =================== 商品搜索缓存 ===================
-
-    /**
-     * 商品搜索缓存名称
+     * 商品搜索缓存
      */
     public static final String GOODS_SEARCH_CACHE = "goods:search";
-
+    
     /**
-     * 搜索结果缓存Key
+     * 分类商品缓存
      */
-    public static final String GOODS_SEARCH_KEY = "'goods:search:' + #request.keyword + ':' + #request.pageNum + ':' + #request.pageSize + ':' + #request.categoryId + ':' + #request.priceMin + ':' + #request.priceMax";
-
+    public static final String GOODS_CATEGORY_CACHE = "goods:category";
+    
     /**
-     * 搜索结果缓存过期时间（分钟）
+     * 商家商品缓存
      */
-    public static final int GOODS_SEARCH_EXPIRE = 10;
-
-    // =================== 商品统计缓存 ===================
-
+    public static final String GOODS_SELLER_CACHE = "goods:seller";
+    
     /**
-     * 商品统计缓存名称
+     * 内容商品缓存
+     */
+    public static final String GOODS_CONTENT_CACHE = "goods:content";
+    
+    /**
+     * 商品统计缓存
      */
     public static final String GOODS_STATISTICS_CACHE = "goods:statistics";
-
+    
     /**
-     * 商家商品统计缓存Key
+     * 低库存商品缓存
      */
-    public static final String SELLER_GOODS_STATS_KEY = "'goods:stats:seller:' + #sellerId";
+    public static final String GOODS_LOW_STOCK_CACHE = "goods:lowstock";
 
+    // =================== 缓存键模板 ===================
+    
     /**
-     * 分类商品统计缓存Key
+     * 商品详情键模板：goods:detail:{goodsId}
      */
-    public static final String CATEGORY_GOODS_STATS_KEY = "'goods:stats:category:' + #categoryId";
-
+    public static final String GOODS_DETAIL_KEY = "goods:detail:";
+    
     /**
-     * 商品统计缓存过期时间（分钟）
+     * 商品列表键模板：goods:list:{type}:{status}:{page}:{size}
      */
-    public static final int GOODS_STATISTICS_EXPIRE = 30;
-
-    // =================== 库存管理缓存 ===================
-
+    public static final String GOODS_LIST_KEY = "goods:list:";
+    
     /**
-     * 库存管理缓存名称
+     * 热门商品键模板：goods:hot:{type}:{page}:{size}
      */
-    public static final String GOODS_INVENTORY_CACHE = "goods:inventory";
-
+    public static final String GOODS_HOT_KEY = "goods:hot:";
+    
     /**
-     * 商品库存缓存Key
+     * 商品搜索键模板：goods:search:{keyword}:{page}:{size}
      */
-    public static final String GOODS_INVENTORY_KEY = "'goods:inventory:' + #goodsId";
-
+    public static final String GOODS_SEARCH_KEY = "goods:search:";
+    
     /**
-     * 批量库存缓存Key
+     * 分类商品键模板：goods:category:{categoryId}:{page}:{size}
      */
-    public static final String BATCH_INVENTORY_KEY = "'goods:inventory:batch:' + #goodsIds.size()";
-
+    public static final String GOODS_CATEGORY_KEY = "goods:category:";
+    
     /**
-     * 库存缓存过期时间（分钟）
+     * 商家商品键模板：goods:seller:{sellerId}:{page}:{size}
      */
-    public static final int GOODS_INVENTORY_EXPIRE = 5;
-
-    // =================== 商品状态缓存 ===================
-
+    public static final String GOODS_SELLER_KEY = "goods:seller:";
+    
     /**
-     * 商品状态缓存名称
+     * 内容商品键模板：goods:content:{contentId}
      */
-    public static final String GOODS_STATUS_CACHE = "goods:status";
+    public static final String GOODS_CONTENT_KEY = "goods:content:";
 
+    // =================== 缓存过期时间 ===================
+    
     /**
-     * 商品状态缓存Key
+     * 商品详情缓存过期时间：30分钟
      */
-    public static final String GOODS_STATUS_KEY = "'goods:status:' + #goodsId";
-
+    public static final int DETAIL_EXPIRE = 30;
+    
     /**
-     * 状态下商品列表缓存Key
+     * 商品列表缓存过期时间：15分钟
      */
-    public static final String STATUS_GOODS_LIST_KEY = "'goods:status:list:' + #status + ':' + #pageNum + ':' + #pageSize";
-
+    public static final int LIST_EXPIRE = 15;
+    
     /**
-     * 商品状态缓存过期时间（分钟）
+     * 热门商品缓存过期时间：60分钟
      */
-    public static final int GOODS_STATUS_EXPIRE = 20;
-
-    // =================== 商家商品缓存 ===================
-
+    public static final int HOT_EXPIRE = 60;
+    
     /**
-     * 商家商品缓存名称
+     * 搜索结果缓存过期时间：10分钟
      */
-    public static final String SELLER_GOODS_CACHE = "goods:seller";
-
+    public static final int SEARCH_EXPIRE = 10;
+    
     /**
-     * 商家商品列表缓存Key
+     * 统计数据缓存过期时间：5分钟
      */
-    public static final String SELLER_GOODS_LIST_KEY = "'goods:seller:' + #sellerId + ':' + #pageNum + ':' + #pageSize + ':' + #status";
-
+    public static final int STATISTICS_EXPIRE = 5;
+    
     /**
-     * 商家商品数量缓存Key
+     * 低库存商品缓存过期时间：3分钟
      */
-    public static final String SELLER_GOODS_COUNT_KEY = "'goods:seller:count:' + #sellerId + ':' + #status";
+    public static final int LOW_STOCK_EXPIRE = 3;
 
+    // =================== 缓存时间单位 ===================
+    
     /**
-     * 商家商品缓存过期时间（分钟）
-     */
-    public static final int SELLER_GOODS_EXPIRE = 25;
-
-    // =================== 热门商品缓存 ===================
-
-    /**
-     * 热门商品缓存名称
-     */
-    public static final String HOT_GOODS_CACHE = "goods:hot";
-
-    /**
-     * 热门商品列表缓存Key
-     */
-    public static final String HOT_GOODS_LIST_KEY = "'goods:hot:' + #categoryId + ':' + #limit";
-
-    /**
-     * 推荐商品缓存Key
-     */
-    public static final String RECOMMEND_GOODS_KEY = "'goods:recommend:' + #userId + ':' + #limit";
-
-    /**
-     * 热门商品缓存过期时间（分钟）
-     */
-    public static final int HOT_GOODS_EXPIRE = 60;
-
-    // =================== 商品操作缓存 ===================
-
-    /**
-     * 商品操作记录缓存名称
-     */
-    public static final String GOODS_OPERATION_CACHE = "goods:operation";
-
-    /**
-     * 商品创建操作缓存Key
-     */
-    public static final String GOODS_CREATE_OP_KEY = "'goods:op:create:' + #sellerId + ':' + #name";
-
-    /**
-     * 商品更新操作缓存Key
-     */
-    public static final String GOODS_UPDATE_OP_KEY = "'goods:op:update:' + #goodsId";
-
-    /**
-     * 商品操作缓存过期时间（分钟）
-     */
-    public static final int GOODS_OPERATION_EXPIRE = 3;
-
-    // =================== 缓存性能配置 ===================
-
-    /**
-     * 默认时间单位
+     * 默认时间单位：分钟
      */
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
 
+    // =================== 防穿透配置 ===================
+    
     /**
-     * 缓存预热间隔（分钟）
+     * 空值缓存时间：1分钟（防止缓存穿透）
      */
-    public static final int CACHE_WARMUP_INTERVAL = 15;
-
+    public static final int NULL_CACHE_EXPIRE = 1;
+    
     /**
-     * 商品缓存容量
+     * 随机过期时间范围：±5分钟（防止缓存雪崩）
      */
-    public static final int GOODS_CACHE_SIZE = 10000;
+    public static final int RANDOM_EXPIRE_RANGE = 5;
 
+    // =================== 工具方法 ===================
+    
     /**
-     * 最大缓存项数量
+     * 构建商品详情缓存键
      */
-    public static final int MAX_CACHE_ITEMS = 50000;
-
-    // =================== 业务常量 ===================
-
+    public static String buildDetailKey(Long goodsId) {
+        return GOODS_DETAIL_KEY + goodsId;
+    }
+    
     /**
-     * 默认分页大小
+     * 构建商品列表缓存键
      */
-    public static final int DEFAULT_PAGE_SIZE = 20;
-
+    public static String buildListKey(String type, String status, int page, int size) {
+        return GOODS_LIST_KEY + type + ":" + status + ":" + page + ":" + size;
+    }
+    
     /**
-     * 最大分页大小
+     * 构建热门商品缓存键
      */
-    public static final int MAX_PAGE_SIZE = 100;
-
+    public static String buildHotKey(String type, int page, int size) {
+        return GOODS_HOT_KEY + type + ":" + page + ":" + size;
+    }
+    
     /**
-     * 批量操作最大数量
+     * 构建搜索缓存键
      */
-    public static final int MAX_BATCH_SIZE = 500;
-
+    public static String buildSearchKey(String keyword, int page, int size) {
+        return GOODS_SEARCH_KEY + keyword + ":" + page + ":" + size;
+    }
+    
     /**
-     * 商品状态：上架
+     * 构建分类商品缓存键
      */
-    public static final String GOODS_STATUS_ACTIVE = "active";
-
+    public static String buildCategoryKey(Long categoryId, int page, int size) {
+        return GOODS_CATEGORY_KEY + categoryId + ":" + page + ":" + size;
+    }
+    
     /**
-     * 商品状态：下架
+     * 构建商家商品缓存键
      */
-    public static final String GOODS_STATUS_INACTIVE = "inactive";
-
+    public static String buildSellerKey(Long sellerId, int page, int size) {
+        return GOODS_SELLER_KEY + sellerId + ":" + page + ":" + size;
+    }
+    
     /**
-     * 商品状态：草稿
+     * 构建内容商品缓存键
      */
-    public static final String GOODS_STATUS_DRAFT = "draft";
-
-    /**
-     * 商品状态：已删除
-     */
-    public static final String GOODS_STATUS_DELETED = "deleted";
-
-    /**
-     * 热门商品阈值
-     */
-    public static final int HOT_GOODS_THRESHOLD = 100;
-
-    /**
-     * 默认统计时间范围（天）
-     */
-    public static final int DEFAULT_STATS_DAYS = 7;
-
-    /**
-     * 库存预警阈值
-     */
-    public static final int INVENTORY_WARNING_THRESHOLD = 10;
+    public static String buildContentKey(Long contentId) {
+        return GOODS_CONTENT_KEY + contentId;
+    }
 }

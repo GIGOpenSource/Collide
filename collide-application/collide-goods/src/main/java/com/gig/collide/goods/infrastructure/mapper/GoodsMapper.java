@@ -4,208 +4,228 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.goods.domain.entity.Goods;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.*;
+import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
- * 商品数据访问层 - 简洁版
- * 基于MyBatis-Plus，实现简洁的数据访问
- * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * 商品数据访问层
+ * 基于MyBatis Plus的增强Mapper
+ *
+ * @author GIG Team
+ * @version 2.0.0 (扩展版)
+ * @since 2024-01-31
  */
+@Repository
 @Mapper
 public interface GoodsMapper extends BaseMapper<Goods> {
 
     /**
-     * 根据分类ID查询商品
-     * 
-     * @param page 分页参数
-     * @param categoryId 分类ID
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * 根据商品类型分页查询
+     *
+     * @param page      分页参数
+     * @param goodsType 商品类型
+     * @param status    商品状态
+     * @return 分页结果
      */
-    IPage<Goods> findByCategory(Page<Goods> page, 
-                               @Param("categoryId") Long categoryId,
-                               @Param("status") String status);
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE goods_type = #{goodsType} 
+            AND status = #{status}
+            ORDER BY create_time DESC
+            """)
+    IPage<Goods> selectByTypeAndStatus(Page<Goods> page, 
+                                      @Param("goodsType") String goodsType, 
+                                      @Param("status") String status);
+
+    /**
+     * 根据分类ID查询商品
+     *
+     * @param page       分页参数
+     * @param categoryId 分类ID
+     * @param status     商品状态
+     * @return 分页结果
+     */
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE category_id = #{categoryId} 
+            AND status = #{status}
+            ORDER BY sales_count DESC, create_time DESC
+            """)
+    IPage<Goods> selectByCategoryAndStatus(Page<Goods> page, 
+                                          @Param("categoryId") Long categoryId, 
+                                          @Param("status") String status);
 
     /**
      * 根据商家ID查询商品
-     * 
-     * @param page 分页参数
+     *
+     * @param page     分页参数
      * @param sellerId 商家ID
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * @param status   商品状态
+     * @return 分页结果
      */
-    IPage<Goods> findBySeller(Page<Goods> page,
-                             @Param("sellerId") Long sellerId,
-                             @Param("status") String status);
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE seller_id = #{sellerId} 
+            AND status = #{status}
+            ORDER BY create_time DESC
+            """)
+    IPage<Goods> selectBySellerAndStatus(Page<Goods> page, 
+                                        @Param("sellerId") Long sellerId, 
+                                        @Param("status") String status);
 
     /**
-     * 根据名称关键词搜索商品
-     * 
-     * @param page 分页参数
-     * @param keyword 关键词
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * 根据内容ID查询商品
+     * 用于内容购买流程中获取对应的商品记录
+     *
+     * @param contentId 内容ID
+     * @param goodsType 商品类型
+     * @return 商品信息
      */
-    IPage<Goods> searchByName(Page<Goods> page,
-                             @Param("keyword") String keyword,
-                             @Param("status") String status);
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE content_id = #{contentId} 
+            AND goods_type = #{goodsType}
+            ORDER BY create_time DESC
+            LIMIT 1
+            """)
+    Goods selectByContentId(@Param("contentId") Long contentId, 
+                           @Param("goodsType") String goodsType);
 
     /**
-     * 根据价格区间查询商品
-     * 
-     * @param page 分页参数
-     * @param minPrice 最小价格
-     * @param maxPrice 最大价格
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * 热门商品查询（按销量排序）
+     *
+     * @param page      分页参数
+     * @param goodsType 商品类型（可为空）
+     * @return 分页结果
      */
-    IPage<Goods> findByPriceRange(Page<Goods> page,
-                                 @Param("minPrice") BigDecimal minPrice,
-                                 @Param("maxPrice") BigDecimal maxPrice,
-                                 @Param("status") String status);
+    @Select("""
+            <script>
+            SELECT * FROM t_goods 
+            WHERE status = 'active'
+            <if test="goodsType != null and goodsType != ''">
+                AND goods_type = #{goodsType}
+            </if>
+            ORDER BY sales_count DESC, view_count DESC
+            </script>
+            """)
+    IPage<Goods> selectHotGoods(Page<Goods> page, @Param("goodsType") String goodsType);
 
     /**
-     * 查询有库存的商品
-     * 
-     * @param page 分页参数
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * 搜索商品（按名称和描述）
+     *
+     * @param page    分页参数
+     * @param keyword 搜索关键词
+     * @param status  商品状态
+     * @return 分页结果
      */
-    IPage<Goods> findInStock(Page<Goods> page,
-                           @Param("status") String status);
-
-    /**
-     * 查询库存不足的商品
-     * 
-     * @param page 分页参数
-     * @param threshold 库存阈值
-     * @return 商品分页数据
-     */
-    IPage<Goods> findLowStock(Page<Goods> page,
-                            @Param("threshold") Integer threshold);
-
-    /**
-     * 更新商品库存
-     * 
-     * @param goodsId 商品ID
-     * @param stockChange 库存变化量
-     * @return 更新行数
-     */
-    int updateStock(@Param("goodsId") Long goodsId,
-                   @Param("stockChange") Integer stockChange);
-
-    /**
-     * 更新商品销量
-     * 
-     * @param goodsId 商品ID
-     * @param salesChange 销量变化量
-     * @return 更新行数
-     */
-    int updateSalesCount(@Param("goodsId") Long goodsId,
-                        @Param("salesChange") Integer salesChange);
-
-    /**
-     * 增加商品浏览量
-     * 
-     * @param goodsId 商品ID
-     * @return 更新行数
-     */
-    int increaseViewCount(@Param("goodsId") Long goodsId);
-
-    /**
-     * 批量更新商品状态
-     * 
-     * @param goodsIds 商品ID列表
-     * @param status 新状态
-     * @return 更新行数
-     */
-    int batchUpdateStatus(@Param("goodsIds") List<Long> goodsIds,
-                         @Param("status") String status);
-
-    /**
-     * 获取商品统计信息
-     * 
-     * @param goodsId 商品ID
-     * @return 统计信息
-     */
-    Map<String, Object> getGoodsStatistics(@Param("goodsId") Long goodsId);
-
-    /**
-     * 统计商家的商品数量
-     * 
-     * @param sellerId 商家ID
-     * @param status 状态（可选）
-     * @return 商品数量
-     */
-    Long countBySeller(@Param("sellerId") Long sellerId,
-                      @Param("status") String status);
-
-    /**
-     * 统计分类的商品数量
-     * 
-     * @param categoryId 分类ID
-     * @param status 状态（可选）
-     * @return 商品数量
-     */
-    Long countByCategory(@Param("categoryId") Long categoryId,
-                        @Param("status") String status);
-
-    /**
-     * 查询热销商品
-     * 
-     * @param page 分页参数
-     * @param minSalesCount 最小销量
-     * @param status 状态（可选）
-     * @return 商品分页数据
-     */
-    IPage<Goods> findHotGoods(Page<Goods> page,
-                            @Param("minSalesCount") Long minSalesCount,
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE (name LIKE CONCAT('%', #{keyword}, '%') 
+                   OR description LIKE CONCAT('%', #{keyword}, '%'))
+            AND status = #{status}
+            ORDER BY sales_count DESC, create_time DESC
+            """)
+    IPage<Goods> searchGoods(Page<Goods> page, 
+                            @Param("keyword") String keyword, 
                             @Param("status") String status);
 
     /**
-     * 查询最新商品
-     * 
-     * @param page 分页参数
-     * @param days 天数
-     * @param status 状态（可选）
-     * @return 商品分页数据
+     * 批量更新销量
+     *
+     * @param goodsId 商品ID
+     * @param count   增加数量
+     * @return 影响行数
      */
-    IPage<Goods> findLatestGoods(Page<Goods> page,
-                               @Param("days") Integer days,
-                               @Param("status") String status);
+    @Update("UPDATE t_goods SET sales_count = sales_count + #{count} WHERE id = #{goodsId}")
+    int increaseSalesCount(@Param("goodsId") Long goodsId, @Param("count") Long count);
 
     /**
-     * 复合条件查询商品
-     * 
-     * @param page 分页参数
-     * @param categoryId 分类ID（可选）
-     * @param sellerId 商家ID（可选）
-     * @param nameKeyword 名称关键词（可选）
-     * @param minPrice 最小价格（可选）
-     * @param maxPrice 最大价格（可选）
-     * @param hasStock 是否有库存（可选）
-     * @param status 状态（可选）
-     * @param orderBy 排序字段
-     * @param orderDirection 排序方向
-     * @return 商品分页数据
+     * 批量更新浏览量
+     *
+     * @param goodsId 商品ID
+     * @param count   增加数量
+     * @return 影响行数
      */
-    IPage<Goods> findWithConditions(Page<Goods> page,
-                                   @Param("categoryId") Long categoryId,
-                                   @Param("sellerId") Long sellerId,
-                                   @Param("nameKeyword") String nameKeyword,
-                                   @Param("minPrice") BigDecimal minPrice,
-                                   @Param("maxPrice") BigDecimal maxPrice,
-                                   @Param("hasStock") Boolean hasStock,
-                                   @Param("status") String status,
-                                   @Param("orderBy") String orderBy,
-                                   @Param("orderDirection") String orderDirection);
+    @Update("UPDATE t_goods SET view_count = view_count + #{count} WHERE id = #{goodsId}")
+    int increaseViewCount(@Param("goodsId") Long goodsId, @Param("count") Long count);
+
+    /**
+     * 批量更新库存
+     *
+     * @param goodsId 商品ID
+     * @param quantity 扣减数量
+     * @return 影响行数
+     */
+    @Update("""
+            UPDATE t_goods 
+            SET stock = CASE 
+                WHEN stock = -1 THEN -1 
+                ELSE GREATEST(0, stock - #{quantity}) 
+            END 
+            WHERE id = #{goodsId}
+            """)
+    int reduceStock(@Param("goodsId") Long goodsId, @Param("quantity") Integer quantity);
+
+    /**
+     * 查询库存不足的商品
+     *
+     * @param threshold 库存阈值
+     * @return 商品列表
+     */
+    @Select("""
+            SELECT * FROM t_goods 
+            WHERE stock >= 0 AND stock <= #{threshold} 
+            AND status = 'active' 
+            ORDER BY stock ASC
+            """)
+    List<Goods> selectLowStockGoods(@Param("threshold") Integer threshold);
+
+    /**
+     * 按价格区间查询
+     *
+     * @param page     分页参数
+     * @param minPrice 最低价格
+     * @param maxPrice 最高价格
+     * @param goodsType 商品类型
+     * @return 分页结果
+     */
+    @Select("""
+            <script>
+            SELECT * FROM t_goods 
+            WHERE status = 'active'
+            <if test="goodsType == 'content'">
+                AND coin_price BETWEEN #{minPrice} AND #{maxPrice}
+            </if>
+            <if test="goodsType != 'content'">
+                AND price BETWEEN #{minPrice} AND #{maxPrice}
+            </if>
+            <if test="goodsType != null and goodsType != ''">
+                AND goods_type = #{goodsType}
+            </if>
+            ORDER BY 
+            <choose>
+                <when test="goodsType == 'content'">coin_price ASC</when>
+                <otherwise>price ASC</otherwise>
+            </choose>
+            </script>
+            """)
+    IPage<Goods> selectByPriceRange(Page<Goods> page, 
+                                   @Param("minPrice") Object minPrice, 
+                                   @Param("maxPrice") Object maxPrice,
+                                   @Param("goodsType") String goodsType);
+
+    /**
+     * 统计各类型商品数量
+     *
+     * @return 统计结果
+     */
+    @Select("""
+            SELECT goods_type, status, COUNT(*) as count
+            FROM t_goods 
+            GROUP BY goods_type, status
+            """)
+    @MapKey("goods_type")
+    List<java.util.Map<String, Object>> countByTypeAndStatus();
 }

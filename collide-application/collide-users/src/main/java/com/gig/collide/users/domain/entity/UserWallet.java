@@ -3,6 +3,7 @@ package com.gig.collide.users.domain.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.gig.collide.api.user.constant.WalletStatusConstant;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -48,6 +49,21 @@ public class UserWallet {
     private BigDecimal totalExpense;
 
     /**
+     * 金币余额
+     */
+    private Long coinBalance;
+
+    /**
+     * 金币总收入
+     */
+    private Long coinTotalEarned;
+
+    /**
+     * 金币总支出
+     */
+    private Long coinTotalSpent;
+
+    /**
      * 状态：active、frozen
      */
     private String status;
@@ -72,8 +88,23 @@ public class UserWallet {
         if (this.totalExpense == null) {
             this.totalExpense = BigDecimal.ZERO;
         }
+        if (this.coinBalance == null) {
+            this.coinBalance = 0L;
+        }
+        if (this.coinTotalEarned == null) {
+            this.coinTotalEarned = 0L;
+        }
+        if (this.coinTotalSpent == null) {
+            this.coinTotalSpent = 0L;
+        }
         if (this.status == null) {
-            this.status = "active";
+            this.status = WalletStatusConstant.ACTIVE;
+        }
+        if (this.createTime == null) {
+            this.createTime = LocalDateTime.now();
+        }
+        if (this.updateTime == null) {
+            this.updateTime = LocalDateTime.now();
         }
     }
 
@@ -85,9 +116,102 @@ public class UserWallet {
     }
 
     /**
-     * 是否有足够余额
+     * 是否有足够现金余额
      */
     public boolean hasSufficientBalance(BigDecimal amount) {
         return getAvailableBalance().compareTo(amount) >= 0;
+    }
+
+    /**
+     * 是否有足够金币余额
+     */
+    public boolean hasSufficientCoinBalance(Long amount) {
+        return this.coinBalance >= amount;
+    }
+
+    /**
+     * 检查钱包是否激活
+     */
+    public boolean isActive() {
+        return WalletStatusConstant.isActiveStatus(this.status);
+    }
+
+    /**
+     * 检查钱包是否冻结
+     */
+    public boolean isFrozen() {
+        return WalletStatusConstant.isFrozenStatus(this.status);
+    }
+
+    /**
+     * 增加现金余额
+     */
+    public void addBalance(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+        this.totalIncome = this.totalIncome.add(amount);
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 扣除现金余额
+     */
+    public boolean deductBalance(BigDecimal amount) {
+        if (!hasSufficientBalance(amount)) {
+            return false;
+        }
+        this.balance = this.balance.subtract(amount);
+        this.totalExpense = this.totalExpense.add(amount);
+        this.updateTime = LocalDateTime.now();
+        return true;
+    }
+
+    /**
+     * 增加金币余额
+     */
+    public void addCoinBalance(Long amount) {
+        this.coinBalance += amount;
+        this.coinTotalEarned += amount;
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 扣除金币余额
+     */
+    public boolean deductCoinBalance(Long amount) {
+        if (!hasSufficientCoinBalance(amount)) {
+            return false;
+        }
+        this.coinBalance -= amount;
+        this.coinTotalSpent += amount;
+        this.updateTime = LocalDateTime.now();
+        return true;
+    }
+
+    /**
+     * 冻结指定金额
+     */
+    public boolean freezeAmount(BigDecimal amount) {
+        if (!hasSufficientBalance(amount)) {
+            return false;
+        }
+        this.frozenAmount = this.frozenAmount.add(amount);
+        this.updateTime = LocalDateTime.now();
+        return true;
+    }
+
+    /**
+     * 解冻指定金额
+     */
+    public void unfreezeAmount(BigDecimal amount) {
+        BigDecimal unfreezeAmount = amount.min(this.frozenAmount);
+        this.frozenAmount = this.frozenAmount.subtract(unfreezeAmount);
+        this.updateTime = LocalDateTime.now();
+    }
+
+    /**
+     * 更新钱包修改时间
+     */
+    public void updateModifyTime() {
+        this.updateTime = LocalDateTime.now();
     }
 }

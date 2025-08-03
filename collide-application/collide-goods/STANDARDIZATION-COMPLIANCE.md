@@ -13,27 +13,27 @@
 ```xml
 <!-- 使用标准化的Collide组件 -->
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-base</artifactId>        <!-- 基础组件 -->
 </dependency>
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-api</artifactId>         <!-- API定义 -->
 </dependency>
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-web</artifactId>         <!-- Web组件 -->
 </dependency>
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-datasource</artifactId>  <!-- 数据源组件 -->
 </dependency>
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-cache</artifactId>       <!-- 缓存组件 -->
 </dependency>
 <dependency>
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-rpc</artifactId>         <!-- RPC组件 -->
 </dependency>
 ```

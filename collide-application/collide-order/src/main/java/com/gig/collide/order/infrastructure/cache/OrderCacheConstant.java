@@ -3,195 +3,205 @@ package com.gig.collide.order.infrastructure.cache;
 import java.util.concurrent.TimeUnit;
 
 /**
- * 订单模块缓存常量定义 - 缓存增强版
- * 对齐payment模块设计风格，提供统一的缓存配置
- * 
+ * 订单模块缓存常量配置
+ * 统一管理缓存键名、过期时间等配置
+ *
  * @author GIG Team
  * @version 2.0.0 (缓存增强版)
- * @since 2024-01-16
+ * @since 2024-01-31
  */
 public class OrderCacheConstant {
 
-    // =================== 订单详情缓存 ===================
+    // =================== 缓存名称定义 ===================
     
     /**
-     * 订单详情缓存名称
+     * 订单详情缓存
      */
     public static final String ORDER_DETAIL_CACHE = "order:detail";
     
     /**
-     * 订单详情缓存Key（按ID）
+     * 订单列表缓存
      */
-    public static final String ORDER_DETAIL_BY_ID_KEY = "'order:detail:id:' + #orderId";
+    public static final String ORDER_LIST_CACHE = "order:list";
     
     /**
-     * 订单详情缓存Key（按订单号）
+     * 用户订单缓存
      */
-    public static final String ORDER_DETAIL_BY_NO_KEY = "'order:detail:no:' + #orderNo";
+    public static final String USER_ORDER_CACHE = "order:user";
     
     /**
-     * 订单详情缓存过期时间（分钟）
+     * 商品订单缓存
      */
-    public static final int ORDER_DETAIL_EXPIRE = 30;
-
-    // =================== 用户订单记录缓存 ===================
+    public static final String GOODS_ORDER_CACHE = "order:goods";
     
     /**
-     * 用户订单记录缓存名称
-     */
-    public static final String USER_ORDER_CACHE = "order:user:records";
-    
-    /**
-     * 用户订单记录缓存Key
-     */
-    public static final String USER_ORDER_KEY = "'order:user:' + #request.userId + ':' + #request.pageNum + ':' + #request.pageSize + ':' + #request.status";
-    
-    /**
-     * 用户订单记录缓存过期时间（分钟）
-     */
-    public static final int USER_ORDER_EXPIRE = 15;
-
-    // =================== 订单统计缓存 ===================
-    
-    /**
-     * 订单统计缓存名称
+     * 订单统计缓存
      */
     public static final String ORDER_STATISTICS_CACHE = "order:statistics";
     
     /**
-     * 用户订单统计缓存Key
+     * 热门商品缓存
      */
-    public static final String USER_ORDER_STATS_KEY = "'order:stats:user:' + #userId + ':' + #status";
+    public static final String HOT_GOODS_CACHE = "order:hotgoods";
     
     /**
-     * 商品销量统计缓存Key
+     * 用户购买记录缓存
      */
-    public static final String GOODS_SALES_STATS_KEY = "'order:stats:goods:' + #goodsId";
+    public static final String USER_PURCHASE_CACHE = "order:purchase";
     
     /**
-     * 订单统计缓存过期时间（分钟）
+     * 营收统计缓存
      */
-    public static final int ORDER_STATISTICS_EXPIRE = 60;
+    public static final String REVENUE_CACHE = "order:revenue";
 
-    // =================== 订单状态缓存 ===================
+    // =================== 缓存键模板 ===================
     
     /**
-     * 订单状态缓存名称
+     * 订单详情键模板：order:detail:{orderId}
      */
-    public static final String ORDER_STATUS_CACHE = "order:status";
+    public static final String ORDER_DETAIL_KEY = "order:detail:";
     
     /**
-     * 订单状态缓存Key
+     * 订单号键模板：order:no:{orderNo}
      */
-    public static final String ORDER_STATUS_KEY = "'order:status:' + #orderId";
+    public static final String ORDER_NO_KEY = "order:no:";
     
     /**
-     * 订单状态缓存过期时间（分钟）
+     * 用户订单键模板：order:user:{userId}:{status}:{page}:{size}
      */
-    public static final int ORDER_STATUS_EXPIRE = 10;
+    public static final String USER_ORDER_KEY = "order:user:";
+    
+    /**
+     * 商品订单键模板：order:goods:{goodsId}:{page}:{size}
+     */
+    public static final String GOODS_ORDER_KEY = "order:goods:";
+    
+    /**
+     * 商家订单键模板：order:seller:{sellerId}:{page}:{size}
+     */
+    public static final String SELLER_ORDER_KEY = "order:seller:";
+    
+    /**
+     * 用户统计键模板：order:stats:user:{userId}
+     */
+    public static final String USER_STATS_KEY = "order:stats:user:";
+    
+    /**
+     * 商品销售统计键模板：order:stats:goods:{goodsId}
+     */
+    public static final String GOODS_STATS_KEY = "order:stats:goods:";
 
-    // =================== 商品订单关联缓存 ===================
+    // =================== 缓存过期时间 ===================
     
     /**
-     * 商品订单关联缓存名称
+     * 订单详情缓存过期时间：15分钟
      */
-    public static final String GOODS_ORDER_CACHE = "order:goods:relation";
+    public static final int DETAIL_EXPIRE = 15;
     
     /**
-     * 商品订单关联缓存Key
+     * 订单列表缓存过期时间：10分钟
      */
-    public static final String GOODS_ORDER_KEY = "'order:goods:' + #goodsId + ':' + #pageNum + ':' + #pageSize";
+    public static final int LIST_EXPIRE = 10;
     
     /**
-     * 商品订单关联缓存过期时间（分钟）
+     * 用户订单缓存过期时间：20分钟
      */
-    public static final int GOODS_ORDER_EXPIRE = 30;
+    public static final int USER_ORDER_EXPIRE = 20;
+    
+    /**
+     * 统计数据缓存过期时间：30分钟
+     */
+    public static final int STATISTICS_EXPIRE = 30;
+    
+    /**
+     * 热门商品缓存过期时间：60分钟
+     */
+    public static final int HOT_GOODS_EXPIRE = 60;
+    
+    /**
+     * 营收统计缓存过期时间：120分钟
+     */
+    public static final int REVENUE_EXPIRE = 120;
+    
+    /**
+     * 用户购买记录缓存过期时间：30分钟
+     */
+    public static final int PURCHASE_EXPIRE = 30;
 
-    // =================== 订单支付状态缓存 ===================
+    // =================== 缓存时间单位 ===================
     
     /**
-     * 订单支付状态缓存名称
-     */
-    public static final String ORDER_PAY_STATUS_CACHE = "order:pay:status";
-    
-    /**
-     * 订单支付状态缓存Key
-     */
-    public static final String ORDER_PAY_STATUS_KEY = "'order:pay:status:' + #orderId";
-    
-    /**
-     * 订单支付状态缓存过期时间（分钟）
-     */
-    public static final int ORDER_PAY_STATUS_EXPIRE = 5;
-
-    // =================== 订单流程缓存 ===================
-    
-    /**
-     * 订单流程缓存名称
-     */
-    public static final String ORDER_WORKFLOW_CACHE = "order:workflow";
-    
-    /**
-     * 订单流程缓存Key
-     */
-    public static final String ORDER_WORKFLOW_KEY = "'order:workflow:' + #orderId + ':' + #status";
-    
-    /**
-     * 订单流程缓存过期时间（分钟）
-     */
-    public static final int ORDER_WORKFLOW_EXPIRE = 20;
-
-    // =================== 缓存性能配置 ===================
-    
-    /**
-     * 默认时间单位
+     * 默认时间单位：分钟
      */
     public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.MINUTES;
-    
-    /**
-     * 缓存预热间隔（分钟）
-     */
-    public static final int CACHE_WARMUP_INTERVAL = 30;
-    
-    /**
-     * 订单缓存容量
-     */
-    public static final int ORDER_CACHE_SIZE = 8000;
-    
-    /**
-     * 最大缓存项数量
-     */
-    public static final int MAX_CACHE_ITEMS = 40000;
 
-    // =================== 业务常量 ===================
+    // =================== 防穿透配置 ===================
     
     /**
-     * 默认订单查询页大小
+     * 空值缓存时间：2分钟（防止缓存穿透）
      */
-    public static final int DEFAULT_PAGE_SIZE = 20;
+    public static final int NULL_CACHE_EXPIRE = 2;
     
     /**
-     * 最大订单查询页大小
+     * 随机过期时间范围：±3分钟（防止缓存雪崩）
      */
-    public static final int MAX_PAGE_SIZE = 100;
+    public static final int RANDOM_EXPIRE_RANGE = 3;
+
+    // =================== 工具方法 ===================
     
     /**
-     * 订单超时时间（分钟）
+     * 构建订单详情缓存键
      */
-    public static final int ORDER_TIMEOUT_MINUTES = 30;
+    public static String buildDetailKey(Long orderId) {
+        return ORDER_DETAIL_KEY + orderId;
+    }
     
     /**
-     * 订单状态同步间隔（分钟）
+     * 构建订单号缓存键
      */
-    public static final int ORDER_STATUS_SYNC_INTERVAL = 5;
+    public static String buildOrderNoKey(String orderNo) {
+        return ORDER_NO_KEY + orderNo;
+    }
     
     /**
-     * 默认订单统计天数
+     * 构建用户订单缓存键
      */
-    public static final int DEFAULT_STATS_DAYS = 30;
+    public static String buildUserOrderKey(Long userId, String status, int page, int size) {
+        return USER_ORDER_KEY + userId + ":" + status + ":" + page + ":" + size;
+    }
     
     /**
-     * 批量处理订单数量限制
+     * 构建商品订单缓存键
      */
-    public static final int BATCH_PROCESS_LIMIT = 1000;
+    public static String buildGoodsOrderKey(Long goodsId, int page, int size) {
+        return GOODS_ORDER_KEY + goodsId + ":" + page + ":" + size;
+    }
+    
+    /**
+     * 构建商家订单缓存键
+     */
+    public static String buildSellerOrderKey(Long sellerId, int page, int size) {
+        return SELLER_ORDER_KEY + sellerId + ":" + page + ":" + size;
+    }
+    
+    /**
+     * 构建用户统计缓存键
+     */
+    public static String buildUserStatsKey(Long userId) {
+        return USER_STATS_KEY + userId;
+    }
+    
+    /**
+     * 构建商品销售统计缓存键
+     */
+    public static String buildGoodsStatsKey(Long goodsId) {
+        return GOODS_STATS_KEY + goodsId;
+    }
+    
+    /**
+     * 构建营收统计缓存键
+     */
+    public static String buildRevenueKey(String startDate, String endDate) {
+        return "order:revenue:" + startDate + ":" + endDate;
+    }
 }

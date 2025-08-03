@@ -6,12 +6,12 @@
     <packaging>pom</packaging>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>Collide</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-application</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <description>Collide Business Modules</description>
@@ -24,20 +24,15 @@
     </properties>
 
     <modules>
-        <module>collide-search</module>
-        <module>collide-category</module>
-        <module>collide-tag</module>
-        <module>collide-users</module>
-        <module>collide-follow</module>
-        <module>collide-content</module>
-        <module>collide-comment</module>
-        <module>collide-like</module>
-        <module>collide-favorite</module>
-        <module>collide-social</module>
+        <module>collide-ads</module>
         <module>collide-goods</module>
+        <module>collide-message</module>
         <module>collide-order</module>
         <module>collide-payment</module>
-        <module>collide-app</module>
+        <module>collide-social</module>
+        <module>collide-tag</module>
+        <module>collide-task</module>
+        <module>collide-users</module>
     </modules>
 
 </project>

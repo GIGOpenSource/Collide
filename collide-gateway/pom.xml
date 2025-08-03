@@ -4,13 +4,13 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.gig</groupId>
+        <groupId>com.gig.collide</groupId>
         <artifactId>Collide</artifactId>
         <version>1.0.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <groupId>com.gig</groupId>
+    <groupId>com.gig.collide</groupId>
     <artifactId>collide-gateway</artifactId>
     <version>1.0.0-SNAPSHOT</version>
 
@@ -31,7 +31,7 @@
 
         <!-- 限流组件 - 学习 NFTurbo 最佳实践 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-limiter</artifactId>
             <exclusions>
                 <!-- 排除 Spring Web MVC - Gateway 应用中不能包含 Spring MVC 组件 -->
@@ -51,17 +51,17 @@
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-config</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-api</artifactId>
             <exclusions>
                 <!-- 排除 Web MVC 相关组件 - Gateway 应用基于 WebFlux，不能包含 Spring MVC 组件 -->
                 <exclusion>
-                    <groupId>com.gig</groupId>
+                    <groupId>com.gig.collide</groupId>
                     <artifactId>collide-web</artifactId>
                 </exclusion>
                 <!-- 排除 Spring Web MVC 核心组件 -->
@@ -87,7 +87,7 @@
 
         <!-- SkyWalking 链路追踪 -->
         <dependency>
-            <groupId>com.gig</groupId>
+            <groupId>com.gig.collide</groupId>
             <artifactId>collide-skywalking</artifactId>
         </dependency>
 

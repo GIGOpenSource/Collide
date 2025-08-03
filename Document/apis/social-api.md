@@ -131,7 +131,7 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 #### 请求参数
 ```json
 {
-  "pageNum": 1,                    // 页码（从1开始）
+  "currentPage": 1,                    // 页码（从1开始）
   "pageSize": 20,                  // 每页大小
   "userId": 12345,                 // 可选，发布者用户ID
   "dynamicType": "text",           // 可选，动态类型
@@ -156,7 +156,7 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 
 #### 请求参数
 - **userId** (query): 用户ID，必填
-- **pageNum** (query): 页码，可选，默认1
+- **currentPage** (query): 页码，可选，默认1
 - **pageSize** (query): 页面大小，可选，默认20
 - **lastId** (query): 上次加载的最后一条动态ID，可选（用于无限滚动）
 
@@ -168,7 +168,7 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 
 #### 请求参数
 - **userId** (query): 用户ID，必填
-- **pageNum** (query): 页码，可选
+- **currentPage** (query): 页码，可选
 - **pageSize** (query): 页面大小，可选
 
 ---
@@ -179,7 +179,7 @@ Collide 社交服务提供完整的社交功能，包括动态发布、动态流
 
 #### 请求参数
 - **timeRange** (query): 时间范围（小时），可选，默认24
-- **pageNum** (query): 页码，可选
+- **currentPage** (query): 页码，可选
 - **pageSize** (query): 页面大小，可选
 
 ---
@@ -414,7 +414,7 @@ Collide 社交模块构建了完整的用户互动生态，通过多维度的互
 
 #### 请求参数
 - **keyword** (query): 搜索关键词，必填
-- **pageNum** (query): 页码，可选
+- **currentPage** (query): 页码，可选
 - **pageSize** (query): 页面大小，可选
 
 ---

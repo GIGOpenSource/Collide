@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.gig.collide.users.infrastructure.mapper.UserBlockMapper">
+
+    <!-- 基础字段映射 -->
+    <sql id="baseColumns">
+        id, user_id, blocked_user_id, user_username, blocked_username, 
+        status, reason, create_time, update_time
+    </sql>
+
+    <!-- 根据ID查询拉黑记录 -->
+    <select id="findById" parameterType="long" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE id = #{id}
+    </select>
+
+    <!-- 查询拉黑关系 - 使用uk_user_blocked复合唯一索引 -->
+    <select id="findByUserAndBlocked" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询用户的拉黑列表 - 使用idx_user_id索引和idx_status索引 -->
+    <select id="findByUserId" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="status == null or status == ''">
+            AND status = 'active'
+        </if>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 查询被拉黑情况 - 使用idx_blocked_user_id索引和idx_status索引 -->
+    <select id="findByBlockedUserId" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="status == null or status == ''">
+            AND status = 'active'
+        </if>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 统计用户拉黑数量 - 使用idx_user_id索引 -->
+    <select id="countByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE user_id = #{userId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="status == null or status == ''">
+            AND status = 'active'
+        </if>
+    </select>
+
+    <!-- 统计被拉黑数量 - 使用idx_blocked_user_id索引 -->
+    <select id="countByBlockedUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="status == null or status == ''">
+            AND status = 'active'
+        </if>
+    </select>
+
+    <!-- 检查拉黑状态 - 使用uk_user_blocked复合唯一索引 -->
+    <select id="checkBlockStatus" resultType="int">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE user_id = #{userId} 
+        AND blocked_user_id = #{blockedUserId}
+        <if test="status != null and status != ''">
+            AND status = #{status}
+        </if>
+        <if test="status == null or status == ''">
+            AND status = 'active'
+        </if>
+    </select>
+
+    <!-- 分页查询拉黑记录（支持条件查询） -->
+    <select id="findBlocksByCondition" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="blockedUserId != null">
+                AND blocked_user_id = #{blockedUserId}
+            </if>
+            <if test="userUsername != null and userUsername != ''">
+                AND user_username LIKE #{userUsername}
+            </if>
+            <if test="blockedUsername != null and blockedUsername != ''">
+                AND blocked_username LIKE #{blockedUsername}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+        <if test="offset != null and size != null">
+            LIMIT #{size} OFFSET #{offset}
+        </if>
+    </select>
+
+    <!-- 统计拉黑记录数量（支持条件查询） -->
+    <select id="countBlocksByCondition" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        <where>
+            <if test="userId != null">
+                AND user_id = #{userId}
+            </if>
+            <if test="blockedUserId != null">
+                AND blocked_user_id = #{blockedUserId}
+            </if>
+            <if test="userUsername != null and userUsername != ''">
+                AND user_username LIKE #{userUsername}
+            </if>
+            <if test="blockedUsername != null and blockedUsername != ''">
+                AND blocked_username LIKE #{blockedUsername}
+            </if>
+            <if test="status != null and status != ''">
+                AND status = #{status}
+            </if>
+        </where>
+    </select>
+
+    <!-- 插入拉黑记录 -->
+    <insert id="insert" parameterType="com.gig.collide.users.domain.entity.UserBlock" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user_block (
+            user_id, blocked_user_id, user_username, blocked_username, 
+            status, reason, create_time, update_time
+        ) VALUES (
+            #{userId}, #{blockedUserId}, #{userUsername}, #{blockedUsername}, 
+            #{status}, #{reason}, #{createTime}, #{updateTime}
+        )
+    </insert>
+
+    <!-- 更新拉黑记录 -->
+    <update id="updateById" parameterType="com.gig.collide.users.domain.entity.UserBlock">
+        UPDATE t_user_block
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="reason != null">reason = #{reason},</if>
+            update_time = #{updateTime}
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <!-- 更新拉黑状态 -->
+    <update id="updateStatus">
+        UPDATE t_user_block
+        SET status = #{status}, update_time = NOW()
+        WHERE id = #{id}
+    </update>
+
+    <!-- 取消拉黑（更新状态为cancelled） -->
+    <update id="cancelBlock">
+        UPDATE t_user_block
+        SET status = 'cancelled', update_time = NOW()
+        WHERE user_id = #{userId} AND blocked_user_id = #{blockedUserId}
+    </update>
+
+    <!-- 批量检查拉黑状态 -->
+    <select id="batchCheckBlockStatus" resultType="map">
+        SELECT blocked_user_id as userId, COUNT(*) > 0 as isBlocked
+        FROM t_user_block
+        WHERE user_id = #{userId}
+          AND blocked_user_id IN
+        <foreach item="blockedUserId" collection="blockedUserIds" open="(" separator="," close=")">
+            #{blockedUserId}
+        </foreach>
+        AND status = 'active'
+        GROUP BY blocked_user_id
+    </select>
+
+    <!-- 批量拉黑用户 -->
+    <insert id="batchBlockUsers">
+        INSERT INTO t_user_block (
+            user_id, blocked_user_id, user_username, blocked_username, 
+            status, reason, create_time, update_time
+        ) VALUES
+        <foreach item="blockedUserId" collection="blockedUserIds" separator=",">
+            (#{userId}, #{blockedUserId}, #{username}, 
+             (SELECT username FROM t_user WHERE id = #{blockedUserId}), 
+             'active', #{reason}, NOW(), NOW())
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        status = 'active', reason = #{reason}, update_time = NOW()
+    </insert>
+
+    <!-- 批量取消拉黑 -->
+    <update id="batchUnblockUsers">
+        UPDATE t_user_block
+        SET status = 'cancelled', update_time = NOW()
+        WHERE user_id = #{userId}
+          AND blocked_user_id IN
+        <foreach item="blockedUserId" collection="blockedUserIds" open="(" separator="," close=")">
+            #{blockedUserId}
+        </foreach>
+    </update>
+
+    <!-- 获取互相拉黑的用户列表 -->
+    <select id="getMutualBlockList" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT b1.*
+        FROM t_user_block b1
+        INNER JOIN t_user_block b2 ON b1.user_id = b2.blocked_user_id 
+                                  AND b1.blocked_user_id = b2.user_id
+        WHERE b1.user_id = #{userId}
+          AND b1.status = 'active'
+          AND b2.status = 'active'
+        ORDER BY b1.create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 检查是否互相拉黑 -->
+    <select id="checkMutualBlock" resultType="boolean">
+        SELECT COUNT(*) = 2
+        FROM t_user_block
+        WHERE ((user_id = #{userId1} AND blocked_user_id = #{userId2})
+            OR (user_id = #{userId2} AND blocked_user_id = #{userId1}))
+          AND status = 'active'
+    </select>
+
+    <!-- 获取最近拉黑记录 - 使用idx_user_id和idx_create_time索引 -->
+    <select id="getRecentBlocks" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE user_id = #{userId} AND status = 'active'
+        ORDER BY create_time DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取指定时间范围的拉黑记录 - 使用idx_create_time索引 -->
+    <select id="getBlocksByTimeRange" resultType="com.gig.collide.users.domain.entity.UserBlock">
+        SELECT <include refid="baseColumns" />
+        FROM t_user_block
+        WHERE status = 'active'
+          AND create_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY create_time DESC
+        LIMIT #{size} OFFSET #{offset}
+    </select>
+
+    <!-- 统计指定时间范围的拉黑数量 - 使用idx_create_time索引 -->
+    <select id="countBlocksByTimeRange" resultType="long">
+        SELECT COUNT(*)
+        FROM t_user_block
+        WHERE status = 'active'
+          AND create_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+    <!-- 根据拉黑原因统计 - 使用idx_status索引 -->
+    <select id="getBlockReasonStatistics" resultType="map">
+        SELECT reason, COUNT(*) as count
+        FROM t_user_block
+        WHERE status = 'active'
+          AND reason IS NOT NULL
+          AND reason != ''
+        GROUP BY reason
+        ORDER BY count DESC
+    </select>
+
+    <!-- 获取平台拉黑统计信息 - 使用idx_status索引 -->
+    <select id="getPlatformBlockStats" resultType="map">
+        SELECT 
+            COUNT(*) as totalBlocks,
+            COUNT(DISTINCT user_id) as uniqueBlockers,
+            COUNT(DISTINCT blocked_user_id) as uniqueBlocked,
+            DATE(create_time) as blockDate,
+            COUNT(*) as dailyBlocks
+        FROM t_user_block
+        WHERE status = 'active'
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY DATE(create_time)
+        ORDER BY blockDate DESC
+    </select>
+
+    <!-- 获取最活跃的拉黑用户 - 使用idx_user_id索引 -->
+    <select id="getMostActiveBlockers" resultType="map">
+        SELECT user_id, user_username, COUNT(*) as blockCount
+        FROM t_user_block
+        WHERE status = 'active'
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY user_id, user_username
+        ORDER BY blockCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 获取最常被拉黑的用户 - 使用idx_blocked_user_id索引 -->
+    <select id="getMostBlockedUsers" resultType="map">
+        SELECT blocked_user_id, blocked_username, COUNT(*) as blockedCount
+        FROM t_user_block
+        WHERE status = 'active'
+          AND create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        GROUP BY blocked_user_id, blocked_username
+        ORDER BY blockedCount DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 清理已取消的拉黑记录 -->
+    <delete id="cleanCancelledBlocks">
+        DELETE FROM t_user_block
+        WHERE status = 'cancelled'
+          AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
+    </delete>
+
+    <!-- 删除拉黑记录（物理删除，慎用） -->
+    <delete id="deleteById">
+        DELETE FROM t_user_block
+        WHERE id = #{id}
+    </delete>
+
+</mapper>

@@ -1,6 +1,6 @@
 dubbo:
   consumer:
-    timeout: 3000
+    timeout: 10000  # 增加到10秒，给数据库查询足够时间
     check: false
   protocol:
     name: dubbo
