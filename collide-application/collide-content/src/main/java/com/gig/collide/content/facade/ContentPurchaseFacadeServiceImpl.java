@@ -1,28 +1,27 @@
 package com.gig.collide.content.facade;
 
 import com.gig.collide.api.content.ContentPurchaseFacadeService;
-import com.gig.collide.api.content.request.ContentPurchaseRequest;
-import com.gig.collide.api.content.request.ContentPurchaseQueryRequest;
 import com.gig.collide.api.content.response.ContentPurchaseResponse;
 import com.gig.collide.base.response.PageResponse;
+import com.gig.collide.web.vo.Result;
 import com.gig.collide.content.domain.entity.UserContentPurchase;
 import com.gig.collide.content.domain.service.UserContentPurchaseService;
-import com.gig.collide.content.domain.service.ContentPaymentService;
-import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 内容购买门面服务实现类
- * 管理用户的内容购买、权限验证和购买历史
+ * 内容购买门面服务实现类 - 简化版
+ * 与UserContentPurchaseService保持一致，专注核心功能
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -35,265 +34,246 @@ import java.util.stream.Collectors;
 public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeService {
 
     private final UserContentPurchaseService userContentPurchaseService;
-    private final ContentPaymentService contentPaymentService;
 
-    // =================== 购买功能 ===================
+    // =================== 基础CRUD ===================
 
     @Override
-    @Deprecated
-    public Result<Map<String, Object>> purchaseContent(ContentPurchaseRequest request) {
-        log.info("处理内容购买请求: userId={}, contentId={}", request.getUserId(), request.getContentId());
-        
+    public Result<ContentPurchaseResponse> getPurchaseById(Long id) {
         try {
-            // 验证购买权限
-            boolean canPurchase = userContentPurchaseService.validatePurchasePermission(
-                request.getUserId(), request.getContentId());
-            if (!canPurchase) {
-                return Result.failure("无购买权限");
+            log.debug("获取购买记录: id={}", id);
+            
+            UserContentPurchase purchase = userContentPurchaseService.getPurchaseById(id);
+            
+            if (purchase == null) {
+                return Result.error("PURCHASE_NOT_FOUND", "购买记录不存在");
             }
-
-            // 检查是否已购买
-            UserContentPurchase existing = userContentPurchaseService.getUserContentPurchase(
-                request.getUserId(), request.getContentId());
-            if (existing != null && existing.hasAccessPermission()) {
-                return Result.failure("已购买该内容");
-            }
-
-            // 验证价格
-            Long actualPrice = contentPaymentService.calculateActualPrice(
-                request.getUserId(), request.getContentId());
-            if (!actualPrice.equals(request.getConfirmedPrice())) {
-                return Result.failure("价格已变更，请重新确认");
-            }
-
-            // 处理购买逻辑（这里应该集成订单服务）
-            Map<String, Object> purchaseResult = contentPaymentService.handleContentPurchase(
-                request.getUserId(), request.getContentId());
-
-            return Result.success("购买处理成功", purchaseResult);
+            
+            ContentPurchaseResponse response = convertToResponse(purchase);
+            return Result.success(response);
         } catch (Exception e) {
-            log.error("处理内容购买失败", e);
-            return Result.failure("购买处理失败: " + e.getMessage());
+            log.error("获取购买记录失败: id={}", id, e);
+            return Result.error("GET_PURCHASE_FAILED", "获取购买记录失败: " + e.getMessage());
         }
     }
 
     @Override
-    public Result<Map<String, Object>> validateContentPurchase(ContentPurchaseRequest request) {
-        log.info("验证内容购买权限: userId={}, contentId={}", request.getUserId(), request.getContentId());
-        
+    public Result<Boolean> deletePurchase(Long id, Long operatorId) {
         try {
-            Map<String, Object> validationResult = new HashMap<>();
+            log.info("删除购买记录: id={}, operatorId={}", id, operatorId);
             
-            // =================== 1. 验证购买权限 ===================
+            boolean result = userContentPurchaseService.deletePurchase(id, operatorId);
             
-            boolean canPurchase = userContentPurchaseService.validatePurchasePermission(
-                request.getUserId(), request.getContentId());
-            if (!canPurchase) {
-                return Result.failure("无购买权限");
+            if (result) {
+                return Result.success(true);
+            } else {
+                return Result.error("DELETE_FAILED", "删除购买记录失败");
             }
-            
-            // =================== 2. 检查是否已购买 ===================
-            
-            UserContentPurchase existing = userContentPurchaseService.getUserContentPurchase(
-                request.getUserId(), request.getContentId());
-            if (existing != null && existing.hasAccessPermission()) {
-                return Result.failure("已购买该内容");
-            }
-            
-            // =================== 3. 验证价格 ===================
-            
-            Long actualPrice = contentPaymentService.calculateActualPrice(
-                request.getUserId(), request.getContentId());
-            if (!actualPrice.equals(request.getConfirmedPrice())) {
-                return Result.failure("价格已变更，请重新确认。当前价格: " + actualPrice + " 金币");
-            }
-            
-            // =================== 4. 获取访问策略 ===================
-            
-            Map<String, Object> accessPolicy = contentPaymentService.getAccessPolicy(
-                request.getUserId(), request.getContentId());
-            
-            // =================== 5. 构建验证结果 ===================
-            
-            validationResult.put("canPurchase", true);
-            validationResult.put("actualPrice", actualPrice);
-            validationResult.put("confirmedPrice", request.getConfirmedPrice());
-            validationResult.put("accessPolicy", accessPolicy);
-            validationResult.put("userId", request.getUserId());
-            validationResult.put("contentId", request.getContentId());
-            validationResult.put("validationTime", System.currentTimeMillis());
-            
-            log.info("内容购买验证通过: userId={}, contentId={}, price={}", 
-                request.getUserId(), request.getContentId(), actualPrice);
-            
-            return Result.success("验证通过", validationResult);
-            
         } catch (Exception e) {
-            log.error("验证内容购买权限失败: userId={}, contentId={}", 
-                request.getUserId(), request.getContentId(), e);
-            return Result.failure("验证失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    public Result<Map<String, Object>> getContentPurchaseInfo(Long userId, Long contentId) {
-        log.debug("获取内容购买信息: userId={}, contentId={}", userId, contentId);
-        
-        try {
-            Map<String, Object> purchaseInfo = new HashMap<>();
-
-            // 获取访问策略
-            Map<String, Object> accessPolicy = contentPaymentService.getAccessPolicy(userId, contentId);
-            purchaseInfo.put("accessPolicy", accessPolicy);
-
-            // 获取价格信息
-            Map<String, Object> priceInfo = contentPaymentService.getContentPriceInfo(contentId);
-            purchaseInfo.put("priceInfo", priceInfo);
-
-            // 计算实际价格
-            Long actualPrice = contentPaymentService.calculateActualPrice(userId, contentId);
-            purchaseInfo.put("actualPrice", actualPrice);
-
-            // 检查购买状态
-            UserContentPurchase purchase = userContentPurchaseService.getUserContentPurchase(userId, contentId);
-            purchaseInfo.put("hasPurchased", purchase != null);
-            purchaseInfo.put("hasAccess", purchase != null && purchase.hasAccessPermission());
-
-            return Result.success(purchaseInfo);
-        } catch (Exception e) {
-            log.error("获取内容购买信息失败", e);
-            return Result.failure("获取购买信息失败");
-        }
-    }
-
-    @Override
-    public Result<Map<String, Object>> requestTrial(Long userId, Long contentId) {
-        log.info("处理试读申请: userId={}, contentId={}", userId, contentId);
-        
-        try {
-            Map<String, Object> trialResult = contentPaymentService.handleTrialRequest(userId, contentId);
-            return Result.success(trialResult);
-        } catch (Exception e) {
-            log.error("处理试读申请失败", e);
-            return Result.failure("试读申请失败");
+            log.error("删除购买记录失败: id={}", id, e);
+            return Result.error("DELETE_FAILED", "删除购买记录失败: " + e.getMessage());
         }
     }
 
     // =================== 权限验证 ===================
 
     @Override
-    public Result<Map<String, Object>> checkAccessPermission(Long userId, Long contentId) {
+    public Result<ContentPurchaseResponse> getUserContentPurchase(Long userId, Long contentId) {
         try {
-            Map<String, Object> accessInfo = userContentPurchaseService.calculateContentAccess(userId, contentId);
-            return Result.success(accessInfo);
+            log.debug("获取用户内容购买记录: userId={}, contentId={}", userId, contentId);
+            
+            UserContentPurchase purchase = userContentPurchaseService.getUserContentPurchase(userId, contentId);
+            
+            if (purchase == null) {
+                return Result.error("PURCHASE_NOT_FOUND", "用户未购买该内容");
+            }
+            
+            ContentPurchaseResponse response = convertToResponse(purchase);
+            return Result.success(response);
         } catch (Exception e) {
-            log.error("检查访问权限失败", e);
-            return Result.failure("权限检查失败");
+            log.error("获取用户内容购买记录失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("GET_PURCHASE_FAILED", "获取购买记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> hasAccessPermission(Long userId, Long contentId) {
+        try {
+            log.debug("检查用户访问权限: userId={}, contentId={}", userId, contentId);
+            
+            boolean hasPermission = userContentPurchaseService.hasAccessPermission(userId, contentId);
+            
+            return Result.success(hasPermission);
+        } catch (Exception e) {
+            log.error("检查用户访问权限失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("CHECK_PERMISSION_FAILED", "检查访问权限失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<ContentPurchaseResponse> getValidPurchase(Long userId, Long contentId) {
+        try {
+            log.debug("获取有效购买记录: userId={}, contentId={}", userId, contentId);
+            
+            UserContentPurchase purchase = userContentPurchaseService.getValidPurchase(userId, contentId);
+            
+            if (purchase == null) {
+                return Result.error("VALID_PURCHASE_NOT_FOUND", "用户没有有效的购买记录");
+            }
+            
+            ContentPurchaseResponse response = convertToResponse(purchase);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("获取有效购买记录失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("GET_VALID_PURCHASE_FAILED", "获取有效购买记录失败: " + e.getMessage());
         }
     }
 
     @Override
     public Result<Map<Long, Boolean>> batchCheckAccessPermission(Long userId, List<Long> contentIds) {
         try {
+            log.debug("批量检查用户访问权限: userId={}, contentIds={}", userId, contentIds);
+            
             Map<Long, Boolean> permissions = userContentPurchaseService.batchCheckAccessPermission(userId, contentIds);
+            
             return Result.success(permissions);
         } catch (Exception e) {
-            log.error("批量检查访问权限失败", e);
-            return Result.failure("批量权限检查失败");
+            log.error("批量检查用户访问权限失败: userId={}", userId, e);
+            return Result.error("BATCH_CHECK_FAILED", "批量检查访问权限失败: " + e.getMessage());
         }
     }
 
-    @Override
-    public Result<Void> recordContentAccess(Long userId, Long contentId) {
-        try {
-            boolean success = userContentPurchaseService.recordContentAccess(userId, contentId);
-            if (success) {
-                return Result.success();
-            } else {
-                return Result.failure("记录访问失败");
-            }
-        } catch (Exception e) {
-            log.error("记录内容访问失败", e);
-            return Result.failure("记录访问失败");
-        }
-    }
-
-    // =================== 购买记录查询 ===================
+    // =================== 查询功能 ===================
 
     @Override
-    public Result<PageResponse<ContentPurchaseResponse>> getUserPurchases(ContentPurchaseQueryRequest request) {
+    public Result<PageResponse<ContentPurchaseResponse>> getUserPurchases(Long userId, Integer currentPage, Integer pageSize) {
         try {
-            List<UserContentPurchase> purchases = userContentPurchaseService.getUserPurchases(
-                request.getUserId(), request.getPage(), request.getSize());
+            log.debug("查询用户购买记录: userId={}, currentPage={}, pageSize={}", userId, currentPage, pageSize);
             
-            List<ContentPurchaseResponse> responses = purchases.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-            Long total = userContentPurchaseService.countUserPurchases(request.getUserId());
-            PageResponse<ContentPurchaseResponse> pageResponse = PageResponse.of(
-                responses, total, request.getPage(), request.getSize());
-
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserPurchases(userId, currentPage, pageSize);
+            
+            PageResponse<ContentPurchaseResponse> pageResponse = convertToPageResponse(purchases, currentPage, pageSize);
+            
             return Result.success(pageResponse);
         } catch (Exception e) {
-            log.error("查询用户购买记录失败", e);
-            return Result.failure("查询购买记录失败");
-        }
-    }
-
-    @Override
-    public Result<PageResponse<ContentPurchaseResponse>> getContentPurchases(ContentPurchaseQueryRequest request) {
-        try {
-            List<UserContentPurchase> purchases = userContentPurchaseService.getContentPurchases(
-                request.getContentId(), request.getPage(), request.getSize());
-            
-            List<ContentPurchaseResponse> responses = purchases.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
-
-            Long total = userContentPurchaseService.countContentPurchases(request.getContentId());
-            PageResponse<ContentPurchaseResponse> pageResponse = PageResponse.of(
-                responses, total, request.getPage(), request.getSize());
-
-            return Result.success(pageResponse);
-        } catch (Exception e) {
-            log.error("查询内容购买记录失败", e);
-            return Result.failure("查询购买记录失败");
-        }
-    }
-
-    @Override
-    public Result<ContentPurchaseResponse> getPurchaseDetail(Long purchaseId, Long userId) {
-        try {
-            UserContentPurchase purchase = userContentPurchaseService.getPurchaseById(purchaseId);
-            if (purchase == null) {
-                return Result.failure("购买记录不存在");
-            }
-
-            // 权限检查（只能查看自己的购买记录）
-            if (!purchase.getUserId().equals(userId)) {
-                return Result.failure("无权限查看");
-            }
-
-            ContentPurchaseResponse response = convertToResponse(purchase);
-            return Result.success(response);
-        } catch (Exception e) {
-            log.error("获取购买记录详情失败", e);
-            return Result.failure("获取详情失败");
+            log.error("查询用户购买记录失败: userId={}", userId, e);
+            return Result.error("QUERY_FAILED", "查询用户购买记录失败: " + e.getMessage());
         }
     }
 
     @Override
     public Result<List<ContentPurchaseResponse>> getUserValidPurchases(Long userId) {
         try {
+            log.debug("查询用户有效购买记录: userId={}", userId);
+            
             List<UserContentPurchase> purchases = userContentPurchaseService.getUserValidPurchases(userId);
+            
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            
             List<ContentPurchaseResponse> responses = purchases.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            
             return Result.success(responses);
         } catch (Exception e) {
-            log.error("查询用户有效购买失败", e);
-            return Result.failure("查询有效购买失败");
+            log.error("查询用户有效购买记录失败: userId={}", userId, e);
+            return Result.error("QUERY_FAILED", "查询有效购买记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<ContentPurchaseResponse>> getContentPurchases(Long contentId, Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("查询内容购买记录: contentId={}, currentPage={}, pageSize={}", contentId, currentPage, pageSize);
+            
+            List<UserContentPurchase> purchases = userContentPurchaseService.getContentPurchases(contentId, currentPage, pageSize);
+            
+            PageResponse<ContentPurchaseResponse> pageResponse = convertToPageResponse(purchases, currentPage, pageSize);
+            
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("查询内容购买记录失败: contentId={}", contentId, e);
+            return Result.error("QUERY_FAILED", "查询内容购买记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<ContentPurchaseResponse> getPurchaseByOrderId(Long orderId) {
+        try {
+            UserContentPurchase purchase = userContentPurchaseService.getPurchaseByOrderId(orderId);
+            if (purchase == null) {
+                return Result.error("PURCHASE_NOT_FOUND", "根据订单ID未找到购买记录");
+            }
+            return Result.success(convertToResponse(purchase));
+        } catch (Exception e) {
+            log.error("根据订单ID查询购买记录失败: orderId={}", orderId, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<ContentPurchaseResponse> getPurchaseByOrderNo(String orderNo) {
+        try {
+            UserContentPurchase purchase = userContentPurchaseService.getPurchaseByOrderNo(orderNo);
+            if (purchase == null) {
+                return Result.error("PURCHASE_NOT_FOUND", "根据订单号未找到购买记录");
+            }
+            return Result.success(convertToResponse(purchase));
+        } catch (Exception e) {
+            log.error("根据订单号查询购买记录失败: orderNo={}", orderNo, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getUserPurchasesByContentType(Long userId, String contentType) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserPurchasesByContentType(userId, contentType);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询用户指定类型购买记录失败: userId={}, contentType={}", userId, contentType, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getUserPurchasesByAuthor(Long userId, Long authorId) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserPurchasesByAuthor(userId, authorId);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询用户指定作者购买记录失败: userId={}, authorId={}", userId, authorId, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getUserRecentPurchases(Long userId, Integer limit) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserRecentPurchases(userId, limit);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询用户最近购买记录失败: userId={}", userId, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
         }
     }
 
@@ -301,48 +281,250 @@ public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeSe
     public Result<List<ContentPurchaseResponse>> getUserUnreadPurchases(Long userId) {
         try {
             List<UserContentPurchase> purchases = userContentPurchaseService.getUserUnreadPurchases(userId);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
             List<ContentPurchaseResponse> responses = purchases.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
             return Result.success(responses);
         } catch (Exception e) {
-            log.error("查询用户未读购买失败", e);
-            return Result.failure("查询未读购买失败");
+            log.error("查询用户未读购买记录失败: userId={}", userId, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
         }
     }
 
-    // =================== 购买统计 ===================
+    // =================== C端必需的购买记录查询方法 ===================
 
     @Override
-    public Result<Map<String, Object>> getUserPurchaseStats(Long userId) {
+    public Result<List<ContentPurchaseResponse>> getHighValuePurchases(Long minAmount, Integer limit) {
         try {
-            Map<String, Object> stats = userContentPurchaseService.getUserPurchaseStats(userId);
-            return Result.success(stats);
+            List<UserContentPurchase> purchases = userContentPurchaseService.getHighValuePurchases(minAmount, limit);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
         } catch (Exception e) {
-            log.error("获取用户购买统计失败", e);
-            return Result.failure("获取购买统计失败");
-        }
-    }
-
-    @Override
-    public Result<Map<String, Object>> getContentSalesStats(Long contentId) {
-        try {
-            Map<String, Object> stats = userContentPurchaseService.getContentSalesStats(contentId);
-            return Result.success(stats);
-        } catch (Exception e) {
-            log.error("获取内容销售统计失败", e);
-            return Result.failure("获取销售统计失败");
+            log.error("查询高价值购买记录失败: minAmount={}", minAmount, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public Result<Map<String, Object>> getAuthorRevenueStats(Long authorId) {
+    public Result<List<ContentPurchaseResponse>> getUserHighValuePurchases(Long userId, Long minAmount) {
         try {
-            Map<String, Object> stats = userContentPurchaseService.getAuthorRevenueStats(authorId);
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserHighValuePurchases(userId, minAmount);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询用户高价值购买记录失败: userId={}, minAmount={}", userId, minAmount, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getMostAccessedPurchases(Integer limit) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getMostAccessedPurchases(limit);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询最受欢迎购买记录失败", e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getUserRecentAccessedPurchases(Long userId, Integer limit) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getUserRecentAccessedPurchases(userId, limit);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询用户最近访问购买记录失败: userId={}", userId, e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> getDiscountStats(Long userId) {
+        try {
+            Map<String, Object> stats = userContentPurchaseService.getDiscountStats(userId);
             return Result.success(stats);
         } catch (Exception e) {
-            log.error("获取作者收入统计失败", e);
-            return Result.failure("获取收入统计失败");
+            log.error("获取用户优惠统计失败: userId={}", userId, e);
+            return Result.error("GET_STATS_FAILED", "获取优惠统计失败: " + e.getMessage());
+        }
+    }
+
+    // =================== 访问记录管理 ===================
+
+    @Override
+    public Result<Boolean> recordContentAccess(Long userId, Long contentId) {
+        try {
+            log.debug("记录内容访问: userId={}, contentId={}", userId, contentId);
+            
+            boolean result = userContentPurchaseService.recordContentAccess(userId, contentId);
+            
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("记录内容访问失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("RECORD_ACCESS_FAILED", "记录内容访问失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> batchUpdateAccessStats(List<Long> purchaseIds) {
+        try {
+            boolean result = userContentPurchaseService.batchUpdateAccessStats(purchaseIds);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("批量更新访问统计失败", e);
+            return Result.error("UPDATE_STATS_FAILED", "批量更新访问统计失败: " + e.getMessage());
+        }
+    }
+
+    // =================== 状态管理 ===================
+
+    @Override
+    public Result<Integer> processExpiredPurchases() {
+        try {
+            int count = userContentPurchaseService.processExpiredPurchases();
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("处理过期购买记录失败", e);
+            return Result.error("PROCESS_EXPIRED_FAILED", "处理过期购买记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getExpiringSoonPurchases(LocalDateTime beforeTime) {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getExpiringSoonPurchases(beforeTime);
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询即将过期购买记录失败", e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<ContentPurchaseResponse>> getExpiredPurchases() {
+        try {
+            List<UserContentPurchase> purchases = userContentPurchaseService.getExpiredPurchases();
+            if (CollectionUtils.isEmpty(purchases)) {
+                return Result.success(Collections.emptyList());
+            }
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("查询已过期购买记录失败", e);
+            return Result.error("QUERY_FAILED", "查询失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> batchUpdateStatus(List<Long> ids, String status) {
+        try {
+            boolean result = userContentPurchaseService.batchUpdateStatus(ids, status);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("批量更新购买记录状态失败", e);
+            return Result.error("UPDATE_STATUS_FAILED", "批量更新状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> refundPurchase(Long purchaseId, String reason, Long operatorId) {
+        try {
+            boolean result = userContentPurchaseService.refundPurchase(purchaseId, reason, operatorId);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("退款处理失败: purchaseId={}", purchaseId, e);
+            return Result.error("REFUND_FAILED", "退款处理失败: " + e.getMessage());
+        }
+    }
+
+    // =================== 统计分析 ===================
+
+    @Override
+    public Result<Long> countUserPurchases(Long userId) {
+        try {
+            Long count = userContentPurchaseService.countUserPurchases(userId);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("统计用户购买总数失败: userId={}", userId, e);
+            return Result.error("COUNT_FAILED", "统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countUserValidPurchases(Long userId) {
+        try {
+            Long count = userContentPurchaseService.countUserValidPurchases(userId);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("统计用户有效购买数失败: userId={}", userId, e);
+            return Result.error("COUNT_FAILED", "统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countContentPurchases(Long contentId) {
+        try {
+            Long count = userContentPurchaseService.countContentPurchases(contentId);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("统计内容购买总数失败: contentId={}", contentId, e);
+            return Result.error("COUNT_FAILED", "统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> sumContentRevenue(Long contentId) {
+        try {
+            Long revenue = userContentPurchaseService.sumContentRevenue(contentId);
+            return Result.success(revenue);
+        } catch (Exception e) {
+            log.error("统计内容收入失败: contentId={}", contentId, e);
+            return Result.error("SUM_FAILED", "统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> sumUserExpense(Long userId) {
+        try {
+            Long expense = userContentPurchaseService.sumUserExpense(userId);
+            return Result.success(expense);
+        } catch (Exception e) {
+            log.error("统计用户消费失败: userId={}", userId, e);
+            return Result.error("SUM_FAILED", "统计失败: " + e.getMessage());
         }
     }
 
@@ -353,44 +535,91 @@ public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeSe
             return Result.success(ranking);
         } catch (Exception e) {
             log.error("获取热门内容排行失败", e);
-            return Result.failure("获取排行失败");
+            return Result.error("GET_RANKING_FAILED", "获取排行失败: " + e.getMessage());
         }
     }
 
-    // =================== 订单处理 ===================
+    @Override
+    public Result<Map<String, Object>> getUserPurchaseStats(Long userId) {
+        try {
+            Map<String, Object> stats = userContentPurchaseService.getUserPurchaseStats(userId);
+            return Result.success(stats);
+        } catch (Exception e) {
+            log.error("获取用户购买统计失败: userId={}", userId, e);
+            return Result.error("GET_STATS_FAILED", "获取统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> getContentSalesStats(Long contentId) {
+        try {
+            Map<String, Object> stats = userContentPurchaseService.getContentSalesStats(contentId);
+            return Result.success(stats);
+        } catch (Exception e) {
+            log.error("获取内容销售统计失败: contentId={}", contentId, e);
+            return Result.error("GET_STATS_FAILED", "获取统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> getAuthorRevenueStats(Long authorId) {
+        try {
+            Map<String, Object> stats = userContentPurchaseService.getAuthorRevenueStats(authorId);
+            return Result.success(stats);
+        } catch (Exception e) {
+            log.error("获取作者收入统计失败: authorId={}", authorId, e);
+            return Result.error("GET_STATS_FAILED", "获取统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getPurchaseStatsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        try {
+            List<Map<String, Object>> stats = userContentPurchaseService.getPurchaseStatsByDateRange(startDate, endDate);
+            return Result.success(stats);
+        } catch (Exception e) {
+            log.error("获取日期范围购买统计失败", e);
+            return Result.error("GET_STATS_FAILED", "获取统计失败: " + e.getMessage());
+        }
+    }
+
+    // =================== 业务逻辑 ===================
 
     @Override
     public Result<ContentPurchaseResponse> handleOrderPaymentSuccess(Long orderId) {
         try {
             UserContentPurchase purchase = userContentPurchaseService.handleOrderPaymentSuccess(orderId);
-            if (purchase != null) {
-                ContentPurchaseResponse response = convertToResponse(purchase);
-                return Result.success(response);
-            } else {
-                return Result.failure("订单处理失败");
+            if (purchase == null) {
+                return Result.error("HANDLE_PAYMENT_FAILED", "处理订单支付成功失败");
             }
+            return Result.success(convertToResponse(purchase));
         } catch (Exception e) {
-            log.error("处理订单支付成功失败", e);
-            return Result.failure("订单处理失败");
+            log.error("处理订单支付成功失败: orderId={}", orderId, e);
+            return Result.error("HANDLE_PAYMENT_FAILED", "处理订单支付成功失败: " + e.getMessage());
         }
     }
 
     @Override
-    public Result<Void> handleRefundRequest(Long purchaseId, String reason, Long operatorId) {
+    public Result<Boolean> validatePurchasePermission(Long userId, Long contentId) {
         try {
-            boolean success = userContentPurchaseService.refundPurchase(purchaseId, reason, operatorId);
-            if (success) {
-                return Result.success();
-            } else {
-                return Result.failure("退款处理失败");
-            }
+            boolean result = userContentPurchaseService.validatePurchasePermission(userId, contentId);
+            return Result.success(result);
         } catch (Exception e) {
-            log.error("处理退款申请失败", e);
-            return Result.failure("退款处理失败");
+            log.error("验证购买权限失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("VALIDATE_FAILED", "验证购买权限失败: " + e.getMessage());
         }
     }
 
-    // =================== 推荐功能 ===================
+    @Override
+    public Result<Map<String, Object>> calculateContentAccess(Long userId, Long contentId) {
+        try {
+            Map<String, Object> access = userContentPurchaseService.calculateContentAccess(userId, contentId);
+            return Result.success(access);
+        } catch (Exception e) {
+            log.error("计算内容访问权限失败: userId={}, contentId={}", userId, contentId, e);
+            return Result.error("CALCULATE_FAILED", "计算内容访问权限失败: " + e.getMessage());
+        }
+    }
 
     @Override
     public Result<List<Long>> getUserContentRecommendations(Long userId, Integer limit) {
@@ -398,42 +627,38 @@ public class ContentPurchaseFacadeServiceImpl implements ContentPurchaseFacadeSe
             List<Long> recommendations = userContentPurchaseService.getUserContentRecommendations(userId, limit);
             return Result.success(recommendations);
         } catch (Exception e) {
-            log.error("获取用户内容推荐失败", e);
-            return Result.failure("获取推荐失败");
+            log.error("获取用户内容推荐失败: userId={}", userId, e);
+            return Result.error("GET_RECOMMENDATIONS_FAILED", "获取内容推荐失败: " + e.getMessage());
         }
     }
 
-    @Override
-    public Result<Map<String, Object>> getPurchaseSuggestion(Long userId, Long contentId) {
-        try {
-            // 这里可以实现更复杂的购买建议逻辑
-            Map<String, Object> suggestion = new HashMap<>();
-            suggestion.put("recommended", true);
-            suggestion.put("reason", "基于您的购买历史推荐");
-            return Result.success(suggestion);
-        } catch (Exception e) {
-            log.error("获取购买建议失败", e);
-            return Result.failure("获取建议失败");
-        }
-    }
+    // =================== 私有辅助方法 ===================
 
-    // =================== 私有方法 ===================
-
-    /**
-     * 转换为响应对象
-     */
     private ContentPurchaseResponse convertToResponse(UserContentPurchase purchase) {
         ContentPurchaseResponse response = new ContentPurchaseResponse();
         BeanUtils.copyProperties(purchase, response);
-        
-        // 设置计算属性
-        response.setActualPaidAmount(purchase.getActualPaidAmount());
-        response.setDiscountRate(purchase.getDiscountRate());
-        response.setIsExpired(purchase.isExpired());
-        response.setRemainingDays(purchase.getRemainingDays());
-        response.setHasAccessPermission(purchase.hasAccessPermission());
-        response.setHasAccessed(purchase.getAccessCount() != null && purchase.getAccessCount() > 0);
-
         return response;
+    }
+
+    private PageResponse<ContentPurchaseResponse> convertToPageResponse(List<UserContentPurchase> purchases, Integer currentPage, Integer pageSize) {
+        PageResponse<ContentPurchaseResponse> pageResponse = new PageResponse<>();
+        
+        if (CollectionUtils.isEmpty(purchases)) {
+            pageResponse.setDatas(Collections.emptyList());
+            pageResponse.setTotal(0L);
+        } else {
+            List<ContentPurchaseResponse> responses = purchases.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            pageResponse.setDatas(responses);
+            pageResponse.setTotal((long) purchases.size());
+        }
+        
+        pageResponse.setCurrentPage(currentPage);
+        pageResponse.setPageSize(pageSize);
+        pageResponse.setTotalPage((int) Math.ceil((double) pageResponse.getTotal() / pageSize));
+        pageResponse.setSuccess(true);
+        
+        return pageResponse;
     }
 }

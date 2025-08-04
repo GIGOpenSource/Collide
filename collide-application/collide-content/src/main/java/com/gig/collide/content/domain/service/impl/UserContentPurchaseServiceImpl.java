@@ -127,9 +127,9 @@ public class UserContentPurchaseServiceImpl extends ServiceImpl<UserContentPurch
     // =================== 查询功能 ===================
 
     @Override
-    public List<UserContentPurchase> getUserPurchases(Long userId, Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return userContentPurchaseMapper.selectByUserId(userId, offset, size);
+    public List<UserContentPurchase> getUserPurchases(Long userId, Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return userContentPurchaseMapper.selectByUserId(userId, currentPage, pageSize);
     }
 
     @Override
@@ -138,9 +138,9 @@ public class UserContentPurchaseServiceImpl extends ServiceImpl<UserContentPurch
     }
 
     @Override
-    public List<UserContentPurchase> getContentPurchases(Long contentId, Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return userContentPurchaseMapper.selectByContentId(contentId, offset, size);
+    public List<UserContentPurchase> getContentPurchases(Long contentId, Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return userContentPurchaseMapper.selectByContentId(contentId, currentPage, pageSize);
     }
 
     @Override
@@ -302,6 +302,74 @@ public class UserContentPurchaseServiceImpl extends ServiceImpl<UserContentPurch
     @Override
     public List<Map<String, Object>> getPurchaseStatsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         return userContentPurchaseMapper.getPurchaseStatsByDateRange(startDate, endDate);
+    }
+
+    @Override
+    public Map<String, Object> getDiscountStats(Long userId) {
+        log.debug("获取用户优惠统计: userId={}", userId);
+        
+        try {
+            return userContentPurchaseMapper.getDiscountStats(userId);
+        } catch (Exception e) {
+            log.error("获取用户优惠统计失败: userId={}", userId, e);
+            return Map.of();
+        }
+    }
+
+    @Override
+    public List<UserContentPurchase> getUserRecentAccessedPurchases(Long userId, Integer limit) {
+        log.debug("获取用户最近访问的购买记录: userId={}, limit={}", userId, limit);
+        
+        try {
+            // TODO: 实现获取用户最近访问的购买记录
+            // 当前Mapper不支持此方法，暂时返回空列表
+            return List.of();
+        } catch (Exception e) {
+            log.error("获取用户最近访问的购买记录失败: userId={}", userId, e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<UserContentPurchase> getMostAccessedPurchases(Integer limit) {
+        log.debug("获取最受欢迎的购买记录: limit={}", limit);
+        
+        try {
+            // TODO: 实现获取最受欢迎的购买记录
+            // 当前Mapper不支持此方法，暂时返回空列表
+            return List.of();
+        } catch (Exception e) {
+            log.error("获取最受欢迎的购买记录失败", e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<UserContentPurchase> getUserHighValuePurchases(Long userId, Long minAmount) {
+        log.debug("获取用户高价值购买记录: userId={}, minAmount={}", userId, minAmount);
+        
+        try {
+            // TODO: 实现获取用户高价值购买记录
+            // 当前Mapper不支持此方法，暂时返回空列表
+            return List.of();
+        } catch (Exception e) {
+            log.error("获取用户高价值购买记录失败: userId={}", userId, e);
+            return List.of();
+        }
+    }
+
+    @Override
+    public List<UserContentPurchase> getHighValuePurchases(Long minAmount, Integer limit) {
+        log.debug("获取高价值购买记录: minAmount={}, limit={}", minAmount, limit);
+        
+        try {
+            // TODO: 实现获取高价值购买记录
+            // 当前Mapper不支持此方法，暂时返回空列表
+            return List.of();
+        } catch (Exception e) {
+            log.error("获取高价值购买记录失败", e);
+            return List.of();
+        }
     }
 
     // =================== 业务逻辑 ===================

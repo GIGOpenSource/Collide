@@ -129,27 +129,27 @@ public class ContentPaymentServiceImpl extends ServiceImpl<ContentPaymentMapper,
     }
 
     @Override
-    public List<ContentPayment> getFreeContentConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectFreeContent(offset, size);
+    public List<ContentPayment> getFreeContentConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectFreeContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getCoinPayContentConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectCoinPayContent(offset, size);
+    public List<ContentPayment> getCoinPayContentConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectCoinPayContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getVipFreeContentConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectVipFreeContent(offset, size);
+    public List<ContentPayment> getVipFreeContentConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectVipFreeContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getVipOnlyContentConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectVipOnlyContent(offset, size);
+    public List<ContentPayment> getVipOnlyContentConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectVipOnlyContent(currentPage, pageSize);
     }
 
     @Override
@@ -158,27 +158,27 @@ public class ContentPaymentServiceImpl extends ServiceImpl<ContentPaymentMapper,
     }
 
     @Override
-    public List<ContentPayment> getTrialEnabledConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectTrialEnabledContent(offset, size);
+    public List<ContentPayment> getTrialEnabledConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectTrialEnabledContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getPermanentContentConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectPermanentContent(offset, size);
+    public List<ContentPayment> getPermanentContentConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectPermanentContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getTimeLimitedConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectTimeLimitedContent(offset, size);
+    public List<ContentPayment> getTimeLimitedConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectTimeLimitedContent(currentPage, pageSize);
     }
 
     @Override
-    public List<ContentPayment> getDiscountedConfigs(Integer page, Integer size) {
-        Long offset = (long) ((page - 1) * size);
-        return contentPaymentMapper.selectDiscountedContent(offset, size);
+    public List<ContentPayment> getDiscountedConfigs(Integer currentPage, Integer pageSize) {
+        Long offset = (long) ((currentPage - 1) * pageSize);
+        return contentPaymentMapper.selectDiscountedContent(currentPage, pageSize);
     }
 
     @Override

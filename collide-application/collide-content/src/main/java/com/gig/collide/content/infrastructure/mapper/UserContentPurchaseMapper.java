@@ -38,8 +38,8 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
      * 查询用户的购买记录列表
      */
     List<UserContentPurchase> selectByUserId(@Param("userId") Long userId,
-                                            @Param("offset") Long offset,
-                                            @Param("limit") Integer limit);
+                                            @Param("currentPage") Integer currentPage,
+                                            @Param("pageSize") Integer pageSize);
 
     /**
      * 查询用户的有效购买记录
@@ -50,8 +50,8 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
      * 查询内容的购买记录列表
      */
     List<UserContentPurchase> selectByContentId(@Param("contentId") Long contentId,
-                                               @Param("offset") Long offset,
-                                               @Param("limit") Integer limit);
+                                               @Param("currentPage") Integer currentPage,
+                                               @Param("pageSize") Integer pageSize);
 
     /**
      * 根据订单ID查询购买记录

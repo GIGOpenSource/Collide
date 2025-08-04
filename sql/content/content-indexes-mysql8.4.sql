@@ -1,229 +1,168 @@
 -- ==========================================
--- 内容模块 MySQL 8.4.1 索引优化脚本
--- 基于MySQL 8.4.1新特性进行索引优化
+-- MySQL 8.4 优化索引文件 
+-- 专门针对内容模块的高性能索引设计
 -- ==========================================
 
 USE collide;
 
 -- =================== t_content 表索引优化 ===================
 
--- 1. 复合索引优化（利用最左前缀原则）
-CREATE INDEX idx_content_status_publish ON t_content(status, review_status, publish_time DESC);
+-- 删除旧索引 (如果存在)
+ALTER TABLE t_content 
+DROP INDEX IF EXISTS `idx_author_id`,
+DROP INDEX IF EXISTS `idx_category_id`, 
+DROP INDEX IF EXISTS `idx_content_type`,
+DROP INDEX IF EXISTS `idx_status`,
+DROP INDEX IF EXISTS `idx_publish_time`;
 
--- 2. 作者内容复合索引
-CREATE INDEX idx_author_status_publish ON t_content(author_id, status, publish_time DESC);
+-- 添加 MySQL 8.4 优化索引
 
--- 3. 分类内容复合索引
-CREATE INDEX idx_category_status_publish ON t_content(category_id, status, publish_time DESC);
+-- 1. 作者相关复合索引 (最左前缀匹配，支持多维度查询)
+ALTER TABLE t_content ADD INDEX `idx_author_status_publish` (`author_id`, `status`, `publish_time` DESC);
 
--- 4. 内容类型复合索引
-CREATE INDEX idx_type_status_publish ON t_content(content_type, status, publish_time DESC);
+-- 2. 分类相关复合索引
+ALTER TABLE t_content ADD INDEX `idx_category_status_publish` (`category_id`, `status`, `publish_time` DESC);
 
--- 5. 函数索引优化标题搜索（MySQL 8.4.1新特性）
-CREATE INDEX idx_title_search ON t_content((LOWER(title)));
+-- 3. 内容类型复合索引  
+ALTER TABLE t_content ADD INDEX `idx_type_status_publish` (`content_type`, `status`, `publish_time` DESC);
 
--- 6. 标签搜索函数索引
-CREATE INDEX idx_tags_search ON t_content((JSON_EXTRACT(tags, '$')));
+-- 4. 内容状态复合索引 (支持状态查询、审核状态、发布时间排序)
+ALTER TABLE t_content ADD INDEX `idx_content_status_publish` (`status`, `review_status`, `publish_time` DESC);
 
--- 7. 评分统计复合索引
-CREATE INDEX idx_score_stats ON t_content(score_count DESC, score_total DESC);
+-- 5. 审核状态索引
+ALTER TABLE t_content ADD INDEX `idx_review_status` (`review_status`, `status`);
 
--- 8. 热门内容复合索引
-CREATE INDEX idx_hot_content ON t_content(view_count DESC, like_count DESC, publish_time DESC);
+-- 6. 热门内容复合索引 (按热度排序查询)
+ALTER TABLE t_content ADD INDEX `idx_hot_content` (`view_count` DESC, `like_count` DESC, `publish_time` DESC);
 
--- 9. 审核状态索引
-CREATE INDEX idx_review_status ON t_content(review_status, status);
+-- 7. 评分统计索引
+ALTER TABLE t_content ADD INDEX `idx_score_stats` (`score_count` DESC, `score_total` DESC);
 
--- 10. 创建时间索引（用于最新内容）
-CREATE INDEX idx_create_time ON t_content(create_time DESC);
+-- 8. MySQL 8 函数索引 (支持标题搜索，不区分大小写)
+ALTER TABLE t_content ADD INDEX `idx_title_search` ((LOWER(`title`)));
 
--- =================== t_content_payment 表索引优化 ===================
-
--- 1. VIP相关复合索引
-CREATE INDEX idx_vip_status ON t_content_payment(vip_free, vip_only, status);
-
--- 2. 付费类型状态复合索引
-CREATE INDEX idx_payment_status ON t_content_payment(payment_type, status, create_time DESC);
-
--- 3. 价格范围复合索引
-CREATE INDEX idx_price_range ON t_content_payment(coin_price ASC, original_price ASC);
-
--- 4. 试读功能复合索引
-CREATE INDEX idx_trial_status ON t_content_payment(trial_enabled, status);
-
--- 5. 永久性复合索引
-CREATE INDEX idx_permanent_status ON t_content_payment(is_permanent, status);
-
--- 6. 销售统计复合索引
-CREATE INDEX idx_sales_stats ON t_content_payment(total_sales DESC, total_revenue DESC);
-
--- 7. 折扣计算函数索引
-CREATE INDEX idx_discount_calc ON t_content_payment((original_price - coin_price));
-
--- 8. 性价比复合索引
-CREATE INDEX idx_value_ratio ON t_content_payment((total_sales / NULLIF(coin_price, 0)) DESC);
-
--- 9. 创建时间索引
-CREATE INDEX idx_create_time ON t_content_payment(create_time DESC);
-
--- 10. 隐藏索引（用于测试）
-CREATE INDEX idx_test_hidden ON t_content_payment(content_id) INVISIBLE;
+-- 9. MySQL 8 JSON 函数索引 (支持标签搜索)  
+ALTER TABLE t_content ADD INDEX `idx_tags_search` ((JSON_EXTRACT(`tags`, '$')));
 
 -- =================== t_content_chapter 表索引优化 ===================
 
--- 1. 内容章节状态复合索引
-CREATE INDEX idx_content_status ON t_content_chapter(content_id, status, chapter_num ASC);
+-- 删除旧索引 (如果存在)
+ALTER TABLE t_content_chapter 
+DROP INDEX IF EXISTS `idx_content_id`,
+DROP INDEX IF EXISTS `idx_status`;
 
--- 2. 章节号范围查询索引
-CREATE INDEX idx_chapter_range ON t_content_chapter(content_id, chapter_num ASC, status);
+-- 添加 MySQL 8.4 优化索引
 
--- 3. 字数统计复合索引
-CREATE INDEX idx_word_count ON t_content_chapter(content_id, word_count DESC);
+-- 1. 内容状态复合索引 (支持内容查询、状态筛选、章节号排序)
+ALTER TABLE t_content_chapter ADD INDEX `idx_content_status` (`content_id`, `status`, `chapter_num` ASC);
 
--- 4. 创建时间索引
-CREATE INDEX idx_create_time ON t_content_chapter(create_time DESC);
+-- 2. 章节范围查询索引 (支持上一章、下一章查询)
+ALTER TABLE t_content_chapter ADD INDEX `idx_chapter_range` (`content_id`, `chapter_num` ASC, `status`);
 
--- 5. 状态时间复合索引
-CREATE INDEX idx_status_time ON t_content_chapter(status, create_time DESC);
+-- 3. 状态时间索引 (支持状态查询、时间排序)
+ALTER TABLE t_content_chapter ADD INDEX `idx_status_time` (`status`, `create_time` DESC);
 
--- 6. 内容字数统计函数索引
-CREATE INDEX idx_content_words ON t_content_chapter(content_id, (SUM(word_count)));
+-- 4. 字数统计索引 (支持字数查询和排序)
+ALTER TABLE t_content_chapter ADD INDEX `idx_word_count` (`content_id`, `word_count` DESC);
 
--- 7. 章节标题搜索函数索引
-CREATE INDEX idx_title_search ON t_content_chapter((LOWER(title)));
-
--- 8. 不可见索引（用于测试）
-CREATE INDEX idx_test_invisible ON t_content_chapter(content_id) INVISIBLE;
+-- 5. MySQL 8 函数索引 (支持章节标题搜索)
+ALTER TABLE t_content_chapter ADD INDEX `idx_title_search` ((LOWER(`title`)));
 
 -- =================== t_user_content_purchase 表索引优化 ===================
 
--- 1. 用户购买状态复合索引
-CREATE INDEX idx_user_status ON t_user_content_purchase(user_id, status, purchase_time DESC);
+-- 删除旧索引 (如果存在)
+ALTER TABLE t_user_content_purchase 
+DROP INDEX IF EXISTS `idx_user_id`,
+DROP INDEX IF EXISTS `idx_content_id`,
+DROP INDEX IF EXISTS `idx_order_id`,
+DROP INDEX IF EXISTS `idx_order_no`,
+DROP INDEX IF EXISTS `idx_status`,
+DROP INDEX IF EXISTS `idx_purchase_time`;
 
--- 2. 内容购买统计复合索引
-CREATE INDEX idx_content_sales ON t_user_content_purchase(content_id, status, purchase_time DESC);
+-- 添加 MySQL 8.4 优化索引
 
--- 3. 订单相关复合索引
-CREATE INDEX idx_order_info ON t_user_content_purchase(order_id, order_no, status);
+-- 1. 用户状态复合索引 (支持用户购买记录查询、状态筛选、购买时间排序)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_user_status` (`user_id`, `status`, `purchase_time` DESC);
 
--- 4. 过期时间复合索引
-CREATE INDEX idx_expire_time ON t_user_content_purchase(status, expire_time ASC);
+-- 2. 内容销售复合索引 (支持内容销售查询、状态筛选、购买时间排序)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_content_sales` (`content_id`, `status`, `purchase_time` DESC);
 
--- 5. 访问统计复合索引
-CREATE INDEX idx_access_stats ON t_user_content_purchase(access_count DESC, last_access_time DESC);
+-- 3. 订单信息索引 (支持订单查询)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_order_info` (`order_id`, `order_no`);
 
--- 6. 消费金额复合索引
-CREATE INDEX idx_coin_amount ON t_user_content_purchase(coin_amount DESC, purchase_time DESC);
+-- 4. 内容类型索引 (支持按内容类型查询购买记录)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_content_type` (`user_id`, `content_type`, `purchase_time` DESC);
 
--- 7. 折扣计算函数索引
-CREATE INDEX idx_discount_calc ON t_user_content_purchase((original_price - coin_amount));
+-- 5. 作者购买索引 (支持用户查询特定作者的购买记录)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_author_purchase` (`user_id`, `author_id`, `purchase_time` DESC);
 
--- 8. 内容类型购买复合索引
-CREATE INDEX idx_content_type ON t_user_content_purchase(user_id, content_type, purchase_time DESC);
+-- 6. 过期时间索引 (支持过期记录查询和批量处理)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_expire_time` (`status`, `expire_time`);
 
--- 9. 作者购买复合索引
-CREATE INDEX idx_author_purchase ON t_user_content_purchase(user_id, author_id, purchase_time DESC);
+-- 7. 金币金额索引 (支持高价值购买查询和统计)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_coin_amount` (`coin_amount` DESC, `purchase_time` DESC);
 
--- 10. 隐藏索引（用于测试）
-CREATE INDEX idx_test_hidden ON t_user_content_purchase(user_id) INVISIBLE;
+-- 8. 访问统计索引 (支持访问次数查询和统计)
+ALTER TABLE t_user_content_purchase ADD INDEX `idx_access_stats` (`access_count` DESC, `last_access_time` DESC);
 
--- =================== 索引使用情况查询 ===================
+-- =================== t_content_payment 表索引优化 ===================
 
--- 查看所有索引
-SHOW INDEX FROM t_content;
-SHOW INDEX FROM t_content_payment;
-SHOW INDEX FROM t_content_chapter;
-SHOW INDEX FROM t_user_content_purchase;
+-- 删除旧索引 (如果存在)
+ALTER TABLE t_content_payment 
+DROP INDEX IF EXISTS `idx_payment_type`,
+DROP INDEX IF EXISTS `idx_coin_price`,
+DROP INDEX IF EXISTS `idx_status`;
 
--- 查看索引使用情况
-SELECT 
-    TABLE_NAME,
-    INDEX_NAME,
-    CARDINALITY,
-    SUB_PART,
-    PACKED,
-    NULLABLE,
-    INDEX_TYPE
-FROM information_schema.STATISTICS 
-WHERE TABLE_SCHEMA = 'collide' 
-AND TABLE_NAME IN ('t_content', 't_content_payment', 't_content_chapter', 't_user_content_purchase')
-ORDER BY TABLE_NAME, INDEX_NAME;
+-- 添加 MySQL 8.4 优化索引
 
--- =================== 性能测试查询 ===================
+-- 1. 付费类型状态复合索引 (支持付费类型查询、状态筛选、创建时间排序)
+ALTER TABLE t_content_payment ADD INDEX `idx_payment_status` (`payment_type`, `status`, `create_time` DESC);
 
--- 测试内容查询性能
-EXPLAIN SELECT * FROM t_content 
-WHERE status = 'PUBLISHED' AND review_status = 'APPROVED' 
-ORDER BY publish_time DESC LIMIT 20;
+-- 2. VIP相关复合索引 (支持VIP免费和VIP专享查询)
+ALTER TABLE t_content_payment ADD INDEX `idx_vip_status` (`vip_free`, `vip_only`, `status`);
 
--- 测试标题搜索性能
-EXPLAIN SELECT * FROM t_content 
-WHERE LOWER(title) LIKE '%测试%' 
-AND status = 'PUBLISHED' AND review_status = 'APPROVED';
+-- 3. 价格范围索引 (支持价格范围查询和排序)
+ALTER TABLE t_content_payment ADD INDEX `idx_price_range` (`payment_type`, `coin_price` ASC, `status`);
 
--- 测试VIP内容查询性能
-EXPLAIN SELECT * FROM t_content_payment 
-WHERE (vip_free = 1 OR vip_only = 1) AND status = 'ACTIVE';
+-- 4. 试读功能索引 (支持试读内容查询)
+ALTER TABLE t_content_payment ADD INDEX `idx_trial_status` (`trial_enabled`, `status`, `create_time` DESC);
 
--- 测试章节查询性能
-EXPLAIN SELECT * FROM t_content_chapter 
-WHERE content_id = 1 AND status = 'PUBLISHED' 
-ORDER BY chapter_num ASC;
+-- 5. 永久/限时索引 (支持永久和限时内容查询)
+ALTER TABLE t_content_payment ADD INDEX `idx_permanent_status` (`is_permanent`, `valid_days`, `status`);
 
--- 测试购买记录查询性能
-EXPLAIN SELECT * FROM t_user_content_purchase 
-WHERE user_id = 1 AND status = 'ACTIVE' 
-ORDER BY purchase_time DESC;
+-- 6. 销售统计索引 (支持销售排行和收入统计)
+ALTER TABLE t_content_payment ADD INDEX `idx_sales_stats` (`total_sales` DESC, `total_revenue` DESC, `status`);
 
--- =================== 索引维护脚本 ===================
+-- 7. MySQL 8 函数索引 (支持折扣计算查询)
+ALTER TABLE t_content_payment ADD INDEX `idx_discount_calc` ((((`original_price` - `coin_price`) / `original_price`) DESC));
 
--- 分析表统计信息
-ANALYZE TABLE t_content;
-ANALYZE TABLE t_content_payment;
-ANALYZE TABLE t_content_chapter;
-ANALYZE TABLE t_user_content_purchase;
+-- 8. MySQL 8 函数索引 (支持性价比计算)
+ALTER TABLE t_content_payment ADD INDEX `idx_value_ratio` (((`total_sales` / `coin_price`) DESC));
 
--- 优化表结构
-OPTIMIZE TABLE t_content;
-OPTIMIZE TABLE t_content_payment;
-OPTIMIZE TABLE t_content_chapter;
-OPTIMIZE TABLE t_user_content_purchase;
-
--- =================== 监控查询 ===================
-
--- 查看慢查询
-SELECT * FROM mysql.slow_log 
-WHERE start_time > DATE_SUB(NOW(), INTERVAL 1 HOUR)
-ORDER BY start_time DESC;
-
--- 查看索引使用统计
-SELECT 
-    object_schema,
-    object_name,
-    index_name,
-    count_read,
-    count_write,
-    count_fetch,
-    count_insert,
-    count_update,
-    count_delete
-FROM performance_schema.table_io_waits_summary_by_index_usage
-WHERE object_schema = 'collide'
-AND object_name IN ('t_content', 't_content_payment', 't_content_chapter', 't_user_content_purchase');
-
--- =================== 清理脚本（如果需要删除索引） ===================
+-- =================== 索引使用建议和查询优化 ===================
 
 /*
--- 删除测试索引（谨慎使用）
-DROP INDEX idx_test_hidden ON t_content_payment;
-DROP INDEX idx_test_invisible ON t_content_chapter;
-DROP INDEX idx_test_hidden ON t_user_content_purchase;
+1. 复合索引最左前缀原则：
+   - idx_author_status_publish 可以支持：
+     * WHERE author_id = ?
+     * WHERE author_id = ? AND status = ?  
+     * WHERE author_id = ? AND status = ? ORDER BY publish_time DESC
 
--- 删除函数索引（如果需要）
-DROP INDEX idx_title_search ON t_content;
-DROP INDEX idx_tags_search ON t_content;
-DROP INDEX idx_discount_calc ON t_content_payment;
-DROP INDEX idx_content_words ON t_content_chapter;
-DROP INDEX idx_title_search ON t_content_chapter;
-DROP INDEX idx_discount_calc ON t_user_content_purchase;
-*/ 
+2. 函数索引使用：
+   - 标题搜索：WHERE LOWER(title) LIKE '%keyword%'
+   - JSON标签搜索：WHERE JSON_EXTRACT(tags, '$') LIKE '%tag%'
+   - 折扣计算：ORDER BY ((original_price - coin_price) / original_price) DESC
+
+3. 降序索引利用：
+   - MySQL 8支持真正的降序索引，提升ORDER BY性能
+   - 特别是时间字段和统计字段的排序查询
+
+4. 索引统计信息更新：
+   - 定期执行 ANALYZE TABLE 更新索引统计信息
+   - 使用 OPTIMIZER_TRACE 分析查询执行计划
+
+5. 查询优化建议：
+   - 避免SELECT * ，明确指定需要的字段
+   - 合理使用LIMIT，特别是大数据量分页
+   - 利用覆盖索引，减少回表查询
+*/

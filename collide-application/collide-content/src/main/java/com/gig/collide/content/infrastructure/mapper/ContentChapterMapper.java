@@ -35,8 +35,8 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
      * 根据内容ID分页查询章节
      */
     List<ContentChapter> selectByContentIdPaged(@Param("contentId") Long contentId,
-                                               @Param("offset") Long offset,
-                                               @Param("limit") Integer limit);
+                                               @Param("currentPage") Integer currentPage,
+                                               @Param("pageSize") Integer pageSize);
 
     /**
      * 根据内容ID和章节号查询章节
@@ -74,7 +74,9 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     /**
      * 根据章节标题搜索
      */
-    List<ContentChapter> selectByTitleLike(@Param("titleKeyword") String titleKeyword);
+    List<ContentChapter> searchChaptersByTitle(@Param("titleKeyword") String titleKeyword,
+                                              @Param("currentPage") Integer currentPage,
+                                              @Param("pageSize") Integer pageSize);
 
     /**
      * 根据内容ID和字数范围查询章节
@@ -96,7 +98,8 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     /**
      * 查询最新更新的章节
      */
-    List<ContentChapter> selectLatestChapters(@Param("limit") Integer limit);
+    List<ContentChapter> selectLatestChapters(@Param("currentPage") Integer currentPage,
+                                             @Param("pageSize") Integer pageSize);
 
     // =================== C端必需的统计方法 ===================
 
@@ -125,12 +128,12 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     /**
      * 批量更新章节状态
      */
-    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
+    int batchUpdateChapterStatus(@Param("ids") List<Long> ids, @Param("status") String status);
 
     /**
      * 删除内容的所有章节
      */
-    int deleteByContentId(@Param("contentId") Long contentId);
+    int deleteAllChaptersByContentId(@Param("contentId") Long contentId);
 
     /**
      * 重新排序章节号（用于章节删除后的重新编号）

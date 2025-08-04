@@ -58,22 +58,22 @@ public interface ContentPaymentService {
     /**
      * 查询免费内容配置
      */
-    List<ContentPayment> getFreeContentConfigs(Integer page, Integer size);
+    List<ContentPayment> getFreeContentConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询金币付费内容配置
      */
-    List<ContentPayment> getCoinPayContentConfigs(Integer page, Integer size);
+    List<ContentPayment> getCoinPayContentConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询VIP免费内容配置
      */
-    List<ContentPayment> getVipFreeContentConfigs(Integer page, Integer size);
+    List<ContentPayment> getVipFreeContentConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询VIP专享内容配置
      */
-    List<ContentPayment> getVipOnlyContentConfigs(Integer page, Integer size);
+    List<ContentPayment> getVipOnlyContentConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 根据价格范围查询配置
@@ -83,22 +83,22 @@ public interface ContentPaymentService {
     /**
      * 查询支持试读的内容配置
      */
-    List<ContentPayment> getTrialEnabledConfigs(Integer page, Integer size);
+    List<ContentPayment> getTrialEnabledConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询永久有效的内容配置
      */
-    List<ContentPayment> getPermanentContentConfigs(Integer page, Integer size);
+    List<ContentPayment> getPermanentContentConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询限时内容配置
      */
-    List<ContentPayment> getTimeLimitedConfigs(Integer page, Integer size);
+    List<ContentPayment> getTimeLimitedConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 查询有折扣的内容配置
      */
-    List<ContentPayment> getDiscountedConfigs(Integer page, Integer size);
+    List<ContentPayment> getDiscountedConfigs(Integer currentPage, Integer pageSize);
 
     /**
      * 根据状态查询配置列表

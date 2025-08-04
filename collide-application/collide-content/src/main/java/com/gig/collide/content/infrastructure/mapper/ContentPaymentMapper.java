@@ -34,26 +34,26 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 查询免费内容配置
      */
-    List<ContentPayment> selectFreeContent(@Param("offset") Long offset,
-                                          @Param("limit") Integer limit);
+    List<ContentPayment> selectFreeContent(@Param("currentPage") Integer currentPage,
+                                          @Param("pageSize") Integer pageSize);
 
     /**
      * 查询金币付费内容配置
      */
-    List<ContentPayment> selectCoinPayContent(@Param("offset") Long offset,
-                                             @Param("limit") Integer limit);
+    List<ContentPayment> selectCoinPayContent(@Param("currentPage") Integer currentPage,
+                                             @Param("pageSize") Integer pageSize);
 
     /**
      * 查询VIP免费内容配置
      */
-    List<ContentPayment> selectVipFreeContent(@Param("offset") Long offset,
-                                             @Param("limit") Integer limit);
+    List<ContentPayment> selectVipFreeContent(@Param("currentPage") Integer currentPage,
+                                             @Param("pageSize") Integer pageSize);
 
     /**
      * 查询VIP专享内容配置
      */
-    List<ContentPayment> selectVipOnlyContent(@Param("offset") Long offset,
-                                             @Param("limit") Integer limit);
+    List<ContentPayment> selectVipOnlyContent(@Param("currentPage") Integer currentPage,
+                                             @Param("pageSize") Integer pageSize);
 
     /**
      * 根据价格范围查询配置
@@ -64,20 +64,20 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 查询支持试读的内容配置
      */
-    List<ContentPayment> selectTrialEnabledContent(@Param("offset") Long offset,
-                                                  @Param("limit") Integer limit);
+    List<ContentPayment> selectTrialEnabledContent(@Param("currentPage") Integer currentPage,
+                                                  @Param("pageSize") Integer pageSize);
 
     /**
      * 查询永久有效的内容配置
      */
-    List<ContentPayment> selectPermanentContent(@Param("offset") Long offset,
-                                               @Param("limit") Integer limit);
+    List<ContentPayment> selectPermanentContent(@Param("currentPage") Integer currentPage,
+                                               @Param("pageSize") Integer pageSize);
 
     /**
      * 查询限时内容配置
      */
-    List<ContentPayment> selectTimeLimitedContent(@Param("offset") Long offset,
-                                                 @Param("limit") Integer limit);
+    List<ContentPayment> selectTimeLimitedContent(@Param("currentPage") Integer currentPage,
+                                                 @Param("pageSize") Integer pageSize);
 
     /**
      * 根据状态查询配置列表
@@ -87,8 +87,8 @@ public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
     /**
      * 查询有折扣的内容配置
      */
-    List<ContentPayment> selectDiscountedContent(@Param("offset") Long offset,
-                                                @Param("limit") Integer limit);
+    List<ContentPayment> selectDiscountedContent(@Param("currentPage") Integer currentPage,
+                                                @Param("pageSize") Integer pageSize);
 
     // =================== C端必需的推荐方法 ===================
 

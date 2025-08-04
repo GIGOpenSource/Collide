@@ -23,63 +23,63 @@ public interface ContentMapper extends BaseMapper<Content> {
     /**
      * 根据作者ID查询内容列表
      */
-    List<Content> selectByAuthorId(@Param("authorId") Long authorId);
+    List<Content> getContentsByAuthor(@Param("authorId") Long authorId);
 
     /**
      * 根据分类ID查询内容列表
      */
-    List<Content> selectByCategoryId(@Param("categoryId") Long categoryId);
+    List<Content> getContentsByCategory(@Param("categoryId") Long categoryId);
 
     /**
      * 根据内容类型查询内容列表
      */
-    List<Content> selectByContentType(@Param("contentType") String contentType);
+    List<Content> getContentsByContentType(@Param("contentType") String contentType);
 
     /**
      * 根据状态查询内容列表
      */
-    List<Content> selectByStatus(@Param("status") String status);
+    List<Content> getContentsByStatus(@Param("status") String status);
 
     /**
      * 根据审核状态查询内容列表
      */
-    List<Content> selectByReviewStatus(@Param("reviewStatus") String reviewStatus);
+    List<Content> getContentsByReviewStatus(@Param("reviewStatus") String reviewStatus);
 
     /**
      * 分页查询已发布且审核通过的内容
      */
-    List<Content> selectPublishedContent(@Param("offset") Long offset, 
-                                       @Param("limit") Integer limit);
+    List<Content> getPublishedContents(@Param("currentPage") Integer currentPage,
+                                       @Param("pageSize") Integer pageSize);
 
     /**
      * 根据标题模糊搜索内容
      */
-    List<Content> searchByTitle(@Param("title") String title,
-                               @Param("offset") Long offset,
-                               @Param("limit") Integer limit);
+    List<Content> searchContentsByTitle(@Param("title") String title,
+                                        @Param("currentPage") Integer currentPage,
+                                        @Param("pageSize") Integer pageSize);
 
     /**
      * 根据标签搜索内容
      */
-    List<Content> searchByTags(@Param("tags") String tags,
-                              @Param("offset") Long offset,
-                              @Param("limit") Integer limit);
+    List<Content> searchContentsByTags(@Param("tags") String tags,
+                                       @Param("currentPage") Integer currentPage,
+                                       @Param("pageSize") Integer pageSize);
 
     /**
      * 查询热门内容（按查看数排序）
      */
-    List<Content> selectHotContent(@Param("limit") Integer limit);
+    List<Content> getPopularContents(@Param("limit") Integer limit);
 
     /**
      * 查询最新内容（按发布时间排序）
      */
-    List<Content> selectLatestContent(@Param("limit") Integer limit);
+    List<Content> getLatestContents(@Param("limit") Integer limit);
 
     /**
      * 查询高评分内容
      */
-    List<Content> selectTopRatedContent(@Param("minScore") Double minScore,
-                                       @Param("limit") Integer limit);
+    List<Content> getContentsByScore(@Param("minScore") Double minScore,
+                                    @Param("limit") Integer limit);
 
     // =================== C端必需的统计增加方法 ===================
 
@@ -184,22 +184,23 @@ public interface ContentMapper extends BaseMapper<Content> {
     /**
      * 推荐内容
      */
-    List<Content> findRecommendedContents(@Param("page") com.baomidou.mybatisplus.extension.plugins.pagination.Page<Content> page,
-                                         @Param("contentType") String contentType,
-                                         @Param("excludeAuthorId") Long excludeAuthorId);
+    List<Content> getRecommendedContents(@Param("currentPage") Integer currentPage,
+                                        @Param("pageSize") Integer pageSize,
+                                        @Param("contentType") String contentType,
+                                        @Param("excludeAuthorId") Long excludeAuthorId);
 
     /**
      * 相似内容
      */
-    List<Content> findSimilarContents(@Param("categoryId") Long categoryId,
-                                     @Param("contentType") String contentType,
-                                     @Param("contentId") Long contentId,
-                                     @Param("limit") Integer limit);
+    List<Content> getSimilarContents(@Param("categoryId") Long categoryId,
+                                    @Param("contentType") String contentType,
+                                    @Param("contentId") Long contentId,
+                                    @Param("limit") Integer limit);
 
     /**
      * 需要章节管理的内容
      */
-    List<Content> findNeedsChapterManagement(@Param("authorId") Long authorId);
+    List<Content> getNeedsChapterManagement(@Param("authorId") Long authorId);
 
     /**
      * 按作者统计
@@ -215,4 +216,27 @@ public interface ContentMapper extends BaseMapper<Content> {
      * 内容类型统计
      */
     List<Map<String, Object>> getContentTypeStats();
+
+    // =================== 分页查询总数支持方法 ===================
+
+    /**
+     * 查询已发布内容总数
+     */
+    Long countPublishedContent();
+
+    /**
+     * 根据标题搜索内容总数
+     */
+    Long countContentsByTitle(@Param("title") String title);
+
+    /**
+     * 根据标签搜索内容总数
+     */
+    Long countContentsByTags(@Param("tags") String tags);
+
+    /**
+     * 推荐内容总数
+     */
+    Long countRecommendedContents(@Param("contentType") String contentType,
+                                 @Param("excludeAuthorId") Long excludeAuthorId);
 }

@@ -13,7 +13,7 @@
     </sql>
 
     <!-- 根据作者ID查询内容列表 - 使用复合索引 idx_author_status_publish -->
-    <select id="selectByAuthorId" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByAuthor" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE author_id = #{authorId}
@@ -23,7 +23,7 @@
     </select>
 
     <!-- 根据分类ID查询内容列表 - 使用复合索引 idx_category_status_publish -->
-    <select id="selectByCategoryId" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByCategory" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE category_id = #{categoryId}
@@ -33,7 +33,7 @@
     </select>
 
     <!-- 根据内容类型查询内容列表 - 使用复合索引 idx_type_status_publish -->
-    <select id="selectByContentType" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByContentType" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE content_type = #{contentType}
@@ -43,7 +43,7 @@
     </select>
 
     <!-- 根据状态查询内容列表 - 使用复合索引 idx_content_status_publish -->
-    <select id="selectByStatus" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByStatus" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = #{status}
@@ -52,7 +52,7 @@
     </select>
 
     <!-- 根据审核状态查询内容列表 - 使用复合索引 idx_review_status -->
-    <select id="selectByReviewStatus" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByReviewStatus" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE review_status = #{reviewStatus}
@@ -62,7 +62,7 @@
     </select>
 
     <!-- 分页查询已发布且审核通过的内容 - 使用复合索引 idx_content_status_publish -->
-    <select id="selectPublishedContent" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getPublishedContents" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
@@ -72,7 +72,7 @@
     </select>
 
     <!-- 根据标题模糊搜索内容 - 使用函数索引 idx_title_search -->
-    <select id="searchByTitle" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="searchContentsByTitle" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE LOWER(title) LIKE CONCAT('%', LOWER(#{title}), '%')
@@ -83,7 +83,7 @@
     </select>
 
     <!-- 根据标签搜索内容 - 使用函数索引 idx_tags_search -->
-    <select id="searchByTags" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="searchContentsByTags" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE JSON_EXTRACT(tags, '$') LIKE CONCAT('%', #{tags}, '%')
@@ -94,7 +94,7 @@
     </select>
 
     <!-- 查询热门内容（按查看数排序） - 使用复合索引 idx_hot_content -->
-    <select id="selectHotContent" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getPopularContents" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
@@ -104,7 +104,7 @@
     </select>
 
     <!-- 查询最新内容（按发布时间排序） - 使用复合索引 idx_content_status_publish -->
-    <select id="selectLatestContent" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getLatestContents" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
@@ -114,7 +114,7 @@
     </select>
 
     <!-- 查询高评分内容 - 使用复合索引 idx_score_stats -->
-    <select id="selectTopRatedContent" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getContentsByScore" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
@@ -277,7 +277,7 @@
     </update>
 
     <!-- 推荐内容 - 使用复合索引优化 -->
-    <select id="findRecommendedContents" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getRecommendedContents" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
@@ -292,7 +292,7 @@
     </select>
 
     <!-- 相似内容 - 使用复合索引 idx_category_status_publish -->
-    <select id="findSimilarContents" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getSimilarContents" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE category_id = #{categoryId}
@@ -305,7 +305,7 @@
     </select>
 
     <!-- 需要章节管理的内容 -->
-    <select id="findNeedsChapterManagement" resultType="com.gig.collide.content.domain.entity.Content">
+    <select id="getNeedsChapterManagement" resultType="com.gig.collide.content.domain.entity.Content">
         SELECT <include refid="baseColumns"/>
         FROM t_content
         WHERE author_id = #{authorId}
@@ -349,6 +349,48 @@
         WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
         GROUP BY content_type
         <!-- 使用索引: idx_type_status_publish (content_type, status, publish_time DESC) -->
+    </select>
+
+    <!-- =================== 分页查询总数支持方法 =================== -->
+    
+    <!-- 查询已发布内容总数 -->
+    <select id="countPublishedContent" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <!-- 使用索引: idx_content_status_publish (status, review_status, publish_time DESC) -->
+    </select>
+    
+    <!-- 根据标题搜索内容总数 -->
+    <select id="countContentsByTitle" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE LOWER(title) LIKE CONCAT('%', LOWER(#{title}), '%')
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <!-- 使用索引: idx_title_search ((LOWER(title))) -->
+    </select>
+    
+    <!-- 根据标签搜索内容总数 -->
+    <select id="countContentsByTags" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE JSON_EXTRACT(tags, '$') LIKE CONCAT('%', #{tags}, '%')
+        AND status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <!-- 使用索引: idx_tags_search ((JSON_EXTRACT(tags, '$'))) -->
+    </select>
+    
+    <!-- 推荐内容总数 -->
+    <select id="countRecommendedContents" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_content
+        WHERE status = 'PUBLISHED' AND review_status = 'APPROVED'
+        <if test="contentType != null and contentType != ''">
+            AND content_type = #{contentType}
+        </if>
+        <if test="excludeAuthorId != null">
+            AND author_id != #{excludeAuthorId}
+        </if>
+        <!-- 使用索引: idx_hot_content (view_count DESC, like_count DESC, publish_time DESC) -->
     </select>
 
 </mapper>

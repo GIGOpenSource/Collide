@@ -66,7 +66,7 @@ public interface UserContentPurchaseService {
     /**
      * 查询用户的购买记录列表（分页）
      */
-    List<UserContentPurchase> getUserPurchases(Long userId, Integer page, Integer size);
+    List<UserContentPurchase> getUserPurchases(Long userId, Integer currentPage, Integer pageSize);
 
     /**
      * 查询用户的有效购买记录
@@ -76,7 +76,7 @@ public interface UserContentPurchaseService {
     /**
      * 查询内容的购买记录列表（分页）
      */
-    List<UserContentPurchase> getContentPurchases(Long contentId, Integer page, Integer size);
+    List<UserContentPurchase> getContentPurchases(Long contentId, Integer currentPage, Integer pageSize);
 
     /**
      * 根据订单ID查询购买记录

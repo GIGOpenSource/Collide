@@ -2,6 +2,7 @@ package com.gig.collide.content.domain.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.content.domain.entity.Content;
+import com.gig.collide.base.response.PageResponse;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,8 @@ public interface ContentService {
     /**
      * 分页查询内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param title 标题关键词
      * @param contentType 内容类型
      * @param authorId 作者ID
@@ -69,9 +71,9 @@ public interface ContentService {
      * @param orderDirection 排序方向
      * @return 分页结果
      */
-    Page<Content> queryContents(Page<Content> page, String title, String contentType,
-                               Long authorId, Long categoryId, String status, String reviewStatus,
-                               String orderBy, String orderDirection);
+    PageResponse<Content> queryContents(Integer currentPage, Integer pageSize, String title, String contentType,
+                                       Long authorId, Long categoryId, String status, String reviewStatus,
+                                       String orderBy, String orderDirection);
 
     // =================== 状态管理 ===================
 
@@ -110,62 +112,68 @@ public interface ContentService {
     /**
      * 根据作者查询内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param authorId 作者ID
      * @param contentType 内容类型
      * @param status 状态
      * @return 分页结果
      */
-    Page<Content> getContentsByAuthor(Page<Content> page, Long authorId, String contentType, String status);
+    PageResponse<Content> getContentsByAuthor(Integer currentPage, Integer pageSize, Long authorId, String contentType, String status);
 
     /**
      * 根据分类查询内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param categoryId 分类ID
      * @param contentType 内容类型
      * @return 分页结果
      */
-    Page<Content> getContentsByCategory(Page<Content> page, Long categoryId, String contentType);
+    PageResponse<Content> getContentsByCategory(Integer currentPage, Integer pageSize, Long categoryId, String contentType);
 
     /**
      * 搜索内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param keyword 搜索关键词
      * @param contentType 内容类型
      * @return 搜索结果
      */
-    Page<Content> searchContents(Page<Content> page, String keyword, String contentType);
+    PageResponse<Content> searchContents(Integer currentPage, Integer pageSize, String keyword, String contentType);
 
     /**
      * 获取热门内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param contentType 内容类型
      * @param timeRange 时间范围（天）
      * @return 热门内容
      */
-    Page<Content> getPopularContents(Page<Content> page, String contentType, Integer timeRange);
+    PageResponse<Content> getPopularContents(Integer currentPage, Integer pageSize, String contentType, Integer timeRange);
 
     /**
      * 获取最新内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param contentType 内容类型
      * @return 最新内容
      */
-    Page<Content> getLatestContents(Page<Content> page, String contentType);
+    PageResponse<Content> getLatestContents(Integer currentPage, Integer pageSize, String contentType);
 
     /**
      * 根据评分查询内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param minScore 最低评分
      * @param contentType 内容类型
      * @return 高评分内容
      */
-    Page<Content> getContentsByScore(Page<Content> page, Double minScore, String contentType);
+    PageResponse<Content> getContentsByScore(Integer currentPage, Integer pageSize, Double minScore, String contentType);
 
     // =================== C端必需的基础查询方法 ===================
 
@@ -186,23 +194,41 @@ public interface ContentService {
     List<Content> getContentsByStatus(String status);
 
     /**
+     * 根据审核状态查询内容列表
+     * 
+     * @param reviewStatus 审核状态
+     * @return 内容列表
+     */
+    List<Content> getContentsByReviewStatus(String reviewStatus);
+
+    /**
      * 获取已发布内容列表
      * 
-     * @param page 页码
-     * @param size 每页大小
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @return 已发布内容列表
      */
-    List<Content> getPublishedContents(Integer page, Integer size);
+    List<Content> getPublishedContents(Integer currentPage, Integer pageSize);
+
+    /**
+     * 根据标题搜索内容
+     * 
+     * @param title 标题关键词
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 搜索结果
+     */
+    List<Content> searchContentsByTitle(String title, Integer currentPage, Integer pageSize);
 
     /**
      * 根据标签搜索内容
      * 
      * @param tags 标签
-     * @param page 页码
-     * @param size 每页大小
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @return 搜索结果
      */
-    List<Content> searchContentsByTags(String tags, Integer page, Integer size);
+    List<Content> searchContentsByTags(String tags, Integer currentPage, Integer pageSize);
 
     // =================== 统计功能 ===================
 
@@ -322,12 +348,13 @@ public interface ContentService {
     /**
      * 获取推荐内容
      * 
-     * @param page 分页对象
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      * @param contentType 内容类型
      * @param excludeAuthorId 排除的作者ID
      * @return 推荐内容
      */
-    Page<Content> getRecommendedContents(Page<Content> page, String contentType, Long excludeAuthorId);
+    PageResponse<Content> getRecommendedContents(Integer currentPage, Integer pageSize, String contentType, Long excludeAuthorId);
 
     /**
      * 获取相似内容

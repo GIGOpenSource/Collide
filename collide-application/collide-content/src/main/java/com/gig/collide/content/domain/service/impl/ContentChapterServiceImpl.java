@@ -77,7 +77,7 @@ public class ContentChapterServiceImpl implements ContentChapterService {
         // 计算偏移量
         Long offset = (long) ((currentPage - 1) * pageSize);
         
-        List<ContentChapter> chapters = contentChapterMapper.selectByContentIdPaged(contentId, offset, pageSize);
+        List<ContentChapter> chapters = contentChapterMapper.selectByContentIdPaged(contentId, currentPage, pageSize);
         
         log.info("分页获取章节列表成功: contentId={}, 数量={}", contentId, chapters.size());
         return chapters;
@@ -189,7 +189,7 @@ public class ContentChapterServiceImpl implements ContentChapterService {
         // 计算偏移量
         Long offset = (long) ((currentPage - 1) * pageSize);
         
-        List<ContentChapter> chapters = contentChapterMapper.selectByTitleLike(titleKeyword);
+        List<ContentChapter> chapters = contentChapterMapper.searchChaptersByTitle(titleKeyword, currentPage, pageSize);
         
         log.info("搜索章节成功: titleKeyword={}, 数量={}", titleKeyword, chapters.size());
         return chapters;
@@ -251,7 +251,7 @@ public class ContentChapterServiceImpl implements ContentChapterService {
         // 计算偏移量
         Long offset = (long) ((currentPage - 1) * pageSize);
         
-        List<ContentChapter> chapters = contentChapterMapper.selectLatestChapters(pageSize);
+        List<ContentChapter> chapters = contentChapterMapper.selectLatestChapters(currentPage, pageSize);
         
         log.info("获取最新更新的章节成功: 数量={}", chapters.size());
         return chapters;
@@ -335,7 +335,7 @@ public class ContentChapterServiceImpl implements ContentChapterService {
         }
         
         try {
-            int result = contentChapterMapper.batchUpdateStatus(ids, status);
+            int result = contentChapterMapper.batchUpdateChapterStatus(ids, status);
             
             log.info("批量更新章节状态成功: 更新数量={}", result);
             return result > 0;
@@ -356,7 +356,7 @@ public class ContentChapterServiceImpl implements ContentChapterService {
         }
         
         try {
-            int result = contentChapterMapper.deleteByContentId(contentId);
+            int result = contentChapterMapper.deleteAllChaptersByContentId(contentId);
             
             log.info("删除内容的所有章节成功: contentId={}, 删除数量={}", contentId, result);
             return result > 0;

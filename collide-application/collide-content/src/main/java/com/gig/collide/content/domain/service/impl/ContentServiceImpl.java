@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.content.domain.entity.Content;
 import com.gig.collide.content.domain.service.ContentService;
 import com.gig.collide.content.infrastructure.mapper.ContentMapper;
+import com.gig.collide.base.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -129,9 +130,12 @@ public class ContentServiceImpl implements ContentService {
     }
 
     @Override
-    public Page<Content> queryContents(Page<Content> page, String title, String contentType,
-                                     Long authorId, Long categoryId, String status, String reviewStatus,
-                                     String orderBy, String orderDirection) {
+    public PageResponse<Content> queryContents(Integer currentPage, Integer pageSize, String title, String contentType,
+                                             Long authorId, Long categoryId, String status, String reviewStatus,
+                                             String orderBy, String orderDirection) {
+        
+        // 创建分页对象
+        Page<Content> page = new Page<>(currentPage, pageSize);
         
         // 简化实现：使用MyBatis-Plus的条件查询
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
@@ -174,7 +178,8 @@ public class ContentServiceImpl implements ContentService {
             }
         }
         
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     // =================== 状态管理 ===================
@@ -257,7 +262,8 @@ public class ContentServiceImpl implements ContentService {
     // =================== 查询功能 ===================
 
     @Override
-    public Page<Content> getContentsByAuthor(Page<Content> page, Long authorId, String contentType, String status) {
+    public PageResponse<Content> getContentsByAuthor(Integer currentPage, Integer pageSize, Long authorId, String contentType, String status) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getAuthorId, authorId);
         if (StringUtils.hasText(contentType)) {
@@ -267,11 +273,13 @@ public class ContentServiceImpl implements ContentService {
             queryWrapper.eq(Content::getStatus, status);
         }
         queryWrapper.orderByDesc(Content::getCreateTime);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
-    public Page<Content> getContentsByCategory(Page<Content> page, Long categoryId, String contentType) {
+    public PageResponse<Content> getContentsByCategory(Integer currentPage, Integer pageSize, Long categoryId, String contentType) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getCategoryId, categoryId)
                    .eq(Content::getStatus, "PUBLISHED");
@@ -279,11 +287,13 @@ public class ContentServiceImpl implements ContentService {
             queryWrapper.eq(Content::getContentType, contentType);
         }
         queryWrapper.orderByDesc(Content::getCreateTime);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
-    public Page<Content> searchContents(Page<Content> page, String keyword, String contentType) {
+    public PageResponse<Content> searchContents(Integer currentPage, Integer pageSize, String keyword, String contentType) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getStatus, "PUBLISHED");
         if (StringUtils.hasText(keyword)) {
@@ -296,11 +306,13 @@ public class ContentServiceImpl implements ContentService {
             queryWrapper.eq(Content::getContentType, contentType);
         }
         queryWrapper.orderByDesc(Content::getViewCount);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
-    public Page<Content> getPopularContents(Page<Content> page, String contentType, Integer timeRange) {
+    public PageResponse<Content> getPopularContents(Integer currentPage, Integer pageSize, String contentType, Integer timeRange) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getStatus, "PUBLISHED");
         if (StringUtils.hasText(contentType)) {
@@ -308,22 +320,26 @@ public class ContentServiceImpl implements ContentService {
         }
         // 按浏览量排序
         queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
-    public Page<Content> getLatestContents(Page<Content> page, String contentType) {
+    public PageResponse<Content> getLatestContents(Integer currentPage, Integer pageSize, String contentType) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getStatus, "PUBLISHED");
         if (StringUtils.hasText(contentType)) {
             queryWrapper.eq(Content::getContentType, contentType);
         }
         queryWrapper.orderByDesc(Content::getPublishTime);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
-    public Page<Content> getContentsByScore(Page<Content> page, Double minScore, String contentType) {
+    public PageResponse<Content> getContentsByScore(Integer currentPage, Integer pageSize, Double minScore, String contentType) {
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getStatus, "PUBLISHED");
         if (minScore != null) {
@@ -333,7 +349,65 @@ public class ContentServiceImpl implements ContentService {
             queryWrapper.eq(Content::getContentType, contentType);
         }
         queryWrapper.orderByDesc(Content::getAverageScore);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
+    }
+
+    // =================== C端必需的基础查询方法 ===================
+
+    @Override
+    public List<Content> getContentsByContentType(String contentType) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getContentType, contentType)
+                   .eq(Content::getStatus, "PUBLISHED")
+                   .orderByDesc(Content::getCreateTime);
+        return contentMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<Content> getContentsByStatus(String status) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, status)
+                   .orderByDesc(Content::getCreateTime);
+        return contentMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<Content> getContentsByReviewStatus(String reviewStatus) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getReviewStatus, reviewStatus)
+                   .orderByDesc(Content::getCreateTime);
+        return contentMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<Content> getPublishedContents(Integer currentPage, Integer pageSize) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED")
+                   .eq(Content::getReviewStatus, "APPROVED")
+                   .orderByDesc(Content::getPublishTime)
+                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
+        return contentMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<Content> searchContentsByTitle(String title, Integer currentPage, Integer pageSize) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED")
+                   .like(Content::getTitle, title)
+                   .orderByDesc(Content::getViewCount)
+                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
+        return contentMapper.selectList(queryWrapper);
+    }
+
+    @Override
+    public List<Content> searchContentsByTags(String tags, Integer currentPage, Integer pageSize) {
+        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Content::getStatus, "PUBLISHED")
+                   .like(Content::getTags, tags)
+                   .orderByDesc(Content::getViewCount)
+                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
+        return contentMapper.selectList(queryWrapper);
     }
 
     // =================== 统计功能 ===================
@@ -560,8 +634,9 @@ public class ContentServiceImpl implements ContentService {
     // =================== 高级功能 ===================
 
     @Override
-    public Page<Content> getRecommendedContents(Page<Content> page, String contentType, Long excludeAuthorId) {
+    public PageResponse<Content> getRecommendedContents(Integer currentPage, Integer pageSize, String contentType, Long excludeAuthorId) {
         // 简化实现：推荐热门内容
+        Page<Content> page = new Page<>(currentPage, pageSize);
         LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
         queryWrapper.eq(Content::getStatus, "PUBLISHED");
         
@@ -573,7 +648,8 @@ public class ContentServiceImpl implements ContentService {
         }
         
         queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
-        return contentMapper.selectPage(page, queryWrapper);
+        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
+        return convertToPageResponse(resultPage);
     }
 
     @Override
@@ -692,5 +768,19 @@ public class ContentServiceImpl implements ContentService {
                || "VIDEO".equals(contentType)
                || "ARTICLE".equals(contentType)
                || "AUDIO".equals(contentType);
+    }
+
+    /**
+     * 将Page<Content>转换为PageResponse<Content>
+     */
+    private PageResponse<Content> convertToPageResponse(Page<Content> page) {
+        PageResponse<Content> pageResponse = new PageResponse<>();
+        pageResponse.setDatas(page.getRecords());
+        pageResponse.setTotal(page.getTotal());
+        pageResponse.setCurrentPage((int) page.getCurrent());
+        pageResponse.setPageSize((int) page.getSize());
+        pageResponse.setTotalPage((int) page.getPages());
+        pageResponse.setSuccess(true);
+        return pageResponse;
     }
 }
