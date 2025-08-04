@@ -59,7 +59,7 @@ public interface FollowService {
      * 分页查询关注记录
      * 支持复合条件查询
      * 
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @param followerId 关注者ID（可选）
      * @param followeeId 被关注者ID（可选）
@@ -71,7 +71,7 @@ public interface FollowService {
      * @param orderDirection 排序方向
      * @return 分页结果
      */
-    IPage<Follow> queryFollows(Integer pageNum, Integer pageSize, Long followerId, Long followeeId,
+    IPage<Follow> queryFollows(Integer currentPage, Integer pageSize, Long followerId, Long followeeId,
                               String followerNickname, String followeeNickname, String status,
                               String queryType, String orderBy, String orderDirection);
 
@@ -79,31 +79,31 @@ public interface FollowService {
      * 获取用户的关注列表
      * 
      * @param followerId 关注者ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 关注列表
      */
-    IPage<Follow> getFollowing(Long followerId, Integer pageNum, Integer pageSize);
+    IPage<Follow> getFollowing(Long followerId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户的粉丝列表
      * 
      * @param followeeId 被关注者ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 粉丝列表
      */
-    IPage<Follow> getFollowers(Long followeeId, Integer pageNum, Integer pageSize);
+    IPage<Follow> getFollowers(Long followeeId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取互相关注的好友
      * 
      * @param userId 用户ID
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 互关好友列表
      */
-    IPage<Follow> getMutualFollows(Long userId, Integer pageNum, Integer pageSize);
+    IPage<Follow> getMutualFollows(Long userId, Integer currentPage, Integer pageSize);
 
     /**
      * 获取用户关注数量
@@ -144,12 +144,12 @@ public interface FollowService {
      * @param followerId 关注者ID（可选）
      * @param followeeId 被关注者ID（可选）
      * @param nicknameKeyword 昵称关键词
-     * @param pageNum 页码
+     * @param currentPage 页码
      * @param pageSize 页面大小
      * @return 搜索结果
      */
     IPage<Follow> searchByNickname(Long followerId, Long followeeId, String nicknameKeyword, 
-                                  Integer pageNum, Integer pageSize);
+                                  Integer currentPage, Integer pageSize);
 
     /**
      * 更新用户信息（冗余字段）
@@ -213,4 +213,14 @@ public interface FollowService {
      * @return 是否成功
      */
     boolean reactivateFollow(Long followerId, Long followeeId);
+
+    /**
+     * 更新关注状态
+     * 
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @param status 新状态
+     * @return 是否成功
+     */
+    boolean updateFollowStatus(Long followerId, Long followeeId, String status);
 }

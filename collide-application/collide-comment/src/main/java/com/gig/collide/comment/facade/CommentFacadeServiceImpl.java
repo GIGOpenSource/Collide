@@ -14,19 +14,22 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 评论门面服务实现 - C端简洁版
- * 只实现客户端使用的核心接口
+ * 评论门面服务实现 - 规范版
+ * 完整实现所有评论功能：基础操作、高级查询、统计分析、管理功能
+ * 支持评论类型：CONTENT、DYNAMIC
  * 
  * @author Collide
- * @version 2.0.0 (C端简洁版)
+ * @version 5.0.0 (与Content模块一致版)
  * @since 2024-01-01
  */
 @Slf4j
-@DubboService
+@DubboService(version = "5.0.0", timeout = 5000)
 @RequiredArgsConstructor
 public class CommentFacadeServiceImpl implements CommentFacadeService {
 
@@ -41,7 +44,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (request == null) {
-                return Result.error("请求参数不能为空");
+                return Result.error("INVALID_REQUEST", "请求参数不能为空");
             }
             
             // 转换为实体
@@ -59,10 +62,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("创建评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_CREATE_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("创建评论失败", e);
-            return Result.error("创建评论失败");
+            return Result.error("COMMENT_CREATE_ERROR", "创建评论失败");
         }
     }
 
@@ -73,7 +76,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (request == null || request.getId() == null) {
-                return Result.error("评论ID不能为空");
+                return Result.error("INVALID_COMMENT_ID", "评论ID不能为空");
             }
             
             // 转换为实体
@@ -91,10 +94,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("更新评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_UPDATE_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("更新评论失败", e);
-            return Result.error("更新评论失败");
+            return Result.error("COMMENT_UPDATE_ERROR", "更新评论失败");
         }
     }
 
@@ -105,7 +108,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (commentId == null || userId == null) {
-                return Result.error("评论ID和用户ID不能为空");
+                return Result.error("INVALID_PARAMETERS", "评论ID和用户ID不能为空");
             }
             
             // 调用服务层
@@ -115,15 +118,15 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
                 log.info("评论删除成功: {}", commentId);
                 return Result.success();
             } else {
-                return Result.error("删除评论失败");
+                return Result.error("COMMENT_DELETE_ERROR", "删除评论失败");
             }
             
         } catch (IllegalArgumentException e) {
             log.warn("删除评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_DELETE_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("删除评论失败", e);
-            return Result.error("删除评论失败");
+            return Result.error("COMMENT_DELETE_ERROR", "删除评论失败");
         }
     }
 
@@ -134,14 +137,14 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (commentId == null) {
-                return Result.error("评论ID不能为空");
+                return Result.error("INVALID_COMMENT_ID", "评论ID不能为空");
             }
             
             // 调用服务层
             Comment comment = commentService.getCommentById(commentId);
             
             if (comment == null) {
-                return Result.error("评论不存在");
+                return Result.error("COMMENT_NOT_FOUND", "评论不存在");
             }
             
             // 转换为响应对象
@@ -152,10 +155,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取评论详情参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_GET_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取评论详情失败", e);
-            return Result.error("获取评论详情失败");
+            return Result.error("COMMENT_GET_ERROR", "获取评论详情失败");
         }
     }
 
@@ -170,7 +173,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (targetId == null) {
-                return Result.error("目标ID不能为空");
+                return Result.error("INVALID_TARGET_ID", "目标ID不能为空");
             }
             
             // 调用服务层
@@ -184,10 +187,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取目标评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取目标评论失败", e);
-            return Result.error("获取目标评论失败");
+            return Result.error("TARGET_COMMENTS_ERROR", "获取目标评论失败");
         }
     }
 
@@ -198,7 +201,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (parentCommentId == null || parentCommentId <= 0) {
-                return Result.error("父评论ID不能为空");
+                return Result.error("INVALID_PARENT_ID", "父评论ID不能为空");
             }
             
             // 调用服务层
@@ -212,10 +215,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取评论回复参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取评论回复失败", e);
-            return Result.error("获取评论回复失败");
+            return Result.error("COMMENT_REPLIES_ERROR", "获取评论回复失败");
         }
     }
 
@@ -228,7 +231,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (targetId == null) {
-                return Result.error("目标ID不能为空");
+                return Result.error("INVALID_TARGET_ID", "目标ID不能为空");
             }
             
             // 调用服务层
@@ -242,10 +245,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取评论树参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取评论树失败", e);
-            return Result.error("获取评论树失败");
+            return Result.error("COMMENT_TREE_ERROR", "获取评论树失败");
         }
     }
 
@@ -260,7 +263,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (userId == null) {
-                return Result.error("用户ID不能为空");
+                return Result.error("INVALID_USER_ID", "用户ID不能为空");
             }
             
             // 调用服务层
@@ -274,10 +277,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取用户评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取用户评论失败", e);
-            return Result.error("获取用户评论失败");
+            return Result.error("USER_COMMENTS_ERROR", "获取用户评论失败");
         }
     }
 
@@ -288,7 +291,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (userId == null) {
-                return Result.error("用户ID不能为空");
+                return Result.error("INVALID_USER_ID", "用户ID不能为空");
             }
             
             // 调用服务层
@@ -302,10 +305,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("获取用户回复参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("获取用户回复失败", e);
-            return Result.error("获取用户回复失败");
+            return Result.error("USER_REPLIES_ERROR", "获取用户回复失败");
         }
     }
 
@@ -318,7 +321,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (commentId == null || increment == null) {
-                return Result.error("评论ID和增量不能为空");
+                return Result.error("INVALID_PARAMETERS", "评论ID和增量不能为空");
             }
             
             // 调用服务层
@@ -329,10 +332,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("增加评论点赞数参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("增加评论点赞数失败", e);
-            return Result.error("增加评论点赞数失败");
+            return Result.error("LIKE_COUNT_ERROR", "增加评论点赞数失败");
         }
     }
 
@@ -343,7 +346,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (commentId == null || increment == null) {
-                return Result.error("评论ID和增量不能为空");
+                return Result.error("INVALID_PARAMETERS", "评论ID和增量不能为空");
             }
             
             // 调用服务层
@@ -354,10 +357,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("增加回复数参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("增加回复数失败", e);
-            return Result.error("增加回复数失败");
+            return Result.error("REPLY_COUNT_ERROR", "增加回复数失败");
         }
     }
 
@@ -368,7 +371,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (targetId == null) {
-                return Result.error("目标ID不能为空");
+                return Result.error("INVALID_TARGET_ID", "目标ID不能为空");
             }
             
             // 调用服务层
@@ -379,10 +382,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("统计目标评论数参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("统计目标评论数失败", e);
-            return Result.error("统计目标评论数失败");
+            return Result.error("COUNT_TARGET_COMMENTS_ERROR", "统计目标评论数失败");
         }
     }
 
@@ -393,7 +396,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (userId == null) {
-                return Result.error("用户ID不能为空");
+                return Result.error("INVALID_USER_ID", "用户ID不能为空");
             }
             
             // 调用服务层
@@ -404,10 +407,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("统计用户评论数参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("统计用户评论数失败", e);
-            return Result.error("统计用户评论数失败");
+            return Result.error("COUNT_USER_COMMENTS_ERROR", "统计用户评论数失败");
         }
     }
 
@@ -422,7 +425,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
         try {
             // 参数验证
             if (keyword == null || keyword.trim().isEmpty()) {
-                return Result.error("搜索关键词不能为空");
+                return Result.error("INVALID_KEYWORD", "搜索关键词不能为空");
             }
             
             // 调用服务层
@@ -436,10 +439,10 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (IllegalArgumentException e) {
             log.warn("搜索评论参数错误: {}", e.getMessage());
-            return Result.error(e.getMessage());
+            return Result.error("COMMENT_OPERATION_ERROR", e.getMessage());
         } catch (Exception e) {
             log.error("搜索评论失败", e);
-            return Result.error("搜索评论失败");
+            return Result.error("SEARCH_COMMENTS_ERROR", "搜索评论失败");
         }
     }
 
@@ -461,7 +464,7 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (Exception e) {
             log.error("获取热门评论失败", e);
-            return Result.error("获取热门评论失败");
+            return Result.error("POPULAR_COMMENTS_ERROR", "获取热门评论失败");
         }
     }
 
@@ -483,7 +486,233 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
             
         } catch (Exception e) {
             log.error("获取最新评论失败", e);
-            return Result.error("获取最新评论失败");
+            return Result.error("LATEST_COMMENTS_ERROR", "获取最新评论失败");
+        }
+    }
+
+    @Override
+    public Result<PageResponse<CommentResponse>> getCommentsByLikeCountRange(Integer minLikeCount, Integer maxLikeCount,
+                                                                           String commentType, Long targetId,
+                                                                           Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("根据点赞数范围查询评论: minLike={}, maxLike={}, commentType={}, targetId={}, page={}/{}", 
+                     minLikeCount, maxLikeCount, commentType, targetId, currentPage, pageSize);
+            
+            // 调用服务层
+            IPage<Comment> page = commentService.getCommentsByLikeCountRange(minLikeCount, maxLikeCount, 
+                    commentType, targetId, currentPage, pageSize);
+            
+            // 转换为响应对象
+            PageResponse<CommentResponse> response = convertToPageResponse(page);
+            
+            log.info("根据点赞数范围查询评论成功: 总数={}", response.getTotal());
+            return Result.success(response);
+            
+        } catch (Exception e) {
+            log.error("根据点赞数范围查询评论失败", e);
+            return Result.error("LIKE_COUNT_RANGE_ERROR", "根据点赞数范围查询评论失败");
+        }
+    }
+
+    @Override
+    public Result<PageResponse<CommentResponse>> getCommentsByTimeRange(LocalDateTime startTime, LocalDateTime endTime,
+                                                                       String commentType, Long targetId,
+                                                                       Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("根据时间范围查询评论: startTime={}, endTime={}, commentType={}, targetId={}, page={}/{}", 
+                     startTime, endTime, commentType, targetId, currentPage, pageSize);
+            
+            // 调用服务层
+            IPage<Comment> page = commentService.getCommentsByTimeRange(startTime, endTime, 
+                    commentType, targetId, currentPage, pageSize);
+            
+            // 转换为响应对象
+            PageResponse<CommentResponse> response = convertToPageResponse(page);
+            
+            log.info("根据时间范围查询评论成功: 总数={}", response.getTotal());
+            return Result.success(response);
+            
+        } catch (Exception e) {
+            log.error("根据时间范围查询评论失败", e);
+            return Result.error("TIME_RANGE_ERROR", "根据时间范围查询评论失败");
+        }
+    }
+
+    // =================== 数据分析功能 ===================
+
+    @Override
+    public Result<Map<String, Object>> getCommentStatistics(Long targetId, String commentType, Long userId,
+                                                           LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            log.debug("获取评论统计信息: targetId={}, commentType={}, userId={}, startTime={}, endTime={}", 
+                     targetId, commentType, userId, startTime, endTime);
+            
+            // 调用服务层
+            Map<String, Object> statistics = commentService.getCommentStatistics(targetId, commentType, userId, 
+                    startTime, endTime);
+            
+            log.info("获取评论统计信息成功: {}", statistics);
+            return Result.success(statistics);
+            
+        } catch (Exception e) {
+            log.error("获取评论统计信息失败", e);
+            return Result.error("COMMENT_STATISTICS_ERROR", "获取评论统计信息失败");
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getUserReplyRelations(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            log.debug("查询用户回复关系: userId={}, startTime={}, endTime={}", userId, startTime, endTime);
+            
+            // 调用服务层
+            List<Map<String, Object>> relations = commentService.getUserReplyRelations(userId, startTime, endTime);
+            
+            log.info("查询用户回复关系成功: 总数={}", relations.size());
+            return Result.success(relations);
+            
+        } catch (Exception e) {
+            log.error("查询用户回复关系失败", e);
+            return Result.error("USER_REPLY_RELATIONS_ERROR", "查询用户回复关系失败");
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getCommentHotRanking(String commentType, Long targetId,
+                                                                 LocalDateTime startTime, LocalDateTime endTime, Integer limit) {
+        try {
+            log.debug("查询评论热度排行: commentType={}, targetId={}, startTime={}, endTime={}, limit={}", 
+                     commentType, targetId, startTime, endTime, limit);
+            
+            // 调用服务层
+            List<Map<String, Object>> ranking = commentService.getCommentHotRanking(commentType, targetId, 
+                    startTime, endTime, limit);
+            
+            log.info("查询评论热度排行成功: 总数={}", ranking.size());
+            return Result.success(ranking);
+            
+        } catch (Exception e) {
+            log.error("查询评论热度排行失败", e);
+            return Result.error("COMMENT_HOT_RANKING_ERROR", "查询评论热度排行失败");
+        }
+    }
+
+    // =================== 管理功能（需要管理员权限） ===================
+
+    @Override
+    public Result<Integer> batchUpdateCommentStatus(List<Long> commentIds, String status) {
+        try {
+            log.debug("批量更新评论状态: commentIds={}, status={}", commentIds, status);
+            
+            // 参数验证
+            if (commentIds == null || commentIds.isEmpty()) {
+                return Result.error("INVALID_PARAMETERS", "评论ID列表不能为空");
+            }
+            
+            // 调用服务层
+            int result = commentService.batchUpdateCommentStatus(commentIds, status);
+            
+            log.info("批量更新评论状态成功: 影响行数={}", result);
+            return Result.success(result);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("批量更新评论状态参数错误: {}", e.getMessage());
+            return Result.error("BATCH_UPDATE_STATUS_ERROR", e.getMessage());
+        } catch (Exception e) {
+            log.error("批量更新评论状态失败", e);
+            return Result.error("BATCH_UPDATE_STATUS_ERROR", "批量更新评论状态失败");
+        }
+    }
+
+    @Override
+    public Result<Integer> batchDeleteTargetComments(Long targetId, String commentType) {
+        try {
+            log.debug("批量删除目标评论: targetId={}, commentType={}", targetId, commentType);
+            
+            // 参数验证
+            if (targetId == null) {
+                return Result.error("INVALID_TARGET_ID", "目标ID不能为空");
+            }
+            
+            // 调用服务层
+            int result = commentService.batchDeleteTargetComments(targetId, commentType);
+            
+            log.info("批量删除目标评论成功: 影响行数={}", result);
+            return Result.success(result);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("批量删除目标评论参数错误: {}", e.getMessage());
+            return Result.error("BATCH_DELETE_ERROR", e.getMessage());
+        } catch (Exception e) {
+            log.error("批量删除目标评论失败", e);
+            return Result.error("BATCH_DELETE_ERROR", "批量删除目标评论失败");
+        }
+    }
+
+    @Override
+    public Result<Integer> updateUserInfo(Long userId, String nickname, String avatar) {
+        try {
+            log.debug("更新用户信息: userId={}, nickname={}, avatar={}", userId, nickname, avatar);
+            
+            // 参数验证
+            if (userId == null) {
+                return Result.error("INVALID_USER_ID", "用户ID不能为空");
+            }
+            
+            // 调用服务层
+            int result = commentService.updateUserInfo(userId, nickname, avatar);
+            
+            log.info("更新用户信息成功: 影响行数={}", result);
+            return Result.success(result);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("更新用户信息参数错误: {}", e.getMessage());
+            return Result.error("UPDATE_USER_INFO_ERROR", e.getMessage());
+        } catch (Exception e) {
+            log.error("更新用户信息失败", e);
+            return Result.error("UPDATE_USER_INFO_ERROR", "更新用户信息失败");
+        }
+    }
+
+    @Override
+    public Result<Integer> updateReplyToUserInfo(Long replyToUserId, String nickname, String avatar) {
+        try {
+            log.debug("更新回复目标用户信息: replyToUserId={}, nickname={}, avatar={}", replyToUserId, nickname, avatar);
+            
+            // 参数验证
+            if (replyToUserId == null) {
+                return Result.error("INVALID_REPLY_TO_USER_ID", "回复目标用户ID不能为空");
+            }
+            
+            // 调用服务层
+            int result = commentService.updateReplyToUserInfo(replyToUserId, nickname, avatar);
+            
+            log.info("更新回复目标用户信息成功: 影响行数={}", result);
+            return Result.success(result);
+            
+        } catch (IllegalArgumentException e) {
+            log.warn("更新回复目标用户信息参数错误: {}", e.getMessage());
+            return Result.error("UPDATE_REPLY_TO_USER_INFO_ERROR", e.getMessage());
+        } catch (Exception e) {
+            log.error("更新回复目标用户信息失败", e);
+            return Result.error("UPDATE_REPLY_TO_USER_INFO_ERROR", "更新回复目标用户信息失败");
+        }
+    }
+
+    @Override
+    public Result<Integer> cleanDeletedComments(Integer days, Integer limit) {
+        try {
+            log.debug("清理已删除评论: days={}, limit={}", days, limit);
+            
+            // 调用服务层
+            int result = commentService.cleanDeletedComments(days, limit);
+            
+            log.info("清理已删除评论成功: 删除数量={}", result);
+            return Result.success(result);
+            
+        } catch (Exception e) {
+            log.error("清理已删除评论失败", e);
+            return Result.error("CLEAN_DELETED_COMMENTS_ERROR", "清理已删除评论失败");
         }
     }
 
@@ -515,11 +744,11 @@ public class CommentFacadeServiceImpl implements CommentFacadeService {
                 .collect(Collectors.toList());
         
         PageResponse<CommentResponse> response = new PageResponse<>();
-        response.setRecords(records);
+        response.setDatas(records);
         response.setTotal(page.getTotal());
-        response.setCurrent(page.getCurrent());
-        response.setSize(page.getSize());
-        response.setPages(page.getPages());
+        response.setCurrentPage((int) page.getCurrent());
+        response.setPageSize((int) page.getSize());
+        response.setTotalPage((int) page.getPages());
         
         return response;
     }

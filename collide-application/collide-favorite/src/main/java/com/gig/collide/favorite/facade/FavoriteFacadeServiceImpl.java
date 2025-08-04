@@ -19,7 +19,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -511,5 +510,208 @@ public class FavoriteFacadeServiceImpl implements FavoriteFacadeService {
         pageResponse.setTotalPage((int) favoritePage.getPages());
 
         return pageResponse;
+    }
+
+    @Override
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATUS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_COUNT_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATISTICS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.USER_FAVORITES_CACHE)
+    public Result<Integer> updateUserInfo(Long userId, String nickname) {
+        try {
+            log.info("更新用户冗余信息: 用户={}, 昵称={}", userId, nickname);
+            long startTime = System.currentTimeMillis();
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法更新冗余信息: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            int updateCount = favoriteService.updateUserInfo(userId, nickname);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("用户冗余信息更新完成: 用户={}({}), 更新数量={}, 耗时={}ms",
+                    userId, userResult.getData().getNickname(), updateCount, duration);
+            
+            return Result.success(updateCount);
+        } catch (Exception e) {
+            log.error("更新用户冗余信息失败: 用户={}, 昵称={}", userId, nickname, e);
+            return Result.error("UPDATE_USER_INFO_ERROR", "更新用户信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATUS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_COUNT_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATISTICS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.TARGET_FAVORITES_CACHE)
+    public Result<Integer> updateTargetInfo(String favoriteType, Long targetId, String title, String cover, Long authorId) {
+        try {
+            log.info("更新目标对象冗余信息: 类型={}, 目标={}, 标题={}", favoriteType, targetId, title);
+            long startTime = System.currentTimeMillis();
+            
+            int updateCount = favoriteService.updateTargetInfo(favoriteType, targetId, title, cover, authorId);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("目标对象冗余信息更新完成: 类型={}, 目标={}, 更新数量={}, 耗时={}ms",
+                    favoriteType, targetId, updateCount, duration);
+            
+            return Result.success(updateCount);
+        } catch (Exception e) {
+            log.error("更新目标对象冗余信息失败: 类型={}, 目标={}, 标题={}", favoriteType, targetId, title, e);
+            return Result.error("UPDATE_TARGET_INFO_ERROR", "更新目标对象信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = FavoriteCacheConstant.TARGET_FAVORITES_CACHE, key = FavoriteCacheConstant.AUTHOR_FAVORITES_KEY,
+            expire = FavoriteCacheConstant.TARGET_FAVORITES_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<PageResponse<FavoriteResponse>> getFavoritesByAuthor(Long targetAuthorId, String favoriteType,
+                                                                     Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("根据作者查询收藏作品: 作者={}, 类型={}, 页码={}, 大小={}", 
+                    targetAuthorId, favoriteType, currentPage, pageSize);
+            long startTime = System.currentTimeMillis();
+            
+            IPage<Favorite> favoritePage = favoriteService.getFavoritesByAuthor(targetAuthorId, favoriteType, currentPage, pageSize);
+            PageResponse<FavoriteResponse> pageResponse = convertToPageResponse(favoritePage);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.debug("作者收藏作品查询完成: 作者={}, 类型={}, 结果数={}, 耗时={}ms",
+                    targetAuthorId, favoriteType, pageResponse.getTotal(), duration);
+            
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("根据作者查询收藏作品失败: 作者={}, 类型={}", targetAuthorId, favoriteType, e);
+            return Result.error("GET_FAVORITES_BY_AUTHOR_ERROR", "查询作者收藏作品失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = FavoriteCacheConstant.FAVORITE_STATUS_CACHE, key = FavoriteCacheConstant.FAVORITE_RELATION_KEY,
+            expire = FavoriteCacheConstant.FAVORITE_STATUS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<Boolean> existsFavoriteRelation(Long userId, String favoriteType, Long targetId) {
+        try {
+            log.debug("检查收藏关系是否存在: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
+            long startTime = System.currentTimeMillis();
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法检查收藏关系: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            boolean exists = favoriteService.existsFavoriteRelation(userId, favoriteType, targetId);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.debug("收藏关系检查完成: 用户={}({}), 类型={}, 目标={}, 存在={}, 耗时={}ms",
+                    userId, userResult.getData().getNickname(), favoriteType, targetId, exists, duration);
+            
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查收藏关系失败: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId, e);
+            return Result.error("CHECK_RELATION_ERROR", "检查收藏关系失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATUS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_COUNT_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.FAVORITE_STATISTICS_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.USER_FAVORITES_CACHE)
+    @CacheInvalidate(name = FavoriteCacheConstant.TARGET_FAVORITES_CACHE)
+    public Result<Boolean> reactivateFavorite(Long userId, String favoriteType, Long targetId) {
+        try {
+            log.info("重新激活收藏: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
+            long startTime = System.currentTimeMillis();
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法重新激活收藏: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            boolean success = favoriteService.reactivateFavorite(userId, favoriteType, targetId);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            
+            if (success) {
+                log.info("收藏重新激活成功: 用户={}({}), 类型={}, 目标={}, 耗时={}ms",
+                        userId, userResult.getData().getNickname(), favoriteType, targetId, duration);
+                return Result.success(true);
+            } else {
+                log.warn("收藏重新激活失败: 用户={}({}), 类型={}, 目标={}, 耗时={}ms",
+                        userId, userResult.getData().getNickname(), favoriteType, targetId, duration);
+                return Result.error("REACTIVATE_FAILED", "重新激活收藏失败");
+            }
+        } catch (Exception e) {
+            log.error("重新激活收藏失败: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId, e);
+            return Result.error("REACTIVATE_ERROR", "重新激活收藏失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<String> validateFavoriteRequest(FavoriteCreateRequest request) {
+        try {
+            log.debug("验证收藏请求参数: 用户={}, 类型={}, 目标={}", 
+                    request != null ? request.getUserId() : null,
+                    request != null ? request.getFavoriteType() : null,
+                    request != null ? request.getTargetId() : null);
+            
+            if (request == null) {
+                log.warn("收藏请求参数为空");
+                return Result.error("VALIDATION_FAILED", "请求参数不能为空");
+            }
+            
+            // 转换请求对象为实体进行验证
+            Favorite favorite = convertCreateRequestToEntity(request);
+            String validationResult = favoriteService.validateFavoriteRequest(favorite);
+            
+            if (validationResult == null) {
+                log.debug("收藏请求参数验证通过: 用户={}, 类型={}, 目标={}", 
+                        request.getUserId(), request.getFavoriteType(), request.getTargetId());
+                return Result.success("验证通过");
+            } else {
+                log.warn("收藏请求参数验证失败: 用户={}, 类型={}, 目标={}, 错误={}",
+                        request.getUserId(), request.getFavoriteType(), request.getTargetId(), validationResult);
+                return Result.error("VALIDATION_FAILED", validationResult);
+            }
+        } catch (Exception e) {
+            log.error("验证收藏请求参数失败", e);
+            return Result.error("VALIDATION_ERROR", "参数验证失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<String> checkCanFavorite(Long userId, String favoriteType, Long targetId) {
+        try {
+            log.debug("检查是否可以收藏: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId);
+            
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法检查收藏权限: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            String checkResult = favoriteService.checkCanFavorite(userId, favoriteType, targetId);
+            
+            if (checkResult == null) {
+                log.debug("可以收藏: 用户={}({}), 类型={}, 目标={}", 
+                        userId, userResult.getData().getNickname(), favoriteType, targetId);
+                return Result.success("可以收藏");
+            } else {
+                log.warn("不可以收藏: 用户={}({}), 类型={}, 目标={}, 原因={}",
+                        userId, userResult.getData().getNickname(), favoriteType, targetId, checkResult);
+                return Result.error("CANNOT_FAVORITE", checkResult);
+            }
+        } catch (Exception e) {
+            log.error("检查收藏权限失败: 用户={}, 类型={}, 目标={}", userId, favoriteType, targetId, e);
+            return Result.error("CHECK_PERMISSION_ERROR", "检查收藏权限失败: " + e.getMessage());
+        }
     }
 }

@@ -12,11 +12,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 分类REST控制器 - C端简化版
- * 专注于客户端使用的简单查询功能，移除复杂的管理功能
+ * 分类REST控制器 - 规范版
+ * 参考Content模块设计，直接返回Facade层的Result包装
+ * 专注于客户端使用的查询功能
  * 
  * @author Collide
- * @version 2.0.0 (C端简化版)
+ * @version 5.0.0 (与Content模块一致版)
  * @since 2024-01-01
  */
 @Slf4j
@@ -42,17 +43,16 @@ public class CategoryController {
      * 分页查询分类（POST方式，支持复杂查询条件）
      */
     @PostMapping("/query")
-    public PageResponse<CategoryResponse> queryCategories(@RequestBody CategoryQueryRequest request) {
+    public Result<PageResponse<CategoryResponse>> queryCategories(@RequestBody CategoryQueryRequest request) {
         log.info("REST - 查询分类：{}", request);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
-        return result.getData();
+        return categoryFacadeService.queryCategories(request);
     }
 
     /**
      * 分页查询分类（GET方式，支持基本查询参数）
      */
     @GetMapping("/query")
-    public PageResponse<CategoryResponse> queryCategoriesGet(
+    public Result<PageResponse<CategoryResponse>> queryCategoriesGet(
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
@@ -72,15 +72,14 @@ public class CategoryController {
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
         
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
-        return result.getData();
+        return categoryFacadeService.queryCategories(request);
     }
 
     /**
      * 获取分类列表（默认接口，支持分页）
      */
     @GetMapping
-    public PageResponse<CategoryResponse> getCategories(
+    public Result<PageResponse<CategoryResponse>> getCategories(
             @RequestParam(required = false) Long parentId,
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "active") String status,
@@ -101,23 +100,24 @@ public class CategoryController {
         request.setOrderBy(orderBy);
         request.setOrderDirection(orderDirection);
         
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.queryCategories(request);
-        return result.getData();
+        return categoryFacadeService.queryCategories(request);
     }
 
     /**
      * 搜索分类
      */
     @GetMapping("/search")
-    public PageResponse<CategoryResponse> searchCategories(
+    public Result<PageResponse<CategoryResponse>> searchCategories(
             @RequestParam String keyword,
             @RequestParam(required = false) Long parentId,
+            @RequestParam(defaultValue = "active") String status,
             @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
-            @RequestParam(defaultValue = "20") Integer pageSize) {
+            @RequestParam(defaultValue = "20") Integer pageSize,
+            @RequestParam(defaultValue = "sort") String orderBy,
+            @RequestParam(defaultValue = "ASC") String orderDirection) {
         
-        log.info("REST - 搜索分类，关键词：{}", keyword);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.searchCategories(keyword, parentId, currentPage, pageSize);
-        return result.getData();
+        log.info("REST - 搜索分类，关键词：{}，父分类：{}，状态：{}", keyword, parentId, status);
+        return categoryFacadeService.searchCategories(keyword, parentId, status, currentPage, pageSize, orderBy, orderDirection);
     }
 
     // =================== 层级查询 ===================
@@ -126,31 +126,31 @@ public class CategoryController {
      * 获取根分类列表
      */
     @GetMapping("/root")
-    public PageResponse<CategoryResponse> getRootCategories(
+    public Result<PageResponse<CategoryResponse>> getRootCategories(
+            @RequestParam(defaultValue = "active") String status,
             @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
-        log.info("REST - 获取根分类列表");
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getRootCategories(currentPage, pageSize, orderBy, orderDirection);
-        return result.getData();
+        log.info("REST - 获取根分类列表，状态：{}，页码：{}，大小：{}", status, currentPage, pageSize);
+        return categoryFacadeService.getRootCategories(status, currentPage, pageSize, orderBy, orderDirection);
     }
 
     /**
      * 获取子分类列表
      */
     @GetMapping("/{parentId}/children")
-    public PageResponse<CategoryResponse> getChildCategories(
+    public Result<PageResponse<CategoryResponse>> getChildCategories(
             @PathVariable Long parentId,
+            @RequestParam(defaultValue = "active") String status,
             @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize,
             @RequestParam(defaultValue = "sort") String orderBy,
             @RequestParam(defaultValue = "ASC") String orderDirection) {
         
-        log.info("REST - 获取子分类列表，父分类ID：{}", parentId);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getChildCategories(parentId, currentPage, pageSize, orderBy, orderDirection);
-        return result.getData();
+        log.info("REST - 获取子分类列表，父分类ID：{}，状态：{}，页码：{}，大小：{}", parentId, status, currentPage, pageSize);
+        return categoryFacadeService.getChildCategories(parentId, status, currentPage, pageSize, orderBy, orderDirection);
     }
 
     /**
@@ -159,10 +159,13 @@ public class CategoryController {
     @GetMapping("/tree")
     public Result<List<CategoryResponse>> getCategoryTree(
             @RequestParam(required = false) Long rootId,
-            @RequestParam(defaultValue = "5") Integer maxDepth) {
+            @RequestParam(defaultValue = "5") Integer maxDepth,
+            @RequestParam(defaultValue = "active") String status,
+            @RequestParam(defaultValue = "sort") String orderBy,
+            @RequestParam(defaultValue = "ASC") String orderDirection) {
         
-        log.info("REST - 获取分类树，根ID：{}", rootId);
-        return categoryFacadeService.getCategoryTree(rootId, maxDepth);
+        log.info("REST - 获取分类树，根ID：{}，最大深度：{}，状态：{}", rootId, maxDepth, status);
+        return categoryFacadeService.getCategoryTree(rootId, maxDepth, status, orderBy, orderDirection);
     }
 
     /**
@@ -180,14 +183,14 @@ public class CategoryController {
      * 获取热门分类
      */
     @GetMapping("/popular")
-    public PageResponse<CategoryResponse> getPopularCategories(
+    public Result<PageResponse<CategoryResponse>> getPopularCategories(
             @RequestParam(required = false) Long parentId,
+            @RequestParam(defaultValue = "active") String status,
             @RequestParam(value = "currentPage", defaultValue = "1") Integer currentPage,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         
-        log.info("REST - 获取热门分类，父分类：{}", parentId);
-        Result<PageResponse<CategoryResponse>> result = categoryFacadeService.getPopularCategories(parentId, currentPage, pageSize);
-        return result.getData();
+        log.info("REST - 获取热门分类，父分类：{}，状态：{}，页码：{}，大小：{}", parentId, status, currentPage, pageSize);
+        return categoryFacadeService.getPopularCategories(parentId, status, currentPage, pageSize);
     }
 
     /**
@@ -196,10 +199,11 @@ public class CategoryController {
     @GetMapping("/suggestions")
     public Result<List<CategoryResponse>> getCategorySuggestions(
             @RequestParam String keyword,
-            @RequestParam(defaultValue = "10") Integer limit) {
+            @RequestParam(defaultValue = "10") Integer limit,
+            @RequestParam(defaultValue = "active") String status) {
         
-        log.info("REST - 获取分类建议，关键词：{}", keyword);
-        return categoryFacadeService.getCategorySuggestions(keyword, limit);
+        log.info("REST - 获取分类建议，关键词：{}，限制数量：{}，状态：{}", keyword, limit, status);
+        return categoryFacadeService.getCategorySuggestions(keyword, limit, status);
     }
 
     /**

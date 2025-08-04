@@ -18,6 +18,7 @@ import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -96,7 +97,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             }
             
             // 增加浏览量
-            goodsService.increaseViews(id, 1L);
+            goodsService.increaseViewCount(id, 1L);
             
             GoodsResponse response = convertToResponse(goods);
             return Result.success(response);
@@ -194,7 +195,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     // =================== 查询操作 ===================
 
     @Override
-    public PageResponse<GoodsResponse> queryGoods(GoodsQueryRequest request) {
+    public Result<PageResponse<GoodsResponse>> queryGoods(GoodsQueryRequest request) {
         try {
             log.debug("REST分页查询商品: type={}, page={}, size={}", 
                     request.getGoodsType(), request.getCurrentPage(), request.getPageSize());
@@ -205,51 +206,53 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             Page<Goods> page = new Page<>(request.getCurrentPage(), request.getPageSize());
             IPage<Goods> result = goodsService.queryGoods(page, request.getGoodsType(), request.getStatus());
             
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (IllegalArgumentException e) {
             log.warn("商品查询参数错误: {}", e.getMessage());
-            return PageResponse.empty();
+            return Result.success(PageResponse.empty());
         } catch (Exception e) {
             log.error("分页查询商品失败", e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public PageResponse<GoodsResponse> getGoodsByCategory(Long categoryId, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getGoodsByCategory(Long categoryId, Integer currentPage, Integer pageSize) {
         try {
             log.debug("REST根据分类查询商品: categoryId={}, page={}, size={}", categoryId, currentPage, pageSize);
             
             if (categoryId == null || categoryId <= 0) {
-                return PageResponse.empty();
+                return Result.success(PageResponse.empty());
             }
             
             Page<Goods> page = new Page<>(currentPage, pageSize);
             IPage<Goods> result = goodsService.getGoodsByCategory(page, categoryId, "active");
             
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("根据分类查询商品失败: categoryId={}", categoryId, e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public PageResponse<GoodsResponse> getGoodsBySeller(Long sellerId, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getGoodsBySeller(Long sellerId, Integer currentPage, Integer pageSize) {
         try {
             log.debug("REST根据商家查询商品: sellerId={}, page={}, size={}", sellerId, currentPage, pageSize);
             
             if (sellerId == null || sellerId <= 0) {
-                return PageResponse.empty();
+                return Result.success(PageResponse.empty());
             }
             
             // 验证商家用户是否存在
             Result<UserResponse> userResult = userFacadeService.getUserById(sellerId);
             if (userResult == null || !userResult.getSuccess()) {
                 log.warn("商家用户不存在，无法查询商品: sellerId={}", sellerId);
-                return PageResponse.empty();
+                return Result.success(PageResponse.empty());
             }
             
             Page<Goods> page = new Page<>(currentPage, pageSize);
@@ -257,25 +260,27 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             
             log.debug("商家商品查询完成: 商家={}({}), 商品数量={}", 
                     sellerId, userResult.getData().getNickname(), result.getTotal());
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("根据商家查询商品失败: sellerId={}", sellerId, e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public Result<GoodsResponse> getGoodsByContentId(Long contentId) {
+    public Result<GoodsResponse> getGoodsByContentId(Long contentId, String goodsType) {
         try {
-            log.debug("REST根据内容ID查询商品: contentId={}", contentId);
+            log.debug("REST根据内容ID查询商品: contentId={}, goodsType={}", contentId, goodsType);
             
             if (contentId == null || contentId <= 0) {
                 return Result.failure("内容ID不能为空");
             }
             
-            // 查询内容类型的商品
-            Goods goods = goodsService.getGoodsByContentId(contentId);
+            // 查询指定类型的商品
+            String type = StringUtils.hasText(goodsType) ? goodsType : "content";
+            Goods goods = goodsService.getGoodsByContentId(contentId, type);
             if (goods == null) {
                 return Result.failure("未找到对应的商品记录");
             }
@@ -288,51 +293,53 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             // 转换为响应对象
             GoodsResponse response = convertToResponse(goods);
             
-            log.debug("根据内容ID查询商品成功: contentId={}, goodsId={}, price={}", 
-                contentId, goods.getId(), goods.getCoinPrice());
+            log.debug("根据内容ID查询商品成功: contentId={}, goodsId={}, type={}, price={}", 
+                contentId, goods.getId(), type, goods.getCoinPrice());
             
             return Result.success(response);
             
         } catch (Exception e) {
-            log.error("根据内容ID查询商品失败: contentId={}", contentId, e);
+            log.error("根据内容ID查询商品失败: contentId={}, goodsType={}", contentId, goodsType, e);
             return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public PageResponse<GoodsResponse> getHotGoods(String goodsType, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getHotGoods(String goodsType, Integer currentPage, Integer pageSize) {
         try {
             log.debug("REST查询热门商品: type={}, page={}, size={}", goodsType, currentPage, pageSize);
             
             Page<Goods> page = new Page<>(currentPage, pageSize);
             IPage<Goods> result = goodsService.getHotGoods(page, goodsType);
             
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("查询热门商品失败: type={}", goodsType, e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public PageResponse<GoodsResponse> searchGoods(String keyword, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> searchGoods(String keyword, Integer currentPage, Integer pageSize) {
         try {
             log.debug("REST搜索商品: keyword={}, page={}, size={}", keyword, currentPage, pageSize);
             
             Page<Goods> page = new Page<>(currentPage, pageSize);
             IPage<Goods> result = goodsService.searchGoods(page, keyword, "active");
             
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("搜索商品失败: keyword={}", keyword, e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
     @Override
-    public PageResponse<GoodsResponse> getGoodsByPriceRange(String goodsType, Object minPrice, Object maxPrice, 
+    public Result<PageResponse<GoodsResponse>> getGoodsByPriceRange(String goodsType, Object minPrice, Object maxPrice, 
                                                            Integer currentPage, Integer pageSize) {
         try {
             log.debug("REST按价格区间查询商品: type={}, min={}, max={}, page={}, size={}", 
@@ -341,11 +348,12 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             Page<Goods> page = new Page<>(currentPage, pageSize);
             IPage<Goods> result = goodsService.getGoodsByPriceRange(page, minPrice, maxPrice, goodsType);
             
-            return convertToPageResponse(result);
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
             
         } catch (Exception e) {
             log.error("按价格区间查询商品失败: type={}, min={}, max={}", goodsType, minPrice, maxPrice, e);
-            return PageResponse.empty();
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
@@ -434,7 +442,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     // =================== 统计操作 ===================
 
     @Override
-    public Result<Void> increaseSales(Long goodsId, Long count) {
+    public Result<Void> increaseSalesCount(Long goodsId, Long count) {
         try {
             log.debug("REST增加销量: goodsId={}, count={}", goodsId, count);
             
@@ -442,7 +450,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 return Result.failure("参数无效");
             }
             
-            boolean success = goodsService.increaseSales(goodsId, count);
+            boolean success = goodsService.increaseSalesCount(goodsId, count);
             if (!success) {
                 return Result.failure("增加销量失败");
             }
@@ -456,7 +464,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     }
 
     @Override
-    public Result<Void> increaseViews(Long goodsId, Long count) {
+    public Result<Void> increaseViewCount(Long goodsId, Long count) {
         try {
             log.debug("REST增加浏览量: goodsId={}, count={}", goodsId, count);
             
@@ -464,7 +472,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 return Result.failure("参数无效");
             }
             
-            boolean success = goodsService.increaseViews(goodsId, count);
+            boolean success = goodsService.increaseViewCount(goodsId, count);
             if (!success) {
                 return Result.failure("增加浏览量失败");
             }
@@ -478,7 +486,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     }
 
     @Override
-    public Result<Void> batchIncreaseViews(Map<Long, Long> viewMap) {
+    public Result<Void> batchIncreaseViewCount(Map<Long, Long> viewMap) {
         try {
             log.debug("REST批量增加浏览量: count={}", viewMap.size());
             
@@ -486,7 +494,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 return Result.success();
             }
             
-            boolean success = goodsService.batchIncreaseViews(viewMap);
+            boolean success = goodsService.batchIncreaseViewCount(viewMap);
             if (!success) {
                 return Result.failure("批量增加浏览量失败");
             }
@@ -496,6 +504,20 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
         } catch (Exception e) {
             log.error("批量增加浏览量失败: count={}", viewMap.size(), e);
             return Result.failure("批量增加浏览量失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> countByTypeAndStatus() {
+        try {
+            log.debug("REST按类型和状态统计商品");
+            
+            List<Map<String, Object>> statistics = goodsService.countByTypeAndStatus();
+            return Result.success(statistics);
+            
+        } catch (Exception e) {
+            log.error("按类型和状态统计商品失败", e);
+            return Result.failure("统计失败: " + e.getMessage());
         }
     }
 
@@ -510,6 +532,66 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
         } catch (Exception e) {
             log.error("获取商品统计信息失败", e);
             return Result.failure("获取统计信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countByCategory(Long categoryId, String status) {
+        try {
+            log.debug("REST根据分类统计商品数量: categoryId={}, status={}", categoryId, status);
+            
+            if (categoryId == null || categoryId <= 0) {
+                return Result.success(0L);
+            }
+            
+            long count = goodsService.countByCategory(categoryId, status);
+            return Result.success(count);
+            
+        } catch (Exception e) {
+            log.error("根据分类统计商品数量失败: categoryId={}, status={}", categoryId, status, e);
+            return Result.failure("统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Long> countBySeller(Long sellerId, String status) {
+        try {
+            log.debug("REST根据商家统计商品数量: sellerId={}, status={}", sellerId, status);
+            
+            if (sellerId == null || sellerId <= 0) {
+                return Result.success(0L);
+            }
+            
+            long count = goodsService.countBySeller(sellerId, status);
+            return Result.success(count);
+            
+        } catch (Exception e) {
+            log.error("根据商家统计商品数量失败: sellerId={}, status={}", sellerId, status, e);
+            return Result.failure("统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<GoodsResponse>> findWithConditions(Long categoryId, Long sellerId, String goodsType,
+                                                                 String nameKeyword, Object minPrice, Object maxPrice,
+                                                                 Object minCoinPrice, Object maxCoinPrice, Boolean hasStock,
+                                                                 String status, String orderBy, String orderDirection,
+                                                                 Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("REST复合条件查询商品: categoryId={}, sellerId={}, type={}, keyword={}", 
+                    categoryId, sellerId, goodsType, nameKeyword);
+            
+            Page<Goods> page = new Page<>(currentPage, pageSize);
+            IPage<Goods> result = goodsService.findWithConditions(page, categoryId, sellerId, goodsType,
+                    nameKeyword, minPrice, maxPrice, minCoinPrice, maxCoinPrice, hasStock,
+                    status, orderBy, orderDirection);
+            
+            PageResponse<GoodsResponse> pageResponse = convertToPageResponse(result);
+            return Result.success(pageResponse);
+            
+        } catch (Exception e) {
+            log.error("复合条件查询商品失败", e);
+            return Result.failure("查询失败: " + e.getMessage());
         }
     }
 
@@ -603,6 +685,24 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
         }
     }
 
+    @Override
+    public Result<Integer> batchUpdateStatus(List<Long> goodsIds, String status) {
+        try {
+            log.info("REST批量更新商品状态: count={}, status={}", goodsIds.size(), status);
+            
+            if (CollectionUtils.isEmpty(goodsIds)) {
+                return Result.success(0);
+            }
+            
+            int affectedRows = goodsService.batchUpdateStatus(goodsIds, status);
+            return Result.success(affectedRows);
+            
+        } catch (Exception e) {
+            log.error("批量更新商品状态失败: count={}, status={}", goodsIds.size(), status, e);
+            return Result.failure("批量更新状态失败: " + e.getMessage());
+        }
+    }
+
     // =================== 业务验证 ===================
 
     @Override
@@ -656,7 +756,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     // =================== 快捷查询 ===================
 
     @Override
-    public PageResponse<GoodsResponse> getCoinPackages(Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getCoinPackages(Integer currentPage, Integer pageSize) {
         GoodsQueryRequest request = new GoodsQueryRequest()
                 .setGoodsType("coin")
                 .setStatus("active")
@@ -668,7 +768,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     }
 
     @Override
-    public PageResponse<GoodsResponse> getSubscriptionServices(Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getSubscriptionServices(Integer currentPage, Integer pageSize) {
         GoodsQueryRequest request = new GoodsQueryRequest()
                 .setGoodsType("subscription")
                 .setStatus("active")
@@ -680,7 +780,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     }
 
     @Override
-    public PageResponse<GoodsResponse> getContentGoods(Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getContentGoods(Integer currentPage, Integer pageSize) {
         GoodsQueryRequest request = new GoodsQueryRequest()
                 .setGoodsType("content")
                 .setStatus("active")
@@ -692,7 +792,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
     }
 
     @Override
-    public PageResponse<GoodsResponse> getPhysicalGoods(Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<GoodsResponse>> getPhysicalGoods(Integer currentPage, Integer pageSize) {
         GoodsQueryRequest request = new GoodsQueryRequest()
                 .setGoodsType("goods")
                 .setStatus("active")
@@ -829,7 +929,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             }
 
             // 检查是否已存在该内容的商品
-            Goods existingGoods = goodsService.getGoodsByContentId(contentId);
+            Goods existingGoods = goodsService.getGoodsByContentId(contentId, "content");
             if (existingGoods != null) {
                 log.warn("内容商品已存在: contentId={}, goodsId={}", contentId, existingGoods.getId());
                 return Result.failure("该内容的商品已存在");
@@ -889,7 +989,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             }
 
             // 查找对应的商品
-            Goods goods = goodsService.getGoodsByContentId(contentId);
+            Goods goods = goodsService.getGoodsByContentId(contentId, "content");
             if (goods == null) {
                 log.warn("未找到对应的商品: contentId={}", contentId);
                 return Result.failure("未找到对应的商品记录");
@@ -926,7 +1026,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("REST同步内容状态到商品: contentId={}, status={}", contentId, contentStatus);
 
             // 查找对应的商品
-            Goods goods = goodsService.getGoodsByContentId(contentId);
+            Goods goods = goodsService.getGoodsByContentId(contentId, "content");
             if (goods == null) {
                 log.warn("未找到对应的商品: contentId={}", contentId);
                 return Result.failure("未找到对应的商品记录");
@@ -959,7 +1059,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
                 contentId, coinPrice, isActive);
 
             // 查找对应的商品
-            Goods goods = goodsService.getGoodsByContentId(contentId);
+            Goods goods = goodsService.getGoodsByContentId(contentId, "content");
             if (goods == null) {
                 log.warn("未找到对应的商品: contentId={}", contentId);
                 return Result.failure("未找到对应的商品记录");
@@ -1026,7 +1126,7 @@ public class GoodsFacadeServiceImpl implements GoodsFacadeService {
             log.info("REST删除内容对应的商品: contentId={}", contentId);
 
             // 查找对应的商品
-            Goods goods = goodsService.getGoodsByContentId(contentId);
+            Goods goods = goodsService.getGoodsByContentId(contentId, "content");
             if (goods == null) {
                 log.warn("未找到对应的商品: contentId={}", contentId);
                 return Result.success(); // 已经不存在，认为删除成功

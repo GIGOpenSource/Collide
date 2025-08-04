@@ -11,7 +11,49 @@
 
     <!-- =================== 基础查询（优化版） =================== -->
 
-    <!-- 根据目标ID分页查询评论（使用 idx_target_status_time_desc 索引） -->
+    <!-- 根据目标ID查询评论列表（使用 idx_target_status_time 索引） -->
+    <select id="selectTargetComments" resultType="com.gig.collide.comment.domain.entity.Comment">
+        SELECT <include refid="Base_Column_List"/>
+        FROM t_comment
+        WHERE target_id = #{targetId}
+        <if test="commentType != null and commentType != ''">
+            AND LOWER(comment_type) = LOWER(#{commentType})
+        </if>
+        <if test="parentCommentId != null">
+            AND parent_comment_id = #{parentCommentId}
+        </if>
+        <if test="status != null and status != ''">
+            AND LOWER(status) = LOWER(#{status})
+        </if>
+        <choose>
+            <when test="orderBy == 'like_count' and orderDirection == 'ASC'">
+                ORDER BY like_count ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'like_count'">
+                ORDER BY like_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'reply_count' and orderDirection == 'ASC'">
+                ORDER BY reply_count ASC, create_time DESC
+            </when>
+            <when test="orderBy == 'reply_count'">
+                ORDER BY reply_count DESC, create_time DESC
+            </when>
+            <when test="orderBy == 'update_time' and orderDirection == 'ASC'">
+                ORDER BY update_time ASC
+            </when>
+            <when test="orderBy == 'update_time'">
+                ORDER BY update_time DESC
+            </when>
+            <when test="orderBy == 'create_time' and orderDirection == 'ASC'">
+                ORDER BY create_time ASC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
+    </select>
+
+    <!-- 根据目标ID分页查询评论（使用 idx_target_status_time 索引） -->
     <select id="selectTargetCommentsPage" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -44,7 +86,7 @@
         </choose>
     </select>
 
-    <!-- 根据用户ID分页查询评论（使用 idx_user_status_time_desc 索引） -->
+    <!-- 根据用户ID分页查询评论（使用 idx_user_status_time 索引） -->
     <select id="selectUserCommentsPage" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -61,7 +103,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据用户ID分页查询回复（使用 idx_reply_user_status_time_desc 索引） -->
+    <!-- 根据用户ID分页查询回复（使用 idx_reply_user_status_time 索引） -->
     <select id="selectUserRepliesPage" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -101,7 +143,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 获取热门评论（使用 idx_target_status_like_reply_desc 索引） -->
+    <!-- 获取热门评论（使用 idx_target_status_popularity 索引） -->
     <select id="selectPopularComments" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -123,7 +165,7 @@
         </if>
     </select>
 
-    <!-- 获取最新评论（使用 idx_create_time_status_type 索引） -->
+    <!-- 获取最新评论（使用 idx_create_time_status 索引） -->
     <select id="selectLatestComments" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -144,7 +186,7 @@
         </if>
     </select>
 
-    <!-- 获取评论树形结构（使用 idx_parent_status_time_desc 索引） -->
+    <!-- 获取评论树形结构（使用 idx_parent_status_time 索引） -->
     <select id="selectCommentTree" resultType="com.gig.collide.comment.domain.entity.Comment">
         WITH RECURSIVE comment_tree AS (
             -- 获取根评论（使用 idx_target_normal_time_desc 部分索引）
@@ -175,7 +217,7 @@
 
     <!-- =================== 统计查询（优化版） =================== -->
 
-    <!-- 统计目标评论数量（使用 idx_target_status_time_desc 索引） -->
+    <!-- 统计目标评论数量（使用 idx_target_status_time 索引） -->
     <select id="countTargetComments" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_comment
@@ -194,7 +236,7 @@
         </if>
     </select>
 
-    <!-- 统计用户评论数量（使用 idx_user_type_status_time_desc 索引） -->
+    <!-- 统计用户评论数量（使用 idx_user_status_time 索引） -->
     <select id="countUserComments" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_comment
@@ -210,7 +252,7 @@
         </if>
     </select>
 
-    <!-- 统计评论的回复数（使用 idx_parent_status_time_desc 索引） -->
+    <!-- 统计评论的回复数（使用 idx_parent_status_time 索引） -->
     <select id="countCommentReplies" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_comment
@@ -283,7 +325,7 @@
         </foreach>
     </update>
 
-    <!-- 更新用户信息（使用 idx_user_status_time_desc 索引） -->
+    <!-- 更新用户信息（使用 idx_user_status_time 索引） -->
     <update id="updateUserInfo">
         UPDATE t_comment
         SET user_nickname = #{nickname},
@@ -292,7 +334,7 @@
         WHERE user_id = #{userId}
     </update>
 
-    <!-- 更新回复目标用户信息（使用 idx_reply_user_status_time_desc 索引） -->
+    <!-- 更新回复目标用户信息（使用 idx_reply_user_status_time 索引） -->
     <update id="updateReplyToUserInfo">
         UPDATE t_comment
         SET reply_to_user_nickname = #{nickname},
@@ -301,7 +343,7 @@
         WHERE reply_to_user_id = #{replyToUserId}
     </update>
 
-    <!-- 批量删除目标评论（使用 idx_target_status_time_desc 索引） -->
+    <!-- 批量删除目标评论（使用 idx_target_status_time 索引） -->
     <update id="batchDeleteTargetComments">
         UPDATE t_comment
         SET status = 'DELETED',
@@ -315,7 +357,7 @@
 
     <!-- =================== 高级查询（优化版） =================== -->
 
-    <!-- 根据时间范围查询评论（使用 idx_create_time_status_type 索引） -->
+    <!-- 根据时间范围查询评论（使用 idx_create_time_status 索引） -->
     <select id="selectCommentsByTimeRange" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -344,7 +386,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据点赞数范围查询评论（使用 idx_target_status_like_reply_desc 索引） -->
+    <!-- 根据点赞数范围查询评论（使用 idx_target_status_popularity 索引） -->
     <select id="selectCommentsByLikeCountRange" resultType="com.gig.collide.comment.domain.entity.Comment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_comment
@@ -409,7 +451,7 @@
         ORDER BY reply_count DESC
     </select>
 
-    <!-- 查询评论热度排行（使用 idx_hot_score_desc 复合索引） -->
+    <!-- 查询评论热度排行（使用 idx_target_status_popularity 索引） -->
     <select id="selectCommentHotRanking" resultType="java.util.Map">
         SELECT 
             id,

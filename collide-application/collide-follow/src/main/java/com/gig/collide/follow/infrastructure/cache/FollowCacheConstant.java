@@ -39,7 +39,7 @@ public class FollowCacheConstant {
     /**
      * 关注者分页列表缓存Key
      */
-    public static final String FOLLOWERS_LIST_KEY = "'follow:followers:' + #request.followeeId + ':' + #request.pageNum + ':' + #request.pageSize";
+    public static final String FOLLOWERS_LIST_KEY = "'follow:followers:' + #followeeId + ':' + #currentPage + ':' + #pageSize";
 
     /**
      * 关注者列表缓存过期时间（分钟）
@@ -56,7 +56,7 @@ public class FollowCacheConstant {
     /**
      * 被关注者分页列表缓存Key
      */
-    public static final String FOLLOWEES_LIST_KEY = "'follow:followees:' + #request.followerId + ':' + #request.pageNum + ':' + #request.pageSize";
+    public static final String FOLLOWEES_LIST_KEY = "'follow:followees:' + #followerId + ':' + #currentPage + ':' + #pageSize";
 
     /**
      * 被关注者列表缓存过期时间（分钟）
@@ -100,7 +100,7 @@ public class FollowCacheConstant {
     /**
      * 互关关系缓存Key
      */
-    public static final String MUTUAL_FOLLOW_KEY = "'follow:mutual:' + #userId1 + ':' + #userId2";
+    public static final String MUTUAL_FOLLOW_KEY = "'follow:mutual:' + #userId + ':' + #currentPage + ':' + #pageSize";
 
     /**
      * 互关检测缓存过期时间（分钟）
@@ -117,12 +117,12 @@ public class FollowCacheConstant {
     /**
      * 用户关注状态缓存Key
      */
-    public static final String USER_FOLLOW_STATUS_KEY = "'follow:status:' + #userId + ':' + #targetUserId";
+    public static final String USER_FOLLOW_STATUS_KEY = "'follow:status:' + #followerId + ':' + #followeeId";
 
     /**
      * 批量关注状态缓存Key
      */
-    public static final String BATCH_FOLLOW_STATUS_KEY = "'follow:status:batch:' + #userId + ':' + #targetUserIds.size()";
+    public static final String BATCH_FOLLOW_STATUS_KEY = "'follow:status:batch:' + #followerId + ':' + #followeeIds.size()";
 
     /**
      * 关注状态缓存过期时间（分钟）

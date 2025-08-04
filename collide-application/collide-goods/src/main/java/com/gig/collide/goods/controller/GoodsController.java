@@ -84,7 +84,7 @@ public class GoodsController {
 
     @PostMapping("/query")
     @Operation(summary = "分页查询商品", description = "支持多条件分页查询商品列表")
-    public PageResponse<GoodsResponse> queryGoods(@Valid @RequestBody GoodsQueryRequest request) {
+    public Result<PageResponse<GoodsResponse>> queryGoods(@Valid @RequestBody GoodsQueryRequest request) {
         log.debug("REST分页查询商品: type={}, page={}, size={}", 
                 request.getGoodsType(), request.getCurrentPage(), request.getPageSize());
         return goodsFacadeService.queryGoods(request);
@@ -92,7 +92,7 @@ public class GoodsController {
 
     @GetMapping("/category/{categoryId}")
     @Operation(summary = "根据分类查询商品", description = "获取指定分类下的商品列表")
-    public PageResponse<GoodsResponse> getGoodsByCategory(
+    public Result<PageResponse<GoodsResponse>> getGoodsByCategory(
             @Parameter(description = "分类ID") @PathVariable @NotNull @Min(1) Long categoryId,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
@@ -102,7 +102,7 @@ public class GoodsController {
 
     @GetMapping("/seller/{sellerId}")
     @Operation(summary = "根据商家查询商品", description = "获取指定商家的商品列表")
-    public PageResponse<GoodsResponse> getGoodsBySeller(
+    public Result<PageResponse<GoodsResponse>> getGoodsBySeller(
             @Parameter(description = "商家ID") @PathVariable @NotNull @Min(1) Long sellerId,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
@@ -112,7 +112,7 @@ public class GoodsController {
 
     @GetMapping("/hot")
     @Operation(summary = "获取热门商品", description = "获取按销量排序的热门商品列表")
-    public PageResponse<GoodsResponse> getHotGoods(
+    public Result<PageResponse<GoodsResponse>> getHotGoods(
             @Parameter(description = "商品类型") @RequestParam(required = false) String goodsType,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
@@ -122,7 +122,7 @@ public class GoodsController {
 
     @GetMapping("/search")
     @Operation(summary = "搜索商品", description = "根据关键词搜索商品名称和描述")
-    public PageResponse<GoodsResponse> searchGoods(
+    public Result<PageResponse<GoodsResponse>> searchGoods(
             @Parameter(description = "搜索关键词") @RequestParam @NotNull String keyword,
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
@@ -132,7 +132,7 @@ public class GoodsController {
 
     @GetMapping("/price-range")
     @Operation(summary = "按价格区间查询", description = "根据价格区间查询商品")
-    public PageResponse<GoodsResponse> getGoodsByPriceRange(
+    public Result<PageResponse<GoodsResponse>> getGoodsByPriceRange(
             @Parameter(description = "商品类型") @RequestParam @NotNull String goodsType,
             @Parameter(description = "最低价格") @RequestParam @NotNull Object minPrice,
             @Parameter(description = "最高价格") @RequestParam @NotNull Object maxPrice,
@@ -183,28 +183,28 @@ public class GoodsController {
 
     @PostMapping("/{id}/sales/increase")
     @Operation(summary = "增加销量", description = "增加指定商品的销量统计")
-    public Result<Void> increaseSales(
+    public Result<Void> increaseSalesCount(
             @Parameter(description = "商品ID") @PathVariable @NotNull @Min(1) Long id,
             @Parameter(description = "增加数量") @RequestParam @NotNull @Min(1) Long count) {
         log.debug("REST增加销量: goodsId={}, count={}", id, count);
-        return goodsFacadeService.increaseSales(id, count);
+        return goodsFacadeService.increaseSalesCount(id, count);
     }
 
     @PostMapping("/{id}/views/increase")
     @Operation(summary = "增加浏览量", description = "增加指定商品的浏览量统计")
-    public Result<Void> increaseViews(
+    public Result<Void> increaseViewCount(
             @Parameter(description = "商品ID") @PathVariable @NotNull @Min(1) Long id,
             @Parameter(description = "增加数量") @RequestParam(defaultValue = "1") @Min(1) Long count) {
         log.debug("REST增加浏览量: goodsId={}, count={}", id, count);
-        return goodsFacadeService.increaseViews(id, count);
+        return goodsFacadeService.increaseViewCount(id, count);
     }
 
     @PostMapping("/views/batch-increase")
     @Operation(summary = "批量增加浏览量", description = "批量增加多个商品的浏览量")
-    public Result<Void> batchIncreaseViews(
+    public Result<Void> batchIncreaseViewCount(
             @Parameter(description = "商品ID和浏览量映射") @RequestBody @NotNull Map<Long, Long> viewMap) {
         log.debug("REST批量增加浏览量: count={}", viewMap.size());
-        return goodsFacadeService.batchIncreaseViews(viewMap);
+        return goodsFacadeService.batchIncreaseViewCount(viewMap);
     }
 
     @GetMapping("/statistics")
@@ -212,6 +212,65 @@ public class GoodsController {
     public Result<List<Map<String, Object>>> getGoodsStatistics() {
         log.debug("REST获取商品统计信息");
         return goodsFacadeService.getGoodsStatistics();
+    }
+
+    @GetMapping("/statistics/type-status")
+    @Operation(summary = "按类型状态统计", description = "按商品类型和状态统计商品数量")
+    public Result<List<Map<String, Object>>> countByTypeAndStatus() {
+        log.debug("REST按类型状态统计商品");
+        return goodsFacadeService.countByTypeAndStatus();
+    }
+
+    @GetMapping("/statistics/category/{categoryId}")
+    @Operation(summary = "按分类统计", description = "统计指定分类下的商品数量")
+    public Result<Long> countByCategory(
+            @Parameter(description = "分类ID") @PathVariable @NotNull @Min(1) Long categoryId,
+            @Parameter(description = "商品状态") @RequestParam(required = false) String status) {
+        log.debug("REST按分类统计商品: categoryId={}, status={}", categoryId, status);
+        return goodsFacadeService.countByCategory(categoryId, status);
+    }
+
+    @GetMapping("/statistics/seller/{sellerId}")
+    @Operation(summary = "按商家统计", description = "统计指定商家的商品数量")
+    public Result<Long> countBySeller(
+            @Parameter(description = "商家ID") @PathVariable @NotNull @Min(1) Long sellerId,
+            @Parameter(description = "商品状态") @RequestParam(required = false) String status) {
+        log.debug("REST按商家统计商品: sellerId={}, status={}", sellerId, status);
+        return goodsFacadeService.countBySeller(sellerId, status);
+    }
+
+    @PostMapping("/search/advanced")
+    @Operation(summary = "复合条件查询", description = "支持多种查询条件和排序方式的复合查询")
+    public Result<PageResponse<GoodsResponse>> findWithConditions(
+            @Parameter(description = "分类ID") @RequestParam(required = false) Long categoryId,
+            @Parameter(description = "商家ID") @RequestParam(required = false) Long sellerId,
+            @Parameter(description = "商品类型") @RequestParam(required = false) String goodsType,
+            @Parameter(description = "名称关键词") @RequestParam(required = false) String nameKeyword,
+            @Parameter(description = "最低现金价格") @RequestParam(required = false) Object minPrice,
+            @Parameter(description = "最高现金价格") @RequestParam(required = false) Object maxPrice,
+            @Parameter(description = "最低金币价格") @RequestParam(required = false) Object minCoinPrice,
+            @Parameter(description = "最高金币价格") @RequestParam(required = false) Object maxCoinPrice,
+            @Parameter(description = "是否有库存") @RequestParam(required = false) Boolean hasStock,
+            @Parameter(description = "商品状态") @RequestParam(required = false) String status,
+            @Parameter(description = "排序字段") @RequestParam(required = false) String orderBy,
+            @Parameter(description = "排序方向") @RequestParam(required = false) String orderDirection,
+            @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
+            @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
+        
+        log.debug("REST复合条件查询商品: categoryId={}, sellerId={}, type={}, keyword={}", 
+                categoryId, sellerId, goodsType, nameKeyword);
+        return goodsFacadeService.findWithConditions(categoryId, sellerId, goodsType, nameKeyword,
+                minPrice, maxPrice, minCoinPrice, maxCoinPrice, hasStock, status,
+                orderBy, orderDirection, currentPage, pageSize);
+    }
+
+    @PostMapping("/batch-update-status")
+    @Operation(summary = "批量更新状态", description = "批量更新多个商品的状态")
+    public Result<Integer> batchUpdateStatus(
+            @Parameter(description = "商品ID列表") @RequestBody @NotNull List<Long> goodsIds,
+            @Parameter(description = "新状态") @RequestParam @NotNull String status) {
+        log.debug("REST批量更新商品状态: count={}, status={}", goodsIds.size(), status);
+        return goodsFacadeService.batchUpdateStatus(goodsIds, status);
     }
 
     // =================== 状态管理 ===================
@@ -272,7 +331,7 @@ public class GoodsController {
 
     @GetMapping("/coin-packages")
     @Operation(summary = "获取金币充值包", description = "获取所有可用的金币充值包")
-    public PageResponse<GoodsResponse> getCoinPackages(
+    public Result<PageResponse<GoodsResponse>> getCoinPackages(
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
         log.debug("REST获取金币充值包: page={}, size={}", currentPage, pageSize);
@@ -281,7 +340,7 @@ public class GoodsController {
 
     @GetMapping("/subscriptions")
     @Operation(summary = "获取订阅服务", description = "获取所有可用的订阅服务")
-    public PageResponse<GoodsResponse> getSubscriptionServices(
+    public Result<PageResponse<GoodsResponse>> getSubscriptionServices(
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
         log.debug("REST获取订阅服务: page={}, size={}", currentPage, pageSize);
@@ -290,7 +349,7 @@ public class GoodsController {
 
     @GetMapping("/contents")
     @Operation(summary = "获取付费内容", description = "获取所有可用的付费内容")
-    public PageResponse<GoodsResponse> getContentGoods(
+    public Result<PageResponse<GoodsResponse>> getContentGoods(
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
         log.debug("REST获取付费内容: page={}, size={}", currentPage, pageSize);
@@ -299,7 +358,7 @@ public class GoodsController {
 
     @GetMapping("/physical")
     @Operation(summary = "获取实体商品", description = "获取所有可用的实体商品")
-    public PageResponse<GoodsResponse> getPhysicalGoods(
+    public Result<PageResponse<GoodsResponse>> getPhysicalGoods(
             @Parameter(description = "当前页码") @RequestParam(defaultValue = "1") @Min(1) Integer currentPage,
             @Parameter(description = "页面大小") @RequestParam(defaultValue = "20") @Min(1) Integer pageSize) {
         log.debug("REST获取实体商品: page={}, size={}", currentPage, pageSize);
@@ -387,9 +446,10 @@ public class GoodsController {
     @GetMapping("/sync/content/{contentId}")
     @Operation(summary = "根据内容ID获取商品", description = "查询内容对应的商品信息")
     public Result<GoodsResponse> getGoodsByContentId(
-            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId) {
+            @Parameter(description = "内容ID") @PathVariable @NotNull Long contentId,
+            @Parameter(description = "商品类型") @RequestParam(defaultValue = "content") String goodsType) {
         
-        log.debug("REST查询内容商品: contentId={}", contentId);
-        return goodsFacadeService.getGoodsByContentId(contentId);
+        log.debug("REST查询内容商品: contentId={}, goodsType={}", contentId, goodsType);
+        return goodsFacadeService.getGoodsByContentId(contentId, goodsType);
     }
 }

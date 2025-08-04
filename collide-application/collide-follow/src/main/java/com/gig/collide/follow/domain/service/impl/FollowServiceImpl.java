@@ -147,36 +147,82 @@ public class FollowServiceImpl implements FollowService {
     }
 
     @Override
-    public IPage<Follow> queryFollows(Integer pageNum, Integer pageSize, Long followerId, Long followeeId,
+    public IPage<Follow> queryFollows(Integer currentPage, Integer pageSize, Long followerId, Long followeeId,
                                      String followerNickname, String followeeNickname, String status,
                                      String queryType, String orderBy, String orderDirection) {
-        log.info("分页查询关注记录: pageNum={}, pageSize={}, followerId={}, followeeId={}", 
-                pageNum, pageSize, followerId, followeeId);
+        log.info("分页查询关注记录: currentPage={}, pageSize={}, followerId={}, followeeId={}", 
+                currentPage, pageSize, followerId, followeeId);
+
+        // 参数验证
+        currentPage = currentPage == null ? 1 : currentPage;
+        pageSize = pageSize == null ? 10 : pageSize;
 
         // 构建分页对象
-        Page<Follow> page = new Page<>(pageNum, pageSize);
+        Page<Follow> page = new Page<>(currentPage, pageSize);
 
         // 调用复合条件查询
-        return followMapper.findWithConditions(page, followerId, followeeId, followerNickname,
+        IPage<Follow> result = followMapper.findWithConditions(page, followerId, followeeId, followerNickname,
                 followeeNickname, status, queryType, orderBy, orderDirection);
+        
+        log.info("分页查询关注记录成功: 总数={}", result.getTotal());
+        return result;
     }
 
     @Override
-    public IPage<Follow> getFollowing(Long followerId, Integer pageNum, Integer pageSize) {
-        Page<Follow> page = new Page<>(pageNum, pageSize);
-        return followMapper.findFollowing(page, followerId, "active");
+    public IPage<Follow> getFollowing(Long followerId, Integer currentPage, Integer pageSize) {
+        log.info("获取关注列表: followerId={}, currentPage={}, pageSize={}", followerId, currentPage, pageSize);
+        
+        if (followerId == null) {
+            log.warn("关注者ID不能为空");
+            return new Page<>();
+        }
+
+        currentPage = currentPage == null ? 1 : currentPage;
+        pageSize = pageSize == null ? 10 : pageSize;
+
+        Page<Follow> page = new Page<>(currentPage, pageSize);
+        IPage<Follow> result = followMapper.findFollowing(page, followerId, "active");
+        
+        log.info("获取关注列表成功: 用户={}, 总数={}", followerId, result.getTotal());
+        return result;
     }
 
     @Override
-    public IPage<Follow> getFollowers(Long followeeId, Integer pageNum, Integer pageSize) {
-        Page<Follow> page = new Page<>(pageNum, pageSize);
-        return followMapper.findFollowers(page, followeeId, "active");
+    public IPage<Follow> getFollowers(Long followeeId, Integer currentPage, Integer pageSize) {
+        log.info("获取粉丝列表: followeeId={}, currentPage={}, pageSize={}", followeeId, currentPage, pageSize);
+        
+        if (followeeId == null) {
+            log.warn("被关注者ID不能为空");
+            return new Page<>();
+        }
+
+        currentPage = currentPage == null ? 1 : currentPage;
+        pageSize = pageSize == null ? 10 : pageSize;
+
+        Page<Follow> page = new Page<>(currentPage, pageSize);
+        IPage<Follow> result = followMapper.findFollowers(page, followeeId, "active");
+        
+        log.info("获取粉丝列表成功: 用户={}, 总数={}", followeeId, result.getTotal());
+        return result;
     }
 
     @Override
-    public IPage<Follow> getMutualFollows(Long userId, Integer pageNum, Integer pageSize) {
-        Page<Follow> page = new Page<>(pageNum, pageSize);
-        return followMapper.findMutualFollows(page, userId, "active");
+    public IPage<Follow> getMutualFollows(Long userId, Integer currentPage, Integer pageSize) {
+        log.info("获取互关好友: userId={}, currentPage={}, pageSize={}", userId, currentPage, pageSize);
+        
+        if (userId == null) {
+            log.warn("用户ID不能为空");
+            return new Page<>();
+        }
+
+        currentPage = currentPage == null ? 1 : currentPage;
+        pageSize = pageSize == null ? 10 : pageSize;
+
+        Page<Follow> page = new Page<>(currentPage, pageSize);
+        IPage<Follow> result = followMapper.findMutualFollows(page, userId, "active");
+        
+        log.info("获取互关好友成功: 用户={}, 总数={}", userId, result.getTotal());
+        return result;
     }
 
     @Override
@@ -213,9 +259,23 @@ public class FollowServiceImpl implements FollowService {
 
     @Override
     public IPage<Follow> searchByNickname(Long followerId, Long followeeId, String nicknameKeyword, 
-                                         Integer pageNum, Integer pageSize) {
-        Page<Follow> page = new Page<>(pageNum, pageSize);
-        return followMapper.searchByNickname(page, followerId, followeeId, nicknameKeyword, "active");
+                                         Integer currentPage, Integer pageSize) {
+        log.info("根据昵称搜索关注关系: followerId={}, followeeId={}, keyword={}, currentPage={}, pageSize={}", 
+                followerId, followeeId, nicknameKeyword, currentPage, pageSize);
+
+        if (nicknameKeyword == null || nicknameKeyword.trim().isEmpty()) {
+            log.warn("搜索关键词不能为空");
+            return new Page<>();
+        }
+
+        currentPage = currentPage == null ? 1 : currentPage;
+        pageSize = pageSize == null ? 10 : pageSize;
+
+        Page<Follow> page = new Page<>(currentPage, pageSize);
+        IPage<Follow> result = followMapper.searchByNickname(page, followerId, followeeId, nicknameKeyword, "active");
+        
+        log.info("昵称搜索成功: 关键词={}, 总数={}", nicknameKeyword, result.getTotal());
+        return result;
     }
 
     @Override
@@ -312,6 +372,32 @@ public class FollowServiceImpl implements FollowService {
             log.info("重新激活关注关系成功: followerId={}, followeeId={}", followerId, followeeId);
         } else {
             log.warn("重新激活关注关系失败: followerId={}, followeeId={}", followerId, followeeId);
+        }
+        
+        return success;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateFollowStatus(Long followerId, Long followeeId, String status) {
+        log.info("更新关注状态: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
+
+        if (followerId == null || followeeId == null || status == null) {
+            throw new IllegalArgumentException("参数不能为空");
+        }
+
+        // 验证状态值
+        if (!"active".equals(status) && !"cancelled".equals(status)) {
+            throw new IllegalArgumentException("无效的状态值: " + status);
+        }
+
+        int result = followMapper.updateFollowStatus(followerId, followeeId, status);
+        boolean success = result > 0;
+        
+        if (success) {
+            log.info("更新关注状态成功: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
+        } else {
+            log.warn("更新关注状态失败: followerId={}, followeeId={}, status={}", followerId, followeeId, status);
         }
         
         return success;

@@ -70,7 +70,7 @@ public interface GoodsFacadeService {
      * @param request 查询请求
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> queryGoods(GoodsQueryRequest request);
+    Result<PageResponse<GoodsResponse>> queryGoods(GoodsQueryRequest request);
 
     /**
      * 根据分类查询商品
@@ -80,7 +80,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getGoodsByCategory(Long categoryId, Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getGoodsByCategory(Long categoryId, Integer currentPage, Integer pageSize);
 
     /**
      * 根据商家查询商品
@@ -90,16 +90,17 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getGoodsBySeller(Long sellerId, Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getGoodsBySeller(Long sellerId, Integer currentPage, Integer pageSize);
 
     /**
      * 根据内容ID获取商品信息
      * 用于内容购买流程中获取对应的商品信息
      *
      * @param contentId 内容ID
+     * @param goodsType 商品类型
      * @return 商品信息
      */
-    Result<GoodsResponse> getGoodsByContentId(Long contentId);
+    Result<GoodsResponse> getGoodsByContentId(Long contentId, String goodsType);
 
     /**
      * 获取热门商品
@@ -109,7 +110,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getHotGoods(String goodsType, Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getHotGoods(String goodsType, Integer currentPage, Integer pageSize);
 
     /**
      * 搜索商品
@@ -119,7 +120,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> searchGoods(String keyword, Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> searchGoods(String keyword, Integer currentPage, Integer pageSize);
 
     /**
      * 按价格区间查询商品
@@ -131,7 +132,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getGoodsByPriceRange(String goodsType, Object minPrice, Object maxPrice, 
+    Result<PageResponse<GoodsResponse>> getGoodsByPriceRange(String goodsType, Object minPrice, Object maxPrice, 
                                                     Integer currentPage, Integer pageSize);
 
     // =================== 库存管理 ===================
@@ -174,36 +175,95 @@ public interface GoodsFacadeService {
 
     /**
      * 增加商品销量
+     * 对应Service方法：increaseSalesCount
      *
      * @param goodsId 商品ID
      * @param count   增加数量
      * @return 操作结果（仅返回状态）
      */
-    Result<Void> increaseSales(Long goodsId, Long count);
+    Result<Void> increaseSalesCount(Long goodsId, Long count);
 
     /**
      * 增加商品浏览量
+     * 对应Service方法：increaseViewCount
      *
      * @param goodsId 商品ID
      * @param count   增加数量
      * @return 操作结果（仅返回状态）
      */
-    Result<Void> increaseViews(Long goodsId, Long count);
+    Result<Void> increaseViewCount(Long goodsId, Long count);
 
     /**
      * 批量增加浏览量
+     * 对应Service方法：batchIncreaseViewCount
      *
      * @param viewMap 商品ID和浏览量的映射
      * @return 操作结果（仅返回状态）
      */
-    Result<Void> batchIncreaseViews(Map<Long, Long> viewMap);
+    Result<Void> batchIncreaseViewCount(Map<Long, Long> viewMap);
+
+    /**
+     * 按类型和状态统计商品
+     * 对应Service方法：countByTypeAndStatus
+     *
+     * @return 统计结果
+     */
+    Result<List<Map<String, Object>>> countByTypeAndStatus();
 
     /**
      * 获取商品统计信息
+     * 业务层方法，提供更丰富的统计数据
      *
      * @return 统计结果
      */
     Result<List<Map<String, Object>>> getGoodsStatistics();
+
+    /**
+     * 根据分类统计商品数量
+     * 对应Service方法：countByCategory
+     *
+     * @param categoryId 分类ID
+     * @param status     商品状态（可为空）
+     * @return 商品数量
+     */
+    Result<Long> countByCategory(Long categoryId, String status);
+
+    /**
+     * 根据商家统计商品数量
+     * 对应Service方法：countBySeller
+     *
+     * @param sellerId 商家ID
+     * @param status   商品状态（可为空）
+     * @return 商品数量
+     */
+    Result<Long> countBySeller(Long sellerId, String status);
+
+    /**
+     * 复合条件查询商品
+     * 对应Service方法：findWithConditions
+     * 支持多种查询条件和排序方式的组合
+     *
+     * @param categoryId     分类ID（可为空）
+     * @param sellerId       商家ID（可为空）
+     * @param goodsType      商品类型（可为空）
+     * @param nameKeyword    名称关键词（可为空）
+     * @param minPrice       最低现金价格（可为空）
+     * @param maxPrice       最高现金价格（可为空）
+     * @param minCoinPrice   最低金币价格（可为空）
+     * @param maxCoinPrice   最高金币价格（可为空）
+     * @param hasStock       是否有库存（可为空）
+     * @param status         商品状态（可为空）
+     * @param orderBy        排序字段（可为空）
+     * @param orderDirection 排序方向（可为空）
+     * @param currentPage    当前页码
+     * @param pageSize       页面大小
+     * @return 商品列表
+     */
+    Result<PageResponse<GoodsResponse>> findWithConditions(Long categoryId, Long sellerId, String goodsType,
+                                                          String nameKeyword, Object minPrice, Object maxPrice,
+                                                          Object minCoinPrice, Object maxCoinPrice, Boolean hasStock,
+                                                          String status, String orderBy, String orderDirection,
+                                                          Integer currentPage, Integer pageSize);
 
     // =================== 状态管理 ===================
 
@@ -239,6 +299,17 @@ public interface GoodsFacadeService {
      */
     Result<Void> batchUnpublishGoods(List<Long> goodsIds);
 
+    /**
+     * 批量更新商品状态
+     * 对应Service方法：batchUpdateStatus
+     * 用于批量上架、下架等操作
+     *
+     * @param goodsIds 商品ID列表
+     * @param status   新状态
+     * @return 操作结果（返回影响行数）
+     */
+    Result<Integer> batchUpdateStatus(List<Long> goodsIds, String status);
+
     // =================== 业务验证 ===================
 
     /**
@@ -268,7 +339,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getCoinPackages(Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getCoinPackages(Integer currentPage, Integer pageSize);
 
     /**
      * 获取订阅服务列表
@@ -277,7 +348,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getSubscriptionServices(Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getSubscriptionServices(Integer currentPage, Integer pageSize);
 
     /**
      * 获取付费内容列表
@@ -286,7 +357,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getContentGoods(Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getContentGoods(Integer currentPage, Integer pageSize);
 
     /**
      * 获取实体商品列表
@@ -295,7 +366,7 @@ public interface GoodsFacadeService {
      * @param pageSize    页面大小
      * @return 分页结果
      */
-    PageResponse<GoodsResponse> getPhysicalGoods(Integer currentPage, Integer pageSize);
+    Result<PageResponse<GoodsResponse>> getPhysicalGoods(Integer currentPage, Integer pageSize);
 
     // =================== 内容同步相关方法 ===================
 

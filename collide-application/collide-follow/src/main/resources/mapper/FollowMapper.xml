@@ -12,7 +12,7 @@
         status, create_time, update_time
     </sql>
 
-    <!-- 根据关注者和被关注者查询关注关系 -->
+    <!-- 根据关注者和被关注者查询关注关系（使用 uk_follower_followee 唯一索引） -->
     <select id="findByFollowerAndFollowee" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT <include refid="baseColumns" />
         FROM t_follow
@@ -24,7 +24,7 @@
         LIMIT 1
     </select>
 
-    <!-- 检查关注关系是否存在 -->
+    <!-- 检查关注关系是否存在（使用 uk_follower_followee 唯一索引） -->
     <select id="checkFollowExists" resultType="boolean">
         SELECT COUNT(1) > 0
         FROM t_follow
@@ -35,7 +35,7 @@
           </if>
     </select>
 
-    <!-- 获取用户的关注列表 -->
+    <!-- 获取用户的关注列表（使用 idx_follower_status_time 索引） -->
     <select id="findFollowing" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT <include refid="baseColumns" />
         FROM t_follow
@@ -46,7 +46,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 获取用户的粉丝列表 -->
+    <!-- 获取用户的粉丝列表（使用 idx_followee_status_time 索引） -->
     <select id="findFollowers" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT <include refid="baseColumns" />
         FROM t_follow
@@ -57,7 +57,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 获取互相关注的好友 -->
+    <!-- 获取互相关注的好友（使用 idx_mutual_follow 和 uk_follower_followee 索引） -->
     <select id="findMutualFollows" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT f1.*
         FROM t_follow f1
@@ -73,9 +73,16 @@
         ORDER BY f1.create_time DESC
     </select>
 
-    <!-- 根据昵称搜索关注关系 -->
+    <!-- 根据昵称搜索关注关系（使用 idx_follower_nickname_fulltext/idx_followee_nickname_fulltext 全文索引） -->
     <select id="searchByNickname" resultType="com.gig.collide.follow.domain.entity.Follow">
-        SELECT <include refid="baseColumns" />
+        SELECT <include refid="baseColumns" />,
+               <if test="nicknameKeyword != null and nicknameKeyword != ''">
+                   (MATCH(follower_nickname) AGAINST(#{nicknameKeyword} IN NATURAL LANGUAGE MODE) +
+                    MATCH(followee_nickname) AGAINST(#{nicknameKeyword} IN NATURAL LANGUAGE MODE)) as relevance_score
+               </if>
+               <if test="nicknameKeyword == null or nicknameKeyword == ''">
+                   0 as relevance_score
+               </if>
         FROM t_follow
         WHERE 1=1
           <if test="followerId != null">
@@ -86,17 +93,26 @@
           </if>
           <if test="nicknameKeyword != null and nicknameKeyword != ''">
               AND (
-                  follower_nickname LIKE CONCAT('%', #{nicknameKeyword}, '%')
+                  MATCH(follower_nickname) AGAINST(#{nicknameKeyword} IN NATURAL LANGUAGE MODE)
+                  OR MATCH(followee_nickname) AGAINST(#{nicknameKeyword} IN NATURAL LANGUAGE MODE)
+                  OR follower_nickname LIKE CONCAT('%', #{nicknameKeyword}, '%')
                   OR followee_nickname LIKE CONCAT('%', #{nicknameKeyword}, '%')
               )
           </if>
           <if test="status != null and status != ''">
               AND status = #{status}
           </if>
-        ORDER BY create_time DESC
+        <choose>
+            <when test="nicknameKeyword != null and nicknameKeyword != ''">
+                ORDER BY relevance_score DESC, create_time DESC
+            </when>
+            <otherwise>
+                ORDER BY create_time DESC
+            </otherwise>
+        </choose>
     </select>
 
-    <!-- 统计用户的关注数量 -->
+    <!-- 统计用户的关注数量（使用 idx_follower_status 索引） -->
     <select id="countFollowing" resultType="long">
         SELECT COUNT(*)
         FROM t_follow
@@ -106,7 +122,7 @@
           </if>
     </select>
 
-    <!-- 统计用户的粉丝数量 -->
+    <!-- 统计用户的粉丝数量（使用 idx_followee_status 索引） -->
     <select id="countFollowers" resultType="long">
         SELECT COUNT(*)
         FROM t_follow
@@ -116,7 +132,7 @@
           </if>
     </select>
 
-    <!-- 批量检查关注状态 -->
+    <!-- 批量检查关注状态（使用 idx_follower_status_followee 索引） -->
     <select id="batchCheckFollowStatus" resultType="map">
         SELECT 
             followee_id as followeeId,
@@ -133,7 +149,7 @@
         GROUP BY followee_id
     </select>
 
-    <!-- 更新关注状态 -->
+    <!-- 更新关注状态（使用 uk_follower_followee 唯一索引） -->
     <update id="updateFollowStatus">
         UPDATE t_follow
         SET status = #{status},
@@ -142,7 +158,7 @@
           AND followee_id = #{followeeId}
     </update>
 
-    <!-- 更新用户信息（冗余字段） -->
+    <!-- 更新用户信息（冗余字段，使用 idx_follower_id 和 idx_followee_id 索引） -->
     <update id="updateUserInfo">
         <if test="updateAsFollower == true and updateAsFollowee == true">
             UPDATE t_follow
@@ -169,7 +185,7 @@
         </if>
     </update>
 
-    <!-- 获取用户的关注统计信息 -->
+    <!-- 获取用户的关注统计信息（使用 idx_follower_status 和 idx_followee_status 索引） -->
     <select id="getUserFollowStatistics" resultType="map">
         SELECT 
             (SELECT COUNT(*) FROM t_follow WHERE follower_id = #{userId} AND status = 'active') as following_count,
@@ -179,14 +195,14 @@
              WHERE f1.follower_id = #{userId} AND f1.status = 'active' AND f2.status = 'active') as mutual_count
     </select>
 
-    <!-- 清理已取消的关注记录 -->
+    <!-- 清理已取消的关注记录（使用 idx_status_update_time 索引） -->
     <delete id="cleanCancelledFollows">
         DELETE FROM t_follow
         WHERE status = 'cancelled'
           AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
     </delete>
 
-    <!-- 复合条件查询关注记录 -->
+    <!-- 复合条件查询关注记录（使用 idx_follower_followee_status_time 复合索引） -->
     <select id="findWithConditions" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT <include refid="baseColumns" />
         FROM t_follow
@@ -230,7 +246,7 @@
         </choose>
     </select>
 
-    <!-- 查询用户间的关注关系链 -->
+    <!-- 查询用户间的关注关系链（使用 uk_follower_followee 唯一索引） -->
     <select id="findRelationChain" resultType="com.gig.collide.follow.domain.entity.Follow">
         SELECT <include refid="baseColumns" />
         FROM t_follow

@@ -141,4 +141,78 @@ public interface FollowFacadeService {
      * @return 清理数量
      */
     Result<Integer> cleanCancelledFollows(Integer days);
+    
+    /**
+     * 根据昵称搜索关注关系
+     * 根据关注者或被关注者昵称进行模糊搜索
+     * 
+     * @param followerId 关注者ID（可选）
+     * @param followeeId 被关注者ID（可选）
+     * @param nicknameKeyword 昵称关键词
+     * @param currentPage 页码
+     * @param pageSize 页面大小
+     * @return 搜索结果
+     */
+    Result<PageResponse<FollowResponse>> searchByNickname(Long followerId, Long followeeId, String nicknameKeyword,
+                                                         Integer currentPage, Integer pageSize);
+    
+    /**
+     * 更新用户信息（冗余字段同步）
+     * 当用户信息变更时，同步更新关注表中的冗余信息
+     * 
+     * @param userId 用户ID
+     * @param nickname 新昵称
+     * @param avatar 新头像
+     * @return 更新成功的记录数
+     */
+    Result<Integer> updateUserInfo(Long userId, String nickname, String avatar);
+    
+    /**
+     * 查询用户间的关注关系链
+     * 检查两个用户之间的双向关注关系
+     * 
+     * @param userIdA 用户A ID
+     * @param userIdB 用户B ID
+     * @return 关注关系链列表
+     */
+    Result<java.util.List<FollowResponse>> getRelationChain(Long userIdA, Long userIdB);
+    
+    /**
+     * 验证关注请求参数
+     * 校验请求参数的有效性
+     * 
+     * @param request 关注请求
+     * @return 验证结果信息
+     */
+    Result<String> validateFollowRequest(FollowCreateRequest request);
+    
+    /**
+     * 检查是否可以关注
+     * 检查业务规则是否允许关注
+     * 
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @return 检查结果信息
+     */
+    Result<String> checkCanFollow(Long followerId, Long followeeId);
+    
+    /**
+     * 检查是否已经存在关注关系
+     * 包括已取消的关注关系
+     * 
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @return 是否存在关注关系
+     */
+    Result<Boolean> existsFollowRelation(Long followerId, Long followeeId);
+    
+    /**
+     * 重新激活已取消的关注关系
+     * 将cancelled状态的关注重新设置为active
+     * 
+     * @param followerId 关注者ID
+     * @param followeeId 被关注者ID
+     * @return 是否成功重新激活
+     */
+    Result<Boolean> reactivateFollow(Long followerId, Long followeeId);
 } 

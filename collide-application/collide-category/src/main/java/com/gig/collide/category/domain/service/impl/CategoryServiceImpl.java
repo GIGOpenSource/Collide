@@ -1,25 +1,28 @@
 package com.gig.collide.category.domain.service.impl;
 
-import com.alicp.jetcache.anno.*;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.category.domain.entity.Category;
 import com.gig.collide.category.domain.service.CategoryService;
 import com.gig.collide.category.infrastructure.mapper.CategoryMapper;
+import com.gig.collide.base.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 分类业务服务实现 - C端简化版
- * 专注于客户端使用的简单查询功能，移除复杂的管理功能
+ * 分类业务服务实现 - 规范版
+ * 参考Content模块设计，分页查询返回PageResponse，非分页查询返回List
+ * 支持完整的分类功能：查询、层级、统计、管理
  * 
  * @author Collide
- * @version 2.0.0 (C端简化版)
+ * @version 5.0.0 (与Content模块一致版)
  * @since 2024-01-01
  */
 @Slf4j
@@ -29,239 +32,541 @@ public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryMapper categoryMapper;
 
+    // =================== 业务常量 ===================
+    
+    private static final String DEFAULT_STATUS = "active";
+    private static final String DEFAULT_ORDER_BY = "sort";
+    private static final String DEFAULT_ORDER_DIRECTION = "ASC";
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_CURRENT_PAGE = 1;
+
     // =================== 基础查询 ===================
 
     @Override
-    @Cached(name = "category:detail:", key = "#categoryId", expire = 30, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 5, stopRefreshAfterLastAccess = 30, timeUnit = TimeUnit.MINUTES)
     public Category getCategoryById(Long categoryId) {
+        log.info("获取分类详情: categoryId={}", categoryId);
+        
         if (categoryId == null) {
-            return null;
+            throw new IllegalArgumentException("分类ID不能为空");
         }
         
-        LambdaQueryWrapper<Category> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Category::getId, categoryId);
-        wrapper.eq(Category::getStatus, "active"); // 只返回激活状态的分类
+        Category category = categoryMapper.selectById(categoryId);
         
-        return categoryMapper.selectOne(wrapper);
+        log.info("获取分类详情完成: categoryId={}, found={}", categoryId, category != null);
+        return category;
     }
 
     @Override
-    @Cached(name = "category:query:", key = "#parentId + ':' + #status + ':' + #currentPage + ':' + #pageSize + ':' + #orderBy + ':' + #orderDirection", 
-            expire = 15, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 3, stopRefreshAfterLastAccess = 20, timeUnit = TimeUnit.MINUTES)
-    public IPage<Category> queryCategories(Long parentId, String status, Integer currentPage, Integer pageSize,
-                                         String orderBy, String orderDirection) {
+    public PageResponse<Category> queryCategories(Long parentId, String status, Integer currentPage, Integer pageSize,
+                                                 String orderBy, String orderDirection) {
+        log.info("查询分类列表: parentId={}, status={}, page={}/{}", parentId, status, currentPage, pageSize);
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        orderBy = StringUtils.hasText(orderBy) ? orderBy : DEFAULT_ORDER_BY;
+        orderDirection = StringUtils.hasText(orderDirection) ? orderDirection : DEFAULT_ORDER_DIRECTION;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
         Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
         
-        // 默认只查询激活状态的分类
-        if (status == null) {
-            status = "active";
-        }
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
         
-        return categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
+        log.info("查询分类列表完成: 查询到{}条记录，总计{}条", result.getRecords().size(), result.getTotal());
+        return pageResponse;
     }
 
     @Override
-    @Cached(name = "category:search:", key = "#keyword + ':' + #parentId + ':' + #currentPage + ':' + #pageSize + ':' + #orderBy + ':' + #orderDirection", 
-            expire = 10, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 2, stopRefreshAfterLastAccess = 15, timeUnit = TimeUnit.MINUTES)
-    public IPage<Category> searchCategories(String keyword, Long parentId, Integer currentPage, Integer pageSize,
-                                          String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(currentPage, pageSize);
-        String status = "active"; // 搜索只返回激活状态的分类
+    public PageResponse<Category> searchCategories(String keyword, Long parentId, String status, 
+                                                  Integer currentPage, Integer pageSize,
+                                                  String orderBy, String orderDirection) {
+        log.info("搜索分类: keyword={}, parentId={}, status={}, page={}/{}", 
+                keyword, parentId, status, currentPage, pageSize);
         
-        return categoryMapper.searchCategories(page, keyword, parentId, status, orderBy, orderDirection);
+        if (!StringUtils.hasText(keyword)) {
+            throw new IllegalArgumentException("搜索关键词不能为空");
+        }
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        orderBy = StringUtils.hasText(orderBy) ? orderBy : DEFAULT_ORDER_BY;
+        orderDirection = StringUtils.hasText(orderDirection) ? orderDirection : DEFAULT_ORDER_DIRECTION;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
+        Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.searchCategories(page, keyword.trim(), parentId, status, 
+                                                                orderBy, orderDirection);
+        
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
+        
+        log.info("搜索分类完成: keyword={}, 查询到{}条记录，总计{}条", keyword, result.getRecords().size(), result.getTotal());
+        return pageResponse;
     }
 
     // =================== 层级查询 ===================
 
     @Override
-    @Cached(name = "category:root:", key = "#currentPage + ':' + #pageSize + ':' + #orderBy + ':' + #orderDirection", 
-            expire = 20, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 5, stopRefreshAfterLastAccess = 25, timeUnit = TimeUnit.MINUTES)
-    public IPage<Category> getRootCategories(Integer currentPage, Integer pageSize, String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(currentPage, pageSize);
-        String status = "active";
+    public PageResponse<Category> getRootCategories(String status, Integer currentPage, Integer pageSize, 
+                                                   String orderBy, String orderDirection) {
+        log.info("获取根分类列表: status={}, page={}/{}", status, currentPage, pageSize);
         
-        return categoryMapper.selectRootCategories(page, status, orderBy, orderDirection);
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        orderBy = StringUtils.hasText(orderBy) ? orderBy : DEFAULT_ORDER_BY;
+        orderDirection = StringUtils.hasText(orderDirection) ? orderDirection : DEFAULT_ORDER_DIRECTION;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
+        Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.selectRootCategories(page, status, orderBy, orderDirection);
+        
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
+        
+        log.info("获取根分类列表完成: 查询到{}条记录，总计{}条", result.getRecords().size(), result.getTotal());
+        return pageResponse;
     }
 
     @Override
-    @Cached(name = "category:children:", key = "#parentId + ':' + #currentPage + ':' + #pageSize + ':' + #orderBy + ':' + #orderDirection", 
-            expire = 15, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 3, stopRefreshAfterLastAccess = 20, timeUnit = TimeUnit.MINUTES)
-    public IPage<Category> getChildCategories(Long parentId, Integer currentPage, Integer pageSize,
-                                            String orderBy, String orderDirection) {
-        Page<Category> page = new Page<>(currentPage, pageSize);
-        String status = "active";
+    public PageResponse<Category> getChildCategories(Long parentId, String status, 
+                                                    Integer currentPage, Integer pageSize,
+                                                    String orderBy, String orderDirection) {
+        log.info("获取子分类列表: parentId={}, status={}, page={}/{}", 
+                parentId, status, currentPage, pageSize);
         
-        return categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
+        if (parentId == null) {
+            throw new IllegalArgumentException("父分类ID不能为空");
+        }
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        orderBy = StringUtils.hasText(orderBy) ? orderBy : DEFAULT_ORDER_BY;
+        orderDirection = StringUtils.hasText(orderDirection) ? orderDirection : DEFAULT_ORDER_DIRECTION;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
+        Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.selectCategoriesPage(page, parentId, status, orderBy, orderDirection);
+        
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
+        
+        log.info("获取子分类列表完成: parentId={}, 查询到{}条记录，总计{}条", parentId, result.getRecords().size(), result.getTotal());
+        return pageResponse;
     }
 
     @Override
-    @Cached(name = "category:tree:", key = "#rootId + ':' + #maxDepth", expire = 30, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 10, stopRefreshAfterLastAccess = 40, timeUnit = TimeUnit.MINUTES)
-    public List<Category> getCategoryTree(Long rootId, Integer maxDepth) {
-        String status = "active"; // 只获取激活状态的分类
+    public List<Category> getCategoryTree(Long rootId, Integer maxDepth, String status,
+                                         String orderBy, String orderDirection) {
+        log.info("获取分类树: rootId={}, maxDepth={}, status={}", rootId, maxDepth, status);
         
-        // 获取所有相关分类
-        List<Category> allCategories = categoryMapper.selectCategoryTree(rootId, maxDepth, status, "sort", "ASC");
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        orderBy = StringUtils.hasText(orderBy) ? orderBy : DEFAULT_ORDER_BY;
+        orderDirection = StringUtils.hasText(orderDirection) ? orderDirection : DEFAULT_ORDER_DIRECTION;
+        
+        List<Category> allCategories = categoryMapper.selectCategoryTree(rootId, maxDepth, status, 
+                                                                        orderBy, orderDirection);
         
         // 构建树形结构
-        return buildCategoryTree(allCategories, maxDepth);
+        List<Category> tree = buildCategoryTree(allCategories, maxDepth);
+        
+        log.info("获取分类树完成: rootId={}, 构建{}个根节点", rootId, tree.size());
+        return tree;
     }
 
     @Override
-    @Cached(name = "category:path:", key = "#categoryId", expire = 20, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 5, stopRefreshAfterLastAccess = 25, timeUnit = TimeUnit.MINUTES)
     public List<Category> getCategoryPath(Long categoryId) {
+        log.info("获取分类路径: categoryId={}", categoryId);
+        
         if (categoryId == null) {
-            return new ArrayList<>();
+            throw new IllegalArgumentException("分类ID不能为空");
         }
         
-        // 获取分类路径（简化实现，实际应该递归查询父分类）
-        Category category = getCategoryById(categoryId);
-        if (category == null) {
-            return new ArrayList<>();
+        List<Category> path = categoryMapper.selectCategoryPath(categoryId);
+        
+        log.info("获取分类路径完成: categoryId={}, 路径长度={}", categoryId, path.size());
+        return path != null ? path : new ArrayList<>();
+    }
+
+    @Override
+    public List<Category> getCategoryAncestors(Long categoryId, Boolean includeInactive) {
+        log.info("获取分类祖先: categoryId={}, includeInactive={}", categoryId, includeInactive);
+        
+        if (categoryId == null) {
+            throw new IllegalArgumentException("分类ID不能为空");
         }
         
-        List<Category> path = new ArrayList<>();
-        path.add(category);
+        List<Category> ancestors = categoryMapper.selectCategoryAncestors(categoryId, includeInactive);
         
-        // 递归获取父分类路径
-        Long parentId = category.getParentId();
-        while (parentId != null && parentId != 0) {
-            Category parent = getCategoryById(parentId);
-            if (parent != null) {
-                path.add(0, parent); // 在开头添加父分类
-                parentId = parent.getParentId();
-            } else {
-                break;
-            }
+        log.info("获取分类祖先完成: categoryId={}, 祖先数量={}", categoryId, ancestors.size());
+        return ancestors != null ? ancestors : new ArrayList<>();
+    }
+
+    @Override
+    public List<Category> getCategoryDescendants(Long categoryId, Integer maxDepth, Boolean includeInactive) {
+        log.info("获取分类后代: categoryId={}, maxDepth={}, includeInactive={}", 
+                categoryId, maxDepth, includeInactive);
+        
+        if (categoryId == null) {
+            throw new IllegalArgumentException("分类ID不能为空");
         }
         
-        return path;
+        List<Category> descendants = categoryMapper.selectCategoryDescendants(categoryId, maxDepth, includeInactive);
+        
+        log.info("获取分类后代完成: categoryId={}, 后代数量={}", categoryId, descendants.size());
+        return descendants != null ? descendants : new ArrayList<>();
+    }
+
+    // =================== 高级查询 ===================
+
+    @Override
+    public PageResponse<Category> getPopularCategories(Long parentId, String status, 
+                                                      Integer currentPage, Integer pageSize) {
+        log.info("获取热门分类: parentId={}, status={}, page={}/{}", 
+                parentId, status, currentPage, pageSize);
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
+        Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.selectPopularCategories(page, parentId, status);
+        
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
+        
+        log.info("获取热门分类完成: 查询到{}条记录，总计{}条", result.getRecords().size(), result.getTotal());
+        return pageResponse;
+    }
+
+    @Override
+    public PageResponse<Category> getLeafCategories(Long parentId, String status, 
+                                                   Integer currentPage, Integer pageSize) {
+        log.info("获取叶子分类: parentId={}, status={}, page={}/{}", 
+                parentId, status, currentPage, pageSize);
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        currentPage = currentPage != null && currentPage > 0 ? currentPage : DEFAULT_CURRENT_PAGE;
+        pageSize = pageSize != null && pageSize > 0 ? pageSize : DEFAULT_PAGE_SIZE;
+        
+        // 使用MyBatis-Plus分页
+        Page<Category> page = new Page<>(currentPage, pageSize);
+        IPage<Category> result = categoryMapper.selectLeafCategories(page, parentId, status);
+        
+        // 转换为PageResponse
+        PageResponse<Category> pageResponse = convertToPageResponse(result);
+        
+        log.info("获取叶子分类完成: 查询到{}条记录，总计{}条", result.getRecords().size(), result.getTotal());
+        return pageResponse;
+    }
+
+    @Override
+    public List<Category> getCategorySuggestions(String keyword, Integer limit, String status) {
+        log.info("获取分类建议: keyword={}, limit={}, status={}", keyword, limit, status);
+        
+        if (!StringUtils.hasText(keyword)) {
+            throw new IllegalArgumentException("搜索关键词不能为空");
+        }
+        
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        limit = limit != null && limit > 0 ? limit : 10;
+        
+        List<Category> suggestions = categoryMapper.selectCategorySuggestions(keyword.trim(), limit, status);
+        
+        log.info("获取分类建议完成: keyword={}, 建议数量={}", keyword, suggestions.size());
+        return suggestions != null ? suggestions : new ArrayList<>();
     }
 
     // =================== 统计功能 ===================
 
     @Override
-    @Cached(name = "category:popular:", key = "#parentId + ':' + #currentPage + ':' + #pageSize", 
-            expire = 10, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 2, stopRefreshAfterLastAccess = 15, timeUnit = TimeUnit.MINUTES)
-    public IPage<Category> getPopularCategories(Long parentId, Integer currentPage, Integer pageSize) {
-        Page<Category> page = new Page<>(currentPage, pageSize);
-        String status = "active";
+    public Long countCategories(Long parentId, String status) {
+        log.info("统计分类数量: parentId={}, status={}", parentId, status);
         
-        return categoryMapper.selectPopularCategories(page, parentId, status);
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        
+        Long count = categoryMapper.countCategories(parentId, status);
+        
+        log.info("统计分类数量完成: parentId={}, status={}, count={}", parentId, status, count);
+        return count != null ? count : 0L;
     }
 
     @Override
-    @Cached(name = "category:suggestions:", key = "#keyword + ':' + #limit", expire = 5, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 1, stopRefreshAfterLastAccess = 10, timeUnit = TimeUnit.MINUTES)
-    public List<Category> getCategorySuggestions(String keyword, Integer limit) {
-        if (keyword == null || keyword.trim().isEmpty()) {
-            return new ArrayList<>();
+    public Long countChildCategories(Long parentId, String status) {
+        log.info("统计子分类数量: parentId={}, status={}", parentId, status);
+        
+        if (parentId == null) {
+            throw new IllegalArgumentException("父分类ID不能为空");
         }
         
-        String status = "active";
-        return categoryMapper.selectCategorySuggestions(keyword.trim(), limit, status);
+        // 设置默认值
+        status = StringUtils.hasText(status) ? status : DEFAULT_STATUS;
+        
+        Long count = categoryMapper.countChildCategories(parentId, status);
+        
+        log.info("统计子分类数量完成: parentId={}, status={}, count={}", parentId, status, count);
+        return count != null ? count : 0L;
     }
 
     @Override
-    @Cached(name = "category:count:", key = "#parentId + ':' + #status", expire = 15, timeUnit = TimeUnit.MINUTES)
-    @CacheRefresh(refresh = 3, stopRefreshAfterLastAccess = 20, timeUnit = TimeUnit.MINUTES)
-    public long countCategories(Long parentId, String status) {
-        // 默认只统计激活状态的分类
-        if (status == null) {
-            status = "active";
+    public Map<String, Object> getCategoryStatistics(Long categoryId) {
+        log.info("获取分类统计信息: categoryId={}", categoryId);
+        
+        if (categoryId == null) {
+            throw new IllegalArgumentException("分类ID不能为空");
         }
         
-        return categoryMapper.countCategories(parentId, status);
+        Map<String, Object> statistics = categoryMapper.selectCategoryStatistics(categoryId);
+        
+        log.info("获取分类统计信息完成: categoryId={}", categoryId);
+        return statistics != null ? statistics : new HashMap<>();
     }
 
-    // =================== 缓存更新方法 ===================
+    // =================== 验证功能 ===================
+
+    @Override
+    public boolean existsCategoryName(String name, Long parentId, Long excludeId) {
+        log.info("检查分类名称是否存在: name={}, parentId={}, excludeId={}", name, parentId, excludeId);
+        
+        if (!StringUtils.hasText(name) || parentId == null) {
+            throw new IllegalArgumentException("分类名称和父分类ID不能为空");
+        }
+        
+        boolean exists = categoryMapper.existsCategoryName(name.trim(), parentId, excludeId);
+        
+        log.info("检查分类名称是否存在完成: name={}, parentId={}, exists={}", name, parentId, exists);
+        return exists;
+    }
+
+    // =================== 管理功能 ===================
+
+    @Override
+    @Transactional
+    public Category createCategory(Category category) {
+        log.info("创建分类: category={}", category);
+        
+        if (category == null) {
+            throw new IllegalArgumentException("分类对象不能为空");
+        }
+        
+        // 参数验证
+        validateCategoryForCreate(category);
+        
+        // 检查名称是否重复
+        if (existsCategoryName(category.getName(), category.getParentId(), null)) {
+            throw new IllegalArgumentException("同级分类下已存在相同名称的分类");
+        }
+        
+        try {
+            // 初始化默认值
+            initCategoryDefaults(category);
+            
+            // 插入数据库
+            int result = categoryMapper.insert(category);
+            if (result > 0) {
+                log.info("创建分类成功: categoryId={}", category.getId());
+                return category;
+            } else {
+                throw new RuntimeException("创建分类失败：数据库插入返回0");
+            }
+        } catch (Exception e) {
+            log.error("创建分类失败: category={}", category, e);
+            throw new RuntimeException("创建分类失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public Category updateCategory(Category category) {
+        log.info("更新分类: category={}", category);
+        
+        if (category == null || category.getId() == null) {
+            throw new IllegalArgumentException("分类对象或ID不能为空");
+        }
+        
+        // 参数验证
+        validateCategoryForUpdate(category);
+        
+        // 检查分类是否存在
+        Category existing = categoryMapper.selectById(category.getId());
+        if (existing == null) {
+            throw new IllegalArgumentException("分类不存在");
+        }
+        
+        // 检查名称是否重复（排除自己）
+        if (existsCategoryName(category.getName(), category.getParentId(), category.getId())) {
+            throw new IllegalArgumentException("同级分类下已存在相同名称的分类");
+        }
+        
+        try {
+            // 更新数据库
+            int result = categoryMapper.updateById(category);
+            if (result > 0) {
+                log.info("更新分类成功: categoryId={}", category.getId());
+                return categoryMapper.selectById(category.getId());
+            } else {
+                throw new RuntimeException("更新分类失败：数据库更新返回0");
+            }
+        } catch (Exception e) {
+            log.error("更新分类失败: category={}", category, e);
+            throw new RuntimeException("更新分类失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteCategory(Long categoryId) {
+        log.info("删除分类: categoryId={}", categoryId);
+        
+        if (categoryId == null) {
+            throw new IllegalArgumentException("分类ID不能为空");
+        }
+        
+        // 检查分类是否存在
+        Category category = categoryMapper.selectById(categoryId);
+        if (category == null) {
+            log.warn("分类不存在: categoryId={}", categoryId);
+            return false;
+        }
+        
+        // 检查是否有子分类
+        Long childCount = countChildCategories(categoryId, null);
+        if (childCount > 0) {
+            throw new IllegalArgumentException("分类存在子分类，无法删除");
+        }
+        
+        try {
+            // 删除分类
+            int result = categoryMapper.deleteById(categoryId);
+            if (result > 0) {
+                log.info("删除分类成功: categoryId={}", categoryId);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("删除分类失败: categoryId={}", categoryId, e);
+            throw new RuntimeException("删除分类失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public int batchUpdateStatus(List<Long> categoryIds, String status) {
+        log.info("批量更新分类状态: categoryIds={}, status={}", categoryIds, status);
+        
+        if (CollectionUtils.isEmpty(categoryIds)) {
+            throw new IllegalArgumentException("分类ID列表不能为空");
+        }
+        if (!StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("状态不能为空");
+        }
+        
+        try {
+            int result = categoryMapper.batchUpdateStatus(categoryIds, status);
+            log.info("批量更新分类状态成功: 影响行数={}", result);
+            return result;
+        } catch (Exception e) {
+            log.error("批量更新分类状态失败: categoryIds={}, status={}", categoryIds, status, e);
+            throw new RuntimeException("批量更新分类状态失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public boolean updateContentCount(Long categoryId, Long increment) {
+        log.info("更新分类内容数量: categoryId={}, increment={}", categoryId, increment);
+        
+        if (categoryId == null || increment == null) {
+            throw new IllegalArgumentException("分类ID和增量值不能为空");
+        }
+        
+        try {
+            int result = categoryMapper.updateContentCount(categoryId, increment);
+            if (result > 0) {
+                log.info("更新分类内容数量成功: categoryId={}, increment={}", categoryId, increment);
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("更新分类内容数量失败: categoryId={}, increment={}", categoryId, increment, e);
+            throw new RuntimeException("更新分类内容数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional
+    public int recalculateContentCount(Long categoryId) {
+        log.info("重新计算分类内容数量: categoryId={}", categoryId);
+        
+        try {
+            int result = categoryMapper.recalculateContentCount(categoryId);
+            log.info("重新计算分类内容数量成功: categoryId={}, 影响行数={}", categoryId, result);
+            return result;
+        } catch (Exception e) {
+            log.error("重新计算分类内容数量失败: categoryId={}", categoryId, e);
+            throw new RuntimeException("重新计算分类内容数量失败：" + e.getMessage(), e);
+        }
+    }
+
+    // =================== 私有辅助方法 ===================
 
     /**
-     * 清除分类详情缓存
+     * 验证分类创建参数
      */
-    @CacheInvalidate(name = "category:detail:", key = "#categoryId")
-    public void invalidateCategoryDetail(Long categoryId) {
-        log.info("清除分类详情缓存，categoryId: {}", categoryId);
+    private void validateCategoryForCreate(Category category) {
+        if (!StringUtils.hasText(category.getName())) {
+            throw new IllegalArgumentException("分类名称不能为空");
+        }
+        if (category.getParentId() == null) {
+            throw new IllegalArgumentException("父分类ID不能为空");
+        }
     }
 
     /**
-     * 清除分类查询缓存
+     * 验证分类更新参数
      */
-    @CacheInvalidate(name = "category:query:", key = "#parentId + ':' + #status + ':*'")
-    public void invalidateCategoryQuery(Long parentId, String status) {
-        log.info("清除分类查询缓存，parentId: {}, status: {}", parentId, status);
+    private void validateCategoryForUpdate(Category category) {
+        if (!StringUtils.hasText(category.getName())) {
+            throw new IllegalArgumentException("分类名称不能为空");
+        }
     }
 
     /**
-     * 清除分类搜索缓存
+     * 初始化分类默认值
      */
-    @CacheInvalidate(name = "category:search:", key = "#keyword + ':*'")
-    public void invalidateCategorySearch(String keyword) {
-        log.info("清除分类搜索缓存，keyword: {}", keyword);
+    private void initCategoryDefaults(Category category) {
+        if (category.getStatus() == null) {
+            category.setStatus(DEFAULT_STATUS);
+        }
+        if (category.getSort() == null) {
+            category.setSort(0);
+        }
+        if (category.getContentCount() == null) {
+            category.setContentCount(0L);
+        }
     }
-
-    /**
-     * 清除分类树缓存
-     */
-    @CacheInvalidate(name = "category:tree:", key = "#rootId + ':*'")
-    public void invalidateCategoryTree(Long rootId) {
-        log.info("清除分类树缓存，rootId: {}", rootId);
-    }
-
-    /**
-     * 清除分类路径缓存
-     */
-    @CacheInvalidate(name = "category:path:", key = "#categoryId")
-    public void invalidateCategoryPath(Long categoryId) {
-        log.info("清除分类路径缓存，categoryId: {}", categoryId);
-    }
-
-    /**
-     * 清除热门分类缓存
-     */
-    @CacheInvalidate(name = "category:popular:", key = "#parentId + ':*'")
-    public void invalidatePopularCategories(Long parentId) {
-        log.info("清除热门分类缓存，parentId: {}", parentId);
-    }
-
-    /**
-     * 清除分类建议缓存
-     */
-    @CacheInvalidate(name = "category:suggestions:", key = "#keyword + ':*'")
-    public void invalidateCategorySuggestions(String keyword) {
-        log.info("清除分类建议缓存，keyword: {}", keyword);
-    }
-
-    /**
-     * 清除分类数量缓存
-     */
-    @CacheInvalidate(name = "category:count:", key = "#parentId + ':' + #status")
-    public void invalidateCategoryCount(Long parentId, String status) {
-        log.info("清除分类数量缓存，parentId: {}, status: {}", parentId, status);
-    }
-
-    /**
-     * 清除所有分类相关缓存
-     */
-    @CacheInvalidate(name = "category:*", key = "*")
-    public void invalidateAllCategoryCache() {
-        log.info("清除所有分类缓存");
-    }
-
-    // =================== 私有方法 ===================
 
     /**
      * 构建分类树形结构
      */
     private List<Category> buildCategoryTree(List<Category> categories, Integer maxDepth) {
-        if (categories == null || categories.isEmpty()) {
+        if (CollectionUtils.isEmpty(categories)) {
             return new ArrayList<>();
         }
         
@@ -290,7 +595,7 @@ public class CategoryServiceImpl implements CategoryService {
         }
         
         List<Category> children = categoryMap.get(parent.getId());
-        if (children != null && !children.isEmpty()) {
+        if (!CollectionUtils.isEmpty(children)) {
             parent.initChildren();
             for (Category child : children) {
                 child.setLevel(currentDepth);
@@ -299,5 +604,19 @@ public class CategoryServiceImpl implements CategoryService {
                 buildCategoryChildren(child, categoryMap, maxDepth, currentDepth + 1);
             }
         }
+    }
+
+    /**
+     * 转换MyBatis-Plus分页结果为PageResponse
+     */
+    private PageResponse<Category> convertToPageResponse(IPage<Category> page) {
+        PageResponse<Category> pageResponse = new PageResponse<>();
+        pageResponse.setDatas(page.getRecords());
+        pageResponse.setTotal(page.getTotal());
+        pageResponse.setCurrentPage((int) page.getCurrent());
+        pageResponse.setPageSize((int) page.getSize());
+        pageResponse.setTotalPage((int) page.getPages());
+        pageResponse.setSuccess(true);
+        return pageResponse;
     }
 }

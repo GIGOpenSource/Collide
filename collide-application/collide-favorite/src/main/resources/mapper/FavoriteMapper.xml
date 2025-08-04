@@ -11,7 +11,7 @@
         user_nickname, status, create_time, update_time
     </sql>
 
-    <!-- 根据用户、类型和目标查询收藏 -->
+    <!-- 根据用户、类型和目标查询收藏（使用 uk_user_target 唯一索引） -->
     <select id="findByUserAndTarget" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
@@ -24,7 +24,7 @@
         LIMIT 1
     </select>
 
-    <!-- 检查收藏是否存在 -->
+    <!-- 检查收藏是否存在（使用 uk_user_target 唯一索引） -->
     <select id="checkFavoriteExists" resultType="boolean">
         SELECT COUNT(1) > 0
         FROM t_favorite
@@ -36,7 +36,7 @@
           </if>
     </select>
 
-    <!-- 获取用户的收藏列表 -->
+    <!-- 获取用户的收藏列表（使用 idx_user_type_status_time 索引） -->
     <select id="findUserFavorites" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
@@ -50,7 +50,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 获取目标对象的收藏列表 -->
+    <!-- 获取目标对象的收藏列表（使用 idx_target_type_status 索引） -->
     <select id="findTargetFavorites" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
@@ -62,13 +62,16 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据标题搜索收藏 -->
+    <!-- 根据标题搜索收藏（优化：支持全文索引和LIKE查询） -->
     <select id="searchByTitle" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
         WHERE user_id = #{userId}
           <if test="titleKeyword != null and titleKeyword != ''">
-              AND target_title LIKE CONCAT('%', #{titleKeyword}, '%')
+              AND (
+                  MATCH(target_title) AGAINST(#{titleKeyword} IN BOOLEAN MODE)
+                  OR target_title LIKE CONCAT('%', #{titleKeyword}, '%')
+              )
           </if>
           <if test="favoriteType != null and favoriteType != ''">
               AND favorite_type = #{favoriteType}
@@ -76,10 +79,14 @@
           <if test="status != null and status != ''">
               AND status = #{status}
           </if>
-        ORDER BY create_time DESC
+        ORDER BY 
+          <if test="titleKeyword != null and titleKeyword != ''">
+              MATCH(target_title) AGAINST(#{titleKeyword} IN BOOLEAN MODE) DESC,
+          </if>
+          create_time DESC
     </select>
 
-    <!-- 获取热门收藏对象 -->
+    <!-- 获取热门收藏对象（使用 idx_type_status_target_time 索引优化GROUP BY） -->
     <select id="findPopularFavorites" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT 
             target_id, favorite_type, target_title, target_cover, target_author_id,
@@ -94,7 +101,7 @@
         ORDER BY favorite_count DESC, latest_favorite_time DESC
     </select>
 
-    <!-- 统计用户收藏数量 -->
+    <!-- 统计用户收藏数量（使用 idx_user_status_type 索引） -->
     <select id="countUserFavorites" resultType="long">
         SELECT COUNT(*)
         FROM t_favorite
@@ -107,7 +114,7 @@
           </if>
     </select>
 
-    <!-- 统计目标对象被收藏数量 -->
+    <!-- 统计目标对象被收藏数量（使用 idx_target_type_status 索引） -->
     <select id="countTargetFavorites" resultType="long">
         SELECT COUNT(*)
         FROM t_favorite
@@ -118,7 +125,7 @@
           </if>
     </select>
 
-    <!-- 批量检查收藏状态 -->
+    <!-- 批量检查收藏状态（使用 uk_user_target 索引优化IN查询） -->
     <select id="batchCheckFavoriteStatus" resultType="map">
         SELECT 
             target_id as targetId,
@@ -136,7 +143,7 @@
         GROUP BY target_id
     </select>
 
-    <!-- 更新收藏状态 -->
+    <!-- 更新收藏状态（使用 uk_user_target 唯一索引） -->
     <update id="updateFavoriteStatus">
         UPDATE t_favorite
         SET status = #{status},
@@ -146,7 +153,7 @@
           AND target_id = #{targetId}
     </update>
 
-    <!-- 更新用户信息（冗余字段） -->
+    <!-- 更新用户信息（冗余字段，使用 idx_user_status_type 索引） -->
     <update id="updateUserInfo">
         UPDATE t_favorite
         SET user_nickname = #{nickname},
@@ -154,7 +161,7 @@
         WHERE user_id = #{userId}
     </update>
 
-    <!-- 更新目标对象信息（冗余字段） -->
+    <!-- 更新目标对象信息（冗余字段，使用 idx_target_type_status 索引） -->
     <update id="updateTargetInfo">
         UPDATE t_favorite
         SET target_title = #{title},
@@ -165,7 +172,7 @@
           AND target_id = #{targetId}
     </update>
 
-    <!-- 获取用户收藏统计信息 -->
+    <!-- 获取用户收藏统计信息（使用 idx_user_status_type 索引） -->
     <select id="getUserFavoriteStatistics" resultType="map">
         SELECT 
             COUNT(*) as total_count,
@@ -178,14 +185,14 @@
           AND status = 'active'
     </select>
 
-    <!-- 清理已取消的收藏记录 -->
+    <!-- 清理已取消的收藏记录（使用 idx_status_update_time 索引） -->
     <delete id="cleanCancelledFavorites">
         DELETE FROM t_favorite
         WHERE status = 'cancelled'
           AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
     </delete>
 
-    <!-- 复合条件查询收藏记录 -->
+    <!-- 复合条件查询收藏记录（根据条件选择最优索引） -->
     <select id="findWithConditions" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
@@ -231,7 +238,7 @@
         </choose>
     </select>
 
-    <!-- 根据作者查询收藏作品 -->
+    <!-- 根据作者查询收藏作品（使用 idx_author_type_status_time 索引） -->
     <select id="findByAuthor" resultType="com.gig.collide.favorite.domain.entity.Favorite">
         SELECT <include refid="baseColumns" />
         FROM t_favorite
@@ -244,5 +251,25 @@
           </if>
         ORDER BY create_time DESC
     </select>
+
+    <!-- 检查收藏关系是否存在（包括已取消的，使用 uk_user_target 唯一索引） -->
+    <select id="existsFavoriteRelation" resultType="boolean">
+        SELECT COUNT(1) > 0
+        FROM t_favorite
+        WHERE user_id = #{userId}
+          AND favorite_type = #{favoriteType}
+          AND target_id = #{targetId}
+    </select>
+
+    <!-- 重新激活已取消的收藏（使用 uk_user_target 唯一索引） -->
+    <update id="reactivateFavorite">
+        UPDATE t_favorite
+        SET status = 'active',
+            update_time = NOW()
+        WHERE user_id = #{userId}
+          AND favorite_type = #{favoriteType}
+          AND target_id = #{targetId}
+          AND status = 'cancelled'
+    </update>
 
 </mapper>

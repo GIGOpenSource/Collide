@@ -240,4 +240,28 @@ public interface FavoriteMapper extends BaseMapper<Favorite> {
                                 @Param("targetAuthorId") Long targetAuthorId,
                                 @Param("favoriteType") String favoriteType,
                                 @Param("status") String status);
+
+    /**
+     * 检查收藏关系是否存在（包括已取消的）
+     * 
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @return 是否存在收藏关系
+     */
+    boolean existsFavoriteRelation(@Param("userId") Long userId,
+                                  @Param("favoriteType") String favoriteType,
+                                  @Param("targetId") Long targetId);
+
+    /**
+     * 重新激活已取消的收藏
+     * 
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @return 更新行数
+     */
+    int reactivateFavorite(@Param("userId") Long userId,
+                          @Param("favoriteType") String favoriteType,
+                          @Param("targetId") Long targetId);
 }

@@ -66,13 +66,17 @@
         </choose>
     </select>
 
-    <!-- 根据名称搜索分类 -->
+    <!-- 根据名称搜索分类（MySQL 8.4 索引优化版） -->
     <select id="searchCategories" resultType="com.gig.collide.category.domain.entity.Category">
         SELECT <include refid="Base_Column_List"/>
         FROM t_category
         WHERE 1=1
         <if test="keyword != null and keyword != ''">
-            AND name LIKE CONCAT('%', #{keyword}, '%')
+            <!-- 优化：使用前缀搜索和函数索引，支持大小写不敏感 -->
+            AND (
+                name LIKE CONCAT(#{keyword}, '%')
+                OR LOWER(name) LIKE LOWER(CONCAT(#{keyword}, '%'))
+            )
         </if>
         <if test="parentId != null">
             AND parent_id = #{parentId}
@@ -82,10 +86,12 @@
         </if>
         <choose>
             <when test="orderBy == 'name'">
-                ORDER BY name ${orderDirection}
+                ORDER BY 
+                    CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
+                    name ${orderDirection}
             </when>
             <when test="orderBy == 'content_count'">
-                ORDER BY content_count ${orderDirection}
+                ORDER BY content_count ${orderDirection}, sort ASC
             </when>
             <when test="orderBy == 'create_time'">
                 ORDER BY create_time ${orderDirection}
@@ -94,7 +100,10 @@
                 ORDER BY update_time ${orderDirection}
             </when>
             <otherwise>
-                ORDER BY sort ${orderDirection}
+                ORDER BY 
+                    CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
+                    content_count DESC,
+                    sort ${orderDirection}
             </otherwise>
         </choose>
     </select>
@@ -108,32 +117,56 @@
         WHERE id = #{categoryId}
     </select>
 
-    <!-- 获取分类的所有祖先（简化版，Service层递归处理） -->
+    <!-- 获取分类的所有祖先（MySQL 8.4 递归CTE优化版） -->
     <select id="selectCategoryAncestors" resultType="com.gig.collide.category.domain.entity.Category">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_category
-        WHERE id IN
-        <foreach collection="ancestorIds" item="id" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+        WITH RECURSIVE category_ancestors AS (
+            -- 锚点：当前分类
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_category 
+            WHERE id = #{categoryId}
+            
+            UNION ALL
+            
+            -- 递归：查找父分类
+            SELECT c.<include refid="Base_Column_List"/>, ca.level + 1
+            FROM t_category c
+            INNER JOIN category_ancestors ca ON c.id = ca.parent_id
+            WHERE c.parent_id != 0
+        )
+        SELECT id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
+        FROM category_ancestors
+        WHERE level > 0
         <if test="includeInactive != null and !includeInactive">
             AND status = 'active'
         </if>
-        ORDER BY sort ASC
+        ORDER BY level DESC
     </select>
 
-    <!-- 获取分类的所有后代（简化版，Service层递归处理） -->
+    <!-- 获取分类的所有后代（MySQL 8.4 递归CTE优化版） -->
     <select id="selectCategoryDescendants" resultType="com.gig.collide.category.domain.entity.Category">
-        SELECT <include refid="Base_Column_List"/>
-        FROM t_category
-        WHERE id IN
-        <foreach collection="descendantIds" item="id" open="(" separator="," close=")">
-            #{id}
-        </foreach>
+        WITH RECURSIVE category_descendants AS (
+            -- 锚点：当前分类
+            SELECT <include refid="Base_Column_List"/>, 0 as level
+            FROM t_category 
+            WHERE id = #{categoryId}
+            
+            UNION ALL
+            
+            -- 递归：查找子分类
+            SELECT c.<include refid="Base_Column_List"/>, cd.level + 1
+            FROM t_category c
+            INNER JOIN category_descendants cd ON c.parent_id = cd.id
+            <if test="maxDepth != null">
+                WHERE cd.level &lt; #{maxDepth}
+            </if>
+        )
+        SELECT id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
+        FROM category_descendants
+        WHERE level > 0
         <if test="includeInactive != null and !includeInactive">
             AND status = 'active'
         </if>
-        ORDER BY sort ASC
+        ORDER BY level ASC, sort ASC
     </select>
 
     <!-- 获取分类树形结构数据（简化版，获取所有相关数据，Service层构建树） -->

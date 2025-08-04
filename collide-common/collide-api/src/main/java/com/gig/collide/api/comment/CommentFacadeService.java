@@ -6,7 +6,9 @@ import com.gig.collide.api.comment.response.CommentResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 评论门面服务接口 - C端简洁版
@@ -200,4 +202,121 @@ public interface CommentFacadeService {
      */
     Result<PageResponse<CommentResponse>> getLatestComments(Long targetId, String commentType, 
                                                           Integer currentPage, Integer pageSize);
+
+    /**
+     * 根据点赞数范围查询评论
+     * 
+     * @param minLikeCount 最小点赞数
+     * @param maxLikeCount 最大点赞数
+     * @param commentType 评论类型（可选）
+     * @param targetId 目标对象ID（可选）
+     * @param currentPage 页码
+     * @param pageSize 页面大小
+     * @return 评论列表
+     */
+    Result<PageResponse<CommentResponse>> getCommentsByLikeCountRange(Integer minLikeCount, Integer maxLikeCount,
+                                                                    String commentType, Long targetId,
+                                                                    Integer currentPage, Integer pageSize);
+
+    /**
+     * 根据时间范围查询评论
+     * 
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param commentType 评论类型（可选）
+     * @param targetId 目标对象ID（可选）
+     * @param currentPage 页码
+     * @param pageSize 页面大小
+     * @return 评论列表
+     */
+    Result<PageResponse<CommentResponse>> getCommentsByTimeRange(LocalDateTime startTime, LocalDateTime endTime,
+                                                               String commentType, Long targetId,
+                                                               Integer currentPage, Integer pageSize);
+
+    // =================== 数据分析功能 ===================
+
+    /**
+     * 获取评论统计信息
+     * 
+     * @param targetId 目标对象ID（可选）
+     * @param commentType 评论类型（可选）
+     * @param userId 用户ID（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 统计信息
+     */
+    Result<Map<String, Object>> getCommentStatistics(Long targetId, String commentType, Long userId,
+                                                    LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 查询用户回复关系
+     * 
+     * @param userId 用户ID（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 回复关系列表
+     */
+    Result<List<Map<String, Object>>> getUserReplyRelations(Long userId, LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 查询评论热度排行
+     * 
+     * @param commentType 评论类型（可选）
+     * @param targetId 目标对象ID（可选）
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @param limit 限制数量
+     * @return 热度排行列表
+     */
+    Result<List<Map<String, Object>>> getCommentHotRanking(String commentType, Long targetId,
+                                                          LocalDateTime startTime, LocalDateTime endTime, Integer limit);
+
+    // =================== 管理功能（需要管理员权限） ===================
+
+    /**
+     * 批量更新评论状态
+     * 
+     * @param commentIds 评论ID列表
+     * @param status 新状态
+     * @return 影响行数
+     */
+    Result<Integer> batchUpdateCommentStatus(List<Long> commentIds, String status);
+
+    /**
+     * 批量删除目标对象的评论
+     * 
+     * @param targetId 目标对象ID
+     * @param commentType 评论类型
+     * @return 影响行数
+     */
+    Result<Integer> batchDeleteTargetComments(Long targetId, String commentType);
+
+    /**
+     * 更新用户信息（同步冗余字段）
+     * 
+     * @param userId 用户ID
+     * @param nickname 新昵称
+     * @param avatar 新头像
+     * @return 影响行数
+     */
+    Result<Integer> updateUserInfo(Long userId, String nickname, String avatar);
+
+    /**
+     * 更新回复目标用户信息（同步冗余字段）
+     * 
+     * @param replyToUserId 回复目标用户ID
+     * @param nickname 新昵称
+     * @param avatar 新头像
+     * @return 影响行数
+     */
+    Result<Integer> updateReplyToUserInfo(Long replyToUserId, String nickname, String avatar);
+
+    /**
+     * 清理已删除的评论（物理删除）
+     * 
+     * @param days 删除多少天前的数据
+     * @param limit 限制删除数量
+     * @return 删除数量
+     */
+    Result<Integer> cleanDeletedComments(Integer days, Integer limit);
 } 

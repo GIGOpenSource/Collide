@@ -25,6 +25,11 @@ public class FavoriteCacheConstant {
     public static final String USER_FAVORITE_STATUS_KEY = "'favorite:status:' + #userId + ':' + #favoriteType + ':' + #targetId";
     
     /**
+     * 收藏关系检查缓存Key
+     */
+    public static final String FAVORITE_RELATION_KEY = "'favorite:relation:' + #userId + ':' + #favoriteType + ':' + #targetId";
+    
+    /**
      * 收藏状态缓存过期时间（分钟）
      */
     public static final int FAVORITE_STATUS_EXPIRE = 15;
@@ -96,6 +101,11 @@ public class FavoriteCacheConstant {
      * 目标收藏用户列表缓存Key
      */
     public static final String TARGET_FAVORITES_KEY = "'favorite:target:' + #favoriteType + ':' + #targetId + ':' + #pageNum + ':' + #pageSize";
+    
+    /**
+     * 作者收藏作品缓存Key
+     */
+    public static final String AUTHOR_FAVORITES_KEY = "'favorite:author:' + #targetAuthorId + ':' + #favoriteType + ':' + #currentPage + ':' + #pageSize";
     
     /**
      * 目标收藏用户列表缓存过期时间（分钟）

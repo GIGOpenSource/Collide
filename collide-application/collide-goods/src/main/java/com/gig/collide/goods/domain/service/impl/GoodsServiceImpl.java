@@ -1,7 +1,6 @@
 package com.gig.collide.goods.domain.service.impl;
 
 import com.alicp.jetcache.anno.*;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -210,18 +209,19 @@ public class GoodsServiceImpl implements GoodsService {
 
     @Override
     @Cached(name = GoodsCacheConstant.GOODS_CONTENT_CACHE,
-            key = "T(com.gig.collide.goods.infrastructure.cache.GoodsCacheConstant).buildContentKey(#contentId)",
+            key = "T(com.gig.collide.goods.infrastructure.cache.GoodsCacheConstant).buildContentKey(#contentId, #goodsType)",
             expire = GoodsCacheConstant.DETAIL_EXPIRE,
             timeUnit = TimeUnit.MINUTES)
-    public Goods getGoodsByContentId(Long contentId) {
-        log.debug("根据内容ID查询商品: contentId={}", contentId);
+    public Goods getGoodsByContentId(Long contentId, String goodsType) {
+        log.debug("根据内容ID查询商品: contentId={}, goodsType={}", contentId, goodsType);
         
         if (contentId == null || contentId <= 0) {
             log.warn("内容ID无效: {}", contentId);
             return null;
         }
         
-        return goodsMapper.selectByContentId(contentId, "content");
+        String type = StringUtils.hasText(goodsType) ? goodsType : "content";
+        return goodsMapper.selectByContentId(contentId, type);
     }
 
     @Override
@@ -351,7 +351,7 @@ public class GoodsServiceImpl implements GoodsService {
     @CacheInvalidate(name = GoodsCacheConstant.GOODS_DETAIL_CACHE, 
                      key = GoodsCacheConstant.GOODS_DETAIL_KEY + "#goodsId")
     @CacheInvalidate(name = GoodsCacheConstant.GOODS_HOT_CACHE)
-    public boolean increaseSales(Long goodsId, Long count) {
+    public boolean increaseSalesCount(Long goodsId, Long count) {
         log.debug("增加销量: goodsId={}, count={}", goodsId, count);
         
         if (goodsId == null || count == null || count <= 0) {
@@ -365,7 +365,7 @@ public class GoodsServiceImpl implements GoodsService {
     @Override
     @CacheInvalidate(name = GoodsCacheConstant.GOODS_DETAIL_CACHE, 
                      key = GoodsCacheConstant.GOODS_DETAIL_KEY + "#goodsId")
-    public boolean increaseViews(Long goodsId, Long count) {
+    public boolean increaseViewCount(Long goodsId, Long count) {
         log.debug("增加浏览量: goodsId={}, count={}", goodsId, count);
         
         if (goodsId == null || count == null || count <= 0) {
@@ -377,7 +377,7 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    public boolean batchIncreaseViews(Map<Long, Long> viewMap) {
+    public boolean batchIncreaseViewCount(Map<Long, Long> viewMap) {
         log.debug("批量增加浏览量: count={}", viewMap.size());
         
         if (CollectionUtils.isEmpty(viewMap)) {
@@ -386,7 +386,7 @@ public class GoodsServiceImpl implements GoodsService {
         
         boolean allSuccess = true;
         for (Map.Entry<Long, Long> entry : viewMap.entrySet()) {
-            if (!increaseViews(entry.getKey(), entry.getValue())) {
+            if (!increaseViewCount(entry.getKey(), entry.getValue())) {
                 allSuccess = false;
             }
         }
@@ -398,9 +398,50 @@ public class GoodsServiceImpl implements GoodsService {
     @Cached(name = GoodsCacheConstant.GOODS_STATISTICS_CACHE,
             expire = GoodsCacheConstant.STATISTICS_EXPIRE,
             timeUnit = TimeUnit.MINUTES)
+    public List<Map<String, Object>> countByTypeAndStatus() {
+        log.debug("按类型和状态统计商品");
+        return goodsMapper.countByTypeAndStatus();
+    }
+
+    @Override
     public List<Map<String, Object>> getGoodsStatistics() {
         log.debug("获取商品统计信息");
-        return goodsMapper.countByTypeAndStatus();
+        // 调用基础统计方法，可以在此基础上添加更多统计逻辑
+        return countByTypeAndStatus();
+    }
+
+    @Override
+    public long countByCategory(Long categoryId, String status) {
+        log.debug("根据分类统计商品数量: categoryId={}, status={}", categoryId, status);
+        
+        if (categoryId == null || categoryId <= 0) {
+            return 0;
+        }
+        
+        return goodsMapper.countByCategory(categoryId, status);
+    }
+
+    @Override
+    public long countBySeller(Long sellerId, String status) {
+        log.debug("根据商家统计商品数量: sellerId={}, status={}", sellerId, status);
+        
+        if (sellerId == null || sellerId <= 0) {
+            return 0;
+        }
+        
+        return goodsMapper.countBySeller(sellerId, status);
+    }
+
+    @Override
+    public IPage<Goods> findWithConditions(Page<Goods> page, Long categoryId, Long sellerId, String goodsType,
+                                          String nameKeyword, Object minPrice, Object maxPrice,
+                                          Object minCoinPrice, Object maxCoinPrice, Boolean hasStock,
+                                          String status, String orderBy, String orderDirection) {
+        log.debug("复合条件查询商品: categoryId={}, sellerId={}, type={}, keyword={}, page={}, size={}", 
+                categoryId, sellerId, goodsType, nameKeyword, page.getCurrent(), page.getSize());
+        
+        return goodsMapper.findWithConditions(page, categoryId, sellerId, goodsType, nameKeyword,
+                minPrice, maxPrice, minCoinPrice, maxCoinPrice, hasStock, status, orderBy, orderDirection);
     }
 
     // =================== 状态管理 ===================
@@ -439,6 +480,23 @@ public class GoodsServiceImpl implements GoodsService {
     public boolean batchUnpublishGoods(List<Long> goodsIds) {
         log.info("批量下架商品: count={}", goodsIds.size());
         return batchUpdateGoodsStatus(goodsIds, Goods.GoodsStatus.INACTIVE);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheInvalidate(name = GoodsCacheConstant.GOODS_LIST_CACHE)
+    @CacheInvalidate(name = GoodsCacheConstant.GOODS_HOT_CACHE)
+    public int batchUpdateStatus(List<Long> goodsIds, String status) {
+        log.info("批量更新商品状态: count={}, status={}", goodsIds.size(), status);
+        
+        if (CollectionUtils.isEmpty(goodsIds)) {
+            return 0;
+        }
+        
+        // 直接调用Mapper的批量更新方法
+        int result = goodsMapper.batchUpdateStatus(goodsIds, status);
+        log.info("批量状态更新完成: 目标={}, 实际={}", goodsIds.size(), result);
+        return result;
     }
 
     // =================== 业务验证 ===================

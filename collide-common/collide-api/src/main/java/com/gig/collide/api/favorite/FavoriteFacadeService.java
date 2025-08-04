@@ -165,4 +165,82 @@ public interface FavoriteFacadeService {
      * @return 清理数量
      */
     Result<Integer> cleanCancelledFavorites(Integer days);
+    
+    /**
+     * 更新用户信息（冗余字段同步）
+     * 当用户信息变更时，同步更新收藏表中的冗余信息
+     * 
+     * @param userId 用户ID
+     * @param nickname 新昵称
+     * @return 更新成功的记录数
+     */
+    Result<Integer> updateUserInfo(Long userId, String nickname);
+    
+    /**
+     * 更新目标对象信息（冗余字段同步）
+     * 当目标对象信息变更时，同步更新收藏表中的冗余信息
+     * 
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @param title 新标题
+     * @param cover 新封面
+     * @param authorId 新作者ID
+     * @return 更新成功的记录数
+     */
+    Result<Integer> updateTargetInfo(String favoriteType, Long targetId, String title, String cover, Long authorId);
+    
+    /**
+     * 根据作者查询收藏作品
+     * 查询某作者的作品被收藏情况
+     * 
+     * @param targetAuthorId 作者ID
+     * @param favoriteType 收藏类型（可选）
+     * @param currentPage 页码
+     * @param pageSize 页面大小
+     * @return 收藏作品列表
+     */
+    Result<PageResponse<FavoriteResponse>> getFavoritesByAuthor(Long targetAuthorId, String favoriteType,
+                                                              Integer currentPage, Integer pageSize);
+    
+    /**
+     * 检查是否已经存在收藏关系
+     * 包括已取消的收藏关系
+     * 
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @return 是否存在收藏关系
+     */
+    Result<Boolean> existsFavoriteRelation(Long userId, String favoriteType, Long targetId);
+    
+    /**
+     * 重新激活已取消的收藏
+     * 将cancelled状态的收藏重新设置为active
+     * 
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @return 是否成功重新激活
+     */
+    Result<Boolean> reactivateFavorite(Long userId, String favoriteType, Long targetId);
+    
+    /**
+     * 验证收藏请求参数
+     * 校验请求参数的有效性
+     * 
+     * @param request 收藏请求
+     * @return 验证结果信息
+     */
+    Result<String> validateFavoriteRequest(FavoriteCreateRequest request);
+    
+    /**
+     * 检查是否可以收藏
+     * 检查业务规则是否允许收藏
+     * 
+     * @param userId 用户ID
+     * @param favoriteType 收藏类型
+     * @param targetId 目标ID
+     * @return 检查结果信息
+     */
+    Result<String> checkCanFavorite(Long userId, String favoriteType, Long targetId);
 }

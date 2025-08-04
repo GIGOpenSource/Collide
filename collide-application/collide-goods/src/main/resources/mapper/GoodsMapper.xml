@@ -4,7 +4,7 @@
 
 <mapper namespace="com.gig.collide.goods.infrastructure.mapper.GoodsMapper">
 
-    <!-- 基础字段列表 - 支持四种商品类型 -->
+    <!-- 基础字段列表 - 支持四种商品类型，已优化为MySQL 8.0索引 -->
     <sql id="baseColumns">
         id, name, description, category_id, category_name, goods_type,
         price, original_price, coin_price, coin_amount,
@@ -13,7 +13,7 @@
         status, sales_count, view_count, create_time, update_time
     </sql>
 
-    <!-- 根据商品类型和状态分页查询 -->
+    <!-- 根据商品类型和状态分页查询 - 使用索引: idx_type_status_time -->
     <select id="selectByTypeAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -27,7 +27,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据分类和状态查询商品 -->
+    <!-- 根据分类和状态查询商品 - 使用索引: idx_category_status_sales_time -->
     <select id="selectByCategoryAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -38,7 +38,7 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 根据商家和状态查询商品 -->
+    <!-- 根据商家和状态查询商品 - 使用索引: idx_seller_status_time -->
     <select id="selectBySellerAndStatus" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -49,7 +49,17 @@
         ORDER BY create_time DESC
     </select>
 
-    <!-- 查询热门商品 -->
+    <!-- 根据内容ID查询商品 - 使用索引: idx_content_type -->
+    <select id="selectByContentId" resultType="com.gig.collide.goods.domain.entity.Goods">
+        SELECT <include refid="baseColumns" />
+        FROM t_goods
+        WHERE content_id = #{contentId}
+        AND goods_type = #{goodsType}
+        ORDER BY create_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询热门商品 - 使用索引: idx_status_sales_views -->
     <select id="selectHotGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -60,18 +70,18 @@
         ORDER BY sales_count DESC, view_count DESC, create_time DESC
     </select>
 
-    <!-- 搜索商品 -->
+    <!-- 搜索商品 - 使用全文索引优化 -->
     <select id="searchGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
-        WHERE (name LIKE CONCAT('%', #{keyword}, '%') OR description LIKE CONCAT('%', #{keyword}, '%'))
+        WHERE MATCH(name, description) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
         ORDER BY sales_count DESC, create_time DESC
     </select>
 
-    <!-- 按价格区间查询商品 -->
+    <!-- 按价格区间查询商品 - 使用索引: idx_status_price/idx_status_coin_price -->
     <select id="selectByPriceRange" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -109,7 +119,7 @@
         </choose>
     </select>
 
-    <!-- 查询低库存商品 -->
+    <!-- 查询低库存商品 - 使用索引: idx_stock_status -->
     <select id="selectLowStockGoods" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods
@@ -118,7 +128,7 @@
         ORDER BY stock ASC, create_time DESC
     </select>
 
-    <!-- 扣减库存 -->
+    <!-- 扣减库存 - 使用主键索引 -->
     <update id="reduceStock">
         UPDATE t_goods
         SET stock = stock - #{quantity},
@@ -127,7 +137,7 @@
         AND stock >= #{quantity}
     </update>
 
-    <!-- 增加销量 -->
+    <!-- 增加销量 - 使用主键索引 -->
     <update id="increaseSalesCount">
         UPDATE t_goods
         SET sales_count = sales_count + #{count},
@@ -135,7 +145,7 @@
         WHERE id = #{goodsId}
     </update>
 
-    <!-- 增加浏览量 -->
+    <!-- 增加浏览量 - 使用主键索引 -->
     <update id="increaseViewCount">
         UPDATE t_goods
         SET view_count = view_count + #{count},
@@ -143,7 +153,7 @@
         WHERE id = #{goodsId}
     </update>
 
-    <!-- 按类型和状态统计 -->
+    <!-- 按类型和状态统计 - 使用索引: idx_type_status_stats -->
     <select id="countByTypeAndStatus" resultType="map">
         SELECT 
             goods_type,
@@ -157,7 +167,7 @@
         ORDER BY goods_type, status
     </select>
 
-    <!-- 批量更新商品状态 -->
+    <!-- 批量更新商品状态 - 使用主键索引 -->
     <update id="batchUpdateStatus">
         UPDATE t_goods
         SET status = #{status},
@@ -168,7 +178,7 @@
         </foreach>
     </update>
 
-    <!-- 根据分类统计商品数量 -->
+    <!-- 根据分类统计商品数量 - 使用索引: idx_category_status_sales_time -->
     <select id="countByCategory" resultType="long">
         SELECT COUNT(*)
         FROM t_goods
@@ -178,7 +188,7 @@
         </if>
     </select>
 
-    <!-- 根据商家统计商品数量 -->
+    <!-- 根据商家统计商品数量 - 使用索引: idx_seller_status_time -->
     <select id="countBySeller" resultType="long">
         SELECT COUNT(*)
         FROM t_goods
@@ -188,7 +198,7 @@
         </if>
     </select>
 
-    <!-- 复合条件查询商品 -->
+    <!-- 复合条件查询商品 - 使用多种索引组合优化 -->
     <select id="findWithConditions" resultType="com.gig.collide.goods.domain.entity.Goods">
         SELECT <include refid="baseColumns" />
         FROM t_goods

@@ -96,9 +96,10 @@ public interface GoodsService {
      * 用于内容购买流程中获取对应的商品记录
      *
      * @param contentId 内容ID
+     * @param goodsType 商品类型
      * @return 商品信息
      */
-    Goods getGoodsByContentId(Long contentId);
+    Goods getGoodsByContentId(Long contentId, String goodsType);
 
     /**
      * 获取热门商品
@@ -170,36 +171,93 @@ public interface GoodsService {
 
     /**
      * 增加商品销量
+     * 对应Mapper方法：increaseSalesCount
      *
      * @param goodsId 商品ID
      * @param count   增加数量
      * @return 是否成功
      */
-    boolean increaseSales(Long goodsId, Long count);
+    boolean increaseSalesCount(Long goodsId, Long count);
 
     /**
      * 增加商品浏览量
+     * 对应Mapper方法：increaseViewCount
      *
      * @param goodsId 商品ID
      * @param count   增加数量
      * @return 是否成功
      */
-    boolean increaseViews(Long goodsId, Long count);
+    boolean increaseViewCount(Long goodsId, Long count);
 
     /**
      * 批量增加浏览量
+     * 基于increaseViewCount方法的批量版本
      *
      * @param viewMap 商品ID和浏览量的映射
      * @return 是否成功
      */
-    boolean batchIncreaseViews(Map<Long, Long> viewMap);
+    boolean batchIncreaseViewCount(Map<Long, Long> viewMap);
+
+    /**
+     * 按类型和状态统计商品
+     * 对应Mapper方法：countByTypeAndStatus
+     *
+     * @return 统计结果
+     */
+    List<Map<String, Object>> countByTypeAndStatus();
 
     /**
      * 获取商品统计信息
+     * 业务层方法，提供更丰富的统计数据
      *
      * @return 统计结果
      */
     List<Map<String, Object>> getGoodsStatistics();
+
+    /**
+     * 根据分类统计商品数量
+     * 对应Mapper方法：countByCategory
+     *
+     * @param categoryId 分类ID
+     * @param status     商品状态（可为空）
+     * @return 商品数量
+     */
+    long countByCategory(Long categoryId, String status);
+
+    /**
+     * 根据商家统计商品数量
+     * 对应Mapper方法：countBySeller
+     *
+     * @param sellerId 商家ID
+     * @param status   商品状态（可为空）
+     * @return 商品数量
+     */
+    long countBySeller(Long sellerId, String status);
+
+    /**
+     * 复合条件查询商品
+     * 对应Mapper方法：findWithConditions
+     * 支持多种查询条件和排序方式的组合
+     *
+     * @param page           分页参数
+     * @param categoryId     分类ID（可为空）
+     * @param sellerId       商家ID（可为空）
+     * @param goodsType      商品类型（可为空）
+     * @param nameKeyword    名称关键词（可为空）
+     * @param minPrice       最低现金价格（可为空）
+     * @param maxPrice       最高现金价格（可为空）
+     * @param minCoinPrice   最低金币价格（可为空）
+     * @param maxCoinPrice   最高金币价格（可为空）
+     * @param hasStock       是否有库存（可为空）
+     * @param status         商品状态（可为空）
+     * @param orderBy        排序字段（可为空）
+     * @param orderDirection 排序方向（可为空）
+     * @return 商品列表
+     */
+    IPage<Goods> findWithConditions(Page<Goods> page, Long categoryId, Long sellerId, String goodsType,
+                                   String nameKeyword, Object minPrice, Object maxPrice,
+                                   Object minCoinPrice, Object maxCoinPrice, Boolean hasStock,
+                                   String status, String orderBy, String orderDirection);
 
     // =================== 状态管理 ===================
 
@@ -234,6 +292,17 @@ public interface GoodsService {
      * @return 是否成功
      */
     boolean batchUnpublishGoods(List<Long> goodsIds);
+
+    /**
+     * 批量更新商品状态
+     * 对应Mapper方法：batchUpdateStatus
+     * 用于批量上架、下架等操作
+     *
+     * @param goodsIds 商品ID列表
+     * @param status   新状态
+     * @return 影响行数
+     */
+    int batchUpdateStatus(List<Long> goodsIds, String status);
 
     // =================== 业务验证 ===================
 

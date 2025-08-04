@@ -9,14 +9,20 @@ import com.gig.collide.web.vo.Result;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
 /**
- * 评论REST控制器 - C端简洁版
- * 只提供客户端使用的核心HTTP接口
+ * 评论REST控制器 - 规范版
+ * 提供完整的评论功能HTTP接口：基础操作、高级查询、统计分析、管理功能
+ * 支持评论类型：CONTENT、DYNAMIC
  * 
  * @author Collide
- * @version 2.0.0 (C端简洁版)
+ * @version 5.0.0 (与Content模块一致版)
  * @since 2024-01-01
  */
 @Slf4j
@@ -158,6 +164,16 @@ public class CommentController {
     }
 
     /**
+     * 增加回复数
+     */
+    @PutMapping("/{commentId}/reply-count")
+    public Result<Integer> increaseReplyCount(@PathVariable Long commentId,
+                                            @RequestParam(defaultValue = "1") Integer increment) {
+        log.info("REST请求 - 增加回复数: commentId={}, increment={}", commentId, increment);
+        return commentFacadeService.increaseReplyCount(commentId, increment);
+    }
+
+    /**
      * 统计目标对象评论数
      */
     @GetMapping("/count/target/{targetId}")
@@ -218,5 +234,140 @@ public class CommentController {
         log.info("REST请求 - 获取最新评论: targetId={}, commentType={}, currentPage={}, pageSize={}", 
                 targetId, commentType, currentPage, pageSize);
         return commentFacadeService.getLatestComments(targetId, commentType, currentPage, pageSize);
+    }
+
+    // =================== 新增查询功能 ===================
+
+    /**
+     * 根据点赞数范围查询评论
+     */
+    @GetMapping("/like-range")
+    public Result<PageResponse<CommentResponse>> getCommentsByLikeCountRange(
+            @RequestParam(required = false) Integer minLikeCount,
+            @RequestParam(required = false) Integer maxLikeCount,
+            @RequestParam(required = false) String commentType,
+            @RequestParam(required = false) Long targetId,
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 根据点赞数范围查询评论: minLike={}, maxLike={}, commentType={}, targetId={}, page={}/{}", 
+                minLikeCount, maxLikeCount, commentType, targetId, currentPage, pageSize);
+        return commentFacadeService.getCommentsByLikeCountRange(minLikeCount, maxLikeCount, 
+                commentType, targetId, currentPage, pageSize);
+    }
+
+    /**
+     * 根据时间范围查询评论
+     */
+    @GetMapping("/time-range")
+    public Result<PageResponse<CommentResponse>> getCommentsByTimeRange(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @RequestParam(required = false) String commentType,
+            @RequestParam(required = false) Long targetId,
+            @RequestParam(defaultValue = "1") Integer currentPage,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        log.info("REST请求 - 根据时间范围查询评论: startTime={}, endTime={}, commentType={}, targetId={}, page={}/{}", 
+                startTime, endTime, commentType, targetId, currentPage, pageSize);
+        return commentFacadeService.getCommentsByTimeRange(startTime, endTime, 
+                commentType, targetId, currentPage, pageSize);
+    }
+
+    // =================== 数据分析功能 ===================
+
+    /**
+     * 获取评论统计信息
+     */
+    @GetMapping("/statistics")
+    public Result<Map<String, Object>> getCommentStatistics(
+            @RequestParam(required = false) Long targetId,
+            @RequestParam(required = false) String commentType,
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+        log.info("REST请求 - 获取评论统计信息: targetId={}, commentType={}, userId={}, startTime={}, endTime={}", 
+                targetId, commentType, userId, startTime, endTime);
+        return commentFacadeService.getCommentStatistics(targetId, commentType, userId, startTime, endTime);
+    }
+
+    /**
+     * 查询用户回复关系
+     */
+    @GetMapping("/reply-relations")
+    public Result<List<Map<String, Object>>> getUserReplyRelations(
+            @RequestParam(required = false) Long userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime) {
+        log.info("REST请求 - 查询用户回复关系: userId={}, startTime={}, endTime={}", userId, startTime, endTime);
+        return commentFacadeService.getUserReplyRelations(userId, startTime, endTime);
+    }
+
+    /**
+     * 查询评论热度排行
+     */
+    @GetMapping("/hot-ranking")
+    public Result<List<Map<String, Object>>> getCommentHotRanking(
+            @RequestParam(required = false) String commentType,
+            @RequestParam(required = false) Long targetId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @RequestParam(defaultValue = "10") Integer limit) {
+        log.info("REST请求 - 查询评论热度排行: commentType={}, targetId={}, startTime={}, endTime={}, limit={}", 
+                commentType, targetId, startTime, endTime, limit);
+        return commentFacadeService.getCommentHotRanking(commentType, targetId, startTime, endTime, limit);
+    }
+
+    // =================== 管理功能（需要管理员权限） ===================
+
+    /**
+     * 批量更新评论状态
+     */
+    @PutMapping("/batch/status")
+    public Result<Integer> batchUpdateCommentStatus(@RequestBody List<Long> commentIds,
+                                                  @RequestParam String status) {
+        log.info("REST请求 - 批量更新评论状态: commentIds={}, status={}", commentIds, status);
+        return commentFacadeService.batchUpdateCommentStatus(commentIds, status);
+    }
+
+    /**
+     * 批量删除目标对象的评论
+     */
+    @DeleteMapping("/batch/target/{targetId}")
+    public Result<Integer> batchDeleteTargetComments(@PathVariable Long targetId,
+                                                   @RequestParam(required = false) String commentType) {
+        log.info("REST请求 - 批量删除目标评论: targetId={}, commentType={}", targetId, commentType);
+        return commentFacadeService.batchDeleteTargetComments(targetId, commentType);
+    }
+
+    /**
+     * 更新用户信息（同步冗余字段）
+     */
+    @PutMapping("/sync/user/{userId}")
+    public Result<Integer> updateUserInfo(@PathVariable Long userId,
+                                        @RequestParam(required = false) String nickname,
+                                        @RequestParam(required = false) String avatar) {
+        log.info("REST请求 - 更新用户信息: userId={}, nickname={}, avatar={}", userId, nickname, avatar);
+        return commentFacadeService.updateUserInfo(userId, nickname, avatar);
+    }
+
+    /**
+     * 更新回复目标用户信息（同步冗余字段）
+     */
+    @PutMapping("/sync/reply-to-user/{replyToUserId}")
+    public Result<Integer> updateReplyToUserInfo(@PathVariable Long replyToUserId,
+                                               @RequestParam(required = false) String nickname,
+                                               @RequestParam(required = false) String avatar) {
+        log.info("REST请求 - 更新回复目标用户信息: replyToUserId={}, nickname={}, avatar={}", 
+                replyToUserId, nickname, avatar);
+        return commentFacadeService.updateReplyToUserInfo(replyToUserId, nickname, avatar);
+    }
+
+    /**
+     * 清理已删除的评论（物理删除）
+     */
+    @DeleteMapping("/cleanup")
+    public Result<Integer> cleanDeletedComments(@RequestParam(defaultValue = "30") Integer days,
+                                              @RequestParam(defaultValue = "1000") Integer limit) {
+        log.info("REST请求 - 清理已删除评论: days={}, limit={}", days, limit);
+        return commentFacadeService.cleanDeletedComments(days, limit);
     }
 }

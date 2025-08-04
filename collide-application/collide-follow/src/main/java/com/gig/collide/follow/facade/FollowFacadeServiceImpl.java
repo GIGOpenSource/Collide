@@ -246,9 +246,9 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     @Override
     @Cached(name = FollowCacheConstant.FOLLOWEES_LIST_CACHE, key = FollowCacheConstant.FOLLOWEES_LIST_KEY,
             expire = FollowCacheConstant.FOLLOWEES_LIST_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<PageResponse<FollowResponse>> getFollowing(Long followerId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<FollowResponse>> getFollowing(Long followerId, Integer currentPage, Integer pageSize) {
         try {
-            log.debug("获取关注列表: followerId={}, pageNum={}, pageSize={}", followerId, pageNum, pageSize);
+            log.debug("获取关注列表: followerId={}, currentPage={}, pageSize={}", followerId, currentPage, pageSize);
             long startTime = System.currentTimeMillis();
             
             // 验证用户是否存在
@@ -258,7 +258,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
                 return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
-            IPage<Follow> followPage = followService.getFollowing(followerId, pageNum, pageSize);
+            IPage<Follow> followPage = followService.getFollowing(followerId, currentPage, pageSize);
             
             long duration = System.currentTimeMillis() - startTime;
             log.debug("关注列表查询成功: 用户={}({}), 总数={}, 耗时={}ms", 
@@ -273,9 +273,9 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     @Override
     @Cached(name = FollowCacheConstant.FOLLOWERS_LIST_CACHE, key = FollowCacheConstant.FOLLOWERS_LIST_KEY,
             expire = FollowCacheConstant.FOLLOWERS_LIST_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<PageResponse<FollowResponse>> getFollowers(Long followeeId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<FollowResponse>> getFollowers(Long followeeId, Integer currentPage, Integer pageSize) {
         try {
-            log.debug("获取粉丝列表: followeeId={}, pageNum={}, pageSize={}", followeeId, pageNum, pageSize);
+            log.debug("获取粉丝列表: followeeId={}, currentPage={}, pageSize={}", followeeId, currentPage, pageSize);
             long startTime = System.currentTimeMillis();
             
             // 验证用户是否存在
@@ -285,7 +285,7 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
                 return Result.error("USER_NOT_FOUND", "用户不存在");
             }
             
-            IPage<Follow> followPage = followService.getFollowers(followeeId, pageNum, pageSize);
+            IPage<Follow> followPage = followService.getFollowers(followeeId, currentPage, pageSize);
             
             long duration = System.currentTimeMillis() - startTime;
             log.debug("粉丝列表查询成功: 用户={}({}), 总数={}, 耗时={}ms", 
@@ -407,16 +407,23 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
     @Override
     @Cached(name = FollowCacheConstant.MUTUAL_FOLLOW_CACHE, key = FollowCacheConstant.MUTUAL_FOLLOW_KEY,
             expire = FollowCacheConstant.MUTUAL_FOLLOW_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<PageResponse<FollowResponse>> getMutualFollows(Long userId, Integer pageNum, Integer pageSize) {
+    public Result<PageResponse<FollowResponse>> getMutualFollows(Long userId, Integer currentPage, Integer pageSize) {
         try {
-            log.debug("获取互关好友: userId={}, pageNum={}, pageSize={}", userId, pageNum, pageSize);
+            log.debug("获取互关好友: userId={}, currentPage={}, pageSize={}", userId, currentPage, pageSize);
             long startTime = System.currentTimeMillis();
             
-            IPage<Follow> followPage = followService.getMutualFollows(userId, pageNum, pageSize);
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法获取互关好友: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+            
+            IPage<Follow> followPage = followService.getMutualFollows(userId, currentPage, pageSize);
             
             long duration = System.currentTimeMillis() - startTime;
-            log.debug("互关好友查询成功: userId={}, 总数={}, 耗时={}ms", 
-                    userId, followPage.getTotal(), duration);
+            log.debug("互关好友查询成功: 用户={}({}), 总数={}, 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), followPage.getTotal(), duration);
             return Result.success(buildPageResult(followPage));
         } catch (Exception e) {
             log.error("获取互关好友失败: userId={}", userId, e);
@@ -443,6 +450,253 @@ public class FollowFacadeServiceImpl implements FollowFacadeService {
         } catch (Exception e) {
             log.error("清理已取消关注记录失败: days={}", days, e);
             return Result.error("CLEAN_FOLLOWS_ERROR", "清理记录失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Cached(name = FollowCacheConstant.FOLLOWEES_LIST_CACHE, key = FollowCacheConstant.FOLLOWEES_LIST_KEY,
+            expire = FollowCacheConstant.FOLLOWEES_LIST_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<PageResponse<FollowResponse>> searchByNickname(Long followerId, Long followeeId, String nicknameKeyword,
+                                                               Integer currentPage, Integer pageSize) {
+        try {
+            log.info("RPC根据昵称搜索关注关系: followerId={}, followeeId={}, keyword={}, currentPage={}, pageSize={}", 
+                    followerId, followeeId, nicknameKeyword, currentPage, pageSize);
+            long startTime = System.currentTimeMillis();
+
+            if (nicknameKeyword == null || nicknameKeyword.trim().isEmpty()) {
+                log.warn("搜索关键词不能为空");
+                return Result.error("NICKNAME_KEYWORD_EMPTY", "搜索关键词不能为空");
+            }
+
+            IPage<Follow> followPage = followService.searchByNickname(followerId, followeeId, nicknameKeyword, 
+                    currentPage, pageSize);
+
+            PageResponse<FollowResponse> pageResponse = buildPageResult(followPage);
+            
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("昵称搜索成功: 关键词={}, 总数={}, 耗时={}ms", 
+                    nicknameKeyword, pageResponse.getTotal(), duration);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("根据昵称搜索关注关系失败: keyword={}", nicknameKeyword, e);
+            return Result.error("SEARCH_NICKNAME_ERROR", "昵称搜索失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_RELATION_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOWERS_LIST_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOWEES_LIST_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_STATISTICS_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_STATUS_CACHE)
+    public Result<Integer> updateUserInfo(Long userId, String nickname, String avatar) {
+        try {
+            log.info("RPC更新用户冗余信息: userId={}, nickname={}", userId, nickname);
+            long startTime = System.currentTimeMillis();
+
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法更新冗余信息: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
+            }
+
+            int updateCount = followService.updateUserInfo(userId, nickname, avatar);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("用户冗余信息更新完成: 用户={}({}), 更新数量={}, 耗时={}ms",
+                    userId, userResult.getData().getNickname(), updateCount, duration);
+
+            return Result.success(updateCount);
+        } catch (Exception e) {
+            log.error("更新用户冗余信息失败: userId={}, nickname={}", userId, nickname, e);
+            return Result.error("UPDATE_USER_INFO_ERROR", "更新用户信息失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Cached(name = FollowCacheConstant.FOLLOW_RELATION_CACHE, key = FollowCacheConstant.FOLLOW_RELATION_KEY,
+            expire = FollowCacheConstant.FOLLOW_RELATION_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<List<FollowResponse>> getRelationChain(Long userIdA, Long userIdB) {
+        try {
+            log.debug("查询用户间关注关系链: userIdA={}, userIdB={}", userIdA, userIdB);
+            long startTime = System.currentTimeMillis();
+
+            // 验证用户是否存在
+            Result<UserResponse> userAResult = userFacadeService.getUserById(userIdA);
+            if (userAResult == null || !userAResult.getSuccess()) {
+                log.warn("用户A不存在: userIdA={}", userIdA);
+                return Result.error("USER_A_NOT_FOUND", "用户A不存在");
+            }
+
+            Result<UserResponse> userBResult = userFacadeService.getUserById(userIdB);
+            if (userBResult == null || !userBResult.getSuccess()) {
+                log.warn("用户B不存在: userIdB={}", userIdB);
+                return Result.error("USER_B_NOT_FOUND", "用户B不存在");
+            }
+
+            List<Follow> relationChain = followService.getRelationChain(userIdA, userIdB);
+            List<FollowResponse> responseList = relationChain.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.debug("关系链查询成功: 用户A={}({}), 用户B={}({}), 关系数量={}, 耗时={}ms",
+                    userIdA, userAResult.getData().getNickname(),
+                    userIdB, userBResult.getData().getNickname(),
+                    responseList.size(), duration);
+
+            return Result.success(responseList);
+        } catch (Exception e) {
+            log.error("查询用户间关注关系链失败: userIdA={}, userIdB={}", userIdA, userIdB, e);
+            return Result.error("GET_RELATION_CHAIN_ERROR", "查询关系链失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public Result<String> validateFollowRequest(FollowCreateRequest request) {
+        try {
+            log.debug("验证关注请求: followerId={}, followeeId={}", 
+                    request != null ? request.getFollowerId() : null,
+                    request != null ? request.getFolloweeId() : null);
+            
+            if (request == null) {
+                return Result.error("REQUEST_NULL", "请求对象不能为空");
+            }
+
+            // 转换为实体对象进行验证
+            Follow follow = convertCreateRequestToEntity(request);
+            String validationResult = followService.validateFollowRequest(follow);
+
+            if (validationResult != null) {
+                log.warn("关注请求验证失败: followerId={}, followeeId={}, 错误={}",
+                        request.getFollowerId(), request.getFolloweeId(), validationResult);
+                return Result.error("VALIDATION_FAILED", validationResult);
+            }
+
+            log.debug("关注请求验证通过: followerId={}, followeeId={}", 
+                    request.getFollowerId(), request.getFolloweeId());
+            return Result.success("验证通过");
+        } catch (Exception e) {
+            log.error("验证关注请求失败: request={}", request, e);
+            return Result.error("VALIDATION_ERROR", "验证请求失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    public Result<String> checkCanFollow(Long followerId, Long followeeId) {
+        try {
+            log.debug("检查是否可以关注: followerId={}, followeeId={}", followerId, followeeId);
+
+            // 验证关注者是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(followerId);
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在: followerId={}", followerId);
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            // 验证被关注者是否存在
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(followeeId);
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在: followeeId={}", followeeId);
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+
+            String checkResult = followService.checkCanFollow(followerId, followeeId);
+
+            if (checkResult != null) {
+                log.warn("不能关注: followerId={}, followeeId={}, 原因={}",
+                        followerId, followeeId, checkResult);
+                return Result.error("CANNOT_FOLLOW", checkResult);
+            }
+
+            log.debug("可以关注: 关注者={}({}), 被关注者={}({})",
+                    followerId, followerResult.getData().getNickname(),
+                    followeeId, followeeResult.getData().getNickname());
+            return Result.success("可以关注");
+        } catch (Exception e) {
+            log.error("检查关注权限失败: followerId={}, followeeId={}", followerId, followeeId, e);
+            return Result.error("CHECK_PERMISSION_ERROR", "检查权限失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @Cached(name = FollowCacheConstant.FOLLOW_STATUS_CACHE, key = FollowCacheConstant.USER_FOLLOW_STATUS_KEY,
+            expire = FollowCacheConstant.FOLLOW_STATUS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<Boolean> existsFollowRelation(Long followerId, Long followeeId) {
+        try {
+            log.debug("检查关注关系是否存在: followerId={}, followeeId={}", followerId, followeeId);
+
+            // 验证用户是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(followerId);
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在: followerId={}", followerId);
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(followeeId);
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在: followeeId={}", followeeId);
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+
+            boolean exists = followService.existsFollowRelation(followerId, followeeId);
+
+            log.debug("关注关系检查完成: 关注者={}({}), 被关注者={}({}), 存在={}",
+                    followerId, followerResult.getData().getNickname(),
+                    followeeId, followeeResult.getData().getNickname(),
+                    exists);
+
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查关注关系是否存在失败: followerId={}, followeeId={}", followerId, followeeId, e);
+            return Result.error("CHECK_RELATION_ERROR", "检查关系失败: " + e.getMessage());
+        }
+    }
+    
+    @Override
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_RELATION_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOWERS_LIST_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOWEES_LIST_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_STATISTICS_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.FOLLOW_STATUS_CACHE)
+    @CacheInvalidate(name = FollowCacheConstant.MUTUAL_FOLLOW_CACHE)
+    public Result<Boolean> reactivateFollow(Long followerId, Long followeeId) {
+        try {
+            log.info("RPC重新激活关注关系: followerId={}, followeeId={}", followerId, followeeId);
+            long startTime = System.currentTimeMillis();
+
+            // 验证用户是否存在
+            Result<UserResponse> followerResult = userFacadeService.getUserById(followerId);
+            if (followerResult == null || !followerResult.getSuccess()) {
+                log.warn("关注者用户不存在: followerId={}", followerId);
+                return Result.error("FOLLOWER_NOT_FOUND", "关注者用户不存在");
+            }
+
+            Result<UserResponse> followeeResult = userFacadeService.getUserById(followeeId);
+            if (followeeResult == null || !followeeResult.getSuccess()) {
+                log.warn("被关注者用户不存在: followeeId={}", followeeId);
+                return Result.error("FOLLOWEE_NOT_FOUND", "被关注者用户不存在");
+            }
+
+            boolean success = followService.reactivateFollow(followerId, followeeId);
+
+            long duration = System.currentTimeMillis() - startTime;
+            if (success) {
+                log.info("重新激活关注关系成功: 关注者={}({}), 被关注者={}({}), 耗时={}ms",
+                        followerId, followerResult.getData().getNickname(),
+                        followeeId, followeeResult.getData().getNickname(),
+                        duration);
+                return Result.success(true);
+            } else {
+                log.warn("重新激活关注关系失败: 关注者={}({}), 被关注者={}({})",
+                        followerId, followerResult.getData().getNickname(),
+                        followeeId, followeeResult.getData().getNickname());
+                return Result.error("REACTIVATE_FAILED", "重新激活失败");
+            }
+        } catch (Exception e) {
+            log.error("重新激活关注关系失败: followerId={}, followeeId={}", followerId, followeeId, e);
+            return Result.error("REACTIVATE_ERROR", "重新激活失败: " + e.getMessage());
         }
     }
 

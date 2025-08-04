@@ -51,6 +51,7 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param status 状态
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
+     * @param includeDeleted 是否包含已删除
      * @return 分页评论列表
      */
     IPage<Comment> selectTargetCommentsPage(IPage<Comment> page,
@@ -59,7 +60,8 @@ public interface CommentMapper extends BaseMapper<Comment> {
                                           @Param("parentCommentId") Long parentCommentId,
                                           @Param("status") String status,
                                           @Param("orderBy") String orderBy,
-                                          @Param("orderDirection") String orderDirection);
+                                          @Param("orderDirection") String orderDirection,
+                                          @Param("includeDeleted") Boolean includeDeleted);
 
     /**
      * 获取用户评论列表
@@ -70,6 +72,7 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param status 状态
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
+     * @param includeDeleted 是否包含已删除
      * @return 分页评论列表
      */
     IPage<Comment> selectUserCommentsPage(IPage<Comment> page,
@@ -77,7 +80,8 @@ public interface CommentMapper extends BaseMapper<Comment> {
                                         @Param("commentType") String commentType,
                                         @Param("status") String status,
                                         @Param("orderBy") String orderBy,
-                                        @Param("orderDirection") String orderDirection);
+                                        @Param("orderDirection") String orderDirection,
+                                        @Param("includeDeleted") Boolean includeDeleted);
 
     /**
      * 获取用户收到的回复
@@ -87,13 +91,75 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param status 状态
      * @param orderBy 排序字段
      * @param orderDirection 排序方向
+     * @param includeDeleted 是否包含已删除
      * @return 分页回复列表
      */
     IPage<Comment> selectUserRepliesPage(IPage<Comment> page,
                                        @Param("replyToUserId") Long replyToUserId,
                                        @Param("status") String status,
                                        @Param("orderBy") String orderBy,
-                                       @Param("orderDirection") String orderDirection);
+                                       @Param("orderDirection") String orderDirection,
+                                       @Param("includeDeleted") Boolean includeDeleted);
+
+    /**
+     * 根据点赞数范围查询评论
+     * 
+     * @param page 分页对象
+     * @param minLikeCount 最小点赞数
+     * @param maxLikeCount 最大点赞数
+     * @param commentType 评论类型
+     * @param targetId 目标对象ID
+     * @param status 状态
+     * @param includeDeleted 是否包含已删除
+     * @return 评论列表
+     */
+    IPage<Comment> selectCommentsByLikeCountRange(IPage<Comment> page,
+                                                @Param("minLikeCount") Integer minLikeCount,
+                                                @Param("maxLikeCount") Integer maxLikeCount,
+                                                @Param("commentType") String commentType,
+                                                @Param("targetId") Long targetId,
+                                                @Param("status") String status,
+                                                @Param("includeDeleted") Boolean includeDeleted);
+
+    /**
+     * 查询待审核评论
+     * 
+     * @param page 分页对象
+     * @param commentType 评论类型
+     * @param limit 限制数量
+     * @return 待审核评论列表
+     */
+    IPage<Comment> selectPendingComments(IPage<Comment> page,
+                                       @Param("commentType") String commentType,
+                                       @Param("limit") Integer limit);
+
+    /**
+     * 查询用户的回复关系
+     * 
+     * @param userId 用户ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 回复关系列表
+     */
+    List<Map<String, Object>> selectUserReplyRelations(@Param("userId") Long userId,
+                                                      @Param("startTime") LocalDateTime startTime,
+                                                      @Param("endTime") LocalDateTime endTime);
+
+    /**
+     * 查询评论热度排行
+     * 
+     * @param commentType 评论类型
+     * @param targetId 目标对象ID
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param limit 限制数量
+     * @return 热度排行列表
+     */
+    List<Map<String, Object>> selectCommentHotRanking(@Param("commentType") String commentType,
+                                                     @Param("targetId") Long targetId,
+                                                     @Param("startTime") LocalDateTime startTime,
+                                                     @Param("endTime") LocalDateTime endTime,
+                                                     @Param("limit") Integer limit);
 
     // =================== 统计查询 ===================
 
@@ -102,12 +168,16 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * 
      * @param targetId 目标对象ID
      * @param commentType 评论类型
+     * @param parentCommentId 父评论ID
      * @param status 状态
+     * @param includeDeleted 是否包含已删除
      * @return 评论数量
      */
     Long countTargetComments(@Param("targetId") Long targetId,
                            @Param("commentType") String commentType,
-                           @Param("status") String status);
+                           @Param("parentCommentId") Long parentCommentId,
+                           @Param("status") String status,
+                           @Param("includeDeleted") Boolean includeDeleted);
 
     /**
      * 统计用户评论数
@@ -115,21 +185,25 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * @param userId 用户ID
      * @param commentType 评论类型
      * @param status 状态
+     * @param includeDeleted 是否包含已删除
      * @return 评论数量
      */
     Long countUserComments(@Param("userId") Long userId,
                          @Param("commentType") String commentType,
-                         @Param("status") String status);
+                         @Param("status") String status,
+                         @Param("includeDeleted") Boolean includeDeleted);
 
     /**
      * 统计评论的回复数
      * 
      * @param parentCommentId 父评论ID
      * @param status 状态
+     * @param includeDeleted 是否包含已删除
      * @return 回复数量
      */
     Long countCommentReplies(@Param("parentCommentId") Long parentCommentId,
-                           @Param("status") String status);
+                           @Param("status") String status,
+                           @Param("includeDeleted") Boolean includeDeleted);
 
     /**
      * 获取评论统计信息
@@ -298,8 +372,10 @@ public interface CommentMapper extends BaseMapper<Comment> {
      * 清理已删除的评论（物理删除）
      * 删除指定时间之前的已删除评论
      * 
-     * @param beforeTime 截止时间
+     * @param days 删除多少天前的数据
+     * @param limit 限制删除数量
      * @return 删除数量
      */
-    int cleanDeletedComments(@Param("beforeTime") LocalDateTime beforeTime);
+    int cleanDeletedComments(@Param("days") Integer days,
+                           @Param("limit") Integer limit);
 }
