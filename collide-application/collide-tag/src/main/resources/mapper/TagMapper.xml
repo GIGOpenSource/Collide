@@ -70,7 +70,7 @@
     <update id="decreaseUsageCount">
         UPDATE t_tag 
         SET usage_count = CASE 
-            WHEN usage_count > 0 THEN usage_count - 1 
+            WHEN usage_count &gt; 0 THEN usage_count - 1 
             ELSE 0 
         END, update_time = NOW()
         WHERE id = #{tagId}

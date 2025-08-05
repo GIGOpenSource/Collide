@@ -49,7 +49,7 @@
     <!-- 检查用户是否已点赞 -->
     <!-- 索引使用: idx_user_type_target_status(user_id, like_type, target_id, status) - 复合索引完美匹配 -->
     <select id="checkLikeExists" resultType="boolean">
-        SELECT COUNT(*) > 0
+        SELECT COUNT(*) &gt; 0
         FROM t_like
         WHERE user_id = #{userId}
           AND like_type = #{likeType}

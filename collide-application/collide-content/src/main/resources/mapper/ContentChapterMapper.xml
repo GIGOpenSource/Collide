@@ -48,7 +48,7 @@
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} 
-        AND chapter_num > #{currentChapterNum}
+        AND chapter_num &gt; #{currentChapterNum}
         AND status = 'PUBLISHED'
         ORDER BY chapter_num ASC
         LIMIT 1
@@ -60,7 +60,7 @@
         SELECT <include refid="baseColumns"/>
         FROM t_content_chapter
         WHERE content_id = #{contentId} 
-        AND chapter_num < #{currentChapterNum}
+        AND chapter_num &lt; #{currentChapterNum}
         AND status = 'PUBLISHED'
         ORDER BY chapter_num DESC
         LIMIT 1

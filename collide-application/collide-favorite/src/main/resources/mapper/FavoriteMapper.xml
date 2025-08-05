@@ -26,7 +26,7 @@
 
     <!-- 检查收藏是否存在（使用 uk_user_target 唯一索引） -->
     <select id="checkFavoriteExists" resultType="boolean">
-        SELECT COUNT(1) > 0
+        SELECT COUNT(1) &gt; 0
         FROM t_favorite
         WHERE user_id = #{userId}
           AND favorite_type = #{favoriteType}
@@ -129,7 +129,7 @@
     <select id="batchCheckFavoriteStatus" resultType="map">
         SELECT 
             target_id as targetId,
-            CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END as isFavorited
+            CASE WHEN COUNT(1) &gt; 0 THEN 1 ELSE 0 END as isFavorited
         FROM t_favorite
         WHERE user_id = #{userId}
           AND favorite_type = #{favoriteType}
@@ -254,7 +254,7 @@
 
     <!-- 检查收藏关系是否存在（包括已取消的，使用 uk_user_target 唯一索引） -->
     <select id="existsFavoriteRelation" resultType="boolean">
-        SELECT COUNT(1) > 0
+        SELECT COUNT(1) &gt; 0
         FROM t_favorite
         WHERE user_id = #{userId}
           AND favorite_type = #{favoriteType}

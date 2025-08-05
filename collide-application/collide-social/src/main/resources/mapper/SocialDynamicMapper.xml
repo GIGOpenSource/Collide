@@ -97,7 +97,7 @@
         SELECT <include refid="Base_Column_List"/>
         FROM t_social_dynamic
         WHERE status = 'normal'
-        AND like_count > 0
+        AND like_count &gt; 0
         AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ORDER BY 
             (like_count * 0.5 + comment_count * 0.3 + share_count * 0.2) DESC,
@@ -256,7 +256,7 @@
         SELECT <include refid="Base_Column_List"/>
         FROM t_social_dynamic
         WHERE status = 'normal'
-        AND (like_count > 0 OR comment_count > 0 OR share_count > 0)
+        AND (like_count &gt; 0 OR comment_count &gt; 0 OR share_count &gt; 0)
         <if test="dynamicType != null and dynamicType != ''">
             AND dynamic_type = #{dynamicType}
         </if>

@@ -41,7 +41,7 @@
         FROM t_payment
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -53,7 +53,7 @@
         WHERE user_id = #{userId}
         AND status = #{status}
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -194,9 +194,9 @@
             AND create_time &lt;= #{endTime}
         </if>
         GROUP BY user_id, user_nickname
-        HAVING total_payments > 0
+        HAVING total_payments &gt; 0
         ORDER BY total_amount DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -216,7 +216,7 @@
             AND create_time &lt;= #{endTime}
         </if>
         ORDER BY amount DESC, create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -239,7 +239,7 @@
             AND create_time &lt;= #{endTime}
         </if>
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -253,7 +253,7 @@
             AND create_time &lt; DATE_SUB(NOW(), INTERVAL #{expireMinutes} MINUTE)
         </if>
         ORDER BY create_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -275,7 +275,7 @@
             AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} HOUR)
         </if>
         GROUP BY order_id, user_id
-        HAVING COUNT(*) > 1
+        HAVING COUNT(*) &gt; 1
         ORDER BY payment_count DESC, total_amount DESC
     </select>
 
@@ -309,7 +309,7 @@
         DELETE FROM t_payment
         WHERE status = 'pending'
         AND create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </delete>
@@ -321,7 +321,7 @@
         WHERE create_time &lt; #{beforeTime}
         AND status IN ('success', 'failed', 'cancelled')
         ORDER BY create_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>

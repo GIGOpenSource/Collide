@@ -229,7 +229,7 @@
         </if>
         <if test="hasStock != null">
             <if test="hasStock == true">
-                AND (stock > 0 OR stock = -1)
+                AND (stock &gt; 0 OR stock = -1)
             </if>
             <if test="hasStock == false">
                 AND stock = 0

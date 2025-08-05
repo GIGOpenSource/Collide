@@ -50,15 +50,3 @@ CREATE TABLE `t_content_tag` (
   KEY `idx_content_id` (`content_id`),
   KEY `idx_tag_id` (`tag_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内容标签关联表';
-
--- 初始化基础标签数据
-INSERT INTO `t_tag` (`name`, `description`, `tag_type`, `usage_count`, `status`) VALUES
-('热门', '热门内容标签', 'system', 1000, 'active'),
-('推荐', '推荐内容标签', 'system', 900, 'active'),
-('精选', '精选内容标签', 'system', 800, 'active'),
-('技术', '技术相关内容', 'content', 500, 'active'),
-('生活', '生活相关内容', 'content', 400, 'active'),
-('娱乐', '娱乐相关内容', 'content', 350, 'active'),
-('编程', '编程兴趣', 'interest', 400, 'active'),
-('设计', '设计兴趣', 'interest', 350, 'active'),
-('摄影', '摄影兴趣', 'interest', 300, 'active'); 

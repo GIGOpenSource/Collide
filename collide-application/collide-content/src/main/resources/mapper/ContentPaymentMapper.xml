@@ -160,7 +160,7 @@
             MIN(coin_price) as min_price,
             MAX(coin_price) as max_price,
             AVG(coin_price) as avg_price,
-            COUNT(CASE WHEN coin_price > 0 THEN 1 END) as paid_content_count,
+            COUNT(CASE WHEN coin_price &gt; 0 THEN 1 END) as paid_content_count,
             COUNT(CASE WHEN payment_type = 'FREE' THEN 1 END) as free_content_count
         FROM t_content_payment
         WHERE status = 'ACTIVE'
@@ -171,7 +171,7 @@
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
         WHERE status = 'ACTIVE'
-        AND total_sales > 0
+        AND total_sales &gt; 0
         ORDER BY total_sales DESC
         LIMIT #{limit}
     </select>
@@ -181,7 +181,7 @@
         SELECT <include refid="baseColumns"/>
         FROM t_content_payment
         WHERE status = 'ACTIVE'
-        AND total_revenue > 0
+        AND total_revenue &gt; 0
         ORDER BY total_revenue DESC
         LIMIT #{limit}
     </select>
@@ -192,7 +192,7 @@
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         AND payment_type = 'COIN_PAY'
-        AND total_sales > 0
+        AND total_sales &gt; 0
         ORDER BY total_sales DESC, total_revenue DESC
         LIMIT #{limit}
     </select>
@@ -203,7 +203,7 @@
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         AND payment_type = 'COIN_PAY'
-        AND coin_price > 0
+        AND coin_price &gt; 0
         ORDER BY coin_price DESC
         LIMIT #{limit}
     </select>
@@ -214,8 +214,8 @@
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         AND payment_type = 'COIN_PAY'
-        AND coin_price > 0
-        AND total_sales > 0
+        AND coin_price &gt; 0
+        AND total_sales &gt; 0
         ORDER BY (total_sales / coin_price) DESC
         LIMIT #{limit}
     </select>
@@ -236,7 +236,7 @@
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         AND original_price IS NOT NULL
-        AND coin_price < original_price
+        AND coin_price &lt; original_price
         ORDER BY ((original_price - coin_price) / original_price) DESC
         LIMIT #{offset}, #{limit}
     </select>
@@ -249,7 +249,7 @@
             SUM(total_revenue) as total_revenue,
             AVG(total_sales) as avg_sales,
             AVG(total_revenue) as avg_revenue,
-            COUNT(CASE WHEN total_sales > 0 THEN 1 END) as active_selling_content
+            COUNT(CASE WHEN total_sales &gt; 0 THEN 1 END) as active_selling_content
         FROM t_content_payment
         WHERE status = 'ACTIVE'
     </select>
@@ -274,9 +274,9 @@
         SELECT
             payment_type,
             COUNT(*) as total_content,
-            COUNT(CASE WHEN total_sales > 0 THEN 1 END) as selling_content,
-            AVG(CASE WHEN total_sales > 0 THEN total_sales ELSE 0 END) as avg_sales,
-            (COUNT(CASE WHEN total_sales > 0 THEN 1 END) / COUNT(*) * 100) as conversion_rate
+            COUNT(CASE WHEN total_sales &gt; 0 THEN 1 END) as selling_content,
+            AVG(CASE WHEN total_sales &gt; 0 THEN total_sales ELSE 0 END) as avg_sales,
+            (COUNT(CASE WHEN total_sales &gt; 0 THEN 1 END) / COUNT(*) * 100) as conversion_rate
         FROM t_content_payment
         WHERE status = 'ACTIVE'
         GROUP BY payment_type

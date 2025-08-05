@@ -303,7 +303,7 @@
 
     <!-- 检查用户今日是否已有指定任务记录 -->
     <select id="existsTodayTaskRecord" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_user_task_record 
+        SELECT COUNT(*) &gt; 0 FROM t_user_task_record 
         WHERE user_id = #{userId} 
           AND task_id = #{taskId} 
           AND task_date = #{taskDate}
@@ -311,7 +311,7 @@
 
     <!-- 检查用户是否可以领取指定任务奖励 -->
     <select id="canClaimTaskReward" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_user_task_record 
+        SELECT COUNT(*) &gt; 0 FROM t_user_task_record 
         WHERE user_id = #{userId} 
           AND task_id = #{taskId} 
           AND task_date = #{taskDate}
