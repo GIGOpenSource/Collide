@@ -29,7 +29,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/content")
+@RequestMapping("/api/v1/content/core")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "内容管理", description = "内容的创建、更新、查询、发布等管理接口（极简版）")
