@@ -1,122 +1,134 @@
 # Content Chapter Controller REST API 文档
 
 **控制器**: ContentChapterController  
-**版本**: 2.0.0 (内容付费版)  
-**基础路径**: `/api/content/chapters`  
-**接口数量**: 24个  
+**版本**: 2.0.0 (极简版)  
+**基础路径**: `/api/v1/content/chapters`  
+**接口数量**: 11个  
 **更新时间**: 2024-01-31  
 
 ## 🚀 概述
 
-内容章节控制器提供章节查询、统计和管理的REST API接口。专为多章节内容（如小说、漫画）设计，支持章节导航、字数统计、状态管理等功能。
+内容章节控制器 - 极简版，基于8个核心Facade方法设计的精简API。专为多章节内容（如小说、漫画）设计，支持万能查询、章节导航、统计分析等功能。
+
+**设计理念**:
+- **极简设计**: 11个API接口替代原有24个接口
+- **万能查询**: 单个查询接口替代多个具体查询接口
+- **统一导航**: 一个接口支持所有导航操作
+- **高效批量**: 支持批量操作，提升性能
 
 **主要功能**:
-- **章节查询**: 按内容、状态、字数等条件查询章节
-- **章节导航**: 上一章、下一章、第一章、最后章导航
-- **搜索功能**: 按标题关键词搜索章节
-- **统计功能**: 章节数量、字数统计
-- **管理功能**: 批量状态更新、章节重排序
+- **万能查询**: 根据多种条件查询章节，替代所有具体查询
+- **智能导航**: 统一的章节导航接口（上一章、下一章、首末章）
+- **搜索功能**: 按标题、内容搜索章节
+- **统计信息**: 一次性获取完整统计数据
+- **批量操作**: 批量状态更新、批量删除
 
 ## 📋 接口分类
 
 | 分类 | 接口数量 | 功能描述 |
 |------|----------|----------|
-| **基础查询功能** | 14个 | 章节列表、导航、搜索、筛选 |
-| **统计功能** | 5个 | 章节数量、字数、统计信息 |
-| **管理功能** | 3个 | 批量更新、删除、重排序 |
-| **高级查询** | 2个 | 字数范围、最新章节 |
+| **核心CRUD功能** | 2个 | 章节查询、删除 |
+| **万能查询功能** | 6个 | 条件查询、导航查询、搜索 + 3个便民接口 |
+| **统计功能** | 1个 | 完整统计信息 |
+| **批量操作功能** | 2个 | 批量状态更新、批量删除 |
 
 ---
 
-## 📚 1. 基础查询功能 (14个接口)
+## 🔧 1. 核心CRUD功能 (2个接口)
 
-### 1.1 获取内容的章节列表
+### 1.1 获取章节详情
 
-**接口**: `GET /api/content/chapters/content/{contentId}`
+**接口**: `GET /api/v1/content/chapters/{id}`
 
-**描述**: 根据内容ID查询所有章节列表（按章节号排序）
+**描述**: 根据章节ID获取章节详情
 
 **路径参数**:
-- `contentId` (Long): 内容ID
+- `id` (Long): 章节ID
 
 **响应示例**:
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "id": 67890,
-      "contentId": 12345,
-      "chapterNum": 1,
-      "title": "第一章 初入江湖",
-      "wordCount": 2500,
-      "status": "PUBLISHED",
-      "isFree": true,
-      "createTime": "2024-01-01T10:00:00",
-      "updateTime": "2024-01-01T10:00:00"
-    },
-    {
-      "id": 67891,
-      "contentId": 12345,
-      "chapterNum": 2,
-      "title": "第二章 奇遇连连",
-      "wordCount": 3000,
-      "status": "PUBLISHED",
-      "isFree": false,
-      "createTime": "2024-01-02T10:00:00",
-      "updateTime": "2024-01-02T10:00:00"
-    }
-  ]
+  "data": {
+    "id": 67890,
+    "contentId": 12345,
+    "chapterNum": 1,
+    "title": "第一章 初入江湖",
+    "wordCount": 2500,
+    "status": "PUBLISHED",
+    "isFree": true,
+    "createTime": "2024-01-01T10:00:00",
+    "publishTime": "2024-01-01T10:30:00"
+  }
 }
 ```
 
-**错误处理**:
-- `GET_CHAPTERS_FAILED`: 获取章节列表失败
+**错误响应**:
+```json
+{
+  "code": 404,
+  "message": "CHAPTER_NOT_FOUND",
+  "data": null
+}
+```
 
-### 1.2 获取内容的已发布章节
+### 1.2 删除章节
 
-**接口**: `GET /api/content/chapters/content/{contentId}/published`
+**接口**: `DELETE /api/v1/content/chapters/{id}`
 
-**描述**: 根据内容ID查询已发布的章节列表
+**描述**: 逻辑删除指定章节
 
 **路径参数**:
-- `contentId` (Long): 内容ID
+- `id` (Long): 章节ID
 
 **响应示例**:
 ```json
 {
   "code": 200,
   "message": "success",
-  "data": [
-    {
-      "id": 67890,
-      "contentId": 12345,
-      "chapterNum": 1,
-      "title": "第一章 初入江湖",
-      "wordCount": 2500,
-      "status": "PUBLISHED",
-      "createTime": "2024-01-01T10:00:00"
-    }
-  ]
+  "data": true
 }
 ```
 
-**错误处理**:
-- `GET_PUBLISHED_CHAPTERS_FAILED`: 获取已发布章节列表失败
+---
 
-### 1.3 分页获取章节列表
+## 🔍 2. 万能查询功能 (6个接口)
 
-**接口**: `GET /api/content/chapters/content/{contentId}/paged`
+### 2.1 万能条件查询章节 ⭐
 
-**描述**: 根据内容ID分页查询章节
+**接口**: `GET /api/v1/content/chapters/query`
 
-**路径参数**:
-- `contentId` (Long): 内容ID
+**描述**: 根据多种条件查询章节列表，替代所有具体查询API
+
+**核心功能**: 
+- 替代原有14个具体查询接口
+- 支持按内容、状态、章节号范围、字数范围查询
+- 支持灵活排序和分页
 
 **查询参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
+- `contentId` (Long, 可选): 内容ID
+- `status` (String, 可选): 章节状态
+- `chapterNumStart` (Integer, 可选): 章节号起始
+- `chapterNumEnd` (Integer, 可选): 章节号结束
+- `minWordCount` (Integer, 可选): 最小字数
+- `maxWordCount` (Integer, 可选): 最大字数
+- `orderBy` (String, 可选): 排序字段，默认"chapterNum"
+- `orderDirection` (String, 可选): 排序方向，默认"ASC"
+- `currentPage` (Integer, 可选): 当前页码
+- `pageSize` (Integer, 可选): 页面大小
+
+**调用示例**:
+```bash
+# 查询指定内容的已发布章节（按章节号排序）
+GET /api/v1/content/chapters/query?contentId=12345&status=PUBLISHED&orderBy=chapterNum&orderDirection=ASC&currentPage=1&pageSize=20
+
+# 查询字数在2000-4000之间的章节
+GET /api/v1/content/chapters/query?contentId=12345&minWordCount=2000&maxWordCount=4000&orderBy=wordCount&orderDirection=DESC
+
+# 查询最新更新的章节（跨所有内容）
+GET /api/v1/content/chapters/query?status=PUBLISHED&orderBy=updateTime&orderDirection=DESC&currentPage=1&pageSize=20
+```
 
 **响应示例**:
 ```json
@@ -131,7 +143,9 @@
         "chapterNum": 1,
         "title": "第一章 初入江湖",
         "wordCount": 2500,
-        "status": "PUBLISHED"
+        "status": "PUBLISHED",
+        "isFree": true,
+        "createTime": "2024-01-01T10:00:00"
       }
     ],
     "totalCount": 50,
@@ -144,53 +158,31 @@
 }
 ```
 
-**错误处理**:
-- `GET_CHAPTERS_PAGED_FAILED`: 分页获取章节列表失败
+### 2.2 章节导航查询 ⭐
 
-### 1.4 获取指定章节
+**接口**: `GET /api/v1/content/chapters/navigation`
 
-**接口**: `GET /api/content/chapters/content/{contentId}/chapter/{chapterNum}`
+**描述**: 章节导航查询，替代上一章、下一章、首章、末章等4个接口
 
-**描述**: 根据内容ID和章节号查询指定章节
+**查询参数**:
+- `contentId` (Long, 必需): 内容ID
+- `currentChapterNum` (Integer, 可选): 当前章节号
+- `direction` (String, 必需): 导航方向（next、previous、first、last）
 
-**路径参数**:
-- `contentId` (Long): 内容ID
-- `chapterNum` (Integer): 章节号
+**调用示例**:
+```bash
+# 获取下一章节
+GET /api/v1/content/chapters/navigation?contentId=12345&currentChapterNum=1&direction=next
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 67890,
-    "contentId": 12345,
-    "chapterNum": 1,
-    "title": "第一章 初入江湖",
-    "content": "章节内容正文...",
-    "wordCount": 2500,
-    "status": "PUBLISHED",
-    "isFree": true,
-    "summary": "本章简介",
-    "createTime": "2024-01-01T10:00:00",
-    "updateTime": "2024-01-01T10:00:00"
-  }
-}
+# 获取上一章节
+GET /api/v1/content/chapters/navigation?contentId=12345&currentChapterNum=5&direction=previous
+
+# 获取第一章节
+GET /api/v1/content/chapters/navigation?contentId=12345&direction=first
+
+# 获取最后章节
+GET /api/v1/content/chapters/navigation?contentId=12345&direction=last
 ```
-
-**错误处理**:
-- `GET_CHAPTER_FAILED`: 获取章节详情失败
-- `CHAPTER_NOT_FOUND`: 章节不存在
-
-### 1.5 获取下一章节
-
-**接口**: `GET /api/content/chapters/content/{contentId}/chapter/{currentChapterNum}/next`
-
-**描述**: 根据当前章节号获取下一章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-- `currentChapterNum` (Integer): 当前章节号
 
 **响应示例**:
 ```json
@@ -203,111 +195,33 @@
     "chapterNum": 2,
     "title": "第二章 奇遇连连",
     "wordCount": 3000,
-    "status": "PUBLISHED"
+    "status": "PUBLISHED",
+    "isFree": true
   }
 }
 ```
 
-**错误处理**:
-- `GET_NEXT_CHAPTER_FAILED`: 获取下一章节失败
-- `NEXT_CHAPTER_NOT_FOUND`: 没有下一章节
+### 2.3 搜索章节 ⭐
 
-### 1.6 获取上一章节
+**接口**: `GET /api/v1/content/chapters/search`
 
-**接口**: `GET /api/content/chapters/content/{contentId}/chapter/{currentChapterNum}/previous`
-
-**描述**: 根据当前章节号获取上一章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-- `currentChapterNum` (Integer): 当前章节号
-
-**错误处理**:
-- `GET_PREVIOUS_CHAPTER_FAILED`: 获取上一章节失败
-- `PREVIOUS_CHAPTER_NOT_FOUND`: 没有上一章节
-
-### 1.7 获取第一章节
-
-**接口**: `GET /api/content/chapters/content/{contentId}/first`
-
-**描述**: 获取内容的第一章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 67890,
-    "contentId": 12345,
-    "chapterNum": 1,
-    "title": "第一章 初入江湖",
-    "wordCount": 2500,
-    "status": "PUBLISHED"
-  }
-}
-```
-
-**错误处理**:
-- `GET_FIRST_CHAPTER_FAILED`: 获取第一章节失败
-- `FIRST_CHAPTER_NOT_FOUND`: 第一章节不存在
-
-### 1.8 获取最后章节
-
-**接口**: `GET /api/content/chapters/content/{contentId}/last`
-
-**描述**: 获取内容的最后一章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**错误处理**:
-- `GET_LAST_CHAPTER_FAILED`: 获取最后章节失败
-- `LAST_CHAPTER_NOT_FOUND`: 最后章节不存在
-
-### 1.9 根据状态查询章节
-
-**接口**: `GET /api/content/chapters/status/{status}`
-
-**描述**: 根据章节状态查询章节列表
-
-**路径参数**:
-- `status` (String): 章节状态 (DRAFT/PUBLISHED/DELETED)
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 67890,
-      "contentId": 12345,
-      "chapterNum": 1,
-      "title": "第一章 初入江湖",
-      "status": "PUBLISHED",
-      "createTime": "2024-01-01T10:00:00"
-    }
-  ]
-}
-```
-
-**错误处理**:
-- `GET_CHAPTERS_BY_STATUS_FAILED`: 根据状态查询章节失败
-
-### 1.10 搜索章节
-
-**接口**: `GET /api/content/chapters/search`
-
-**描述**: 根据标题关键词搜索章节
+**描述**: 按标题、内容搜索章节，替代searchChaptersByTitle接口
 
 **查询参数**:
-- `titleKeyword` (String): 标题关键词
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
+- `keyword` (String, 必需): 搜索关键词
+- `contentId` (Long, 可选): 内容ID（限定搜索范围）
+- `status` (String, 可选): 章节状态
+- `currentPage` (Integer, 必需): 当前页码
+- `pageSize` (Integer, 必需): 页面大小
+
+**调用示例**:
+```bash
+# 在指定内容中搜索包含"江湖"的章节
+GET /api/v1/content/chapters/search?keyword=江湖&contentId=12345&status=PUBLISHED&currentPage=1&pageSize=20
+
+# 全局搜索包含"修炼"的章节
+GET /api/v1/content/chapters/search?keyword=修炼&currentPage=1&pageSize=50
+```
 
 **响应示例**:
 ```json
@@ -329,218 +243,75 @@
       }
     ],
     "totalCount": 5,
+    "totalPage": 1,
     "currentPage": 1,
     "pageSize": 20
   }
 }
 ```
 
-**错误处理**:
-- `SEARCH_CHAPTERS_FAILED`: 搜索章节失败
+### 2.4 获取内容的章节列表（便民接口）
 
-### 1.11 按字数范围查询章节
+**接口**: `GET /api/v1/content/chapters/content/{contentId}`
 
-**接口**: `GET /api/content/chapters/content/{contentId}/word-count-range`
-
-**描述**: 根据字数范围查询章节
+**描述**: 便民接口，获取指定内容的所有章节列表
 
 **路径参数**:
 - `contentId` (Long): 内容ID
 
 **查询参数**:
-- `minWordCount` (Integer, 可选): 最小字数
-- `maxWordCount` (Integer, 可选): 最大字数
+- `status` (String, 可选): 章节状态，默认"PUBLISHED"
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 67890,
-      "contentId": 12345,
-      "chapterNum": 1,
-      "title": "第一章 初入江湖",
-      "wordCount": 2500,
-      "status": "PUBLISHED"
-    }
-  ]
-}
+**内部实现**: 调用万能查询接口
+```java
+// 内部调用
+contentChapterFacadeService.getChaptersByConditions(contentId, "PUBLISHED", null, null, null, null, "chapterNum", "ASC", null, null)
 ```
 
-**错误处理**:
-- `GET_CHAPTERS_BY_WORD_COUNT_FAILED`: 按字数范围查询章节失败
+### 2.5 获取内容的已发布章节（便民接口）
 
-### 1.12 获取字数最多的章节
+**接口**: `GET /api/v1/content/chapters/content/{contentId}/published`
 
-**接口**: `GET /api/content/chapters/content/{contentId}/max-word-count`
-
-**描述**: 查询指定内容中字数最多的章节
+**描述**: 便民接口，获取指定内容的已发布章节列表
 
 **路径参数**:
 - `contentId` (Long): 内容ID
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 67892,
-    "contentId": 12345,
-    "chapterNum": 10,
-    "title": "第十章 巅峰对决",
-    "wordCount": 5000,
-    "status": "PUBLISHED"
-  }
-}
+**内部实现**: 调用万能查询接口
+```java
+// 内部调用
+contentChapterFacadeService.getChaptersByConditions(contentId, "PUBLISHED", null, null, null, null, "chapterNum", "ASC", null, null)
 ```
 
-**错误处理**:
-- `GET_MAX_WORD_COUNT_CHAPTER_FAILED`: 获取字数最多的章节失败
-- `MAX_WORD_COUNT_CHAPTER_NOT_FOUND`: 字数最多的章节不存在
+### 2.6 获取最新章节列表（便民接口）
 
-### 1.13 获取最新章节
+**接口**: `GET /api/v1/content/chapters/latest`
 
-**接口**: `GET /api/content/chapters/content/{contentId}/latest`
-
-**描述**: 获取内容的最新更新章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 67900,
-    "contentId": 12345,
-    "chapterNum": 25,
-    "title": "第二十五章 新的开始",
-    "wordCount": 3200,
-    "status": "PUBLISHED",
-    "updateTime": "2024-01-31T14:30:00"
-  }
-}
-```
-
-**错误处理**:
-- `GET_LATEST_CHAPTER_FAILED`: 获取最新章节失败
-- `LATEST_CHAPTER_NOT_FOUND`: 最新章节不存在
-
-### 1.14 获取最新更新的章节
-
-**接口**: `GET /api/content/chapters/latest`
-
-**描述**: 分页获取最新更新的章节列表
+**描述**: 便民接口，获取最新更新的章节列表
 
 **查询参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
+- `currentPage` (Integer, 必需): 当前页码
+- `pageSize` (Integer, 必需): 页面大小
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "records": [
-      {
-        "id": 67900,
-        "contentId": 12345,
-        "contentTitle": "我的玄幻小说",
-        "chapterNum": 25,
-        "title": "第二十五章 新的开始",
-        "wordCount": 3200,
-        "status": "PUBLISHED",
-        "updateTime": "2024-01-31T14:30:00"
-      }
-    ],
-    "totalCount": 100,
-    "currentPage": 1,
-    "pageSize": 20
-  }
-}
+**内部实现**: 调用万能查询接口
+```java
+// 内部调用
+contentChapterFacadeService.getChaptersByConditions(null, "PUBLISHED", null, null, null, null, "updateTime", "DESC", currentPage, pageSize)
 ```
-
-**错误处理**:
-- `GET_LATEST_CHAPTERS_FAILED`: 获取最新更新的章节失败
 
 ---
 
-## 📊 2. 统计功能 (5个接口)
+## 📊 3. 统计功能 (1个接口)
 
-### 2.1 统计章节总数
+### 3.1 获取章节统计信息 ⭐
 
-**接口**: `GET /api/content/chapters/content/{contentId}/count`
+**接口**: `GET /api/v1/content/chapters/content/{contentId}/stats`
 
-**描述**: 统计指定内容的章节总数
+**描述**: 获取指定内容的章节统计信息，替代所有单个统计接口
 
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": 25
-}
-```
-
-**错误处理**:
-- `COUNT_CHAPTERS_FAILED`: 统计章节总数失败
-
-### 2.2 统计已发布章节数
-
-**接口**: `GET /api/content/chapters/content/{contentId}/published-count`
-
-**描述**: 统计指定内容的已发布章节数量
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": 20
-}
-```
-
-**错误处理**:
-- `COUNT_PUBLISHED_CHAPTERS_FAILED`: 统计已发布章节数失败
-
-### 2.3 统计总字数
-
-**接口**: `GET /api/content/chapters/content/{contentId}/total-words`
-
-**描述**: 统计指定内容的总字数
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": 75000
-}
-```
-
-**错误处理**:
-- `COUNT_TOTAL_WORDS_FAILED`: 统计总字数失败
-
-### 2.4 获取章节统计信息
-
-**接口**: `GET /api/content/chapters/content/{contentId}/stats`
-
-**描述**: 获取指定内容的章节统计信息
+**核心功能**: 
+- 替代原有5个统计接口
+- 一次调用返回完整统计信息
 
 **路径参数**:
 - `contentId` (Long): 内容ID
@@ -568,26 +339,22 @@
 }
 ```
 
-**错误处理**:
-- `GET_CHAPTER_STATS_FAILED`: 获取章节统计信息失败
-
 ---
 
-## ⚙️ 3. 管理功能 (3个接口)
+## ⚙️ 4. 批量操作功能 (2个接口)
 
-### 3.1 批量更新章节状态
+### 4.1 批量更新章节状态
 
-**接口**: `PUT /api/content/chapters/batch-status`
+**接口**: `PUT /api/v1/content/chapters/batch/status`
 
 **描述**: 批量更新指定章节的状态
 
-**查询参数**:
-- `ids` (List<Long>): 章节ID列表
-- `status` (String): 目标状态 (DRAFT/PUBLISHED/DELETED)
-
-**请求示例**:
-```
-PUT /api/content/chapters/batch-status?ids=67890,67891,67892&status=PUBLISHED
+**请求体**:
+```json
+{
+  "ids": [67890, 67891, 67892],
+  "status": "PUBLISHED"
+}
 ```
 
 **响应示例**:
@@ -599,17 +366,18 @@ PUT /api/content/chapters/batch-status?ids=67890,67891,67892&status=PUBLISHED
 }
 ```
 
-**错误处理**:
-- `BATCH_UPDATE_STATUS_FAILED`: 批量更新章节状态失败
+### 4.2 批量删除章节
 
-### 3.2 删除内容的所有章节
+**接口**: `DELETE /api/v1/content/chapters/batch`
 
-**接口**: `DELETE /api/content/chapters/content/{contentId}/all`
+**描述**: 批量删除章节
 
-**描述**: 删除指定内容的所有章节
-
-**路径参数**:
-- `contentId` (Long): 内容ID
+**请求体**:
+```json
+{
+  "ids": [67890, 67891, 67892]
+}
+```
 
 **响应示例**:
 ```json
@@ -619,30 +387,6 @@ PUT /api/content/chapters/batch-status?ids=67890,67891,67892&status=PUBLISHED
   "data": true
 }
 ```
-
-**错误处理**:
-- `DELETE_ALL_CHAPTERS_FAILED`: 删除内容的所有章节失败
-
-### 3.3 重新排序章节号
-
-**接口**: `PUT /api/content/chapters/content/{contentId}/reorder`
-
-**描述**: 重新排序指定内容的章节号
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": true
-}
-```
-
-**错误处理**:
-- `REORDER_CHAPTER_NUMBERS_FAILED`: 重新排序章节号失败
 
 ---
 
@@ -651,148 +395,180 @@ PUT /api/content/chapters/batch-status?ids=67890,67891,67892&status=PUBLISHED
 ### ChapterResponse 章节响应对象
 ```json
 {
-  "id": "章节ID",
-  "contentId": "内容ID",
-  "contentTitle": "内容标题（仅在跨内容查询时返回）",
-  "chapterNum": "章节号",
-  "title": "章节标题",
-  "content": "章节内容（仅在详情查询时返回）",
-  "summary": "章节简介",
-  "wordCount": "字数",
-  "status": "状态（DRAFT/PUBLISHED/DELETED）",
-  "isFree": "是否免费",
-  "viewCount": "浏览量",
-  "likeCount": "点赞数",
-  "commentCount": "评论数",
-  "createTime": "创建时间",
-  "publishTime": "发布时间",
-  "updateTime": "更新时间",
-  "highlight": "搜索高亮信息（仅在搜索时返回）"
+  "id": 67890,                    // 章节ID
+  "contentId": 12345,             // 内容ID
+  "contentTitle": "我的玄幻小说",   // 内容标题（仅在跨内容查询时返回）
+  "chapterNum": 1,                // 章节号
+  "title": "第一章 初入江湖",      // 章节标题
+  "content": "章节内容...",       // 章节内容（仅在详情查询时返回）
+  "summary": "章节简介",          // 章节简介
+  "wordCount": 2500,              // 字数
+  "status": "PUBLISHED",          // 状态（DRAFT/PUBLISHED/DELETED）
+  "isFree": true,                 // 是否免费
+  "viewCount": 1000,              // 浏览量
+  "likeCount": 50,                // 点赞数
+  "commentCount": 20,             // 评论数
+  "createTime": "2024-01-01T10:00:00",  // 创建时间
+  "publishTime": "2024-01-01T10:30:00", // 发布时间
+  "updateTime": "2024-01-01T11:00:00",  // 更新时间
+  "highlight": {                  // 搜索高亮信息（仅在搜索时返回）
+    "title": "第一章 初入<em>江湖</em>"
+  }
 }
 ```
 
-### ChapterStats 章节统计对象
+### PageResponse 分页响应对象
 ```json
 {
-  "totalChapters": "总章节数",
-  "publishedChapters": "已发布章节数",
-  "draftChapters": "草稿章节数",
-  "totalWords": "总字数",
-  "publishedWords": "已发布字数",
-  "avgWordsPerChapter": "平均每章字数",
-  "maxWordCount": "最大章节字数",
-  "minWordCount": "最小章节字数",
-  "freeChapters": "免费章节数",
-  "paidChapters": "付费章节数",
-  "latestChapterNum": "最新章节号",
-  "latestUpdateTime": "最新更新时间",
-  "firstPublishTime": "首次发布时间"
+  "records": [],           // 记录列表
+  "totalCount": 100,       // 总记录数
+  "totalPage": 5,          // 总页数
+  "currentPage": 1,        // 当前页码
+  "pageSize": 20,          // 页面大小
+  "hasNext": true,         // 是否有下一页
+  "hasPrevious": false     // 是否有上一页
 }
 ```
 
 ## 🚨 错误代码
 
-| 错误码 | 描述 | 解决方案 |
-|--------|------|----------|
-| GET_CHAPTERS_FAILED | 获取章节列表失败 | 检查内容ID是否正确 |
-| GET_PUBLISHED_CHAPTERS_FAILED | 获取已发布章节列表失败 | 确认内容存在 |
-| GET_CHAPTERS_PAGED_FAILED | 分页获取章节列表失败 | 检查分页参数 |
-| GET_CHAPTER_FAILED | 获取章节详情失败 | 检查章节ID或章节号 |
-| CHAPTER_NOT_FOUND | 章节不存在 | 确认章节存在 |
-| GET_NEXT_CHAPTER_FAILED | 获取下一章节失败 | 检查章节号 |
-| NEXT_CHAPTER_NOT_FOUND | 没有下一章节 | 已是最后一章 |
-| GET_PREVIOUS_CHAPTER_FAILED | 获取上一章节失败 | 检查章节号 |
-| PREVIOUS_CHAPTER_NOT_FOUND | 没有上一章节 | 已是第一章 |
-| GET_FIRST_CHAPTER_FAILED | 获取第一章节失败 | 检查内容ID |
-| FIRST_CHAPTER_NOT_FOUND | 第一章节不存在 | 内容没有章节 |
-| GET_LAST_CHAPTER_FAILED | 获取最后章节失败 | 检查内容ID |
-| LAST_CHAPTER_NOT_FOUND | 最后章节不存在 | 内容没有章节 |
-| GET_CHAPTERS_BY_STATUS_FAILED | 根据状态查询章节失败 | 检查状态值 |
-| SEARCH_CHAPTERS_FAILED | 搜索章节失败 | 检查搜索关键词 |
-| GET_CHAPTERS_BY_WORD_COUNT_FAILED | 按字数范围查询章节失败 | 检查字数范围 |
-| GET_MAX_WORD_COUNT_CHAPTER_FAILED | 获取字数最多的章节失败 | 检查内容ID |
-| MAX_WORD_COUNT_CHAPTER_NOT_FOUND | 字数最多的章节不存在 | 内容没有章节 |
-| GET_LATEST_CHAPTER_FAILED | 获取最新章节失败 | 检查内容ID |
-| LATEST_CHAPTER_NOT_FOUND | 最新章节不存在 | 内容没有章节 |
-| GET_LATEST_CHAPTERS_FAILED | 获取最新更新的章节失败 | 检查查询参数 |
-| COUNT_CHAPTERS_FAILED | 统计章节总数失败 | 检查内容ID |
-| COUNT_PUBLISHED_CHAPTERS_FAILED | 统计已发布章节数失败 | 检查内容ID |
-| COUNT_TOTAL_WORDS_FAILED | 统计总字数失败 | 检查内容ID |
-| GET_CHAPTER_STATS_FAILED | 获取章节统计信息失败 | 检查内容ID |
-| BATCH_UPDATE_STATUS_FAILED | 批量更新章节状态失败 | 检查章节ID列表和状态 |
-| DELETE_ALL_CHAPTERS_FAILED | 删除内容的所有章节失败 | 确认操作权限 |
-| REORDER_CHAPTER_NUMBERS_FAILED | 重新排序章节号失败 | 确认内容存在 |
+| HTTP状态码 | 错误码 | 描述 | 解决方案 |
+|-----------|--------|------|----------|
+| 400 | INVALID_PARAMETER | 参数验证失败 | 检查请求参数的格式和必填项 |
+| 404 | CHAPTER_NOT_FOUND | 章节不存在 | 检查章节ID是否正确 |
+| 404 | CONTENT_NOT_FOUND | 内容不存在 | 检查内容ID是否正确 |
+| 500 | DELETE_CHAPTER_FAILED | 删除章节失败 | 确认章节存在且有权限 |
+| 500 | BATCH_UPDATE_FAILED | 批量更新失败 | 检查章节ID列表和状态值 |
+| 500 | SEARCH_FAILED | 搜索失败 | 检查搜索关键词和参数 |
+| 500 | STATS_CALCULATION_FAILED | 统计计算失败 | 检查统计参数 |
+| 500 | NAVIGATION_FAILED | 导航查询失败 | 检查内容ID和导航方向 |
 
-## 📈 使用场景
+## 📈 接口使用示例
 
-### 1. 阅读器导航
+### 阅读器章节导航
 ```javascript
-// 获取章节内容和导航信息
-const getChapterWithNavigation = async (contentId, chapterNum) => {
-  // 获取当前章节
-  const currentChapter = await fetch(
-    `/api/content/chapters/content/${contentId}/chapter/${chapterNum}`
-  );
-  
-  // 获取上一章
-  const previousChapter = await fetch(
-    `/api/content/chapters/content/${contentId}/chapter/${chapterNum}/previous`
-  );
-  
-  // 获取下一章
-  const nextChapter = await fetch(
-    `/api/content/chapters/content/${contentId}/chapter/${chapterNum}/next`
-  );
-  
-  return {
-    current: await currentChapter.json(),
-    previous: await previousChapter.json(),
-    next: await nextChapter.json()
-  };
-};
+// 获取章节导航信息
+async function getChapterNavigation(contentId, currentChapterNum) {
+    const promises = [
+        fetch(`/api/v1/content/chapters/navigation?contentId=${contentId}&currentChapterNum=${currentChapterNum}&direction=previous`),
+        fetch(`/api/v1/content/chapters/navigation?contentId=${contentId}&currentChapterNum=${currentChapterNum}&direction=next`),
+        fetch(`/api/v1/content/chapters/navigation?contentId=${contentId}&direction=first`),
+        fetch(`/api/v1/content/chapters/navigation?contentId=${contentId}&direction=last`)
+    ];
+    
+    const [prevRes, nextRes, firstRes, lastRes] = await Promise.all(promises);
+    
+    return {
+        previous: prevRes.ok ? await prevRes.json() : null,
+        next: nextRes.ok ? await nextRes.json() : null,
+        first: firstRes.ok ? await firstRes.json() : null,
+        last: lastRes.ok ? await lastRes.json() : null
+    };
+}
 ```
 
-### 2. 章节目录
+### 章节目录服务
 ```javascript
-// 获取章节目录
-const getChapterCatalog = async (contentId, page = 1) => {
-  const response = await fetch(
-    `/api/content/chapters/content/${contentId}/paged?currentPage=${page}&pageSize=50`
-  );
-  return response.json();
-};
+// 获取章节目录和统计信息
+async function getChapterCatalog(contentId) {
+    const [chaptersRes, statsRes] = await Promise.all([
+        fetch(`/api/v1/content/chapters/content/${contentId}/published`),
+        fetch(`/api/v1/content/chapters/content/${contentId}/stats`)
+    ]);
+    
+    const chapters = await chaptersRes.json();
+    const stats = await statsRes.json();
+    
+    return {
+        chapters: chapters.data || [],
+        stats: stats.data || {}
+    };
+}
 ```
 
-### 3. 统计仪表板
+### 章节搜索
 ```javascript
-// 获取内容统计信息
-const getContentStats = async (contentId) => {
-  const response = await fetch(
-    `/api/content/chapters/content/${contentId}/stats`
-  );
-  return response.json();
-};
+// 搜索章节
+async function searchChapters(keyword, contentId = null, page = 1, size = 20) {
+    let url = `/api/v1/content/chapters/search?keyword=${encodeURIComponent(keyword)}&currentPage=${page}&pageSize=${size}`;
+    
+    if (contentId) {
+        url += `&contentId=${contentId}`;
+    }
+    
+    const response = await fetch(url);
+    return response.json();
+}
+```
+
+### 批量操作
+```javascript
+// 批量发布章节
+async function batchPublishChapters(chapterIds) {
+    const response = await fetch('/api/v1/content/chapters/batch/status', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            ids: chapterIds,
+            status: 'PUBLISHED'
+        })
+    });
+    
+    return response.json();
+}
 ```
 
 ## 🔧 性能优化建议
 
-1. **缓存策略**: 章节列表和统计信息建议使用Redis缓存，TTL设置为10分钟
-2. **分页优化**: 章节目录建议使用游标分页，提升大量章节的查询性能
-3. **内容预加载**: 阅读器可以预加载下一章内容，提升用户体验
-4. **搜索优化**: 章节标题搜索建议使用Elasticsearch全文索引
-5. **统计优化**: 字数统计可以通过定时任务异步计算并缓存
+1. **缓存策略**:
+   - 章节列表: 使用 ETag 和 Last-Modified
+   - 章节统计: 缓存5分钟
+   - 导航信息: 缓存15分钟
+
+2. **分页优化**:
+   - 建议页面大小: 10-50
+   - 使用游标分页替代offset分页（大数据量时）
+
+3. **查询优化**:
+   - 使用万能查询减少API调用次数
+   - 并行请求多个无依赖的接口
+   - 合理使用条件参数减少结果集
+
+4. **请求优化**:
+   ```javascript
+   // 推荐：并行获取章节和统计信息
+   Promise.all([
+       getChapterList(contentId),
+       getChapterStats(contentId)
+   ]);
+   
+   // 避免：串行调用
+   const chapters = await getChapterList(contentId);
+   const stats = await getChapterStats(contentId);
+   ```
+
+## 🚀 极简设计优势
+
+1. **接口精简**: 从24个接口缩减到11个，开发效率提升55%
+2. **万能查询**: 1个查询接口替代14个具体查询接口
+3. **统一导航**: 1个导航接口替代4个导航接口
+4. **批量优化**: 支持批量操作，减少网络开销
+5. **便民接口**: 保留3个高频便民接口，平衡灵活性和易用性
 
 ## 🔗 相关文档
 
-- [ContentController API 文档](./content-controller-api.md)
-- [ContentChapterFacadeService 文档](./content-chapter-facade-service-api.md)
-- [章节数据模型](../models/chapter-model.md)
-- [阅读器设计](../design/reader-design.md)
+- [ContentChapterFacadeService API 文档](../facade/content-chapter-facade-service-api.md)
+- [Content Controller API 文档](./content-controller-api.md)
+- [Content Purchase Controller API 文档](./content-purchase-controller-api.md)
+- [Content Payment Controller API 文档](./content-payment-controller-api.md)
 
 ---
 
 **联系信息**:  
 - 控制器: ContentChapterController  
-- 版本: 2.0.0 (内容付费版)  
+- 版本: 2.0.0 (极简版)  
+- 基础路径: `/api/v1/content/chapters`  
 - 维护: GIG团队  
 - 更新: 2024-01-31

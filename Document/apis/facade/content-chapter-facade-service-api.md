@@ -1,353 +1,258 @@
 # Content Chapter Facade Service API 文档
 
 **Facade服务**: ContentChapterFacadeService  
-**版本**: 2.0.0 (内容付费版)  
+**版本**: 2.0.0 (极简版)  
 **Dubbo版本**: 5.0.0  
 **超时时间**: 5000ms  
 **服务路径**: `com.gig.collide.api.content.ContentChapterFacadeService`  
-**方法数量**: 21个  
+**方法数量**: 8个  
 **更新时间**: 2024-01-31  
 
 ## 🚀 概述
 
-内容章节外观服务接口专注于C端必需的章节查询功能，基于单表无连表设计。提供多章节内容（如小说、漫画）的章节管理RPC接口，支持章节导航、统计分析和管理操作。
+内容章节外观服务接口 - 极简版，专注于C端必需的章节查询功能，基于万能查询方法设计。极简8个核心方法满足所有章节管理需求。
 
 **设计理念**:
-- **C端简洁版**: 专注于C端必需功能，移除复杂的管理接口
-- **单表设计**: 基于单表无连表设计，提升查询性能
-- **高性能**: 针对高并发读取场景优化
-- **导航友好**: 提供完整的章节导航功能
+- **极简设计**: 8个核心方法替代原有21个方法
+- **万能查询**: 单个查询方法替代多个具体查询方法
+- **高性能**: 基于条件查询和批量操作优化
+- **统一接口**: 统一的参数结构和返回格式
 
 ## 📋 接口分类
 
 | 分类 | 方法数量 | 功能描述 |
 |------|----------|----------|
-| **基础查询功能** | 14个 | 章节列表、导航、搜索、筛选 |
-| **统计功能** | 4个 | 章节数量、字数统计 |
-| **管理功能** | 3个 | 批量更新、删除、重排序 |
+| **核心CRUD功能** | 2个 | 章节查询和删除 |
+| **万能查询功能** | 3个 | 条件查询、导航查询、搜索 |
+| **统计功能** | 1个 | 章节统计信息 |
+| **批量操作功能** | 2个 | 批量状态更新、批量删除 |
 
 ---
 
-## 📚 1. 基础查询功能 (14个方法)
+## 🔧 1. 核心CRUD功能 (2个方法)
 
-### 1.1 根据内容ID查询章节列表
+### 1.1 根据ID获取章节详情
 
-**方法**: `getChaptersByContentId(Long contentId)`
+**方法**: `getChapterById(Long id)`
 
-**描述**: 根据内容ID查询所有章节列表（按章节号排序）
+**描述**: 根据章节ID获取章节详细信息
 
 **参数**:
-- `contentId` (Long): 内容ID
+- `id` (Long): 章节ID
 
-**返回值**: `List<ChapterResponse>`
+**返回值**: `Result<ChapterResponse>`
 
 **调用示例**:
 ```java
-List<ChapterResponse> chapters = contentChapterFacadeService.getChaptersByContentId(12345L);
-```
-
-**响应示例**:
-```java
-List<ChapterResponse> chapters = [
-    ChapterResponse.builder()
-        .id(67890L)
-        .contentId(12345L)
-        .chapterNum(1)
-        .title("第一章 初入江湖")
-        .wordCount(2500)
-        .status("PUBLISHED")
-        .createTime(LocalDateTime.of(2024, 1, 1, 10, 0))
-        .build(),
-    ChapterResponse.builder()
-        .id(67891L)
-        .contentId(12345L)
-        .chapterNum(2)
-        .title("第二章 奇遇连连")
-        .wordCount(3000)
-        .status("PUBLISHED")
-        .createTime(LocalDateTime.of(2024, 1, 2, 10, 0))
-        .build()
-];
-```
-
-### 1.2 根据内容ID查询已发布章节列表
-
-**方法**: `getPublishedChaptersByContentId(Long contentId)`
-
-**描述**: 根据内容ID查询已发布的章节列表
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `List<ChapterResponse>`
-
-### 1.3 根据内容ID分页查询章节
-
-**方法**: `getChaptersByContentIdPaged(Long contentId, Integer currentPage, Integer pageSize)`
-
-**描述**: 根据内容ID分页查询章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `PageResponse<ChapterResponse>`
-
-**调用示例**:
-```java
-PageResponse<ChapterResponse> pageResponse = contentChapterFacadeService
-    .getChaptersByContentIdPaged(12345L, 1, 20);
-```
-
-### 1.4 根据内容ID和章节号查询章节
-
-**方法**: `getChapterByContentIdAndNum(Long contentId, Integer chapterNum)`
-
-**描述**: 根据内容ID和章节号查询指定章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `chapterNum` (Integer): 章节号
-
-**返回值**: `ChapterResponse`
-
-**调用示例**:
-```java
-ChapterResponse chapter = contentChapterFacadeService
-    .getChapterByContentIdAndNum(12345L, 1);
-```
-
-### 1.5 查询内容的下一章节
-
-**方法**: `getNextChapter(Long contentId, Integer currentChapterNum)`
-
-**描述**: 查询内容的下一章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `currentChapterNum` (Integer): 当前章节号
-
-**返回值**: `ChapterResponse` - 如果没有下一章节返回null
-
-**调用示例**:
-```java
-ChapterResponse nextChapter = contentChapterFacadeService
-    .getNextChapter(12345L, 1);
-if (nextChapter != null) {
-    // 存在下一章节
-    System.out.println("下一章: " + nextChapter.getTitle());
+Result<ChapterResponse> result = contentChapterFacadeService.getChapterById(67890L);
+if (result.isSuccess()) {
+    ChapterResponse chapter = result.getData();
+    System.out.println("章节标题: " + chapter.getTitle());
+    System.out.println("字数: " + chapter.getWordCount());
 }
 ```
 
-### 1.6 查询内容的上一章节
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 67890,
+    "contentId": 12345,
+    "chapterNum": 1,
+    "title": "第一章 初入江湖",
+    "wordCount": 2500,
+    "status": "PUBLISHED",
+    "isFree": true,
+    "createTime": "2024-01-01T10:00:00",
+    "publishTime": "2024-01-01T10:30:00"
+  }
+}
+```
 
-**方法**: `getPreviousChapter(Long contentId, Integer currentChapterNum)`
+### 1.2 删除章节
 
-**描述**: 查询内容的上一章节
+**方法**: `deleteChapter(Long id)`
+
+**描述**: 逻辑删除指定章节
+
+**参数**:
+- `id` (Long): 章节ID
+
+**返回值**: `Result<Boolean>`
+
+**调用示例**:
+```java
+Result<Boolean> result = contentChapterFacadeService.deleteChapter(67890L);
+if (result.isSuccess() && result.getData()) {
+    System.out.println("章节删除成功");
+}
+```
+
+---
+
+## 🔍 2. 万能查询功能 (3个方法)
+
+### 2.1 万能条件查询章节列表
+
+**方法**: `getChaptersByConditions(Long contentId, String status, Integer chapterNumStart, Integer chapterNumEnd, Integer minWordCount, Integer maxWordCount, String orderBy, String orderDirection, Integer currentPage, Integer pageSize)`
+
+**描述**: 根据多种条件查询章节列表，替代所有具体查询API
+
+**核心功能**: 
+- 替代`getChaptersByContentId`、`getPublishedChapters`、`getChaptersByWordCount`等14个方法
+- 支持分页和不分页查询
+- 灵活的排序和筛选条件
+
+**参数**:
+- `contentId` (Long): 内容ID（可选）
+- `status` (String): 章节状态（可选：DRAFT/PUBLISHED/DELETED）
+- `chapterNumStart` (Integer): 章节号起始（可选）
+- `chapterNumEnd` (Integer): 章节号结束（可选）
+- `minWordCount` (Integer): 最小字数（可选）
+- `maxWordCount` (Integer): 最大字数（可选）
+- `orderBy` (String): 排序字段（可选：chapterNum、createTime、updateTime、wordCount）
+- `orderDirection` (String): 排序方向（可选：ASC、DESC）
+- `currentPage` (Integer): 当前页码（可选，不分页时传null）
+- `pageSize` (Integer): 页面大小（可选，不分页时传null）
+
+**返回值**: `Result<PageResponse<ChapterResponse>>`
+
+**调用示例**:
+```java
+// 查询指定内容的已发布章节（按章节号排序）
+Result<PageResponse<ChapterResponse>> result = contentChapterFacadeService
+    .getChaptersByConditions(12345L, "PUBLISHED", null, null, null, null, 
+                           "chapterNum", "ASC", 1, 20);
+
+// 查询字数在2000-4000之间的章节
+Result<PageResponse<ChapterResponse>> result2 = contentChapterFacadeService
+    .getChaptersByConditions(12345L, null, null, null, 2000, 4000, 
+                           "wordCount", "DESC", null, null);
+
+// 查询最新更新的章节（跨所有内容）
+Result<PageResponse<ChapterResponse>> result3 = contentChapterFacadeService
+    .getChaptersByConditions(null, "PUBLISHED", null, null, null, null, 
+                           "updateTime", "DESC", 1, 20);
+```
+
+### 2.2 章节导航查询
+
+**方法**: `getChapterByNavigation(Long contentId, Integer currentChapterNum, String direction)`
+
+**描述**: 章节导航查询，替代getNextChapter、getPreviousChapter、getFirstChapter、getLastChapter
 
 **参数**:
 - `contentId` (Long): 内容ID
 - `currentChapterNum` (Integer): 当前章节号
+- `direction` (String): 导航方向（next、previous、first、last）
 
-**返回值**: `ChapterResponse` - 如果没有上一章节返回null
+**返回值**: `Result<ChapterResponse>`
 
-### 1.7 查询内容的第一章节
+**调用示例**:
+```java
+// 获取下一章节
+Result<ChapterResponse> nextResult = contentChapterFacadeService
+    .getChapterByNavigation(12345L, 1, "next");
 
-**方法**: `getFirstChapter(Long contentId)`
+// 获取上一章节
+Result<ChapterResponse> prevResult = contentChapterFacadeService
+    .getChapterByNavigation(12345L, 5, "previous");
 
-**描述**: 查询内容的第一章节
+// 获取第一章节
+Result<ChapterResponse> firstResult = contentChapterFacadeService
+    .getChapterByNavigation(12345L, null, "first");
 
-**参数**:
-- `contentId` (Long): 内容ID
+// 获取最后章节
+Result<ChapterResponse> lastResult = contentChapterFacadeService
+    .getChapterByNavigation(12345L, null, "last");
+```
 
-**返回值**: `ChapterResponse`
+### 2.3 搜索章节
 
-### 1.8 查询内容的最后一章节
+**方法**: `searchChapters(String keyword, Long contentId, String status, Integer currentPage, Integer pageSize)`
 
-**方法**: `getLastChapter(Long contentId)`
-
-**描述**: 查询内容的最后一章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `ChapterResponse`
-
-### 1.9 根据状态查询章节列表
-
-**方法**: `getChaptersByStatus(String status)`
-
-**描述**: 根据章节状态查询章节列表
+**描述**: 按标题、内容搜索章节，替代searchChaptersByTitle
 
 **参数**:
-- `status` (String): 章节状态 (DRAFT/PUBLISHED/DELETED)
-
-**返回值**: `List<ChapterResponse>`
-
-### 1.10 根据章节标题搜索
-
-**方法**: `searchChaptersByTitle(String titleKeyword, Integer currentPage, Integer pageSize)`
-
-**描述**: 根据章节标题关键词搜索
-
-**参数**:
-- `titleKeyword` (String): 标题关键词
+- `keyword` (String): 搜索关键词
+- `contentId` (Long): 内容ID（可选，限定搜索范围）
+- `status` (String): 章节状态（可选）
 - `currentPage` (Integer): 当前页码
 - `pageSize` (Integer): 页面大小
 
-**返回值**: `PageResponse<ChapterResponse>`
+**返回值**: `Result<PageResponse<ChapterResponse>>`
 
 **调用示例**:
 ```java
-PageResponse<ChapterResponse> searchResult = contentChapterFacadeService
-    .searchChaptersByTitle("江湖", 1, 20);
-```
+// 在指定内容中搜索包含"江湖"的章节
+Result<PageResponse<ChapterResponse>> result = contentChapterFacadeService
+    .searchChapters("江湖", 12345L, "PUBLISHED", 1, 20);
 
-### 1.11 根据内容ID和字数范围查询章节
-
-**方法**: `getChaptersByWordCountRange(Long contentId, Integer minWordCount, Integer maxWordCount)`
-
-**描述**: 根据内容ID和字数范围查询章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `minWordCount` (Integer): 最小字数（可选）
-- `maxWordCount` (Integer): 最大字数（可选）
-
-**返回值**: `List<ChapterResponse>`
-
-**调用示例**:
-```java
-// 查询字数在2000-4000之间的章节
-List<ChapterResponse> chapters = contentChapterFacadeService
-    .getChaptersByWordCountRange(12345L, 2000, 4000);
-```
-
-### 1.12 查询字数最多的章节
-
-**方法**: `getMaxWordCountChapter(Long contentId)`
-
-**描述**: 查询指定内容中字数最多的章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `ChapterResponse`
-
-### 1.13 查询指定内容的最新章节
-
-**方法**: `getLatestChapterByContentId(Long contentId)`
-
-**描述**: 查询指定内容的最新更新章节
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `ChapterResponse`
-
-### 1.14 查询最新更新的章节
-
-**方法**: `getLatestChapters(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询最新更新的章节列表（跨所有内容）
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `PageResponse<ChapterResponse>`
-
-**调用示例**:
-```java
-// 查询最新更新的20个章节
-PageResponse<ChapterResponse> latestChapters = contentChapterFacadeService
-    .getLatestChapters(1, 20);
+// 全局搜索包含"修炼"的章节
+Result<PageResponse<ChapterResponse>> result2 = contentChapterFacadeService
+    .searchChapters("修炼", null, null, 1, 50);
 ```
 
 ---
 
-## 📊 2. 统计功能 (4个方法)
+## 📊 3. 统计功能 (1个方法)
 
-### 2.1 统计内容的章节总数
-
-**方法**: `countChaptersByContentId(Long contentId)`
-
-**描述**: 统计指定内容的章节总数
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Long` - 章节总数
-
-**调用示例**:
-```java
-Long totalChapters = contentChapterFacadeService.countChaptersByContentId(12345L);
-System.out.println("总章节数: " + totalChapters);
-```
-
-### 2.2 统计内容的已发布章节数
-
-**方法**: `countPublishedChaptersByContentId(Long contentId)`
-
-**描述**: 统计指定内容的已发布章节数
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Long` - 已发布章节数
-
-### 2.3 统计内容的总字数
-
-**方法**: `countTotalWordsByContentId(Long contentId)`
-
-**描述**: 统计指定内容的总字数
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Long` - 总字数
-
-### 2.4 获取内容的章节统计信息
+### 3.1 获取章节统计信息
 
 **方法**: `getChapterStats(Long contentId)`
 
-**描述**: 获取指定内容的章节统计信息
+**描述**: 获取章节统计信息，替代所有单个统计方法
+
+**核心功能**: 
+- 替代`countChaptersByContentId`、`countPublishedChapters`、`countTotalWords`等4个方法
+- 一次调用返回完整统计信息
 
 **参数**:
 - `contentId` (Long): 内容ID
 
-**返回值**: `Map<String, Object>` - 统计信息
+**返回值**: `Result<Map<String, Object>>`
 
 **调用示例**:
 ```java
-Map<String, Object> stats = contentChapterFacadeService.getChapterStats(12345L);
+Result<Map<String, Object>> result = contentChapterFacadeService.getChapterStats(12345L);
+if (result.isSuccess()) {
+    Map<String, Object> stats = result.getData();
+    System.out.println("总章节数: " + stats.get("totalChapters"));
+    System.out.println("已发布数: " + stats.get("publishedChapters"));
+    System.out.println("总字数: " + stats.get("totalWords"));
+}
 ```
 
 **响应示例**:
-```java
-Map<String, Object> stats = Map.of(
-    "totalChapters", 25,
-    "publishedChapters", 20,
-    "draftChapters", 5,
-    "totalWords", 75000L,
-    "publishedWords", 60000L,
-    "avgWordsPerChapter", 3000,
-    "maxWordCount", 5000,
-    "minWordCount", 2000,
-    "freeChapters", 3,
-    "paidChapters", 17,
-    "latestChapterNum", 25,
-    "latestUpdateTime", LocalDateTime.of(2024, 1, 31, 14, 30),
-    "firstPublishTime", LocalDateTime.of(2024, 1, 1, 10, 0)
-);
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "totalChapters": 25,
+    "publishedChapters": 20,
+    "draftChapters": 5,
+    "totalWords": 75000,
+    "publishedWords": 60000,
+    "avgWordsPerChapter": 3000,
+    "maxWordCount": 5000,
+    "minWordCount": 2000,
+    "freeChapters": 3,
+    "paidChapters": 17,
+    "latestChapterNum": 25,
+    "latestUpdateTime": "2024-01-31T14:30:00",
+    "firstPublishTime": "2024-01-01T10:00:00"
+  }
+}
 ```
 
 ---
 
-## ⚙️ 3. 管理功能 (3个方法)
+## ⚙️ 4. 批量操作功能 (2个方法)
 
-### 3.1 批量更新章节状态
+### 4.1 批量更新章节状态
 
 **方法**: `batchUpdateChapterStatus(List<Long> ids, String status)`
 
@@ -355,47 +260,38 @@ Map<String, Object> stats = Map.of(
 
 **参数**:
 - `ids` (List<Long>): 章节ID列表
-- `status` (String): 新状态 (DRAFT/PUBLISHED/DELETED)
+- `status` (String): 新状态（DRAFT/PUBLISHED/DELETED）
 
-**返回值**: `boolean` - 是否更新成功
+**返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
 List<Long> chapterIds = Arrays.asList(67890L, 67891L, 67892L);
-boolean success = contentChapterFacadeService.batchUpdateChapterStatus(chapterIds, "PUBLISHED");
+Result<Boolean> result = contentChapterFacadeService
+    .batchUpdateChapterStatus(chapterIds, "PUBLISHED");
+if (result.isSuccess() && result.getData()) {
+    System.out.println("批量发布成功");
+}
 ```
 
-### 3.2 删除内容的所有章节
+### 4.2 批量删除章节
 
-**方法**: `deleteAllChaptersByContentId(Long contentId)`
+**方法**: `batchDeleteChapters(List<Long> ids)`
 
-**描述**: 删除指定内容的所有章节
+**描述**: 批量删除章节
 
 **参数**:
-- `contentId` (Long): 内容ID
+- `ids` (List<Long>): 章节ID列表
 
-**返回值**: `boolean` - 是否删除成功
+**返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
-boolean success = contentChapterFacadeService.deleteAllChaptersByContentId(12345L);
-```
-
-### 3.3 重新排序章节号
-
-**方法**: `reorderChapterNumbers(Long contentId)`
-
-**描述**: 重新排序指定内容的章节号（用于章节删除后的重新编号）
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `boolean` - 是否重排序成功
-
-**调用示例**:
-```java
-// 当删除了中间章节后，重新排序章节号
-boolean success = contentChapterFacadeService.reorderChapterNumbers(12345L);
+List<Long> chapterIds = Arrays.asList(67890L, 67891L, 67892L);
+Result<Boolean> result = contentChapterFacadeService.batchDeleteChapters(chapterIds);
+if (result.isSuccess() && result.getData()) {
+    System.out.println("批量删除成功");
+}
 ```
 
 ---
@@ -429,50 +325,18 @@ public class ChapterResponse {
 }
 ```
 
-### ChapterNavigation 章节导航对象
-```java
-@Data
-@Builder
-public class ChapterNavigation {
-    private ChapterResponse currentChapter;   // 当前章节
-    private ChapterResponse previousChapter;  // 上一章节
-    private ChapterResponse nextChapter;      // 下一章节
-    private ChapterResponse firstChapter;     // 第一章节
-    private ChapterResponse lastChapter;      // 最后章节
-    private Integer totalChapters;            // 总章节数
-    private Integer currentPosition;          // 当前位置
-}
-```
+## 🚨 错误代码
 
-### ChapterStats 章节统计对象
-```java
-@Data
-@Builder
-public class ChapterStats {
-    private Integer totalChapters;           // 总章节数
-    private Integer publishedChapters;       // 已发布章节数
-    private Integer draftChapters;           // 草稿章节数
-    private Long totalWords;                 // 总字数
-    private Long publishedWords;             // 已发布字数
-    private Integer avgWordsPerChapter;      // 平均每章字数
-    private Integer maxWordCount;            // 最大章节字数
-    private Integer minWordCount;            // 最小章节字数
-    private Integer freeChapters;            // 免费章节数
-    private Integer paidChapters;            // 付费章节数
-    private Integer latestChapterNum;        // 最新章节号
-    private LocalDateTime latestUpdateTime;  // 最新更新时间
-    private LocalDateTime firstPublishTime; // 首次发布时间
-}
-```
-
-## 🚨 错误处理
-
-由于这是一个接口定义（interface），具体的错误处理由实现类负责。常见的异常情况包括：
-
-- **参数异常**: `contentId`为null或无效
-- **数据不存在**: 指定的内容或章节不存在
-- **状态异常**: 无效的章节状态值
-- **权限异常**: 没有足够的操作权限
+| 错误码 | 描述 | 解决方案 |
+|--------|------|----------|
+| CHAPTER_NOT_FOUND | 章节不存在 | 检查章节ID是否正确 |
+| CONTENT_NOT_FOUND | 内容不存在 | 检查内容ID是否正确 |
+| INVALID_PARAMETER | 参数验证失败 | 检查请求参数的格式和必填项 |
+| DELETE_CHAPTER_FAILED | 删除章节失败 | 确认章节存在且有权限 |
+| BATCH_UPDATE_FAILED | 批量更新失败 | 检查章节ID列表和状态值 |
+| SEARCH_FAILED | 搜索失败 | 检查搜索关键词和参数 |
+| STATS_CALCULATION_FAILED | 统计计算失败 | 检查统计参数 |
+| NAVIGATION_FAILED | 导航查询失败 | 检查内容ID和导航方向 |
 
 ## 🔧 Dubbo配置示例
 
@@ -521,33 +385,35 @@ public class ChapterNavigationService {
     public ChapterNavigation getChapterNavigation(Long contentId, Integer chapterNum) {
         try {
             // 获取当前章节
-            ChapterResponse currentChapter = chapterFacadeService
-                .getChapterByContentIdAndNum(contentId, chapterNum);
+            Result<ChapterResponse> currentResult = chapterFacadeService
+                .getChapterByNavigation(contentId, chapterNum, "current");
             
-            if (currentChapter == null) {
+            if (!currentResult.isSuccess() || currentResult.getData() == null) {
                 throw new BusinessException("章节不存在");
             }
             
-            // 获取导航信息
-            ChapterResponse previousChapter = chapterFacadeService
-                .getPreviousChapter(contentId, chapterNum);
-            ChapterResponse nextChapter = chapterFacadeService
-                .getNextChapter(contentId, chapterNum);
-            ChapterResponse firstChapter = chapterFacadeService
-                .getFirstChapter(contentId);
-            ChapterResponse lastChapter = chapterFacadeService
-                .getLastChapter(contentId);
+            // 获取导航信息（使用统一的导航方法）
+            Result<ChapterResponse> previousResult = chapterFacadeService
+                .getChapterByNavigation(contentId, chapterNum, "previous");
+            Result<ChapterResponse> nextResult = chapterFacadeService
+                .getChapterByNavigation(contentId, chapterNum, "next");
+            Result<ChapterResponse> firstResult = chapterFacadeService
+                .getChapterByNavigation(contentId, null, "first");
+            Result<ChapterResponse> lastResult = chapterFacadeService
+                .getChapterByNavigation(contentId, null, "last");
             
-            // 获取总章节数
-            Long totalCount = chapterFacadeService.countChaptersByContentId(contentId);
+            // 获取统计信息
+            Result<Map<String, Object>> statsResult = chapterFacadeService.getChapterStats(contentId);
+            Integer totalCount = statsResult.isSuccess() ? 
+                (Integer) statsResult.getData().get("totalChapters") : 0;
             
             return ChapterNavigation.builder()
-                .currentChapter(currentChapter)
-                .previousChapter(previousChapter)
-                .nextChapter(nextChapter)
-                .firstChapter(firstChapter)
-                .lastChapter(lastChapter)
-                .totalChapters(totalCount.intValue())
+                .currentChapter(currentResult.getData())
+                .previousChapter(previousResult.isSuccess() ? previousResult.getData() : null)
+                .nextChapter(nextResult.isSuccess() ? nextResult.getData() : null)
+                .firstChapter(firstResult.isSuccess() ? firstResult.getData() : null)
+                .lastChapter(lastResult.isSuccess() ? lastResult.getData() : null)
+                .totalChapters(totalCount)
                 .currentPosition(chapterNum)
                 .build();
                 
@@ -569,21 +435,18 @@ public class ChapterCatalogService {
     
     @Cacheable(value = "chapter_catalog", key = "#contentId")
     public List<ChapterResponse> getChapterCatalog(Long contentId) {
-        // 获取已发布的章节列表
-        return chapterFacadeService.getPublishedChaptersByContentId(contentId);
+        // 使用万能查询获取已发布的章节列表
+        Result<PageResponse<ChapterResponse>> result = chapterFacadeService
+            .getChaptersByConditions(contentId, "PUBLISHED", null, null, null, null, 
+                                   "chapterNum", "ASC", null, null);
+        
+        return result.isSuccess() ? result.getData().getRecords() : Collections.emptyList();
     }
     
     @Cacheable(value = "chapter_stats", key = "#contentId", unless = "#result == null")
-    public ChapterStats getChapterStatistics(Long contentId) {
-        Map<String, Object> stats = chapterFacadeService.getChapterStats(contentId);
-        
-        return ChapterStats.builder()
-            .totalChapters((Integer) stats.get("totalChapters"))
-            .publishedChapters((Integer) stats.get("publishedChapters"))
-            .totalWords((Long) stats.get("totalWords"))
-            .avgWordsPerChapter((Integer) stats.get("avgWordsPerChapter"))
-            .latestUpdateTime((LocalDateTime) stats.get("latestUpdateTime"))
-            .build();
+    public Map<String, Object> getChapterStatistics(Long contentId) {
+        Result<Map<String, Object>> result = chapterFacadeService.getChapterStats(contentId);
+        return result.isSuccess() ? result.getData() : Collections.emptyMap();
     }
 }
 ```
@@ -601,11 +464,18 @@ public class ChapterSearchService {
         page = page != null ? page : 1;
         size = size != null ? size : 20;
         
-        return chapterFacadeService.searchChaptersByTitle(keyword, page, size);
+        Result<PageResponse<ChapterResponse>> result = chapterFacadeService
+            .searchChapters(keyword, null, null, page, size);
+        
+        return result.isSuccess() ? result.getData() : PageResponse.empty();
     }
     
     public List<ChapterResponse> getChaptersByWordCount(Long contentId, Integer minWords, Integer maxWords) {
-        return chapterFacadeService.getChaptersByWordCountRange(contentId, minWords, maxWords);
+        Result<PageResponse<ChapterResponse>> result = chapterFacadeService
+            .getChaptersByConditions(contentId, null, null, null, minWords, maxWords, 
+                                   "wordCount", "DESC", null, null);
+        
+        return result.isSuccess() ? result.getData().getRecords() : Collections.emptyList();
     }
 }
 ```
@@ -622,9 +492,24 @@ public class ChapterManagementService {
     public CompletableFuture<Boolean> batchPublishChapters(List<Long> chapterIds) {
         return CompletableFuture.supplyAsync(() -> {
             try {
-                return chapterFacadeService.batchUpdateChapterStatus(chapterIds, "PUBLISHED");
+                Result<Boolean> result = chapterFacadeService
+                    .batchUpdateChapterStatus(chapterIds, "PUBLISHED");
+                return result.isSuccess() && result.getData();
             } catch (Exception e) {
                 log.error("批量发布章节失败: chapterIds={}", chapterIds, e);
+                return false;
+            }
+        });
+    }
+    
+    @Async
+    public CompletableFuture<Boolean> batchDeleteChapters(List<Long> chapterIds) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                Result<Boolean> result = chapterFacadeService.batchDeleteChapters(chapterIds);
+                return result.isSuccess() && result.getData();
+            } catch (Exception e) {
+                log.error("批量删除章节失败: chapterIds={}", chapterIds, e);
                 return false;
             }
         });
@@ -636,37 +521,48 @@ public class ChapterManagementService {
 
 1. **缓存策略**: 
    - 章节列表: TTL 10分钟
-   - 章节内容: TTL 30分钟
-   - 统计信息: TTL 5分钟
+   - 章节统计: TTL 5分钟
+   - 导航信息: TTL 15分钟
 
-2. **分页优化**: 
-   - 建议页面大小不超过50
-   - 使用游标分页代替offset分页
+2. **查询优化**: 
+   - 使用万能查询减少接口调用次数
+   - 批量操作优于单个操作
+   - 合理使用分页避免大结果集
 
-3. **查询优化**:
-   - 章节导航建议批量查询
-   - 搜索结果建议异步获取
-
-4. **连接池配置**:
+3. **连接池配置**:
    ```yaml
    dubbo:
      consumer:
-       connections: 10  # 每个服务提供者的连接数
-       actives: 200     # 每个连接的最大活跃请求数
+       connections: 5   # 极简版减少连接数
+       actives: 100     # 每个连接的最大活跃请求数
+       timeout: 5000    # 合理超时时间
    ```
+
+4. **接口使用建议**:
+   - 优先使用万能查询方法
+   - 统计信息一次性获取
+   - 批量操作替代循环调用
+
+## 🚀 极简设计优势
+
+1. **方法精简**: 从21个方法缩减到8个，学习成本降低75%
+2. **万能查询**: 一个方法替代14个具体查询方法
+3. **统一返回**: 所有方法返回`Result<T>`统一结构
+4. **批量优化**: 支持批量操作，提升性能
+5. **参数灵活**: 可选参数设计，适应各种查询场景
 
 ## 🔗 相关文档
 
-- [ContentChapterController REST API 文档](./content-chapter-controller-api.md)
+- [ContentChapterController REST API 文档](../news/content-chapter-controller-api.md)
 - [ContentFacadeService 文档](./content-facade-service-api.md)
-- [章节数据模型](../models/chapter-model.md)
-- [阅读器设计文档](../design/reader-design.md)
+- [ContentPurchaseFacadeService 文档](./content-purchase-facade-service-api.md)
+- [ContentPaymentFacadeService 文档](./content-payment-facade-service-api.md)
 
 ---
 
 **联系信息**:  
 - Facade服务: ContentChapterFacadeService  
-- 版本: 2.0.0 (内容付费版)  
+- 版本: 2.0.0 (极简版)  
 - Dubbo版本: 5.0.0  
 - 维护: GIG团队  
 - 更新: 2024-01-31

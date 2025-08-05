@@ -4,12 +4,13 @@ import com.gig.collide.api.content.response.ContentPaymentConfigResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 内容付费配置门面服务接口 - 简化版
- * 与ContentPaymentService保持一致，专注核心功能
+ * 内容付费配置门面服务接口 - 极简版
+ * 与ContentPaymentService保持一致，12个核心方法
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -17,7 +18,7 @@ import java.util.Map;
  */
 public interface ContentPaymentFacadeService {
 
-    // =================== 基础CRUD ===================
+    // =================== 核心CRUD功能（2个方法）===================
 
     /**
      * 根据ID获取付费配置
@@ -25,216 +26,99 @@ public interface ContentPaymentFacadeService {
     Result<ContentPaymentConfigResponse> getPaymentConfigById(Long id);
 
     /**
-     * 根据内容ID获取付费配置
-     */
-    Result<ContentPaymentConfigResponse> getPaymentConfigByContentId(Long contentId);
-
-    /**
      * 删除付费配置
      */
     Result<Boolean> deletePaymentConfig(Long id, Long operatorId);
 
-    /**
-     * 删除内容的付费配置
-     */
-    Result<Boolean> deleteByContentId(Long contentId, Long operatorId);
-
-    // =================== 查询功能 ===================
+    // =================== 万能查询功能（2个方法）===================
 
     /**
-     * 根据付费类型查询配置列表
+     * 万能条件查询付费配置列表 - 替代所有具体查询
+     * 可实现：getPaymentConfigByContentId, getFreeContentConfigs, getCoinPayContentConfigs等
+     * 
+     * @param contentId 内容ID（可选）
+     * @param paymentType 付费类型（可选：FREE、COIN_PAY、VIP_FREE、VIP_ONLY）
+     * @param status 状态（可选）
+     * @param minPrice 最小价格（可选）
+     * @param maxPrice 最大价格（可选）
+     * @param trialEnabled 是否支持试读（可选）
+     * @param isPermanent 是否永久（可选）
+     * @param hasDiscount 是否有折扣（可选）
+     * @param orderBy 排序字段（可选：createTime、price、salesCount、totalRevenue）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码（可选，不分页时传null）
+     * @param pageSize 页面大小（可选，不分页时传null）
+     * @return 付费配置列表
      */
-    Result<List<ContentPaymentConfigResponse>> getConfigsByPaymentType(String paymentType);
+    Result<PageResponse<ContentPaymentConfigResponse>> getPaymentsByConditions(
+            Long contentId, String paymentType, String status, Long minPrice, Long maxPrice,
+            Boolean trialEnabled, Boolean isPermanent, Boolean hasDiscount,
+            String orderBy, String orderDirection, Integer currentPage, Integer pageSize);
 
     /**
-     * 查询免费内容配置
+     * 推荐付费内容查询 - 替代所有推荐类查询
+     * 可实现：getHotPaidContent, getHighValueContent, getValueForMoneyContent, getSalesRanking等
      */
-    Result<PageResponse<ContentPaymentConfigResponse>> getFreeContentConfigs(Integer currentPage, Integer pageSize);
+    Result<List<ContentPaymentConfigResponse>> getRecommendedPayments(
+            String strategy, String paymentType, List<Long> excludeContentIds, Integer limit);
+
+    // =================== 状态管理功能（2个方法）===================
 
     /**
-     * 查询金币付费内容配置
+     * 更新付费配置状态
      */
-    Result<PageResponse<ContentPaymentConfigResponse>> getCoinPayContentConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询VIP免费内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getVipFreeContentConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询VIP专享内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getVipOnlyContentConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 根据价格范围查询配置
-     */
-    Result<List<ContentPaymentConfigResponse>> getConfigsByPriceRange(Long minPrice, Long maxPrice);
-
-    /**
-     * 查询支持试读的内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getTrialEnabledConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询永久有效的内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getPermanentContentConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询限时内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getTimeLimitedConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询有折扣的内容配置
-     */
-    Result<PageResponse<ContentPaymentConfigResponse>> getDiscountedConfigs(Integer currentPage, Integer pageSize);
-
-    /**
-     * 根据状态查询配置列表
-     */
-    Result<List<ContentPaymentConfigResponse>> getConfigsByStatus(String status);
-
-    // =================== 销售统计管理 ===================
-
-    /**
-     * 更新销售统计
-     */
-    Result<Boolean> updateSalesStats(Long contentId, Long salesIncrement, Long revenueIncrement);
-
-    /**
-     * 重置销售统计
-     */
-    Result<Boolean> resetSalesStats(Long contentId);
-
-    // =================== 状态管理 ===================
+    Result<Boolean> updatePaymentStatus(Long configId, String status);
 
     /**
      * 批量更新状态
      */
-    Result<Boolean> batchUpdateStatus(List<Long> contentIds, String status);
+    Result<Boolean> batchUpdateStatus(List<Long> ids, String status);
+
+    // =================== 价格管理功能（2个方法）===================
 
     /**
-     * 启用付费配置
+     * 更新付费配置价格信息
      */
-    Result<Boolean> enablePaymentConfig(Long contentId, Long operatorId);
-
-    /**
-     * 禁用付费配置
-     */
-    Result<Boolean> disablePaymentConfig(Long contentId, Long operatorId);
-
-    // =================== 权限验证 ===================
-
-    /**
-     * 检查用户是否有购买权限
-     */
-    Result<Boolean> checkPurchasePermission(Long userId, Long contentId);
-
-    /**
-     * 检查用户是否可以免费访问
-     */
-    Result<Boolean> checkFreeAccess(Long userId, Long contentId);
-
-    /**
-     * 获取用户对内容的访问策略
-     */
-    Result<Map<String, Object>> getAccessPolicy(Long userId, Long contentId);
+    Result<Boolean> updatePaymentPrice(Long configId, Long price, Long originalPrice,
+                                      LocalDateTime discountStartTime, LocalDateTime discountEndTime);
 
     /**
      * 计算用户实际需要支付的价格
      */
     Result<Long> calculateActualPrice(Long userId, Long contentId);
 
-    /**
-     * 获取内容的价格信息
-     */
-    Result<Map<String, Object>> getContentPriceInfo(Long contentId);
-
-    // =================== 推荐功能 ===================
+    // =================== 权限验证功能（1个方法）===================
 
     /**
-     * 获取热门付费内容（按销量排序）
+     * 检查访问权限（包含购买权限和免费访问检查）
+     * 替代：checkPurchasePermission, checkFreeAccess, getAccessPolicy等
      */
-    Result<List<ContentPaymentConfigResponse>> getHotPaidContent(Integer limit);
+    Result<Map<String, Object>> checkAccessPermission(Long userId, Long contentId);
+
+    // =================== 销售统计功能（1个方法）===================
 
     /**
-     * 获取高价值内容（按单价排序）
+     * 更新销售统计
      */
-    Result<List<ContentPaymentConfigResponse>> getHighValueContent(Integer limit);
+    Result<Boolean> updateSalesStats(Long configId, Long salesIncrement, Long revenueIncrement);
+
+    // =================== 统计分析功能（1个方法）===================
 
     /**
-     * 获取性价比内容（按销量/价格比排序）
+     * 获取付费统计信息 - 替代所有统计分析方法
+     * 可实现：countByPaymentType, getPriceStats, getTotalSalesStats, getConversionStats等
+     * 
+     * @param statsType 统计类型（PAYMENT_TYPE、PRICE、SALES、CONVERSION、REVENUE_ANALYSIS）
+     * @param params 统计参数
+     * @return 统计结果
      */
-    Result<List<ContentPaymentConfigResponse>> getValueForMoneyContent(Integer limit);
+    Result<Map<String, Object>> getPaymentStats(String statsType, Map<String, Object> params);
+
+    // =================== 业务逻辑功能（1个方法）===================
 
     /**
-     * 获取新上线的付费内容
+     * 同步内容状态 - 统一业务逻辑处理
+     * 可实现：syncContentStatus, batchSyncContentStatus, getPriceOptimizationSuggestion等
      */
-    Result<List<ContentPaymentConfigResponse>> getNewPaidContent(Integer limit);
-
-    /**
-     * 获取销售排行榜
-     */
-    Result<List<ContentPaymentConfigResponse>> getSalesRanking(Integer limit);
-
-    /**
-     * 获取收入排行榜
-     */
-    Result<List<ContentPaymentConfigResponse>> getRevenueRanking(Integer limit);
-
-    // =================== 统计分析 ===================
-
-    /**
-     * 统计各付费类型的数量
-     */
-    Result<Map<String, Long>> countByPaymentType();
-
-    /**
-     * 统计活跃配置数量
-     */
-    Result<Long> countActiveConfigs();
-
-    /**
-     * 获取价格统计信息
-     */
-    Result<Map<String, Object>> getPriceStats();
-
-    /**
-     * 获取总销售统计
-     */
-    Result<Map<String, Object>> getTotalSalesStats();
-
-    /**
-     * 获取月度销售统计
-     */
-    Result<List<Map<String, Object>>> getMonthlySalesStats(Integer months);
-
-    /**
-     * 获取付费转化率统计
-     */
-    Result<Map<String, Object>> getConversionStats();
-
-    // =================== 业务逻辑 ===================
-
-    /**
-     * 同步内容状态
-     */
-    Result<Boolean> syncContentStatus(Long contentId, String contentStatus);
-
-    /**
-     * 批量同步内容状态
-     */
-    Result<Boolean> batchSyncContentStatus(Map<Long, String> contentStatusMap);
-
-    /**
-     * 获取内容收益分析
-     */
-    Result<Map<String, Object>> getContentRevenueAnalysis(Long contentId);
-
-    /**
-     * 获取价格优化建议
-     */
-    Result<Map<String, Object>> getPriceOptimizationSuggestion(Long contentId);
+    Result<Map<String, Object>> syncContentStatus(String operationType, Map<String, Object> operationData);
 }

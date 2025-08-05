@@ -19,111 +19,70 @@ import java.util.Map;
 @Mapper
 public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
 
-    // =================== C端必需的基础查询方法 ===================
+    // =================== C端必需的通用查询方法 ===================
 
     /**
-     * 根据内容ID查询章节列表（按章节号排序）
+     * 通用条件查询章节列表
+     * @param contentId 内容ID（可选）
+     * @param status 状态（可选）
+     * @param chapterNumStart 章节号开始范围（可选）
+     * @param chapterNumEnd 章节号结束范围（可选）
+     * @param minWordCount 最小字数（可选）
+     * @param maxWordCount 最大字数（可选）
+     * @param orderBy 排序字段（可选：chapterNum、createTime、updateTime、wordCount）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码（可选，不分页时传null）
+     * @param pageSize 页面大小（可选，不分页时传null）
      */
-    List<ContentChapter> selectByContentId(@Param("contentId") Long contentId);
+    List<ContentChapter> selectChaptersByConditions(@Param("contentId") Long contentId,
+                                                   @Param("status") String status,
+                                                   @Param("chapterNumStart") Integer chapterNumStart,
+                                                   @Param("chapterNumEnd") Integer chapterNumEnd,
+                                                   @Param("minWordCount") Integer minWordCount,
+                                                   @Param("maxWordCount") Integer maxWordCount,
+                                                   @Param("orderBy") String orderBy,
+                                                   @Param("orderDirection") String orderDirection,
+                                                   @Param("currentPage") Integer currentPage,
+                                                   @Param("pageSize") Integer pageSize);
 
     /**
-     * 根据内容ID查询已发布章节列表
+     * 章节导航查询
+     * @param contentId 内容ID
+     * @param currentChapterNum 当前章节号
+     * @param direction 导航方向（next、previous、first、last）
      */
-    List<ContentChapter> selectPublishedByContentId(@Param("contentId") Long contentId);
+    ContentChapter selectChapterByNavigation(@Param("contentId") Long contentId,
+                                           @Param("currentChapterNum") Integer currentChapterNum,
+                                           @Param("direction") String direction);
 
     /**
-     * 根据内容ID分页查询章节
+     * 搜索章节
+     * @param keyword 搜索关键词（章节标题、内容）
+     * @param contentId 内容ID（可选）
+     * @param status 状态（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      */
-    List<ContentChapter> selectByContentIdPaged(@Param("contentId") Long contentId,
-                                               @Param("currentPage") Integer currentPage,
-                                               @Param("pageSize") Integer pageSize);
+    List<ContentChapter> searchChapters(@Param("keyword") String keyword,
+                                       @Param("contentId") Long contentId,
+                                       @Param("status") String status,
+                                       @Param("currentPage") Integer currentPage,
+                                       @Param("pageSize") Integer pageSize);
+
+    // =================== C端必需的CRUD操作方法 ===================
 
     /**
-     * 根据内容ID和章节号查询章节
+     * 更新章节状态
      */
-    ContentChapter selectByContentIdAndChapterNum(@Param("contentId") Long contentId,
-                                                 @Param("chapterNum") Integer chapterNum);
+    int updateChapterStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
-     * 查询内容的下一章节
+     * 更新章节基本信息
      */
-    ContentChapter selectNextChapter(@Param("contentId") Long contentId,
-                                   @Param("currentChapterNum") Integer currentChapterNum);
-
-    /**
-     * 查询内容的上一章节
-     */
-    ContentChapter selectPreviousChapter(@Param("contentId") Long contentId,
-                                       @Param("currentChapterNum") Integer currentChapterNum);
-
-    /**
-     * 查询内容的第一章节
-     */
-    ContentChapter selectFirstChapter(@Param("contentId") Long contentId);
-
-    /**
-     * 查询内容的最后一章节
-     */
-    ContentChapter selectLastChapter(@Param("contentId") Long contentId);
-
-    /**
-     * 根据状态查询章节列表
-     */
-    List<ContentChapter> selectByStatus(@Param("status") String status);
-
-    /**
-     * 根据章节标题搜索
-     */
-    List<ContentChapter> searchChaptersByTitle(@Param("titleKeyword") String titleKeyword,
-                                              @Param("currentPage") Integer currentPage,
-                                              @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据内容ID和字数范围查询章节
-     */
-    List<ContentChapter> selectByContentIdAndWordCountRange(@Param("contentId") Long contentId,
-                                                           @Param("minWordCount") Integer minWordCount,
-                                                           @Param("maxWordCount") Integer maxWordCount);
-
-    /**
-     * 查询字数最多的章节
-     */
-    ContentChapter selectMaxWordCountChapter(@Param("contentId") Long contentId);
-
-    /**
-     * 查询指定内容的最新章节
-     */
-    ContentChapter selectLatestChapterByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 查询最新更新的章节
-     */
-    List<ContentChapter> selectLatestChapters(@Param("currentPage") Integer currentPage,
-                                             @Param("pageSize") Integer pageSize);
-
-    // =================== C端必需的统计方法 ===================
-
-    /**
-     * 统计内容的章节总数
-     */
-    Long countByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 统计内容的已发布章节数
-     */
-    Long countPublishedByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 统计内容的总字数
-     */
-    Long countTotalWordsByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 获取内容的章节统计信息
-     */
-    Map<String, Object> getChapterStats(@Param("contentId") Long contentId);
-
-    // =================== C端必需的管理方法 ===================
+    int updateChapterInfo(@Param("id") Long id,
+                         @Param("title") String title,
+                         @Param("content") String content,
+                         @Param("wordCount") Integer wordCount);
 
     /**
      * 批量更新章节状态
@@ -131,12 +90,17 @@ public interface ContentChapterMapper extends BaseMapper<ContentChapter> {
     int batchUpdateChapterStatus(@Param("ids") List<Long> ids, @Param("status") String status);
 
     /**
+     * 软删除章节
+     */
+    int softDeleteChapter(@Param("id") Long id);
+
+    /**
+     * 批量软删除章节
+     */
+    int batchSoftDeleteChapters(@Param("ids") List<Long> ids);
+
+    /**
      * 删除内容的所有章节
      */
     int deleteAllChaptersByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 重新排序章节号（用于章节删除后的重新编号）
-     */
-    int reorderChapterNumbers(@Param("contentId") Long contentId);
 }

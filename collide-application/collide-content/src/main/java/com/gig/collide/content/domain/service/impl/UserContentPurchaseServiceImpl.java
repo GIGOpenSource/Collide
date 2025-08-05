@@ -1,6 +1,5 @@
 package com.gig.collide.content.domain.service.impl;
 
-import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.gig.collide.content.domain.entity.UserContentPurchase;
 import com.gig.collide.content.domain.service.UserContentPurchaseService;
 import com.gig.collide.content.infrastructure.mapper.UserContentPurchaseMapper;
@@ -8,15 +7,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.List;
 
 /**
- * 用户内容购买记录业务逻辑实现类
- * 管理用户的内容购买、权限验证和统计分析
- *
+ * 用户内容购买记录业务服务实现
+ * 极简版 - 严格12个方法，大量使用通用查询
+ * 
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
  * @since 2024-01-31
@@ -25,212 +24,175 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(rollbackFor = Exception.class)
-public class UserContentPurchaseServiceImpl extends ServiceImpl<UserContentPurchaseMapper, UserContentPurchase> implements UserContentPurchaseService {
+public class UserContentPurchaseServiceImpl implements UserContentPurchaseService {
 
     private final UserContentPurchaseMapper userContentPurchaseMapper;
 
-    // =================== 基础CRUD ===================
+    // =================== 核心CRUD功能（2个方法）===================
 
     @Override
     public UserContentPurchase createPurchase(UserContentPurchase purchase) {
-        log.info("创建购买记录: userId={}, contentId={}", purchase.getUserId(), purchase.getContentId());
-        
-        try {
-            // 检查是否已存在购买记录
-            UserContentPurchase existing = userContentPurchaseMapper.selectByUserIdAndContentId(
+        log.info("创建购买记录: userId={}, contentId={}", 
                 purchase.getUserId(), purchase.getContentId());
-            if (existing != null) {
-                log.warn("用户已购买该内容: userId={}, contentId={}", purchase.getUserId(), purchase.getContentId());
-                return existing;
-            }
-
-            // 设置默认值
-            if (purchase.getStatus() == null) {
-                purchase.setStatus("ACTIVE");
-            }
-            if (purchase.getAccessCount() == null) {
-                purchase.setAccessCount(0);
-            }
-            if (purchase.getPurchaseTime() == null) {
-                purchase.setPurchaseTime(LocalDateTime.now());
-            }
-
-            userContentPurchaseMapper.insert(purchase);
-            log.info("购买记录创建成功: id={}", purchase.getId());
-            return purchase;
-        } catch (Exception e) {
-            log.error("创建购买记录失败: userId={}, contentId={}", purchase.getUserId(), purchase.getContentId(), e);
-            throw new RuntimeException("创建购买记录失败", e);
+        
+        // 基础验证
+        if (purchase.getUserId() == null || purchase.getContentId() == null) {
+            throw new IllegalArgumentException("用户ID和内容ID不能为空");
         }
+        
+        // 检查是否已经购买过 - 使用通用查询
+        List<UserContentPurchase> existing = getPurchasesByConditions(
+            purchase.getUserId(), purchase.getContentId(), null, null, null, null,
+            null, null, null, null, null, null, null, 1
+        );
+        if (!existing.isEmpty()) {
+            throw new IllegalArgumentException("该用户已购买过此内容");
+        }
+        
+        // 设置默认值
+        if (purchase.getCreateTime() == null) {
+            purchase.setCreateTime(LocalDateTime.now());
+        }
+        if (purchase.getUpdateTime() == null) {
+            purchase.setUpdateTime(LocalDateTime.now());
+        }
+        if (!StringUtils.hasText(purchase.getStatus())) {
+            purchase.setStatus("ACTIVE");
+        }
+        if (purchase.getAccessCount() == null) {
+            purchase.setAccessCount(0);
+        }
+        
+        userContentPurchaseMapper.insert(purchase);
+        log.info("购买记录创建成功: id={}", purchase.getId());
+        return purchase;
     }
 
     @Override
     public UserContentPurchase getPurchaseById(Long id) {
+        log.debug("获取购买记录详情: id={}", id);
+        
+        if (id == null) {
+            throw new IllegalArgumentException("购买记录ID不能为空");
+        }
+        
         return userContentPurchaseMapper.selectById(id);
     }
 
+    // =================== 万能查询功能（3个方法）===================
+
     @Override
-    public UserContentPurchase updatePurchase(UserContentPurchase purchase) {
-        log.info("更新购买记录: id={}", purchase.getId());
+    public List<UserContentPurchase> getPurchasesByConditions(Long userId, Long contentId, String contentType,
+                                                             Long authorId, String status, Boolean isValid,
+                                                             Long minAmount, Long maxAmount, Integer minAccessCount, Boolean isUnread,
+                                                             String orderBy, String orderDirection,
+                                                             Integer currentPage, Integer pageSize) {
+        log.debug("万能条件查询购买记录: userId={}, contentId={}, contentType={}", 
+                 userId, contentId, contentType);
         
-        try {
-            userContentPurchaseMapper.updateById(purchase);
-            return userContentPurchaseMapper.selectById(purchase.getId());
-        } catch (Exception e) {
-            log.error("更新购买记录失败: id={}", purchase.getId(), e);
-            throw new RuntimeException("更新购买记录失败", e);
-        }
+        return userContentPurchaseMapper.selectPurchasesByConditions(
+            userId, contentId, contentType, authorId, status, isValid,
+            minAmount, maxAmount, minAccessCount, isUnread,
+            orderBy, orderDirection, currentPage, pageSize
+        );
     }
 
     @Override
-    public boolean deletePurchase(Long id, Long operatorId) {
-        log.info("删除购买记录: id={}, operatorId={}", id, operatorId);
+    public List<UserContentPurchase> getRecommendedPurchases(String strategy, Long userId, String contentType,
+                                                            List<Long> excludeContentIds, Integer limit) {
+        log.debug("推荐购买记录查询: strategy={}, userId={}, contentType={}", 
+                 strategy, userId, contentType);
         
-        try {
-            // 这里实现逻辑删除，将状态设置为REFUNDED
-            UserContentPurchase purchase = new UserContentPurchase();
-            purchase.setId(id);
-            purchase.setStatus("REFUNDED");
-            return userContentPurchaseMapper.updateById(purchase) > 0;
-        } catch (Exception e) {
-            log.error("删除购买记录失败: id={}", id, e);
+        if (!StringUtils.hasText(strategy)) {
+            throw new IllegalArgumentException("推荐策略不能为空");
+        }
+        
+        return userContentPurchaseMapper.selectRecommendedPurchases(strategy, userId, contentType, 
+                                                                   excludeContentIds, limit);
+    }
+
+    @Override
+    public List<UserContentPurchase> getPurchasesByExpireStatus(String type, LocalDateTime beforeTime,
+                                                               Long userId, Integer limit) {
+        log.debug("过期状态查询购买记录: type={}, beforeTime={}, userId={}", type, beforeTime, userId);
+        
+        if (!StringUtils.hasText(type)) {
+            throw new IllegalArgumentException("查询类型不能为空");
+        }
+        
+        return userContentPurchaseMapper.selectByExpireStatus(type, beforeTime, userId, limit);
+    }
+
+    // =================== 权限验证功能（1个方法）===================
+
+    @Override
+    public boolean checkAccessPermission(Long userId, Long contentId) {
+        log.debug("检查访问权限: userId={}, contentId={}", userId, contentId);
+        
+        // 使用万能查询检查购买记录
+        List<UserContentPurchase> purchases = getPurchasesByConditions(
+            userId, contentId, null, null, null, null,
+            null, null, null, null, null, null, null, 1
+        );
+        
+        if (purchases.isEmpty()) {
             return false;
         }
-    }
-
-    // =================== 权限验证 ===================
-
-    @Override
-    public UserContentPurchase getUserContentPurchase(Long userId, Long contentId) {
-        return userContentPurchaseMapper.selectByUserIdAndContentId(userId, contentId);
-    }
-
-    @Override
-    public boolean hasAccessPermission(Long userId, Long contentId) {
-        UserContentPurchase purchase = userContentPurchaseMapper.selectValidPurchase(userId, contentId);
-        return purchase != null && purchase.hasAccessPermission();
-    }
-
-    @Override
-    public UserContentPurchase getValidPurchase(Long userId, Long contentId) {
-        return userContentPurchaseMapper.selectValidPurchase(userId, contentId);
-    }
-
-    @Override
-    public Map<Long, Boolean> batchCheckAccessPermission(Long userId, List<Long> contentIds) {
-        return contentIds.stream().collect(Collectors.toMap(
-            contentId -> contentId,
-            contentId -> hasAccessPermission(userId, contentId)
-        ));
-    }
-
-    // =================== 查询功能 ===================
-
-    @Override
-    public List<UserContentPurchase> getUserPurchases(Long userId, Integer currentPage, Integer pageSize) {
-        Long offset = (long) ((currentPage - 1) * pageSize);
-        return userContentPurchaseMapper.selectByUserId(userId, currentPage, pageSize);
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserValidPurchases(Long userId) {
-        return userContentPurchaseMapper.selectValidPurchasesByUserId(userId);
-    }
-
-    @Override
-    public List<UserContentPurchase> getContentPurchases(Long contentId, Integer currentPage, Integer pageSize) {
-        Long offset = (long) ((currentPage - 1) * pageSize);
-        return userContentPurchaseMapper.selectByContentId(contentId, currentPage, pageSize);
-    }
-
-    @Override
-    public UserContentPurchase getPurchaseByOrderId(Long orderId) {
-        return userContentPurchaseMapper.selectByOrderId(orderId);
-    }
-
-    @Override
-    public UserContentPurchase getPurchaseByOrderNo(String orderNo) {
-        return userContentPurchaseMapper.selectByOrderNo(orderNo);
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserPurchasesByContentType(Long userId, String contentType) {
-        return userContentPurchaseMapper.selectByUserIdAndContentType(userId, contentType);
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserPurchasesByAuthor(Long userId, Long authorId) {
-        return userContentPurchaseMapper.selectByUserIdAndAuthorId(userId, authorId);
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserRecentPurchases(Long userId, Integer limit) {
-        return userContentPurchaseMapper.selectRecentPurchases(userId, limit);
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserUnreadPurchases(Long userId) {
-        return userContentPurchaseMapper.selectUnreadPurchases(userId);
-    }
-
-    // =================== 访问记录管理 ===================
-
-    @Override
-    public boolean recordContentAccess(Long userId, Long contentId) {
-        log.debug("记录内容访问: userId={}, contentId={}", userId, contentId);
         
-        try {
-            UserContentPurchase purchase = userContentPurchaseMapper.selectValidPurchase(userId, contentId);
-            if (purchase == null) {
-                log.warn("用户未购买该内容，无法记录访问: userId={}, contentId={}", userId, contentId);
-                return false;
-            }
-
-            int newAccessCount = (purchase.getAccessCount() != null ? purchase.getAccessCount() : 0) + 1;
-            return userContentPurchaseMapper.updateAccessStats(
-                purchase.getId(), newAccessCount, LocalDateTime.now()) > 0;
-        } catch (Exception e) {
-            log.error("记录内容访问失败: userId={}, contentId={}", userId, contentId, e);
+        UserContentPurchase purchase = purchases.get(0);
+        
+        // 检查状态
+        if (!"ACTIVE".equals(purchase.getStatus())) {
             return false;
         }
-    }
-
-    @Override
-    public boolean batchUpdateAccessStats(List<Long> purchaseIds) {
-        // 这里可以实现批量更新逻辑
+        
+        // 检查是否过期
+        if (purchase.getExpireTime() != null && purchase.getExpireTime().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        
         return true;
     }
 
-    // =================== 状态管理 ===================
+    // =================== 状态管理功能（4个方法）===================
 
     @Override
-    public int processExpiredPurchases() {
-        log.info("处理过期的购买记录");
+    public boolean updatePurchaseStatus(Long purchaseId, String status) {
+        log.info("更新购买记录状态: purchaseId={}, status={}", purchaseId, status);
+        
+        if (purchaseId == null || !StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("购买记录ID和状态不能为空");
+        }
         
         try {
-            return userContentPurchaseMapper.batchExpirePurchases(LocalDateTime.now());
+            int result = userContentPurchaseMapper.updatePurchaseStatus(purchaseId, status);
+            boolean success = result > 0;
+            if (success) {
+                log.info("购买记录状态更新成功: purchaseId={}", purchaseId);
+            }
+            return success;
         } catch (Exception e) {
-            log.error("处理过期购买记录失败", e);
-            return 0;
+            log.error("购买记录状态更新失败: purchaseId={}", purchaseId, e);
+            return false;
         }
-    }
-
-    @Override
-    public List<UserContentPurchase> getExpiringSoonPurchases(LocalDateTime beforeTime) {
-        return userContentPurchaseMapper.selectExpiringSoon(beforeTime);
-    }
-
-    @Override
-    public List<UserContentPurchase> getExpiredPurchases() {
-        return userContentPurchaseMapper.selectExpiredPurchases();
     }
 
     @Override
     public boolean batchUpdateStatus(List<Long> ids, String status) {
-        log.info("批量更新购买记录状态: count={}, status={}", ids.size(), status);
+        log.info("批量更新购买记录状态: ids.size={}, status={}", 
+                ids != null ? ids.size() : 0, status);
+        
+        if (ids == null || ids.isEmpty() || !StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("购买记录ID列表和状态不能为空");
+        }
         
         try {
-            return userContentPurchaseMapper.batchUpdateStatus(ids, status) > 0;
+            int result = userContentPurchaseMapper.batchUpdateStatus(ids, status);
+            boolean success = result > 0;
+            if (success) {
+                log.info("批量更新购买记录状态成功: 影响行数={}", result);
+            }
+            return success;
         } catch (Exception e) {
             log.error("批量更新购买记录状态失败", e);
             return false;
@@ -238,184 +200,99 @@ public class UserContentPurchaseServiceImpl extends ServiceImpl<UserContentPurch
     }
 
     @Override
-    public boolean refundPurchase(Long purchaseId, String reason, Long operatorId) {
-        log.info("退款处理: purchaseId={}, reason={}, operatorId={}", purchaseId, reason, operatorId);
+    public int processExpiredPurchases(LocalDateTime beforeTime) {
+        log.info("处理过期购买记录: beforeTime={}", beforeTime);
+        
+        if (beforeTime == null) {
+            beforeTime = LocalDateTime.now();
+        }
         
         try {
-            UserContentPurchase purchase = new UserContentPurchase();
-            purchase.setId(purchaseId);
-            purchase.setStatus("REFUNDED");
-            return userContentPurchaseMapper.updateById(purchase) > 0;
+            int result = userContentPurchaseMapper.batchExpirePurchases(beforeTime);
+            log.info("处理过期购买记录成功: 影响行数={}", result);
+            return result;
         } catch (Exception e) {
-            log.error("退款处理失败: purchaseId={}", purchaseId, e);
+            log.error("处理过期购买记录失败", e);
+            return 0;
+        }
+    }
+
+    @Override
+    public boolean deletePurchase(Long purchaseId) {
+        log.info("软删除购买记录: purchaseId={}", purchaseId);
+        
+        if (purchaseId == null) {
+            throw new IllegalArgumentException("购买记录ID不能为空");
+        }
+        
+        try {
+            int result = userContentPurchaseMapper.softDeletePurchase(purchaseId);
+            boolean success = result > 0;
+            if (success) {
+                log.info("购买记录软删除成功: purchaseId={}", purchaseId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("购买记录软删除失败: purchaseId={}", purchaseId, e);
             return false;
         }
     }
 
-    // =================== 统计分析 ===================
+    // =================== 访问统计功能（1个方法）===================
 
     @Override
-    public Long countUserPurchases(Long userId) {
-        return userContentPurchaseMapper.countByUserId(userId);
-    }
-
-    @Override
-    public Long countUserValidPurchases(Long userId) {
-        return userContentPurchaseMapper.countValidByUserId(userId);
-    }
-
-    @Override
-    public Long countContentPurchases(Long contentId) {
-        return userContentPurchaseMapper.countByContentId(contentId);
-    }
-
-    @Override
-    public Long sumContentRevenue(Long contentId) {
-        return userContentPurchaseMapper.sumRevenueByContentId(contentId);
-    }
-
-    @Override
-    public Long sumUserExpense(Long userId) {
-        return userContentPurchaseMapper.sumExpenseByUserId(userId);
-    }
-
-    @Override
-    public List<Map<String, Object>> getPopularContentRanking(Integer limit) {
-        return userContentPurchaseMapper.getPopularContentRanking(limit);
-    }
-
-    @Override
-    public Map<String, Object> getUserPurchaseStats(Long userId) {
-        return userContentPurchaseMapper.getUserPurchaseStats(userId);
-    }
-
-    @Override
-    public Map<String, Object> getContentSalesStats(Long contentId) {
-        return userContentPurchaseMapper.getContentSalesStats(contentId);
-    }
-
-    @Override
-    public Map<String, Object> getAuthorRevenueStats(Long authorId) {
-        return userContentPurchaseMapper.getAuthorRevenueStats(authorId);
-    }
-
-    @Override
-    public List<Map<String, Object>> getPurchaseStatsByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        return userContentPurchaseMapper.getPurchaseStatsByDateRange(startDate, endDate);
-    }
-
-    @Override
-    public Map<String, Object> getDiscountStats(Long userId) {
-        log.debug("获取用户优惠统计: userId={}", userId);
+    public boolean recordContentAccess(Long userId, Long contentId) {
+        log.debug("记录内容访问: userId={}, contentId={}", userId, contentId);
         
-        try {
-            return userContentPurchaseMapper.getDiscountStats(userId);
-        } catch (Exception e) {
-            log.error("获取用户优惠统计失败: userId={}", userId, e);
-            return Map.of();
+        // 检查访问权限
+        if (!checkAccessPermission(userId, contentId)) {
+            log.warn("用户无权访问内容: userId={}, contentId={}", userId, contentId);
+            return false;
         }
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserRecentAccessedPurchases(Long userId, Integer limit) {
-        log.debug("获取用户最近访问的购买记录: userId={}, limit={}", userId, limit);
         
-        try {
-            // TODO: 实现获取用户最近访问的购买记录
-            // 当前Mapper不支持此方法，暂时返回空列表
-            return List.of();
-        } catch (Exception e) {
-            log.error("获取用户最近访问的购买记录失败: userId={}", userId, e);
-            return List.of();
-        }
-    }
-
-    @Override
-    public List<UserContentPurchase> getMostAccessedPurchases(Integer limit) {
-        log.debug("获取最受欢迎的购买记录: limit={}", limit);
-        
-        try {
-            // TODO: 实现获取最受欢迎的购买记录
-            // 当前Mapper不支持此方法，暂时返回空列表
-            return List.of();
-        } catch (Exception e) {
-            log.error("获取最受欢迎的购买记录失败", e);
-            return List.of();
-        }
-    }
-
-    @Override
-    public List<UserContentPurchase> getUserHighValuePurchases(Long userId, Long minAmount) {
-        log.debug("获取用户高价值购买记录: userId={}, minAmount={}", userId, minAmount);
-        
-        try {
-            // TODO: 实现获取用户高价值购买记录
-            // 当前Mapper不支持此方法，暂时返回空列表
-            return List.of();
-        } catch (Exception e) {
-            log.error("获取用户高价值购买记录失败: userId={}", userId, e);
-            return List.of();
-        }
-    }
-
-    @Override
-    public List<UserContentPurchase> getHighValuePurchases(Long minAmount, Integer limit) {
-        log.debug("获取高价值购买记录: minAmount={}, limit={}", minAmount, limit);
-        
-        try {
-            // TODO: 实现获取高价值购买记录
-            // 当前Mapper不支持此方法，暂时返回空列表
-            return List.of();
-        } catch (Exception e) {
-            log.error("获取高价值购买记录失败", e);
-            return List.of();
-        }
-    }
-
-    // =================== 业务逻辑 ===================
-
-    @Override
-    public UserContentPurchase handleOrderPaymentSuccess(Long orderId) {
-        log.info("处理订单支付成功: orderId={}", orderId);
-        
-        try {
-            // 这里应该根据订单信息创建购买记录
-            // 需要集成订单模块的接口来获取订单详情
-            UserContentPurchase purchase = userContentPurchaseMapper.selectByOrderId(orderId);
-            if (purchase != null) {
-                purchase.setStatus("ACTIVE");
-                purchase.setPurchaseTime(LocalDateTime.now());
-                userContentPurchaseMapper.updateById(purchase);
-            }
-            return purchase;
-        } catch (Exception e) {
-            log.error("处理订单支付成功失败: orderId={}", orderId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public boolean validatePurchasePermission(Long userId, Long contentId) {
-        // 这里应该集成用户模块和内容模块的接口
-        // 检查用户VIP状态、内容VIP权限要求等
-        return true; // 简化实现
-    }
-
-    @Override
-    public Map<String, Object> calculateContentAccess(Long userId, Long contentId) {
-        // 这里应该综合考虑多种访问权限
-        // 包括购买状态、VIP权限、试读权限等
-        return Map.of(
-            "hasAccess", hasAccessPermission(userId, contentId),
-            "accessType", "PURCHASED",
-            "purchase", getValidPurchase(userId, contentId)
+        // 使用万能查询获取购买记录
+        List<UserContentPurchase> purchases = getPurchasesByConditions(
+            userId, contentId, null, null, null, null,
+            null, null, null, null, null, null, null, 1
         );
+        
+        if (purchases.isEmpty()) {
+            return false;
+        }
+        
+        UserContentPurchase purchase = purchases.get(0);
+        
+        // 增加访问次数并更新访问时间
+        Integer newAccessCount = purchase.getAccessCount() + 1;
+        LocalDateTime now = LocalDateTime.now();
+        
+        try {
+            int result = userContentPurchaseMapper.updateAccessStats(purchase.getId(), newAccessCount, now);
+            return result > 0;
+        } catch (Exception e) {
+            log.error("更新访问统计失败: purchaseId={}", purchase.getId(), e);
+            return false;
+        }
     }
 
+    // =================== 业务逻辑功能（1个方法）===================
+
     @Override
-    public List<Long> getUserContentRecommendations(Long userId, Integer limit) {
-        // 这里应该实现基于购买历史的推荐算法
-        // 暂时返回空列表
-        return List.of();
+    public UserContentPurchase completePurchase(Long userId, Long contentId, Long orderId, String orderNo,
+                                               Long purchaseAmount, Long originalPrice, LocalDateTime expireTime) {
+        log.info("处理内容购买完成: userId={}, contentId={}, orderId={}", userId, contentId, orderId);
+        
+        // 创建购买记录
+        UserContentPurchase purchase = new UserContentPurchase();
+        purchase.setUserId(userId);
+        purchase.setContentId(contentId);
+        purchase.setOrderId(orderId);
+        purchase.setOrderNo(orderNo);
+        purchase.setCoinAmount(purchaseAmount);
+        purchase.setOriginalPrice(originalPrice);
+        purchase.setExpireTime(expireTime);
+        purchase.setPurchaseTime(LocalDateTime.now());
+        
+        return createPurchase(purchase);
     }
 }

@@ -1,48 +1,51 @@
 package com.gig.collide.content.domain.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.content.domain.entity.Content;
 import com.gig.collide.content.domain.service.ContentService;
 import com.gig.collide.content.infrastructure.mapper.ContentMapper;
-import com.gig.collide.base.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.*;
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 内容业务逻辑实现类 - 简洁版
- * 基于content-simple.sql的设计，实现核心内容管理业务
- * 包含评分功能、事务管理、权限验证
+ * 内容服务实现
+ * 极简版 - 12个核心方法，使用通用查询
  * 
- * @author Collide
- * @version 2.0.0 (简洁版)
- * @since 2024-01-01
+ * @author GIG Team
+ * @version 2.0.0 (内容付费版)
+ * @since 2024-01-31
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(rollbackFor = Exception.class)
 public class ContentServiceImpl implements ContentService {
 
     private final ContentMapper contentMapper;
 
-    // =================== 基础CRUD ===================
+    // =================== 核心CRUD功能（4个方法）===================
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public Content createContent(Content content) {
-        log.info("创建内容: {}", content.getTitle());
+        log.info("创建内容: title={}, authorId={}", content.getTitle(), content.getAuthorId());
         
-        // 数据验证
-        if (!validateContent(content)) {
-            throw new IllegalArgumentException("内容数据验证失败");
+        // 基础验证
+        if (!StringUtils.hasText(content.getTitle()) || content.getAuthorId() == null) {
+            throw new IllegalArgumentException("标题和作者ID不能为空");
         }
         
-        // 状态初始化
+        // 设置默认值
+        if (content.getCreateTime() == null) {
+            content.setCreateTime(LocalDateTime.now());
+        }
+        if (content.getUpdateTime() == null) {
+            content.setUpdateTime(LocalDateTime.now());
+        }
         if (!StringUtils.hasText(content.getStatus())) {
             content.setStatus("DRAFT");
         }
@@ -50,691 +53,7 @@ public class ContentServiceImpl implements ContentService {
             content.setReviewStatus("PENDING");
         }
         
-        // 统计字段初始化
-        initializeStatistics(content);
-        
-        // 保存内容
-        contentMapper.insert(content);
-        
-        log.info("内容创建成功: ID={}, 标题={}", content.getId(), content.getTitle());
-        return content;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Content updateContent(Content content) {
-        log.info("更新内容: ID={}", content.getId());
-        
-        // 获取原始内容
-        Content existingContent = contentMapper.selectById(content.getId());
-        if (existingContent == null) {
-            throw new IllegalArgumentException("内容不存在: " + content.getId());
-        }
-        
-        // 权限验证（简化实现，实际应结合用户权限）
-        if (!canEdit(content.getId(), content.getAuthorId())) {
-            throw new IllegalArgumentException("无权限编辑此内容");
-        }
-        
-        // 保护关键字段
-        content.setAuthorId(existingContent.getAuthorId());
-        content.setCreateTime(existingContent.getCreateTime());
-        
-        // 更新内容
-        contentMapper.updateById(content);
-        
-        log.info("内容更新成功: ID={}", content.getId());
-        return content;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean deleteContent(Long contentId, Long operatorId) {
-        log.info("删除内容: ID={}, 操作人={}", contentId, operatorId);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            return false;
-        }
-        
-        // 删除权限验证
-        if (!canDelete(contentId, operatorId)) {
-            throw new IllegalArgumentException("无权限删除此内容");
-        }
-        
-        // 逻辑删除（设为OFFLINE状态）
-        content.setStatus("OFFLINE");
-        contentMapper.updateById(content);
-        
-        log.info("内容删除成功: ID={}", contentId);
-        return true;
-    }
-
-    @Override
-    public Content getContentById(Long id, Boolean includeOffline) {
-        if (includeOffline == null) {
-            includeOffline = false;
-        }
-        
-        Content content = contentMapper.selectById(id);
-        if (content == null) {
-            return null;
-        }
-        
-        // 检查是否包含下线内容
-        if (!includeOffline && "OFFLINE".equals(content.getStatus())) {
-            return null;
-        }
-        
-        return content;
-    }
-
-    @Override
-    public PageResponse<Content> queryContents(Integer currentPage, Integer pageSize, String title, String contentType,
-                                             Long authorId, Long categoryId, String status, String reviewStatus,
-                                             String orderBy, String orderDirection) {
-        
-        // 创建分页对象
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        
-        // 简化实现：使用MyBatis-Plus的条件查询
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        
-        if (StringUtils.hasText(title)) {
-            queryWrapper.like(Content::getTitle, title);
-        }
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        if (authorId != null) {
-            queryWrapper.eq(Content::getAuthorId, authorId);
-        }
-        if (categoryId != null) {
-            queryWrapper.eq(Content::getCategoryId, categoryId);
-        }
-        if (StringUtils.hasText(status)) {
-            queryWrapper.eq(Content::getStatus, status);
-        }
-        if (StringUtils.hasText(reviewStatus)) {
-            queryWrapper.eq(Content::getReviewStatus, reviewStatus);
-        }
-        
-        // 排序
-        if ("desc".equalsIgnoreCase(orderDirection)) {
-            if ("createTime".equals(orderBy)) {
-                queryWrapper.orderByDesc(Content::getCreateTime);
-            } else if ("viewCount".equals(orderBy)) {
-                queryWrapper.orderByDesc(Content::getViewCount);
-            } else {
-                queryWrapper.orderByDesc(Content::getId);
-            }
-        } else {
-            if ("createTime".equals(orderBy)) {
-                queryWrapper.orderByAsc(Content::getCreateTime);
-            } else if ("viewCount".equals(orderBy)) {
-                queryWrapper.orderByAsc(Content::getViewCount);
-            } else {
-                queryWrapper.orderByAsc(Content::getId);
-            }
-        }
-        
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    // =================== 状态管理 ===================
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Content publishContent(Long contentId, Long authorId) {
-        log.info("发布内容: ID={}, 作者={}", contentId, authorId);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            throw new IllegalArgumentException("内容不存在");
-        }
-        
-        // 发布权限验证
-        if (!canPublish(contentId, authorId)) {
-            throw new IllegalArgumentException("无权限发布此内容");
-        }
-        
-        // 发布条件验证
-        if (!"APPROVED".equals(content.getReviewStatus())) {
-            throw new IllegalArgumentException("内容未通过审核，无法发布");
-        }
-        
-        // 发布内容
-        content.publish();
-        contentMapper.updateById(content);
-        
-        log.info("内容发布成功: ID={}", contentId);
-        return content;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public boolean offlineContent(Long contentId, Long operatorId) {
-        log.info("下线内容: ID={}, 操作人={}", contentId, operatorId);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            return false;
-        }
-        
-        // 权限验证（管理员或作者可下线）
-        if (!content.getAuthorId().equals(operatorId)) {
-            // TODO: 添加管理员权限检查
-            log.warn("用户{}试图下线不属于自己的内容{}", operatorId, contentId);
-        }
-        
-        // 下线内容
-        content.offline();
-        contentMapper.updateById(content);
-        
-        log.info("内容下线成功: ID={}", contentId);
-        return true;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Content reviewContent(Long contentId, String reviewStatus, Long reviewerId, String reviewComment) {
-        log.info("审核内容: ID={}, 状态={}, 审核人={}", contentId, reviewStatus, reviewerId);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            throw new IllegalArgumentException("内容不存在");
-        }
-        
-        // 更新审核状态
-        if ("APPROVED".equals(reviewStatus)) {
-            content.approveReview();
-        } else if ("REJECTED".equals(reviewStatus)) {
-            content.rejectReview();
-        }
-        
-        contentMapper.updateById(content);
-        
-        log.info("内容审核完成: ID={}, 结果={}", contentId, reviewStatus);
-        return content;
-    }
-
-    // =================== 查询功能 ===================
-
-    @Override
-    public PageResponse<Content> getContentsByAuthor(Integer currentPage, Integer pageSize, Long authorId, String contentType, String status) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getAuthorId, authorId);
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        if (StringUtils.hasText(status)) {
-            queryWrapper.eq(Content::getStatus, status);
-        }
-        queryWrapper.orderByDesc(Content::getCreateTime);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public PageResponse<Content> getContentsByCategory(Integer currentPage, Integer pageSize, Long categoryId, String contentType) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getCategoryId, categoryId)
-                   .eq(Content::getStatus, "PUBLISHED");
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        queryWrapper.orderByDesc(Content::getCreateTime);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public PageResponse<Content> searchContents(Integer currentPage, Integer pageSize, String keyword, String contentType) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED");
-        if (StringUtils.hasText(keyword)) {
-            queryWrapper.and(wrapper -> wrapper
-                .like(Content::getTitle, keyword)
-                .or()
-                .like(Content::getDescription, keyword));
-        }
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        queryWrapper.orderByDesc(Content::getViewCount);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public PageResponse<Content> getPopularContents(Integer currentPage, Integer pageSize, String contentType, Integer timeRange) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED");
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        // 按浏览量排序
-        queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public PageResponse<Content> getLatestContents(Integer currentPage, Integer pageSize, String contentType) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED");
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        queryWrapper.orderByDesc(Content::getPublishTime);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public PageResponse<Content> getContentsByScore(Integer currentPage, Integer pageSize, Double minScore, String contentType) {
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED");
-        if (minScore != null) {
-            queryWrapper.ge(Content::getAverageScore, minScore);
-        }
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        queryWrapper.orderByDesc(Content::getAverageScore);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    // =================== C端必需的基础查询方法 ===================
-
-    @Override
-    public List<Content> getContentsByContentType(String contentType) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getContentType, contentType)
-                   .eq(Content::getStatus, "PUBLISHED")
-                   .orderByDesc(Content::getCreateTime);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> getContentsByStatus(String status) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, status)
-                   .orderByDesc(Content::getCreateTime);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> getContentsByReviewStatus(String reviewStatus) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getReviewStatus, reviewStatus)
-                   .orderByDesc(Content::getCreateTime);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> getPublishedContents(Integer currentPage, Integer pageSize) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED")
-                   .eq(Content::getReviewStatus, "APPROVED")
-                   .orderByDesc(Content::getPublishTime)
-                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> searchContentsByTitle(String title, Integer currentPage, Integer pageSize) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED")
-                   .like(Content::getTitle, title)
-                   .orderByDesc(Content::getViewCount)
-                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> searchContentsByTags(String tags, Integer currentPage, Integer pageSize) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED")
-                   .like(Content::getTags, tags)
-                   .orderByDesc(Content::getViewCount)
-                   .last("LIMIT " + ((currentPage - 1) * pageSize) + ", " + pageSize);
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    // =================== 统计功能 ===================
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long increaseViewCount(Long contentId, Integer increment) {
-        log.debug("增加浏览量: ID={}, 增量={}", contentId, increment);
-        
-        // 使用MyBatis-Plus更新方式
-        Content content = contentMapper.selectById(contentId);
-        if (content != null) {
-            content.setViewCount((content.getViewCount() != null ? content.getViewCount() : 0L) + increment);
-            contentMapper.updateById(content);
-            return content.getViewCount();
-        }
-        return 0L;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long increaseLikeCount(Long contentId, Integer increment) {
-        log.debug("增加点赞数: ID={}, 增量={}", contentId, increment);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content != null) {
-            content.setLikeCount((content.getLikeCount() != null ? content.getLikeCount() : 0L) + increment);
-            contentMapper.updateById(content);
-            return content.getLikeCount();
-        }
-        return 0L;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long increaseCommentCount(Long contentId, Integer increment) {
-        log.debug("增加评论数: ID={}, 增量={}", contentId, increment);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content != null) {
-            content.setCommentCount((content.getCommentCount() != null ? content.getCommentCount() : 0L) + increment);
-            contentMapper.updateById(content);
-            return content.getCommentCount();
-        }
-        return 0L;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Long increaseFavoriteCount(Long contentId, Integer increment) {
-        log.debug("增加收藏数: ID={}, 增量={}", contentId, increment);
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content != null) {
-            content.setFavoriteCount((content.getFavoriteCount() != null ? content.getFavoriteCount() : 0L) + increment);
-            contentMapper.updateById(content);
-            return content.getFavoriteCount();
-        }
-        return 0L;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Double updateScore(Long contentId, Integer score) {
-        log.debug("更新评分: ID={}, 评分={}", contentId, score);
-        
-        // 验证评分范围
-        if (score < 1 || score > 10) {
-            throw new IllegalArgumentException("评分必须在1-10之间");
-        }
-        
-        Content content = contentMapper.selectById(contentId);
-        if (content != null) {
-            // 更新评分统计
-            Long scoreTotal = content.getScoreTotal() != null ? content.getScoreTotal() : 0L;
-            Long scoreCount = content.getScoreCount() != null ? content.getScoreCount() : 0L;
-            
-            scoreTotal += score;
-            scoreCount += 1;
-            
-            content.setScoreTotal(scoreTotal);
-            content.setScoreCount(scoreCount);
-            
-            contentMapper.updateById(content);
-            return content.getAverageScore();
-        }
-        return 0.0;
-    }
-
-    @Override
-    public Map<String, Object> getContentStatistics(Long contentId) {
-        // 简化实现：基于实体数据构建统计信息
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            return Collections.emptyMap();
-        }
-        
-        Map<String, Object> stats = new HashMap<>();
-        stats.put("id", content.getId());
-        stats.put("title", content.getTitle());
-        stats.put("viewCount", content.getViewCount());
-        stats.put("likeCount", content.getLikeCount());
-        stats.put("commentCount", content.getCommentCount());
-        stats.put("favoriteCount", content.getFavoriteCount());
-        stats.put("scoreCount", content.getScoreCount());
-        stats.put("averageScore", content.getAverageScore());
-        stats.put("createTime", content.getCreateTime());
-        stats.put("updateTime", content.getUpdateTime());
-        return stats;
-    }
-
-    // =================== 数据同步 ===================
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Integer updateAuthorInfo(Long authorId, String nickname, String avatar) {
-        log.info("同步作者信息: ID={}, 昵称={}", authorId, nickname);
-        
-        // 使用MyBatis-Plus更新相关内容的作者信息
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getAuthorId, authorId);
-        
-        List<Content> contents = contentMapper.selectList(queryWrapper);
-        if (contents.isEmpty()) {
-            return 0;
-        }
-        
-        int updateCount = 0;
-        for (Content content : contents) {
-            if (StringUtils.hasText(nickname)) {
-                content.setAuthorNickname(nickname);
-            }
-            if (StringUtils.hasText(avatar)) {
-                content.setAuthorAvatar(avatar);
-            }
-            contentMapper.updateById(content);
-            updateCount++;
-        }
-        
-        log.info("作者信息同步完成: 更新{}条记录", updateCount);
-        return updateCount;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public Integer updateCategoryInfo(Long categoryId, String categoryName) {
-        log.info("同步分类信息: ID={}, 名称={}", categoryId, categoryName);
-        
-        // 使用MyBatis-Plus更新相关内容的分类信息
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getCategoryId, categoryId);
-        
-        List<Content> contents = contentMapper.selectList(queryWrapper);
-        if (contents.isEmpty()) {
-            return 0;
-        }
-        
-        int updateCount = 0;
-        for (Content content : contents) {
-            if (StringUtils.hasText(categoryName)) {
-                content.setCategoryName(categoryName);
-            }
-            contentMapper.updateById(content);
-            updateCount++;
-        }
-        
-        log.info("分类信息同步完成: 更新{}条记录", updateCount);
-        return updateCount;
-    }
-
-    // =================== 业务验证 ===================
-
-    @Override
-    public boolean validateContent(Content content) {
-        if (content == null) {
-            return false;
-        }
-        
-        // 标题验证
-        if (!StringUtils.hasText(content.getTitle()) || content.getTitle().length() > 200) {
-            log.warn("内容标题无效: {}", content.getTitle());
-            return false;
-        }
-        
-        // 内容类型验证
-        if (!isValidContentType(content.getContentType())) {
-            log.warn("内容类型无效: {}", content.getContentType());
-            return false;
-        }
-        
-        // 作者ID验证
-        if (content.getAuthorId() == null || content.getAuthorId() <= 0) {
-            log.warn("作者ID无效: {}", content.getAuthorId());
-            return false;
-        }
-        
-        return true;
-    }
-
-    @Override
-    public boolean canPublish(Long contentId, Long authorId) {
-        Content content = contentMapper.selectById(contentId);
-        return content != null 
-               && content.getAuthorId().equals(authorId)
-               && content.canPublish();
-    }
-
-    @Override
-    public boolean canEdit(Long contentId, Long userId) {
-        Content content = contentMapper.selectById(contentId);
-        return content != null 
-               && content.getAuthorId().equals(userId)
-               && content.canEdit();
-    }
-
-    @Override
-    public boolean canDelete(Long contentId, Long userId) {
-        Content content = contentMapper.selectById(contentId);
-        return content != null 
-               && content.getAuthorId().equals(userId)
-               && content.canDelete();
-    }
-
-    // =================== 高级功能 ===================
-
-    @Override
-    public PageResponse<Content> getRecommendedContents(Integer currentPage, Integer pageSize, String contentType, Long excludeAuthorId) {
-        // 简化实现：推荐热门内容
-        Page<Content> page = new Page<>(currentPage, pageSize);
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getStatus, "PUBLISHED");
-        
-        if (StringUtils.hasText(contentType)) {
-            queryWrapper.eq(Content::getContentType, contentType);
-        }
-        if (excludeAuthorId != null) {
-            queryWrapper.ne(Content::getAuthorId, excludeAuthorId);
-        }
-        
-        queryWrapper.orderByDesc(Content::getViewCount, Content::getLikeCount);
-        Page<Content> resultPage = contentMapper.selectPage(page, queryWrapper);
-        return convertToPageResponse(resultPage);
-    }
-
-    @Override
-    public List<Content> getSimilarContents(Long contentId, Integer limit) {
-        Content content = contentMapper.selectById(contentId);
-        if (content == null) {
-            return Collections.emptyList();
-        }
-        
-        // 简化实现：查找同分类同类型的其他内容
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getCategoryId, content.getCategoryId())
-                   .eq(Content::getContentType, content.getContentType())
-                   .eq(Content::getStatus, "PUBLISHED")
-                   .ne(Content::getId, contentId)
-                   .orderByDesc(Content::getViewCount)
-                   .last("LIMIT " + (limit != null ? limit : 10));
-        
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public List<Content> getNeedsChapterManagement(Long authorId) {
-        // 查找需要章节管理的内容类型（小说、漫画等）
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getAuthorId, authorId)
-                   .in(Content::getContentType, "NOVEL", "COMIC")
-                   .eq(Content::getStatus, "PUBLISHED")
-                   .orderByDesc(Content::getCreateTime);
-        
-        return contentMapper.selectList(queryWrapper);
-    }
-
-    @Override
-    public Long countByAuthor(Long authorId, String status) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getAuthorId, authorId);
-        
-        if (StringUtils.hasText(status)) {
-            queryWrapper.eq(Content::getStatus, status);
-        }
-        
-        return contentMapper.selectCount(queryWrapper);
-    }
-
-    @Override
-    public Long countByCategory(Long categoryId, String status) {
-        LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-        queryWrapper.eq(Content::getCategoryId, categoryId);
-        
-        if (StringUtils.hasText(status)) {
-            queryWrapper.eq(Content::getStatus, status);
-        }
-        
-        return contentMapper.selectCount(queryWrapper);
-    }
-
-    @Override
-    public List<Map<String, Object>> getContentTypeStats() {
-        // 简化实现：基于现有数据统计各类型内容数量
-        List<Map<String, Object>> stats = new ArrayList<>();
-        
-        String[] contentTypes = {"NOVEL", "COMIC", "VIDEO", "ARTICLE", "AUDIO"};
-        for (String type : contentTypes) {
-            LambdaQueryWrapper<Content> queryWrapper = new LambdaQueryWrapper<>();
-            queryWrapper.eq(Content::getContentType, type)
-                       .eq(Content::getStatus, "PUBLISHED");
-            
-            Long count = contentMapper.selectCount(queryWrapper);
-            
-            Map<String, Object> stat = new HashMap<>();
-            stat.put("content_type", type);
-            stat.put("count", count);
-            stats.add(stat);
-        }
-        
-        return stats;
-    }
-
-    // =================== 私有辅助方法 ===================
-
-    /**
-     * 初始化统计字段
-     */
-    private void initializeStatistics(Content content) {
+        // 初始化统计数据
         if (content.getViewCount() == null) {
             content.setViewCount(0L);
         }
@@ -747,40 +66,213 @@ public class ContentServiceImpl implements ContentService {
         if (content.getFavoriteCount() == null) {
             content.setFavoriteCount(0L);
         }
-        if (content.getScoreCount() == null) {
-            content.setScoreCount(0L);
-        }
-        if (content.getScoreTotal() == null) {
-            content.setScoreTotal(0L);
-        }
+        
+        contentMapper.insert(content);
+        log.info("内容创建成功: id={}", content.getId());
+        return content;
     }
 
-    /**
-     * 验证内容类型
-     */
-    private boolean isValidContentType(String contentType) {
-        if (!StringUtils.hasText(contentType)) {
-            return false;
+    @Override
+    public Content updateContent(Content content) {
+        log.info("更新内容: id={}", content.getId());
+        
+        if (content.getId() == null) {
+            throw new IllegalArgumentException("内容ID不能为空");
         }
         
-        return "NOVEL".equals(contentType) 
-               || "COMIC".equals(contentType)
-               || "VIDEO".equals(contentType)
-               || "ARTICLE".equals(contentType)
-               || "AUDIO".equals(contentType);
+        content.setUpdateTime(LocalDateTime.now());
+        contentMapper.updateById(content);
+        
+        log.info("内容更新成功: id={}", content.getId());
+        return content;
     }
 
-    /**
-     * 将Page<Content>转换为PageResponse<Content>
-     */
-    private PageResponse<Content> convertToPageResponse(Page<Content> page) {
-        PageResponse<Content> pageResponse = new PageResponse<>();
-        pageResponse.setDatas(page.getRecords());
-        pageResponse.setTotal(page.getTotal());
-        pageResponse.setCurrentPage((int) page.getCurrent());
-        pageResponse.setPageSize((int) page.getSize());
-        pageResponse.setTotalPage((int) page.getPages());
-        pageResponse.setSuccess(true);
-        return pageResponse;
+    @Override
+    public Content getContentById(Long id, Boolean includeOffline) {
+        log.debug("获取内容详情: id={}, includeOffline={}", id, includeOffline);
+        
+        if (id == null) {
+            throw new IllegalArgumentException("内容ID不能为空");
+        }
+        
+        Content content = contentMapper.selectById(id);
+        
+        // 如果不包含下线内容，检查状态
+        if (content != null && Boolean.FALSE.equals(includeOffline)) {
+            if (!"PUBLISHED".equals(content.getStatus())) {
+                return null;
+            }
+        }
+        
+        return content;
+    }
+
+    @Override
+    public boolean deleteContent(Long contentId, Long operatorId) {
+        log.info("软删除内容: contentId={}, operatorId={}", contentId, operatorId);
+        
+        if (contentId == null) {
+            throw new IllegalArgumentException("内容ID不能为空");
+        }
+        
+        try {
+            int result = contentMapper.softDeleteContent(contentId);
+            boolean success = result > 0;
+            if (success) {
+                log.info("内容软删除成功: contentId={}", contentId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("内容软删除失败: contentId={}", contentId, e);
+            return false;
+        }
+    }
+
+    // =================== 万能查询功能（3个方法）===================
+
+    @Override
+    public List<Content> getContentsByConditions(Long authorId, Long categoryId, String contentType,
+                                                String status, String reviewStatus, Double minScore,
+                                                Integer timeRange, String orderBy, String orderDirection,
+                                                Integer currentPage, Integer pageSize) {
+        log.debug("万能条件查询内容: authorId={}, categoryId={}, contentType={}, timeRange={}", 
+                 authorId, categoryId, contentType, timeRange);
+        
+        return contentMapper.selectContentsByConditions(
+            authorId, categoryId, contentType, status, reviewStatus, minScore,
+            timeRange, orderBy, orderDirection, currentPage, pageSize
+        );
+    }
+
+    @Override
+    public List<Content> searchContents(String keyword, String contentType, Long categoryId,
+                                      Integer currentPage, Integer pageSize) {
+        log.debug("搜索内容: keyword={}, contentType={}", keyword, contentType);
+        
+        if (!StringUtils.hasText(keyword)) {
+            throw new IllegalArgumentException("搜索关键词不能为空");
+        }
+        
+        return contentMapper.searchContents(keyword, contentType, categoryId, currentPage, pageSize);
+    }
+
+    @Override
+    public List<Content> getRecommendedContents(Long userId, List<Long> excludeContentIds, Integer limit) {
+        log.debug("获取推荐内容: userId={}, excludeContentIds.size={}, limit={}", 
+                 userId, excludeContentIds != null ? excludeContentIds.size() : 0, limit);
+        
+        return contentMapper.getRecommendedContents(userId, excludeContentIds, limit);
+    }
+
+    // =================== 状态管理功能（3个方法）===================
+
+    @Override
+    public boolean updateContentStatus(Long contentId, String status) {
+        log.info("更新内容状态: contentId={}, status={}", contentId, status);
+        
+        if (contentId == null || !StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("内容ID和状态不能为空");
+        }
+        
+        try {
+            int result = contentMapper.updateContentStatus(contentId, status);
+            boolean success = result > 0;
+            if (success) {
+                log.info("内容状态更新成功: contentId={}", contentId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("内容状态更新失败: contentId={}", contentId, e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean updateReviewStatus(Long contentId, String reviewStatus) {
+        log.info("更新审核状态: contentId={}, reviewStatus={}", contentId, reviewStatus);
+        
+        if (contentId == null || !StringUtils.hasText(reviewStatus)) {
+            throw new IllegalArgumentException("内容ID和审核状态不能为空");
+        }
+        
+        try {
+            int result = contentMapper.updateReviewStatus(contentId, reviewStatus);
+            boolean success = result > 0;
+            if (success) {
+                log.info("审核状态更新成功: contentId={}", contentId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("审核状态更新失败: contentId={}", contentId, e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean batchUpdateStatus(List<Long> ids, String status) {
+        log.info("批量更新内容状态: ids.size={}, status={}", 
+                ids != null ? ids.size() : 0, status);
+        
+        if (ids == null || ids.isEmpty() || !StringUtils.hasText(status)) {
+            throw new IllegalArgumentException("内容ID列表和状态不能为空");
+        }
+        
+        try {
+            int result = contentMapper.batchUpdateStatus(ids, status);
+            boolean success = result > 0;
+            if (success) {
+                log.info("批量更新内容状态成功: 影响行数={}", result);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("批量更新内容状态失败", e);
+            return false;
+        }
+    }
+
+    // =================== 统计管理功能（2个方法）===================
+
+    @Override
+    public boolean updateContentStats(Long contentId, Long viewCount, Long likeCount, 
+                                    Long commentCount, Long favoriteCount) {
+        log.info("更新内容统计: contentId={}, viewCount={}, likeCount={}, commentCount={}, favoriteCount={}", 
+                contentId, viewCount, likeCount, commentCount, favoriteCount);
+        
+        if (contentId == null) {
+            throw new IllegalArgumentException("内容ID不能为空");
+        }
+        
+        try {
+            int result = contentMapper.updateContentStats(contentId, viewCount, likeCount, 
+                                                        commentCount, favoriteCount);
+            boolean success = result > 0;
+            if (success) {
+                log.info("内容统计更新成功: contentId={}", contentId);
+            }
+            return success;
+        } catch (Exception e) {
+            log.error("内容统计更新失败: contentId={}", contentId, e);
+            return false;
+        }
+    }
+
+    @Override
+    public Long increaseViewCount(Long contentId, Integer increment) {
+        log.debug("增加浏览量: contentId={}, increment={}", contentId, increment);
+        
+        if (contentId == null || increment == null || increment <= 0) {
+            throw new IllegalArgumentException("内容ID和增量必须有效");
+        }
+        
+        Content content = contentMapper.selectById(contentId);
+        if (content == null) {
+            throw new IllegalArgumentException("内容不存在");
+        }
+        
+        Long newViewCount = content.getViewCount() + increment;
+        updateContentStats(contentId, newViewCount, content.getLikeCount(), 
+                         content.getCommentCount(), content.getFavoriteCount());
+        
+        return newViewCount;
     }
 }

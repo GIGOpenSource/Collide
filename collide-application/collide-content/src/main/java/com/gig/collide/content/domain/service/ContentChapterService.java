@@ -3,12 +3,10 @@ package com.gig.collide.content.domain.service;
 import com.gig.collide.content.domain.entity.ContentChapter;
 
 import java.util.List;
-import java.util.Map;
 
 /**
- * 内容章节业务服务接口 - C端简洁版
- * 专注于C端必需的章节查询功能，移除复杂的管理接口
- * 基于单表无连表设计
+ * 内容章节业务服务接口
+ * 极简版 - 8个核心方法，使用通用查询
  * 
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -16,188 +14,54 @@ import java.util.Map;
  */
 public interface ContentChapterService {
 
-    // =================== 基础查询功能 ===================
+    // =================== 核心CRUD功能（4个方法）===================
 
     /**
-     * 根据内容ID查询章节列表（按章节号排序）
-     * 
-     * @param contentId 内容ID
-     * @return 章节列表
+     * 创建章节
      */
-    List<ContentChapter> getChaptersByContentId(Long contentId);
+    ContentChapter createChapter(ContentChapter chapter);
 
     /**
-     * 根据内容ID查询已发布章节列表
-     * 
-     * @param contentId 内容ID
-     * @return 已发布章节列表
+     * 更新章节
      */
-    List<ContentChapter> getPublishedChaptersByContentId(Long contentId);
+    ContentChapter updateChapter(ContentChapter chapter);
 
     /**
-     * 根据内容ID分页查询章节
-     * 
-     * @param contentId 内容ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 章节列表
+     * 根据ID获取章节
      */
-    List<ContentChapter> getChaptersByContentIdPaged(Long contentId, Integer currentPage, Integer pageSize);
+    ContentChapter getChapterById(Long id);
 
     /**
-     * 根据内容ID和章节号查询章节
-     * 
-     * @param contentId 内容ID
-     * @param chapterNum 章节号
-     * @return 章节详情
+     * 软删除章节
      */
-    ContentChapter getChapterByContentIdAndNum(Long contentId, Integer chapterNum);
+    boolean deleteChapter(Long id);
+
+    // =================== 万能查询功能（2个方法）===================
 
     /**
-     * 查询内容的下一章节
-     * 
-     * @param contentId 内容ID
-     * @param currentChapterNum 当前章节号
-     * @return 下一章节
+     * 万能条件查询章节列表 - 替代所有具体查询
+     * 可实现：getChaptersByContentId, getPublishedChapters, getChaptersByWordCount等
      */
-    ContentChapter getNextChapter(Long contentId, Integer currentChapterNum);
+    List<ContentChapter> getChaptersByConditions(Long contentId, String status, 
+                                                Integer chapterNumStart, Integer chapterNumEnd,
+                                                Integer minWordCount, Integer maxWordCount,
+                                                String orderBy, String orderDirection,
+                                                Integer currentPage, Integer pageSize);
 
     /**
-     * 查询内容的上一章节
-     * 
-     * @param contentId 内容ID
-     * @param currentChapterNum 当前章节号
-     * @return 上一章节
+     * 章节导航查询（next、previous、first、last）
      */
-    ContentChapter getPreviousChapter(Long contentId, Integer currentChapterNum);
+    ContentChapter getChapterByNavigation(Long contentId, Integer currentChapterNum, String direction);
 
-    /**
-     * 查询内容的第一章节
-     * 
-     * @param contentId 内容ID
-     * @return 第一章节
-     */
-    ContentChapter getFirstChapter(Long contentId);
-
-    /**
-     * 查询内容的最后一章节
-     * 
-     * @param contentId 内容ID
-     * @return 最后一章节
-     */
-    ContentChapter getLastChapter(Long contentId);
-
-    /**
-     * 根据状态查询章节列表
-     * 
-     * @param status 章节状态
-     * @return 章节列表
-     */
-    List<ContentChapter> getChaptersByStatus(String status);
-
-    /**
-     * 根据章节标题搜索
-     * 
-     * @param titleKeyword 标题关键词
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 章节列表
-     */
-    List<ContentChapter> searchChaptersByTitle(String titleKeyword, Integer currentPage, Integer pageSize);
-
-    /**
-     * 根据内容ID和字数范围查询章节
-     * 
-     * @param contentId 内容ID
-     * @param minWordCount 最小字数
-     * @param maxWordCount 最大字数
-     * @return 章节列表
-     */
-    List<ContentChapter> getChaptersByWordCountRange(Long contentId, Integer minWordCount, Integer maxWordCount);
-
-    /**
-     * 查询字数最多的章节
-     * 
-     * @param contentId 内容ID
-     * @return 字数最多的章节
-     */
-    ContentChapter getMaxWordCountChapter(Long contentId);
-
-    /**
-     * 查询指定内容的最新章节
-     * 
-     * @param contentId 内容ID
-     * @return 最新章节
-     */
-    ContentChapter getLatestChapterByContentId(Long contentId);
-
-    /**
-     * 查询最新更新的章节
-     * 
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 章节列表
-     */
-    List<ContentChapter> getLatestChapters(Integer currentPage, Integer pageSize);
-
-    // =================== 统计功能 ===================
-
-    /**
-     * 统计内容的章节总数
-     * 
-     * @param contentId 内容ID
-     * @return 章节总数
-     */
-    Long countChaptersByContentId(Long contentId);
-
-    /**
-     * 统计内容的已发布章节数
-     * 
-     * @param contentId 内容ID
-     * @return 已发布章节数
-     */
-    Long countPublishedChaptersByContentId(Long contentId);
-
-    /**
-     * 统计内容的总字数
-     * 
-     * @param contentId 内容ID
-     * @return 总字数
-     */
-    Long countTotalWordsByContentId(Long contentId);
-
-    /**
-     * 获取内容的章节统计信息
-     * 
-     * @param contentId 内容ID
-     * @return 统计信息
-     */
-    Map<String, Object> getChapterStats(Long contentId);
-
-    // =================== 管理功能 ===================
+    // =================== 批量操作功能（2个方法）===================
 
     /**
      * 批量更新章节状态
-     * 
-     * @param ids 章节ID列表
-     * @param status 新状态
-     * @return 是否成功
      */
     boolean batchUpdateChapterStatus(List<Long> ids, String status);
 
     /**
-     * 删除内容的所有章节
-     * 
-     * @param contentId 内容ID
-     * @return 是否成功
+     * 批量软删除章节
      */
-    boolean deleteAllChaptersByContentId(Long contentId);
-
-    /**
-     * 重新排序章节号（用于章节删除后的重新编号）
-     * 
-     * @param contentId 内容ID
-     * @return 是否成功
-     */
-    boolean reorderChapterNumbers(Long contentId);
+    boolean batchDeleteChapters(List<Long> ids);
 }

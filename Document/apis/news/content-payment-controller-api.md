@@ -1,45 +1,53 @@
 # Content Payment Controller REST API 文档
 
 **控制器**: ContentPaymentController  
-**版本**: 2.0.0 (内容付费版)  
-**基础路径**: `/api/content/payment`  
-**接口数量**: 45个  
+**版本**: 2.0.0 (极简版)  
+**基础路径**: `/api/v1/content/payment`  
+**接口数量**: 22个  
 **更新时间**: 2024-01-31  
 
 ## 🚀 概述
 
-内容付费管理控制器提供付费配置的管理、查询和统计接口。支持多种付费模式，包括免费、金币付费、VIP免费、VIP专享等，具备完整的权限验证、推荐排行和统计分析功能。
+内容付费配置控制器 - 极简版，基于12个核心Facade方法设计的精简API。提供内容付费配置的管理、查询和统计功能。
+
+**设计理念**:
+- **极简设计**: 22个API接口替代原有42个接口，大幅精简
+- **万能查询**: 单个查询接口替代多个具体查询接口
+- **智能推荐**: 内置多种推荐策略
+- **统一权限**: 集中的权限验证机制
+
+**主要功能**:
+- **配置管理**: 付费配置的创建、查询、删除
+- **价格管理**: 价格设置、折扣计算、实际价格计算
+- **权限验证**: 访问权限检查、购买权限验证
+- **统计分析**: 销售统计、收入分析、转化率统计
+- **业务逻辑**: 内容状态同步、销售数据更新
 
 **付费类型**:
-- `FREE` - 完全免费
-- `COIN_PAY` - 金币付费
-- `VIP_FREE` - VIP用户免费
-- `VIP_ONLY` - VIP专享内容
-
-**有效期类型**:
-- `PERMANENT` - 永久有效
-- `TIME_LIMITED` - 限时有效
+```
+FREE(免费) → COIN_PAY(金币付费) → VIP_FREE(VIP免费) → VIP_ONLY(VIP专享)
+```
 
 ## 📋 接口分类
 
 | 分类 | 接口数量 | 功能描述 |
 |------|----------|----------|
-| **基础CRUD** | 4个 | 获取、删除付费配置 |
-| **查询功能** | 13个 | 按类型、价格、状态等条件查询 |
-| **销售统计管理** | 2个 | 更新、重置销售统计 |
-| **状态管理** | 3个 | 批量更新、启用、禁用配置 |
-| **权限验证** | 5个 | 购买权限、访问权限、价格计算 |
-| **推荐功能** | 6个 | 热门、高价值、性价比排行 |
-| **统计分析** | 8个 | 各类统计和数据分析 |
-| **数据同步** | 4个 | 状态同步、收益分析 |
+| **核心CRUD功能** | 2个 | 配置查询和删除 |
+| **万能查询功能** | 5个 | 条件查询、推荐查询 + 3个便民接口 |
+| **状态管理功能** | 3个 | 状态更新、批量操作 + 1个便民接口 |
+| **价格管理功能** | 4个 | 价格更新、实际价格计算 + 2个便民接口 |
+| **权限验证功能** | 2个 | 访问权限检查 + 1个便民接口 |
+| **销售统计功能** | 2个 | 销售统计更新 + 1个便民接口 |
+| **统计分析功能** | 2个 | 付费统计信息 + 1个便民接口 |
+| **业务逻辑功能** | 2个 | 内容状态同步 + 1个便民接口 |
 
 ---
 
-## 🔧 1. 基础CRUD (4个接口)
+## 🔧 1. 核心CRUD功能 (2个接口)
 
-### 1.1 获取付费配置
+### 1.1 获取付费配置详情
 
-**接口**: `GET /api/content/payment/{id}`
+**接口**: `GET /api/v1/content/payment/{id}`
 
 **描述**: 根据配置ID获取付费配置详情
 
@@ -55,16 +63,19 @@
     "id": 12345,
     "contentId": 67890,
     "contentTitle": "我的玄幻小说",
+    "contentType": "NOVEL",
+    "authorId": 2001,
+    "authorNickname": "知名作家",
     "paymentType": "COIN_PAY",
     "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "isTrialEnabled": true,
-    "trialChapterCount": 3,
-    "validityType": "PERMANENT",
-    "validityDays": null,
-    "salesCount": 500,
-    "totalRevenue": 50000,
+    "originalPrice": 120,
+    "discountStartTime": "2024-01-01T00:00:00",
+    "discountEndTime": "2024-01-31T23:59:59",
+    "isPermanent": true,
+    "trialEnabled": true,
+    "trialChapters": 3,
+    "salesCount": 1500,
+    "totalRevenue": 150000,
     "status": "ACTIVE",
     "createTime": "2024-01-01T10:00:00",
     "updateTime": "2024-01-15T14:30:00"
@@ -72,38 +83,9 @@
 }
 ```
 
-**错误处理**:
-- `PAYMENT_CONFIG_NOT_FOUND`: 付费配置不存在
+### 1.2 删除付费配置
 
-### 1.2 获取内容付费配置
-
-**接口**: `GET /api/content/payment/content/{contentId}`
-
-**描述**: 根据内容ID获取付费配置
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "id": 12345,
-    "contentId": 67890,
-    "paymentType": "COIN_PAY",
-    "price": 100,
-    "isTrialEnabled": true,
-    "trialChapterCount": 3,
-    "status": "ACTIVE"
-  }
-}
-```
-
-### 1.3 删除付费配置
-
-**接口**: `DELETE /api/content/payment/{id}`
+**接口**: `DELETE /api/v1/content/payment/{id}`
 
 **描述**: 删除指定的付费配置
 
@@ -111,7 +93,7 @@
 - `id` (Long): 配置ID
 
 **查询参数**:
-- `operatorId` (Long): 操作人ID
+- `operatorId` (Long, 必需): 操作人ID
 
 **响应示例**:
 ```json
@@ -122,59 +104,49 @@
 }
 ```
 
-### 1.4 删除内容付费配置
-
-**接口**: `DELETE /api/content/payment/content/{contentId}`
-
-**描述**: 删除指定内容的付费配置
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**查询参数**:
-- `operatorId` (Long): 操作人ID
-
 ---
 
-## 🔍 2. 查询功能 (13个接口)
+## 🔍 2. 万能查询功能 (5个接口)
 
-### 2.1 按付费类型查询
+### 2.1 万能条件查询付费配置 ⭐
 
-**接口**: `GET /api/content/payment/payment-type/{paymentType}`
+**接口**: `GET /api/v1/content/payment/query`
 
-**描述**: 根据付费类型查询配置列表
+**描述**: 根据多种条件查询付费配置列表，替代所有具体查询API
 
-**路径参数**:
-- `paymentType` (String): 付费类型 (FREE/COIN_PAY/VIP_FREE/VIP_ONLY)
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 12345,
-      "contentId": 67890,
-      "contentTitle": "我的玄幻小说",
-      "paymentType": "COIN_PAY",
-      "price": 100,
-      "salesCount": 500,
-      "status": "ACTIVE"
-    }
-  ]
-}
-```
-
-### 2.2 查询免费内容配置
-
-**接口**: `GET /api/content/payment/free`
-
-**描述**: 分页查询免费内容配置
+**核心功能**: 
+- 替代`getPaymentConfigByContentId`、`getFreeContentConfigs`、`getCoinPayContentConfigs`等方法
+- 支持按内容、付费类型、价格范围等多维度查询
+- 支持试读、永久、折扣等特性筛选
 
 **查询参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
+- `contentId` (Long, 可选): 内容ID
+- `paymentType` (String, 可选): 付费类型（FREE、COIN_PAY、VIP_FREE、VIP_ONLY）
+- `status` (String, 可选): 状态
+- `minPrice` (Long, 可选): 最小价格
+- `maxPrice` (Long, 可选): 最大价格
+- `trialEnabled` (Boolean, 可选): 是否支持试读
+- `isPermanent` (Boolean, 可选): 是否永久
+- `hasDiscount` (Boolean, 可选): 是否有折扣
+- `orderBy` (String, 可选): 排序字段（createTime、price、salesCount、totalRevenue），默认"createTime"
+- `orderDirection` (String, 可选): 排序方向（ASC、DESC），默认"DESC"
+- `currentPage` (Integer, 可选): 当前页码
+- `pageSize` (Integer, 可选): 页面大小
+
+**调用示例**:
+```bash
+# 查询指定内容的付费配置
+GET /api/v1/content/payment/query?contentId=67890&status=ACTIVE
+
+# 查询金币付费的内容（按销量排序）
+GET /api/v1/content/payment/query?paymentType=COIN_PAY&status=ACTIVE&orderBy=salesCount&orderDirection=DESC&currentPage=1&pageSize=20
+
+# 查询价格在50-200之间的付费内容
+GET /api/v1/content/payment/query?status=ACTIVE&minPrice=50&maxPrice=200&orderBy=price&orderDirection=ASC&currentPage=1&pageSize=50
+
+# 查询支持试读且有折扣的内容
+GET /api/v1/content/payment/query?status=ACTIVE&trialEnabled=true&hasDiscount=true&orderBy=totalRevenue&orderDirection=DESC&currentPage=1&pageSize=30
+```
 
 **响应示例**:
 ```json
@@ -185,118 +157,103 @@
     "records": [
       {
         "id": 12345,
-        "contentId": 67890,
-        "contentTitle": "免费小说",
-        "paymentType": "FREE",
-        "price": 0,
-        "viewCount": 10000,
+        "contentTitle": "我的玄幻小说",
+        "paymentType": "COIN_PAY",
+        "price": 100,
+        "originalPrice": 120,
+        "salesCount": 1500,
+        "totalRevenue": 150000,
         "status": "ACTIVE"
       }
     ],
     "totalCount": 50,
+    "totalPage": 3,
     "currentPage": 1,
-    "pageSize": 20
+    "pageSize": 20,
+    "hasNext": true,
+    "hasPrevious": false
   }
 }
 ```
 
-### 2.3 查询金币付费配置
+### 2.2 推荐付费内容查询 ⭐
 
-**接口**: `GET /api/content/payment/coin-pay`
+**接口**: `GET /api/v1/content/payment/recommendations`
 
-**描述**: 分页查询金币付费内容配置
-
-### 2.4 查询VIP免费配置
-
-**接口**: `GET /api/content/payment/vip-free`
-
-**描述**: 分页查询VIP免费内容配置
-
-### 2.5 查询VIP专享配置
-
-**接口**: `GET /api/content/payment/vip-only`
-
-**描述**: 分页查询VIP专享内容配置
-
-### 2.6 按价格范围查询
-
-**接口**: `GET /api/content/payment/price-range`
-
-**描述**: 根据价格范围查询配置
+**描述**: 获取推荐的付费内容
 
 **查询参数**:
-- `minPrice` (Long, 可选): 最低价格
-- `maxPrice` (Long, 可选): 最高价格
+- `strategy` (String, 必需): 推荐策略（HOT、HIGH_VALUE、VALUE_FOR_MONEY、SALES_RANKING）
+- `paymentType` (String, 可选): 付费类型
+- `excludeContentIds` (String, 可选): 排除的内容ID列表（逗号分隔）
+- `limit` (Integer, 可选): 返回数量限制，默认10
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 12345,
-      "contentId": 67890,
-      "contentTitle": "中等价位小说",
-      "paymentType": "COIN_PAY",
-      "price": 100,
-      "originalPrice": 150,
-      "discountRate": 0.67,
-      "salesCount": 300
-    }
-  ]
-}
+**调用示例**:
+```bash
+# 获取热门付费内容
+GET /api/v1/content/payment/recommendations?strategy=HOT&paymentType=COIN_PAY&excludeContentIds=67890,67891&limit=10
+
+# 获取高价值内容（性价比高）
+GET /api/v1/content/payment/recommendations?strategy=VALUE_FOR_MONEY&limit=20
+
+# 获取销量排行
+GET /api/v1/content/payment/recommendations?strategy=SALES_RANKING&limit=50
 ```
 
-### 2.7 查询试读配置
+### 2.3 获取内容付费配置（便民接口）
 
-**接口**: `GET /api/content/payment/trial-enabled`
+**接口**: `GET /api/v1/content/payment/content/{contentId}`
 
-**描述**: 分页查询支持试读的内容配置
-
-### 2.8 查询永久配置
-
-**接口**: `GET /api/content/payment/permanent`
-
-**描述**: 分页查询永久有效的内容配置
-
-### 2.9 查询限时配置
-
-**接口**: `GET /api/content/payment/time-limited`
-
-**描述**: 分页查询限时内容配置
-
-### 2.10 查询折扣配置
-
-**接口**: `GET /api/content/payment/discounted`
-
-**描述**: 分页查询有折扣的内容配置
-
-### 2.11 按状态查询配置
-
-**接口**: `GET /api/content/payment/status/{status}`
-
-**描述**: 根据状态查询配置列表
-
-**路径参数**:
-- `status` (String): 配置状态 (ACTIVE/INACTIVE/DELETED)
-
----
-
-## 📊 3. 销售统计管理 (2个接口)
-
-### 3.1 更新销售统计
-
-**接口**: `PUT /api/content/payment/content/{contentId}/sales-stats`
-
-**描述**: 更新指定内容的销售统计
+**描述**: 便民接口，获取指定内容的付费配置
 
 **路径参数**:
 - `contentId` (Long): 内容ID
 
+**内部实现**: 调用万能查询接口
+
+### 2.4 获取免费内容（便民接口）
+
+**接口**: `GET /api/v1/content/payment/free`
+
+**描述**: 便民接口，获取免费内容列表
+
 **查询参数**:
-- `salesIncrement` (Long): 销售增量
-- `revenueIncrement` (Long): 收入增量
+- `currentPage` (Integer, 必需): 当前页码
+- `pageSize` (Integer, 必需): 页面大小
+
+**内部实现**: 调用万能查询接口，paymentType=FREE
+
+### 2.5 获取金币付费内容（便民接口）
+
+**接口**: `GET /api/v1/content/payment/coin-pay`
+
+**描述**: 便民接口，获取金币付费内容列表
+
+**查询参数**:
+- `currentPage` (Integer, 必需): 当前页码
+- `pageSize` (Integer, 必需): 页面大小
+
+**内部实现**: 调用万能查询接口，paymentType=COIN_PAY
+
+---
+
+## ⚙️ 3. 状态管理功能 (3个接口)
+
+### 3.1 更新付费配置状态 ⭐
+
+**接口**: `PUT /api/v1/content/payment/{configId}/status`
+
+**描述**: 更新付费配置状态
+
+**路径参数**:
+- `configId` (Long): 配置ID
+
+**请求体**:
+```json
+{
+  "status": "ACTIVE"
+}
+```
 
 **响应示例**:
 ```json
@@ -307,83 +264,53 @@
 }
 ```
 
-### 3.2 重置销售统计
+### 3.2 批量更新状态 ⭐
 
-**接口**: `PUT /api/content/payment/content/{contentId}/reset-sales-stats`
-
-**描述**: 重置指定内容的销售统计
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": true
-}
-```
-
----
-
-## ⚙️ 4. 状态管理 (3个接口)
-
-### 4.1 批量更新状态
-
-**接口**: `PUT /api/content/payment/batch-status`
+**接口**: `PUT /api/v1/content/payment/batch/status`
 
 **描述**: 批量更新付费配置状态
 
-**查询参数**:
-- `contentIds` (List<Long>): 内容ID列表
-- `status` (String): 目标状态
-
-**请求示例**:
-```
-PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
-```
-
-**响应示例**:
+**请求体**:
 ```json
 {
-  "code": 200,
-  "message": "success",
-  "data": true
+  "ids": [12345, 12346, 12347],
+  "status": "ACTIVE"
 }
 ```
 
-### 4.2 启用付费配置
+### 3.3 激活付费配置（便民接口）
 
-**接口**: `PUT /api/content/payment/content/{contentId}/enable`
+**接口**: `PUT /api/v1/content/payment/{configId}/activate`
 
-**描述**: 启用指定内容的付费配置
+**描述**: 便民接口，激活付费配置
 
 **路径参数**:
-- `contentId` (Long): 内容ID
+- `configId` (Long): 配置ID
 
-**查询参数**:
-- `operatorId` (Long): 操作人ID
-
-### 4.3 禁用付费配置
-
-**接口**: `PUT /api/content/payment/content/{contentId}/disable`
-
-**描述**: 禁用指定内容的付费配置
+**内部实现**: 调用状态更新接口，设置状态为"ACTIVE"
 
 ---
 
-## 🔐 5. 权限验证 (5个接口)
+## 💰 4. 价格管理功能 (4个接口)
 
-### 5.1 检查购买权限
+### 4.1 更新付费配置价格信息 ⭐
 
-**接口**: `GET /api/content/payment/check-purchase-permission`
+**接口**: `PUT /api/v1/content/payment/{configId}/price`
 
-**描述**: 检查用户是否有权限购买指定内容
+**描述**: 更新付费配置的价格信息
 
-**查询参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
+**路径参数**:
+- `configId` (Long): 配置ID
+
+**请求体**:
+```json
+{
+  "price": 80,
+  "originalPrice": 100,
+  "discountStartTime": "2024-01-01T00:00:00",
+  "discountEndTime": "2024-01-31T23:59:59"
+}
+```
 
 **响应示例**:
 ```json
@@ -394,66 +321,15 @@ PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
 }
 ```
 
-### 5.2 检查免费访问权限
+### 4.2 计算用户实际需要支付的价格 ⭐
 
-**接口**: `GET /api/content/payment/check-free-access`
+**接口**: `GET /api/v1/content/payment/calculate-price`
 
-**描述**: 检查用户是否可以免费访问指定内容
-
-**查询参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": false
-}
-```
-
-### 5.3 获取访问策略
-
-**接口**: `GET /api/content/payment/access-policy`
-
-**描述**: 获取用户对指定内容的访问策略
+**描述**: 根据用户级别、内容配置计算实际需要支付的价格
 
 **查询参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "canAccess": false,
-    "accessType": "PURCHASE_REQUIRED",
-    "needPurchase": true,
-    "paymentType": "COIN_PAY",
-    "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "isTrialEnabled": true,
-    "trialChapters": 3,
-    "userBalance": 500,
-    "sufficientBalance": true,
-    "reason": "需要购买后访问"
-  }
-}
-```
-
-### 5.4 计算实际价格
-
-**接口**: `GET /api/content/payment/calculate-price`
-
-**描述**: 计算用户购买指定内容的实际价格
-
-**查询参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
+- `userId` (Long, 必需): 用户ID
+- `contentId` (Long, 必需): 内容ID
 
 **响应示例**:
 ```json
@@ -464,287 +340,206 @@ PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
 }
 ```
 
-### 5.5 获取价格信息
+### 4.3 设置折扣价格（便民接口）
 
-**接口**: `GET /api/content/payment/content/{contentId}/price-info`
+**接口**: `PUT /api/v1/content/payment/{configId}/discount`
 
-**描述**: 获取指定内容的价格信息
-
-**路径参数**:
-- `contentId` (Long): 内容ID
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "paymentType": "COIN_PAY",
-    "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "discountAmount": 50,
-    "isTrialEnabled": true,
-    "trialChapterCount": 3,
-    "validityType": "PERMANENT",
-    "validityDays": null,
-    "salesCount": 500,
-    "avgRating": 8.5,
-    "description": "高质量付费内容"
-  }
-}
-```
-
----
-
-## 🏆 6. 推荐功能 (6个接口)
-
-### 6.1 获取热门付费内容
-
-**接口**: `GET /api/content/payment/hot`
-
-**描述**: 获取热门付费内容排行
-
-**查询参数**:
-- `limit` (Integer, 默认10): 返回数量限制
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "id": 12345,
-      "contentId": 67890,
-      "contentTitle": "热门小说",
-      "paymentType": "COIN_PAY",
-      "price": 100,
-      "salesCount": 1000,
-      "totalRevenue": 100000,
-      "rating": 9.2,
-      "hotScore": 95.5
-    }
-  ]
-}
-```
-
-### 6.2 获取高价值内容
-
-**接口**: `GET /api/content/payment/high-value`
-
-**描述**: 获取高价值内容排行
-
-### 6.3 获取性价比内容
-
-**接口**: `GET /api/content/payment/value-for-money`
-
-**描述**: 获取性价比内容排行
-
-### 6.4 获取新付费内容
-
-**接口**: `GET /api/content/payment/new`
-
-**描述**: 获取新上线的付费内容
-
-### 6.5 获取销售排行榜
-
-**接口**: `GET /api/content/payment/sales-ranking`
-
-**描述**: 获取内容销售排行榜
-
-### 6.6 获取收入排行榜
-
-**接口**: `GET /api/content/payment/revenue-ranking`
-
-**描述**: 获取内容收入排行榜
-
----
-
-## 📈 7. 统计分析 (8个接口)
-
-### 7.1 统计付费类型
-
-**接口**: `GET /api/content/payment/stats/payment-type`
-
-**描述**: 统计各付费类型的数量
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "FREE": 100,
-    "COIN_PAY": 250,
-    "VIP_FREE": 80,
-    "VIP_ONLY": 30
-  }
-}
-```
-
-### 7.2 统计活跃配置数
-
-**接口**: `GET /api/content/payment/stats/active-count`
-
-**描述**: 统计活跃的付费配置数量
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": 380
-}
-```
-
-### 7.3 获取价格统计
-
-**接口**: `GET /api/content/payment/stats/price`
-
-**描述**: 获取价格统计信息
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "avgPrice": 85.5,
-    "maxPrice": 500,
-    "minPrice": 10,
-    "medianPrice": 80,
-    "priceRanges": {
-      "0-50": 100,
-      "51-100": 150,
-      "101-200": 80,
-      "201+": 20
-    }
-  }
-}
-```
-
-### 7.4 获取总销售统计
-
-**接口**: `GET /api/content/payment/stats/total-sales`
-
-**描述**: 获取总销售统计信息
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "totalSales": 5000,
-    "totalRevenue": 500000,
-    "avgRevenuePerSale": 100,
-    "topSellingContent": {
-      "contentId": 67890,
-      "title": "热门小说",
-      "sales": 1000
-    }
-  }
-}
-```
-
-### 7.5 获取月度销售统计
-
-**接口**: `GET /api/content/payment/stats/monthly-sales`
-
-**描述**: 获取近期月度销售统计
-
-**查询参数**:
-- `months` (Integer, 默认12): 月份数
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": [
-    {
-      "month": "2024-01",
-      "sales": 500,
-      "revenue": 50000,
-      "newConfigs": 20,
-      "avgPrice": 100
-    },
-    {
-      "month": "2024-02",
-      "sales": 600,
-      "revenue": 60000,
-      "newConfigs": 25,
-      "avgPrice": 100
-    }
-  ]
-}
-```
-
-### 7.6 获取转化率统计
-
-**接口**: `GET /api/content/payment/stats/conversion`
-
-**描述**: 获取付费转化率统计
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "overallConversionRate": 0.15,
-    "trialConversionRate": 0.25,
-    "byPaymentType": {
-      "COIN_PAY": 0.18,
-      "VIP_ONLY": 0.45
-    },
-    "byPriceRange": {
-      "0-50": 0.22,
-      "51-100": 0.15,
-      "101-200": 0.08,
-      "201+": 0.03
-    }
-  }
-}
-```
-
----
-
-## 🔄 8. 数据同步 (4个接口)
-
-### 8.1 同步内容状态
-
-**接口**: `PUT /api/content/payment/sync/content/{contentId}/status`
-
-**描述**: 同步内容状态到付费配置
+**描述**: 便民接口，设置折扣价格
 
 **路径参数**:
-- `contentId` (Long): 内容ID
-
-**查询参数**:
-- `contentStatus` (String): 内容状态
-
-### 8.2 批量同步内容状态
-
-**接口**: `PUT /api/content/payment/sync/batch-content-status`
-
-**描述**: 批量同步内容状态到付费配置
+- `configId` (Long): 配置ID
 
 **请求体**:
 ```json
 {
-  "67890": "PUBLISHED",
-  "67891": "OFFLINE",
-  "67892": "PUBLISHED"
+  "discountPrice": 80,
+  "durationDays": 30
 }
 ```
 
-### 8.3 获取收益分析
+**内部实现**: 调用价格更新接口，自动计算折扣时间
 
-**接口**: `GET /api/content/payment/content/{contentId}/revenue-analysis`
+### 4.4 获取价格信息（便民接口）
 
-**描述**: 获取指定内容的收益分析
+**接口**: `GET /api/v1/content/payment/content/{contentId}/price`
+
+**描述**: 便民接口，获取内容的价格信息
+
+**路径参数**:
+- `contentId` (Long): 内容ID
+
+**查询参数**:
+- `userId` (Long, 可选): 用户ID（用于计算实际价格）
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "originalPrice": 100,
+    "currentPrice": 80,
+    "actualPrice": 80,
+    "discountAmount": 20,
+    "hasDiscount": true,
+    "paymentType": "COIN_PAY"
+  }
+}
+```
+
+---
+
+## 🔐 5. 权限验证功能 (2个接口)
+
+### 5.1 检查访问权限 ⭐
+
+**接口**: `GET /api/v1/content/payment/permission`
+
+**描述**: 检查访问权限，包含购买权限和免费访问检查
+
+**查询参数**:
+- `userId` (Long, 必需): 用户ID
+- `contentId` (Long, 必需): 内容ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "canAccess": false,
+    "accessType": "COIN_PAY",
+    "price": 80,
+    "originalPrice": 100,
+    "discountAmount": 20,
+    "discountReason": "VIP折扣",
+    "trialEnabled": true,
+    "trialChapters": 3,
+    "isPermanent": true,
+    "userLevel": "VIP",
+    "hasDiscount": true
+  }
+}
+```
+
+### 5.2 快速权限检查（便民接口）
+
+**接口**: `GET /api/v1/content/payment/can-access`
+
+**描述**: 便民接口，快速检查用户是否可以访问内容
+
+**查询参数**:
+- `userId` (Long, 必需): 用户ID
+- `contentId` (Long, 必需): 内容ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": true
+}
+```
+
+---
+
+## 📊 6. 销售统计功能 (2个接口)
+
+### 6.1 更新销售统计 ⭐
+
+**接口**: `PUT /api/v1/content/payment/{configId}/sales`
+
+**描述**: 更新销售统计数据
+
+**路径参数**:
+- `configId` (Long): 配置ID
+
+**请求体**:
+```json
+{
+  "salesIncrement": 1,
+  "revenueIncrement": 80
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": true
+}
+```
+
+### 6.2 记录销售（便民接口）
+
+**接口**: `POST /api/v1/content/payment/{configId}/sale`
+
+**描述**: 便民接口，记录一次销售
+
+**路径参数**:
+- `configId` (Long): 配置ID
+
+**请求体**:
+```json
+{
+  "amount": 80
+}
+```
+
+**内部实现**: 调用销售统计接口，销量+1，收入+amount
+
+---
+
+## 📈 7. 统计分析功能 (2个接口)
+
+### 7.1 获取付费统计信息 ⭐
+
+**接口**: `GET /api/v1/content/payment/stats`
+
+**描述**: 获取付费统计信息
+
+**查询参数**:
+- `statsType` (String, 必需): 统计类型（PAYMENT_TYPE、PRICE、SALES、CONVERSION、REVENUE_ANALYSIS）
+- 其他参数根据统计类型而定
+
+**调用示例**:
+```bash
+# 获取付费类型统计
+GET /api/v1/content/payment/stats?statsType=PAYMENT_TYPE&contentType=NOVEL
+
+# 获取价格分布统计
+GET /api/v1/content/payment/stats?statsType=PRICE&minPrice=50&maxPrice=200
+
+# 获取销售统计
+GET /api/v1/content/payment/stats?statsType=SALES&authorId=2001&startDate=2024-01-01&endDate=2024-01-31
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "freeCount": 150,
+    "coinPayCount": 800,
+    "vipFreeCount": 200,
+    "vipOnlyCount": 50,
+    "totalCount": 1200,
+    "avgPrice": 85.5,
+    "maxPrice": 500,
+    "minPrice": 10,
+    "totalRevenue": 2500000,
+    "totalSales": 30000
+  }
+}
+```
+
+### 7.2 获取内容收入统计（便民接口）
+
+**接口**: `GET /api/v1/content/payment/content/{contentId}/revenue`
+
+**描述**: 便民接口，获取内容的收入统计
 
 **路径参数**:
 - `contentId` (Long): 内容ID
@@ -755,34 +550,36 @@ PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
   "code": 200,
   "message": "success",
   "data": {
-    "totalRevenue": 100000,
-    "salesCount": 1000,
-    "avgRevenue": 100,
-    "dailyRevenue": [
-      {
-        "date": "2024-01-01",
-        "revenue": 1000,
-        "sales": 10
-      }
-    ],
+    "totalRevenue": 150000,
+    "totalSales": 1500,
+    "avgPrice": 100,
+    "currentPrice": 80,
     "revenueGrowth": 0.15,
-    "marketRanking": 15,
-    "competitorComparison": {
-      "avgMarketPrice": 120,
-      "priceAdvantage": -20
-    }
+    "salesGrowth": 0.12
   }
 }
 ```
 
-### 8.4 获取价格优化建议
+---
 
-**接口**: `GET /api/content/payment/content/{contentId}/price-optimization`
+## 🔄 8. 业务逻辑功能 (2个接口)
 
-**描述**: 获取指定内容的价格优化建议
+### 8.1 同步内容状态 ⭐
 
-**路径参数**:
-- `contentId` (Long): 内容ID
+**接口**: `PUT /api/v1/content/payment/sync`
+
+**描述**: 统一业务逻辑处理
+
+**请求体**:
+```json
+{
+  "operationType": "SYNC_STATUS",
+  "operationData": {
+    "contentId": 67890,
+    "newStatus": "PUBLISHED"
+  }
+}
+```
 
 **响应示例**:
 ```json
@@ -790,27 +587,27 @@ PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
   "code": 200,
   "message": "success",
   "data": {
-    "currentPrice": 100,
-    "suggestedPrice": 120,
-    "priceChangeReason": "基于质量和市场对比，建议提价",
-    "expectedImpact": {
-      "revenueIncrease": 0.15,
-      "salesDecrease": 0.05,
-      "netBenefit": 0.12
-    },
-    "marketAnalysis": {
-      "similarContentAvgPrice": 125,
-      "competitorPrices": [110, 115, 130],
-      "demandLevel": "HIGH"
-    },
-    "recommendations": [
-      "价格略低于市场平均水平，可适当提价",
-      "建议增加限时折扣活动提升销量",
-      "考虑推出VIP专享版本"
-    ]
+    "updatedCount": 1,
+    "message": "同步成功"
   }
 }
 ```
+
+### 8.2 批量同步内容状态（便民接口）
+
+**接口**: `PUT /api/v1/content/payment/sync/batch`
+
+**描述**: 便民接口，批量同步内容状态
+
+**请求体**:
+```json
+{
+  "contentIds": [67890, 67891, 67892],
+  "newStatus": "OFFLINE"
+}
+```
+
+**内部实现**: 调用同步接口，operationType=BATCH_SYNC
 
 ---
 
@@ -819,149 +616,263 @@ PUT /api/content/payment/batch-status?contentIds=67890,67891,67892&status=ACTIVE
 ### ContentPaymentConfigResponse 付费配置响应对象
 ```json
 {
-  "id": "配置ID",
-  "contentId": "内容ID",
-  "contentTitle": "内容标题",
-  "paymentType": "付费类型（FREE/COIN_PAY/VIP_FREE/VIP_ONLY）",
-  "price": "价格（金币）",
-  "originalPrice": "原价",
-  "discountRate": "折扣率",
-  "discountAmount": "折扣金额",
-  "isTrialEnabled": "是否支持试读",
-  "trialChapterCount": "试读章节数",
-  "validityType": "有效期类型（PERMANENT/TIME_LIMITED）",
-  "validityDays": "有效天数",
-  "salesCount": "销售数量",
-  "totalRevenue": "总收入",
-  "status": "状态（ACTIVE/INACTIVE/DELETED）",
-  "createTime": "创建时间",
-  "updateTime": "更新时间"
-}
-```
-
-### AccessPolicy 访问策略对象
-```json
-{
-  "canAccess": "是否可以访问",
-  "accessType": "访问类型",
-  "needPurchase": "是否需要购买",
-  "paymentType": "付费类型",
-  "price": "价格",
-  "originalPrice": "原价",
-  "discountRate": "折扣率",
-  "isTrialEnabled": "是否支持试读",
-  "trialChapters": "试读章节数",
-  "userBalance": "用户余额",
-  "sufficientBalance": "余额是否充足",
-  "reason": "访问策略说明"
+  "id": 12345,                      // 配置ID
+  "contentId": 67890,               // 内容ID
+  "contentTitle": "我的玄幻小说",     // 内容标题
+  "contentType": "NOVEL",           // 内容类型
+  "authorId": 2001,                 // 作者ID
+  "authorNickname": "知名作家",      // 作者昵称
+  "paymentType": "COIN_PAY",        // 付费类型
+  "price": 100,                     // 当前价格
+  "originalPrice": 120,             // 原价
+  "discountStartTime": "2024-01-01T00:00:00", // 折扣开始时间
+  "discountEndTime": "2024-01-31T23:59:59",   // 折扣结束时间
+  "isPermanent": true,              // 是否永久
+  "trialEnabled": true,             // 是否支持试读
+  "trialChapters": 3,               // 试读章节数
+  "salesCount": 1500,               // 销量
+  "totalRevenue": 150000,           // 总收入
+  "status": "ACTIVE",               // 状态
+  "createTime": "2024-01-01T10:00:00",   // 创建时间
+  "updateTime": "2024-01-15T14:30:00"    // 更新时间
 }
 ```
 
 ## 🚨 错误代码
 
-| 错误码 | 描述 | 解决方案 |
-|--------|------|----------|
-| PAYMENT_CONFIG_NOT_FOUND | 付费配置不存在 | 检查配置ID或内容ID |
-| INVALID_PAYMENT_TYPE | 无效的付费类型 | 检查付费类型值 |
-| INVALID_PRICE_RANGE | 无效的价格范围 | 检查价格范围参数 |
-| INSUFFICIENT_PERMISSION | 权限不足 | 确认操作权限 |
-| SALES_STATS_UPDATE_FAILED | 销售统计更新失败 | 检查统计参数 |
-| BATCH_UPDATE_FAILED | 批量更新失败 | 检查批量操作参数 |
-| PURCHASE_PERMISSION_DENIED | 购买权限被拒绝 | 检查用户状态和内容状态 |
-| INSUFFICIENT_BALANCE | 余额不足 | 用户需要充值 |
-| CONTENT_NOT_FOR_SALE | 内容不可购买 | 检查内容状态 |
-| PRICE_CALCULATION_FAILED | 价格计算失败 | 检查用户和内容信息 |
+| HTTP状态码 | 错误码 | 描述 | 解决方案 |
+|-----------|--------|------|----------|
+| 400 | INVALID_PARAMETER | 参数验证失败 | 检查请求参数的格式和必填项 |
+| 404 | PAYMENT_CONFIG_NOT_FOUND | 付费配置不存在 | 检查配置ID |
+| 404 | CONTENT_NOT_FOUND | 内容不存在 | 检查内容ID是否正确 |
+| 404 | USER_NOT_FOUND | 用户不存在 | 检查用户ID是否正确 |
+| 500 | DELETE_CONFIG_FAILED | 删除配置失败 | 确认操作权限 |
+| 500 | PRICE_UPDATE_FAILED | 价格更新失败 | 检查价格参数 |
+| 500 | BATCH_UPDATE_FAILED | 批量更新失败 | 检查配置ID列表 |
+| 500 | STATS_CALCULATION_FAILED | 统计计算失败 | 检查统计参数 |
+| 500 | ACCESS_CHECK_FAILED | 权限检查失败 | 检查用户和内容信息 |
+| 500 | SALES_UPDATE_FAILED | 销售统计更新失败 | 检查统计数据 |
+| 500 | SYNC_OPERATION_FAILED | 同步操作失败 | 检查操作参数 |
 
-## 📈 使用场景
+## 📈 接口使用示例
 
-### 1. 内容购买流程
+### 付费配置管理
 ```javascript
-// 检查购买权限和价格
-const checkPurchase = async (userId, contentId) => {
-  // 获取访问策略
-  const policyResponse = await fetch(
-    `/api/content/payment/access-policy?userId=${userId}&contentId=${contentId}`
-  );
-  const policy = await policyResponse.json();
-  
-  if (policy.data.canAccess) {
-    return { canAccess: true, needPurchase: false };
-  }
-  
-  if (policy.data.needPurchase) {
-    // 计算实际价格
-    const priceResponse = await fetch(
-      `/api/content/payment/calculate-price?userId=${userId}&contentId=${contentId}`
-    );
-    const actualPrice = await priceResponse.json();
+// 获取内容付费配置
+async function getContentPaymentConfig(contentId) {
+    const response = await fetch(`/api/v1/content/payment/content/${contentId}`);
+    return response.json();
+}
+
+// 检查用户访问权限
+async function checkUserAccess(userId, contentId) {
+    const response = await fetch(`/api/v1/content/payment/permission?userId=${userId}&contentId=${contentId}`);
+    return response.json();
+}
+
+// 计算实际价格
+async function calculatePrice(userId, contentId) {
+    const response = await fetch(`/api/v1/content/payment/calculate-price?userId=${userId}&contentId=${contentId}`);
+    return response.json();
+}
+```
+
+### 付费内容查询
+```javascript
+// 获取热门付费内容
+async function getHotPaidContents(paymentType = 'COIN_PAY', limit = 10) {
+    const params = new URLSearchParams({
+        strategy: 'HOT',
+        paymentType: paymentType,
+        limit: limit
+    });
     
-    return {
-      canAccess: false,
-      needPurchase: true,
-      price: actualPrice.data,
-      policy: policy.data
-    };
-  }
-  
-  return { canAccess: false, needPurchase: false };
-};
+    const response = await fetch(`/api/v1/content/payment/recommendations?${params}`);
+    return response.json();
+}
+
+// 查询金币付费内容
+async function getCoinPayContents(page = 1, size = 20) {
+    const params = new URLSearchParams({
+        paymentType: 'COIN_PAY',
+        status: 'ACTIVE',
+        orderBy: 'salesCount',
+        orderDirection: 'DESC',
+        currentPage: page,
+        pageSize: size
+    });
+    
+    const response = await fetch(`/api/v1/content/payment/query?${params}`);
+    return response.json();
+}
+
+// 查询价格范围内的内容
+async function getContentsByPriceRange(minPrice, maxPrice, page = 1, size = 20) {
+    const params = new URLSearchParams({
+        status: 'ACTIVE',
+        minPrice: minPrice,
+        maxPrice: maxPrice,
+        orderBy: 'price',
+        orderDirection: 'ASC',
+        currentPage: page,
+        pageSize: size
+    });
+    
+    const response = await fetch(`/api/v1/content/payment/query?${params}`);
+    return response.json();
+}
 ```
 
-### 2. 推荐系统
+### 价格管理
 ```javascript
-// 获取推荐内容
-const getRecommendations = async () => {
-  const [hot, valueForMoney, newContent] = await Promise.all([
-    fetch('/api/content/payment/hot?limit=5'),
-    fetch('/api/content/payment/value-for-money?limit=5'),
-    fetch('/api/content/payment/new?limit=5')
-  ]);
-  
-  return {
-    hot: await hot.json(),
-    valueForMoney: await valueForMoney.json(),
-    new: await newContent.json()
-  };
-};
+// 设置折扣价格
+async function setDiscount(configId, discountPrice, durationDays) {
+    const response = await fetch(`/api/v1/content/payment/${configId}/discount`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            discountPrice: discountPrice,
+            durationDays: durationDays
+        })
+    });
+    return response.json();
+}
+
+// 更新价格信息
+async function updatePrice(configId, priceData) {
+    const response = await fetch(`/api/v1/content/payment/${configId}/price`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(priceData)
+    });
+    return response.json();
+}
 ```
 
-### 3. 管理后台统计
+### 销售统计
 ```javascript
-// 获取销售统计面板
-const getSalesStatistics = async () => {
-  const [totalStats, monthlyStats, conversionStats] = await Promise.all([
-    fetch('/api/content/payment/stats/total-sales'),
-    fetch('/api/content/payment/stats/monthly-sales?months=6'),
-    fetch('/api/content/payment/stats/conversion')
-  ]);
-  
-  return {
-    total: await totalStats.json(),
-    monthly: await monthlyStats.json(),
-    conversion: await conversionStats.json()
-  };
-};
+// 记录销售
+async function recordSale(configId, amount) {
+    const response = await fetch(`/api/v1/content/payment/${configId}/sale`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            amount: amount
+        })
+    });
+    return response.json();
+}
+
+// 获取内容收入统计
+async function getContentRevenue(contentId) {
+    const response = await fetch(`/api/v1/content/payment/content/${contentId}/revenue`);
+    return response.json();
+}
+
+// 获取付费类型统计
+async function getPaymentTypeStats(contentType) {
+    const params = new URLSearchParams({
+        statsType: 'PAYMENT_TYPE',
+        contentType: contentType
+    });
+    
+    const response = await fetch(`/api/v1/content/payment/stats?${params}`);
+    return response.json();
+}
+```
+
+### 状态管理
+```javascript
+// 批量更新状态
+async function batchUpdateStatus(configIds, status) {
+    const response = await fetch('/api/v1/content/payment/batch/status', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            ids: configIds,
+            status: status
+        })
+    });
+    return response.json();
+}
+
+// 同步内容状态
+async function syncContentStatus(contentIds, newStatus) {
+    const response = await fetch('/api/v1/content/payment/sync/batch', {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            contentIds: contentIds,
+            newStatus: newStatus
+        })
+    });
+    return response.json();
+}
 ```
 
 ## 🔧 性能优化建议
 
-1. **缓存策略**: 付费配置、价格信息建议使用Redis缓存，TTL设置为30分钟
-2. **权限验证优化**: 用户权限信息可以缓存到会话中，减少重复查询
-3. **统计数据优化**: 销售统计可以通过定时任务预计算并缓存
-4. **推荐算法优化**: 推荐排行可以异步计算，定时更新缓存
-5. **价格计算优化**: 复杂的价格计算逻辑可以使用分布式缓存
+1. **缓存策略**:
+   - 付费配置: 缓存30分钟
+   - 权限检查: 缓存5分钟
+   - 推荐列表: 缓存10分钟
+
+2. **查询优化**:
+   - 使用万能查询减少API调用
+   - 价格计算使用缓存
+   - 统计数据定期预计算
+
+3. **异步处理**:
+   - 销售统计异步更新
+   - 价格变更异步通知
+   - 批量操作异步执行
+
+4. **请求优化**:
+   ```javascript
+   // 推荐：并行获取配置和权限信息
+   Promise.all([
+       getContentPaymentConfig(contentId),
+       checkUserAccess(userId, contentId)
+   ]);
+   
+   // 推荐：使用万能查询获取不同类型的付费内容
+   Promise.all([
+       getHotPaidContents('COIN_PAY'),
+       getCoinPayContents(),
+       getContentsByPriceRange(50, 200)
+   ]);
+   ```
+
+## 🚀 极简设计优势
+
+1. **接口精简**: 从42个接口大幅缩减到22个，学习成本降低48%
+2. **万能查询**: 1个查询接口替代多个具体查询接口
+3. **智能推荐**: 内置4种推荐策略
+4. **统一权限**: 集中的权限验证机制
+5. **便民接口**: 保留10个高频便民接口，平衡灵活性和易用性
 
 ## 🔗 相关文档
 
-- [ContentPurchaseController API 文档](./content-purchase-controller-api.md)
-- [ContentPaymentFacadeService 文档](./content-payment-facade-service-api.md)
-- [付费系统设计](../design/payment-system-design.md)
-- [权限验证机制](../design/permission-design.md)
+- [ContentPaymentFacadeService API 文档](../facade/content-payment-facade-service-api.md)
+- [Content Purchase Controller API 文档](./content-purchase-controller-api.md)
+- [Content Controller API 文档](./content-controller-api.md)
+- [Content Chapter Controller API 文档](./content-chapter-controller-api.md)
 
 ---
 
 **联系信息**:  
 - 控制器: ContentPaymentController  
-- 版本: 2.0.0 (内容付费版)  
+- 版本: 2.0.0 (极简版)  
+- 基础路径: `/api/v1/content/payment`  
 - 维护: GIG团队  
 - 更新: 2024-01-31

@@ -19,158 +19,88 @@ import java.util.Map;
 @Mapper
 public interface ContentPaymentMapper extends BaseMapper<ContentPayment> {
 
-    // =================== C端必需的基础查询方法 ===================
+    // =================== C端必需的核心查询方法 ===================
 
     /**
      * 根据内容ID查询付费配置
      */
     ContentPayment selectByContentId(@Param("contentId") Long contentId);
 
-    /**
-     * 根据付费类型查询配置列表
-     */
-    List<ContentPayment> selectByPaymentType(@Param("paymentType") String paymentType);
+    // =================== C端必需的通用查询方法 ===================
 
     /**
-     * 查询免费内容配置
+     * 通用条件查询付费配置列表
+     * @param paymentType 付费类型（可选：FREE、COIN_PAY、VIP_FREE、VIP_ONLY）
+     * @param status 状态（可选）
+     * @param minPrice 最低价格（可选）
+     * @param maxPrice 最高价格（可选）
+     * @param trialEnabled 是否支持试读（可选）
+     * @param isPermanent 是否永久有效（可选）
+     * @param hasDiscount 是否有折扣（可选）
+     * @param orderBy 排序字段（可选：price、salesCount、createTime、revenue）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码（可选，不分页时传null）
+     * @param pageSize 页面大小（可选，不分页时传null）
      */
-    List<ContentPayment> selectFreeContent(@Param("currentPage") Integer currentPage,
-                                          @Param("pageSize") Integer pageSize);
+    List<ContentPayment> selectPaymentsByConditions(@Param("paymentType") String paymentType,
+                                                   @Param("status") String status,
+                                                   @Param("minPrice") Long minPrice,
+                                                   @Param("maxPrice") Long maxPrice,
+                                                   @Param("trialEnabled") Boolean trialEnabled,
+                                                   @Param("isPermanent") Boolean isPermanent,
+                                                   @Param("hasDiscount") Boolean hasDiscount,
+                                                   @Param("orderBy") String orderBy,
+                                                   @Param("orderDirection") String orderDirection,
+                                                   @Param("currentPage") Integer currentPage,
+                                                   @Param("pageSize") Integer pageSize);
 
     /**
-     * 查询金币付费内容配置
+     * 推荐付费内容查询
+     * @param strategy 推荐策略（HOT、HIGH_VALUE、VALUE_FOR_MONEY、NEW）
+     * @param paymentType 付费类型筛选（可选）
+     * @param excludeContentIds 排除的内容ID列表（可选）
+     * @param limit 返回数量限制
      */
-    List<ContentPayment> selectCoinPayContent(@Param("currentPage") Integer currentPage,
-                                             @Param("pageSize") Integer pageSize);
+    List<ContentPayment> selectRecommendedPayments(@Param("strategy") String strategy,
+                                                  @Param("paymentType") String paymentType,
+                                                  @Param("excludeContentIds") List<Long> excludeContentIds,
+                                                  @Param("limit") Integer limit);
+
+    // =================== C端必需的CRUD操作方法 ===================
 
     /**
-     * 查询VIP免费内容配置
+     * 更新付费配置状态
      */
-    List<ContentPayment> selectVipFreeContent(@Param("currentPage") Integer currentPage,
-                                             @Param("pageSize") Integer pageSize);
+    int updatePaymentStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
-     * 查询VIP专享内容配置
+     * 更新付费配置价格信息
      */
-    List<ContentPayment> selectVipOnlyContent(@Param("currentPage") Integer currentPage,
-                                             @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据价格范围查询配置
-     */
-    List<ContentPayment> selectByPriceRange(@Param("minPrice") Long minPrice,
-                                           @Param("maxPrice") Long maxPrice);
-
-    /**
-     * 查询支持试读的内容配置
-     */
-    List<ContentPayment> selectTrialEnabledContent(@Param("currentPage") Integer currentPage,
-                                                  @Param("pageSize") Integer pageSize);
-
-    /**
-     * 查询永久有效的内容配置
-     */
-    List<ContentPayment> selectPermanentContent(@Param("currentPage") Integer currentPage,
-                                               @Param("pageSize") Integer pageSize);
-
-    /**
-     * 查询限时内容配置
-     */
-    List<ContentPayment> selectTimeLimitedContent(@Param("currentPage") Integer currentPage,
-                                                 @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据状态查询配置列表
-     */
-    List<ContentPayment> selectByStatus(@Param("status") String status);
-
-    /**
-     * 查询有折扣的内容配置
-     */
-    List<ContentPayment> selectDiscountedContent(@Param("currentPage") Integer currentPage,
-                                                @Param("pageSize") Integer pageSize);
-
-    // =================== C端必需的推荐方法 ===================
-
-    /**
-     * 查询热门付费内容（按销量排序）
-     */
-    List<ContentPayment> selectHotPaidContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询高价值内容（按单价排序）
-     */
-    List<ContentPayment> selectHighValueContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询性价比内容（按销量/价格比排序）
-     */
-    List<ContentPayment> selectValueForMoneyContent(@Param("limit") Integer limit);
-
-    /**
-     * 查询新上线的付费内容
-     */
-    List<ContentPayment> selectNewPaidContent(@Param("limit") Integer limit);
-
-    // =================== C端必需的统计方法 ===================
-
-    /**
-     * 统计各付费类型的数量
-     */
-    List<Map<String, Object>> countByPaymentType();
-
-    /**
-     * 统计活跃配置数量
-     */
-    Long countActiveConfigs();
-
-    /**
-     * 获取价格统计信息
-     */
-    Map<String, Object> getPriceStats();
-
-    /**
-     * 获取销售排行榜
-     */
-    List<ContentPayment> getSalesRanking(@Param("limit") Integer limit);
-
-    /**
-     * 获取收入排行榜
-     */
-    List<ContentPayment> getRevenueRanking(@Param("limit") Integer limit);
-
-    /**
-     * 获取总销售统计
-     */
-    Map<String, Object> getTotalSalesStats();
-
-    /**
-     * 获取月度销售统计
-     */
-    List<Map<String, Object>> getMonthlySalesStats(@Param("months") Integer months);
-
-    /**
-     * 获取付费转化率统计
-     */
-    Map<String, Object> getConversionStats();
-
-    // =================== C端必需的管理方法 ===================
+    int updatePaymentPrice(@Param("id") Long id,
+                          @Param("price") Long price,
+                          @Param("discountPrice") Long discountPrice,
+                          @Param("discountStartTime") java.time.LocalDateTime discountStartTime,
+                          @Param("discountEndTime") java.time.LocalDateTime discountEndTime);
 
     /**
      * 更新销售统计
      */
-    int updateSalesStats(@Param("contentId") Long contentId,
+    int updateSalesStats(@Param("id") Long id,
                         @Param("salesIncrement") Long salesIncrement,
                         @Param("revenueIncrement") Long revenueIncrement);
 
     /**
      * 批量更新状态
      */
-    int batchUpdateStatus(@Param("contentIds") List<Long> contentIds,
-                         @Param("status") String status);
+    int batchUpdatePaymentStatus(@Param("ids") List<Long> ids, @Param("status") String status);
 
     /**
-     * 删除内容的付费配置
+     * 软删除付费配置
+     */
+    int softDeletePayment(@Param("id") Long id);
+
+    /**
+     * 根据内容ID删除付费配置
      */
     int deleteByContentId(@Param("contentId") Long contentId);
 }

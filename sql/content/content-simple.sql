@@ -33,6 +33,7 @@ CREATE TABLE `t_content` (
     `view_count`      BIGINT       NOT NULL DEFAULT 0     COMMENT '查看数',
     `like_count`      BIGINT       NOT NULL DEFAULT 0     COMMENT '点赞数',
     `comment_count`   BIGINT       NOT NULL DEFAULT 0     COMMENT '评论数',
+    `share_count`     BIGINT       NOT NULL DEFAULT 0     COMMENT '分享数',
     `favorite_count`  BIGINT       NOT NULL DEFAULT 0     COMMENT '收藏数',
     `score_count`     BIGINT       NOT NULL DEFAULT 0     COMMENT '评分数',
     `score_total`     BIGINT       NOT NULL DEFAULT 0     COMMENT '总评分',

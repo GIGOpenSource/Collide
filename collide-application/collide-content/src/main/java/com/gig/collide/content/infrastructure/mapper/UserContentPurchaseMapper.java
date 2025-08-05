@@ -20,38 +20,13 @@ import java.util.Map;
 @Mapper
 public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchase> {
 
-    // =================== C端必需的基础查询方法 ===================
+    // =================== C端必需的核心查询方法 ===================
 
     /**
      * 检查用户是否已购买指定内容
      */
     UserContentPurchase selectByUserIdAndContentId(@Param("userId") Long userId,
                                                    @Param("contentId") Long contentId);
-
-    /**
-     * 检查用户是否有权限访问内容（已购买且未过期）
-     */
-    UserContentPurchase selectValidPurchase(@Param("userId") Long userId,
-                                           @Param("contentId") Long contentId);
-
-    /**
-     * 查询用户的购买记录列表
-     */
-    List<UserContentPurchase> selectByUserId(@Param("userId") Long userId,
-                                            @Param("currentPage") Integer currentPage,
-                                            @Param("pageSize") Integer pageSize);
-
-    /**
-     * 查询用户的有效购买记录
-     */
-    List<UserContentPurchase> selectValidPurchasesByUserId(@Param("userId") Long userId);
-
-    /**
-     * 查询内容的购买记录列表
-     */
-    List<UserContentPurchase> selectByContentId(@Param("contentId") Long contentId,
-                                               @Param("currentPage") Integer currentPage,
-                                               @Param("pageSize") Integer pageSize);
 
     /**
      * 根据订单ID查询购买记录
@@ -63,121 +38,72 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
      */
     UserContentPurchase selectByOrderNo(@Param("orderNo") String orderNo);
 
-    /**
-     * 查询用户指定内容类型的购买记录
-     */
-    List<UserContentPurchase> selectByUserIdAndContentType(@Param("userId") Long userId,
-                                                          @Param("contentType") String contentType);
+    // =================== C端必需的通用查询方法 ===================
 
     /**
-     * 查询用户指定作者的购买记录
+     * 通用条件查询购买记录列表
+     * @param userId 用户ID（可选）
+     * @param contentId 内容ID（可选）
+     * @param contentType 内容类型（可选）
+     * @param authorId 作者ID（可选）
+     * @param status 状态（可选）
+     * @param isValid 是否有效（可选，true=未过期，false=已过期）
+     * @param minAmount 最小金额（可选）
+     * @param maxAmount 最大金额（可选）
+     * @param minAccessCount 最小访问次数（可选）
+     * @param isUnread 是否未读（可选，true=未访问过，false=已访问）
+     * @param orderBy 排序字段（可选：createTime、purchaseAmount、accessCount、lastAccessTime）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码（可选，不分页时传null）
+     * @param pageSize 页面大小（可选，不分页时传null）
      */
-    List<UserContentPurchase> selectByUserIdAndAuthorId(@Param("userId") Long userId,
-                                                        @Param("authorId") Long authorId);
+    List<UserContentPurchase> selectPurchasesByConditions(@Param("userId") Long userId,
+                                                         @Param("contentId") Long contentId,
+                                                         @Param("contentType") String contentType,
+                                                         @Param("authorId") Long authorId,
+                                                         @Param("status") String status,
+                                                         @Param("isValid") Boolean isValid,
+                                                         @Param("minAmount") Long minAmount,
+                                                         @Param("maxAmount") Long maxAmount,
+                                                         @Param("minAccessCount") Integer minAccessCount,
+                                                         @Param("isUnread") Boolean isUnread,
+                                                         @Param("orderBy") String orderBy,
+                                                         @Param("orderDirection") String orderDirection,
+                                                         @Param("currentPage") Integer currentPage,
+                                                         @Param("pageSize") Integer pageSize);
 
     /**
-     * 查询即将过期的购买记录
+     * 推荐购买记录查询
+     * @param strategy 推荐策略（RECENT、HIGH_VALUE、MOST_ACCESSED、POPULAR）
+     * @param userId 用户ID（可选）
+     * @param contentType 内容类型筛选（可选）
+     * @param excludeContentIds 排除的内容ID列表（可选）
+     * @param limit 返回数量限制
      */
-    List<UserContentPurchase> selectExpiringSoon(@Param("beforeTime") LocalDateTime beforeTime);
+    List<UserContentPurchase> selectRecommendedPurchases(@Param("strategy") String strategy,
+                                                        @Param("userId") Long userId,
+                                                        @Param("contentType") String contentType,
+                                                        @Param("excludeContentIds") List<Long> excludeContentIds,
+                                                        @Param("limit") Integer limit);
 
     /**
-     * 查询已过期的购买记录
+     * 过期相关查询
+     * @param type 查询类型（EXPIRING_SOON、EXPIRED）
+     * @param beforeTime 时间界限（EXPIRING_SOON时使用）
+     * @param userId 用户ID（可选）
+     * @param limit 返回数量限制（可选）
      */
-    List<UserContentPurchase> selectExpiredPurchases();
+    List<UserContentPurchase> selectByExpireStatus(@Param("type") String type,
+                                                  @Param("beforeTime") LocalDateTime beforeTime,
+                                                  @Param("userId") Long userId,
+                                                  @Param("limit") Integer limit);
+
+    // =================== C端必需的CRUD操作方法 ===================
 
     /**
-     * 查询高消费金额的购买记录
+     * 更新购买记录状态
      */
-    List<UserContentPurchase> selectHighValuePurchases(@Param("minAmount") Long minAmount,
-                                                      @Param("limit") Integer limit);
-
-    /**
-     * 查询用户的高价值购买记录
-     */
-    List<UserContentPurchase> selectUserHighValuePurchases(@Param("userId") Long userId,
-                                                          @Param("minAmount") Long minAmount);
-
-    /**
-     * 查询访问次数最多的购买记录
-     */
-    List<UserContentPurchase> selectMostAccessedPurchases(@Param("limit") Integer limit);
-
-    /**
-     * 查询用户最近访问的购买记录
-     */
-    List<UserContentPurchase> selectUserRecentAccessedPurchases(@Param("userId") Long userId,
-                                                               @Param("limit") Integer limit);
-
-    /**
-     * 查询用户最近购买的内容
-     */
-    List<UserContentPurchase> selectRecentPurchases(@Param("userId") Long userId,
-                                                   @Param("limit") Integer limit);
-
-    /**
-     * 查询用户购买但未访问的内容
-     */
-    List<UserContentPurchase> selectUnreadPurchases(@Param("userId") Long userId);
-
-    // =================== C端必需的统计方法 ===================
-
-    /**
-     * 统计用户的购买总数
-     */
-    Long countByUserId(@Param("userId") Long userId);
-
-    /**
-     * 统计用户有效购买数
-     */
-    Long countValidByUserId(@Param("userId") Long userId);
-
-    /**
-     * 统计内容的购买总数
-     */
-    Long countByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 统计内容的收入总额
-     */
-    Long sumRevenueByContentId(@Param("contentId") Long contentId);
-
-    /**
-     * 统计用户的消费总额
-     */
-    Long sumExpenseByUserId(@Param("userId") Long userId);
-
-    /**
-     * 获取热门购买内容排行
-     */
-    List<Map<String, Object>> getPopularContentRanking(@Param("limit") Integer limit);
-
-    /**
-     * 获取用户购买统计
-     */
-    Map<String, Object> getUserPurchaseStats(@Param("userId") Long userId);
-
-    /**
-     * 获取内容销售统计
-     */
-    Map<String, Object> getContentSalesStats(@Param("contentId") Long contentId);
-
-    /**
-     * 获取作者收入统计
-     */
-    Map<String, Object> getAuthorRevenueStats(@Param("authorId") Long authorId);
-
-    /**
-     * 获取日期范围内的购买统计
-     */
-    List<Map<String, Object>> getPurchaseStatsByDateRange(@Param("startDate") LocalDateTime startDate,
-                                                          @Param("endDate") LocalDateTime endDate);
-
-    /**
-     * 获取折扣统计信息
-     */
-    Map<String, Object> getDiscountStats(@Param("userId") Long userId);
-
-    // =================== C端必需的管理方法 ===================
+    int updatePurchaseStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
      * 更新访问统计
@@ -195,4 +121,14 @@ public interface UserContentPurchaseMapper extends BaseMapper<UserContentPurchas
      * 批量处理过期记录
      */
     int batchExpirePurchases(@Param("beforeTime") LocalDateTime beforeTime);
+
+    /**
+     * 软删除购买记录
+     */
+    int softDeletePurchase(@Param("id") Long id);
+
+    /**
+     * 批量软删除购买记录
+     */
+    int batchSoftDeletePurchases(@Param("ids") List<Long> ids);
 }

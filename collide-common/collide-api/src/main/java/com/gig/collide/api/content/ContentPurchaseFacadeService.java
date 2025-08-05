@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 内容购买门面服务接口 - 简化版
- * 与UserContentPurchaseService保持一致，专注核心功能
+ * 内容购买门面服务接口 - 极简版
+ * 与UserContentPurchaseService保持一致，12个核心方法
  *
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -18,7 +18,7 @@ import java.util.Map;
  */
 public interface ContentPurchaseFacadeService {
 
-    // =================== 基础CRUD ===================
+    // =================== 核心CRUD功能（2个方法）===================
 
     /**
      * 根据ID获取购买记录
@@ -28,214 +28,88 @@ public interface ContentPurchaseFacadeService {
     /**
      * 删除购买记录（逻辑删除）
      */
-    Result<Boolean> deletePurchase(Long id, Long operatorId);
+    Result<Boolean> deletePurchase(Long id);
 
-    // =================== 权限验证 ===================
+    // =================== 万能查询功能（3个方法）===================
 
     /**
-     * 检查用户是否已购买指定内容
+     * 万能条件查询购买记录列表 - 替代所有具体查询
+     * 可实现：getUserPurchases, getContentPurchases, getUserValidPurchases, getUserPurchasesByContentType等
+     * 
+     * @param userId 用户ID（可选）
+     * @param contentId 内容ID（可选）
+     * @param contentType 内容类型（可选）
+     * @param orderId 订单ID（可选）
+     * @param orderNo 订单号（可选）
+     * @param status 状态（可选）
+     * @param isValid 是否有效（可选，true=未过期，false=已过期）
+     * @param minAmount 最小金额（可选）
+     * @param maxAmount 最大金额（可选）
+     * @param orderBy 排序字段（可选：createTime、purchaseAmount、accessCount）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码（可选，不分页时传null）
+     * @param pageSize 页面大小（可选，不分页时传null）
+     * @return 购买记录列表
      */
-    Result<ContentPurchaseResponse> getUserContentPurchase(Long userId, Long contentId);
+    Result<PageResponse<ContentPurchaseResponse>> getPurchasesByConditions(
+            Long userId, Long contentId, String contentType, Long orderId, String orderNo,
+            String status, Boolean isValid, Long minAmount, Long maxAmount,
+            String orderBy, String orderDirection, Integer currentPage, Integer pageSize);
+
+    /**
+     * 推荐购买记录查询
+     */
+    Result<List<ContentPurchaseResponse>> getRecommendedPurchases(
+            String strategy, Long userId, String contentType,
+            List<Long> excludeContentIds, Integer limit);
+
+    /**
+     * 过期相关查询 - 替代getExpiredPurchases等
+     */
+    Result<List<ContentPurchaseResponse>> getPurchasesByExpireStatus(
+            String type, LocalDateTime beforeTime, Long userId, Integer limit);
+
+    // =================== 权限验证功能（1个方法）===================
 
     /**
      * 检查用户是否有权限访问内容（已购买且未过期）
      */
-    Result<Boolean> hasAccessPermission(Long userId, Long contentId);
+    Result<Boolean> checkAccessPermission(Long userId, Long contentId);
+
+    // =================== 状态管理功能（2个方法）===================
 
     /**
-     * 获取用户对内容的访问权限详情
+     * 更新购买记录状态
      */
-    Result<ContentPurchaseResponse> getValidPurchase(Long userId, Long contentId);
-
-    /**
-     * 批量检查用户对多个内容的访问权限
-     */
-    Result<Map<Long, Boolean>> batchCheckAccessPermission(Long userId, List<Long> contentIds);
-
-    // =================== 查询功能 ===================
-
-    /**
-     * 查询用户的购买记录列表（分页）
-     */
-    Result<PageResponse<ContentPurchaseResponse>> getUserPurchases(Long userId, Integer currentPage, Integer pageSize);
-
-    /**
-     * 查询用户的有效购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getUserValidPurchases(Long userId);
-
-    /**
-     * 查询内容的购买记录列表（分页）
-     */
-    Result<PageResponse<ContentPurchaseResponse>> getContentPurchases(Long contentId, Integer currentPage, Integer pageSize);
-
-    /**
-     * 根据订单ID查询购买记录
-     */
-    Result<ContentPurchaseResponse> getPurchaseByOrderId(Long orderId);
-
-    /**
-     * 根据订单号查询购买记录
-     */
-    Result<ContentPurchaseResponse> getPurchaseByOrderNo(String orderNo);
-
-    /**
-     * 查询用户指定内容类型的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getUserPurchasesByContentType(Long userId, String contentType);
-
-    /**
-     * 查询用户指定作者的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getUserPurchasesByAuthor(Long userId, Long authorId);
-
-    /**
-     * 查询用户最近购买的内容
-     */
-    Result<List<ContentPurchaseResponse>> getUserRecentPurchases(Long userId, Integer limit);
-
-    /**
-     * 查询用户购买但未访问的内容
-     */
-    Result<List<ContentPurchaseResponse>> getUserUnreadPurchases(Long userId);
-
-    // =================== C端必需的购买记录查询方法 ===================
-
-    /**
-     * 查询高消费金额的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getHighValuePurchases(Long minAmount, Integer limit);
-
-    /**
-     * 查询用户的高价值购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getUserHighValuePurchases(Long userId, Long minAmount);
-
-    /**
-     * 查询访问次数最多的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getMostAccessedPurchases(Integer limit);
-
-    /**
-     * 查询用户最近访问的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getUserRecentAccessedPurchases(Long userId, Integer limit);
-
-    /**
-     * 获取折扣统计信息
-     */
-    Result<Map<String, Object>> getDiscountStats(Long userId);
-
-    // =================== 访问记录管理 ===================
-
-    /**
-     * 记录用户访问内容
-     */
-    Result<Boolean> recordContentAccess(Long userId, Long contentId);
-
-    /**
-     * 批量更新访问统计
-     */
-    Result<Boolean> batchUpdateAccessStats(List<Long> purchaseIds);
-
-    // =================== 状态管理 ===================
-
-    /**
-     * 处理过期的购买记录
-     */
-    Result<Integer> processExpiredPurchases();
-
-    /**
-     * 查询即将过期的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getExpiringSoonPurchases(LocalDateTime beforeTime);
-
-    /**
-     * 查询已过期的购买记录
-     */
-    Result<List<ContentPurchaseResponse>> getExpiredPurchases();
+    Result<Boolean> updatePurchaseStatus(Long purchaseId, String status);
 
     /**
      * 批量更新购买记录状态
      */
     Result<Boolean> batchUpdateStatus(List<Long> ids, String status);
 
-    /**
-     * 退款处理
-     */
-    Result<Boolean> refundPurchase(Long purchaseId, String reason, Long operatorId);
-
-    // =================== 统计分析 ===================
+    // =================== 统计功能（1个方法）===================
 
     /**
-     * 统计用户的购买总数
+     * 获取购买统计信息 - 替代getDiscountStats、getPurchaseStatsByDateRange等
      */
-    Result<Long> countUserPurchases(Long userId);
+    Result<Map<String, Object>> getPurchaseStats(String statsType, Map<String, Object> params);
+
+    // =================== 业务逻辑功能（3个方法）===================
 
     /**
-     * 统计用户有效购买数
+     * 处理内容购买完成
      */
-    Result<Long> countUserValidPurchases(Long userId);
+    Result<ContentPurchaseResponse> completePurchase(Long userId, Long contentId, Long orderId, String orderNo,
+                                                    Long purchaseAmount, Long originalPrice, LocalDateTime expireTime);
 
     /**
-     * 统计内容的购买总数
+     * 处理退款 
      */
-    Result<Long> countContentPurchases(Long contentId);
+    Result<Boolean> processRefund(Long purchaseId, String refundReason, Long refundAmount);
 
     /**
-     * 统计内容的收入总额
+     * 记录内容访问
      */
-    Result<Long> sumContentRevenue(Long contentId);
-
-    /**
-     * 统计用户的消费总额
-     */
-    Result<Long> sumUserExpense(Long userId);
-
-    /**
-     * 获取热门购买内容排行
-     */
-    Result<List<Map<String, Object>>> getPopularContentRanking(Integer limit);
-
-    /**
-     * 获取用户购买统计
-     */
-    Result<Map<String, Object>> getUserPurchaseStats(Long userId);
-
-    /**
-     * 获取内容销售统计
-     */
-    Result<Map<String, Object>> getContentSalesStats(Long contentId);
-
-    /**
-     * 获取作者收入统计
-     */
-    Result<Map<String, Object>> getAuthorRevenueStats(Long authorId);
-
-    /**
-     * 获取日期范围内的购买统计
-     */
-    Result<List<Map<String, Object>>> getPurchaseStatsByDateRange(LocalDateTime startDate, LocalDateTime endDate);
-
-    // =================== 业务逻辑 ===================
-
-    /**
-     * 处理订单支付成功后的购买记录创建
-     */
-    Result<ContentPurchaseResponse> handleOrderPaymentSuccess(Long orderId);
-
-    /**
-     * 验证购买权限
-     */
-    Result<Boolean> validatePurchasePermission(Long userId, Long contentId);
-
-    /**
-     * 计算内容访问权限
-     */
-    Result<Map<String, Object>> calculateContentAccess(Long userId, Long contentId);
-
-    /**
-     * 获取用户的内容推荐
-     */
-    Result<List<Long>> getUserContentRecommendations(Long userId, Integer limit);
+    Result<Boolean> recordContentAccess(Long userId, Long contentId);
 }

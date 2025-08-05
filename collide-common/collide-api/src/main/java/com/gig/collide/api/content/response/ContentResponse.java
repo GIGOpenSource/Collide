@@ -127,6 +127,11 @@ public class ContentResponse implements Serializable {
     private Long favoriteCount;
 
     /**
+     * 分享数
+     */
+    private Long shareCount;
+
+    /**
      * 评分数
      */
     private Long scoreCount;

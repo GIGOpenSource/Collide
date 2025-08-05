@@ -139,6 +139,12 @@ public class Content {
     private Long favoriteCount;
 
     /**
+     * 分享数
+     */
+    @TableField("share_count")
+    private Long shareCount;
+
+    /**
      * 评分数
      */
     @TableField("score_count")

@@ -2,286 +2,117 @@ package com.gig.collide.api.content;
 
 import com.gig.collide.api.content.request.ContentCreateRequest;
 import com.gig.collide.api.content.request.ContentUpdateRequest;
-import com.gig.collide.api.content.request.ContentQueryRequest;
-import com.gig.collide.api.content.request.ChapterCreateRequest;
 import com.gig.collide.api.content.response.ContentResponse;
-import com.gig.collide.api.content.response.ChapterResponse;
 import com.gig.collide.web.vo.Result;
 import com.gig.collide.base.response.PageResponse;
 
+import java.util.List;
+
 /**
- * 内容门面服务接口 - 简洁版
- * 基于content-simple.sql的双表设计，实现核心内容管理功能
+ * 内容门面服务接口 - 极简版
+ * 基于万能查询的12个核心方法设计
  * 支持多种内容类型：NOVEL、COMIC、VIDEO、ARTICLE、AUDIO
  * 
  * @author Collide
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (极简版)
  * @since 2024-01-01
  */
-
 public interface ContentFacadeService {
     
-    // =================== 内容管理 ===================
+    // =================== 核心CRUD功能（4个方法）===================
     
     /**
      * 创建内容
-     * 支持作者和分类信息冗余存储
-     * 
-     * @param request 创建请求
-     * @return 创建结果（成功/失败状态）
      */
     Result<Void> createContent(ContentCreateRequest request);
     
     /**
      * 更新内容
-     * 支持内容信息、状态、统计数据等更新
-     * 
-     * @param request 更新请求
-     * @return 更新结果
      */
     Result<ContentResponse> updateContent(ContentUpdateRequest request);
     
     /**
-     * 删除内容
-     * 逻辑删除，将状态更新为OFFLINE
-     * 
-     * @param contentId 内容ID
-     * @param operatorId 操作人ID
-     * @return 删除结果
-     */
-    Result<Void> deleteContent(Long contentId, Long operatorId);
-    
-    /**
      * 根据ID获取内容详情
-     * 
-     * @param contentId 内容ID
-     * @param includeOffline 是否包含下线内容
-     * @return 内容详情
      */
     Result<ContentResponse> getContentById(Long contentId, Boolean includeOffline);
     
     /**
-     * 分页查询内容
-     * 支持按类型、作者、分类、状态等条件查询
-     * 
-     * @param request 查询请求
-     * @return 内容列表
+     * 删除内容（逻辑删除）
      */
-    Result<PageResponse<ContentResponse>> queryContents(ContentQueryRequest request);
+    Result<Void> deleteContent(Long contentId, Long operatorId);
+    
+    // =================== 万能查询功能（3个方法）===================
     
     /**
-     * 发布内容
-     * 将状态从DRAFT更新为PUBLISHED
+     * 万能条件查询内容列表 - 替代所有具体查询
+     * 可实现：getContentsByAuthor, getContentsByCategory, getPopularContents, getLatestContents等
      * 
-     * @param contentId 内容ID
-     * @param authorId 作者ID
-     * @return 发布结果
-     */
-    Result<ContentResponse> publishContent(Long contentId, Long authorId);
-    
-    /**
-     * 下线内容
-     * 将状态更新为OFFLINE
-     * 
-     * @param contentId 内容ID
-     * @param operatorId 操作人ID
-     * @return 下线结果
-     */
-    Result<Void> offlineContent(Long contentId, Long operatorId);
-    
-    // =================== 章节管理 ===================
-    
-    /**
-     * 创建章节
-     * 用于小说、漫画等多章节内容
-     * 
-     * @param request 章节创建请求
-     * @return 创建结果（成功/失败状态）
-     */
-    Result<Void> createChapter(ChapterCreateRequest request);
-    
-    /**
-     * 获取内容的章节列表
-     * 
-     * @param contentId 内容ID
-     * @param status 章节状态（可选）
-     * @param currentPage 页码
-     * @param pageSize 页面大小
-     * @return 章节列表
-     */
-    Result<PageResponse<ChapterResponse>> getContentChapters(Long contentId, String status, 
-                                                           Integer currentPage, Integer pageSize);
-    
-    /**
-     * 获取章节详情
-     * 
-     * @param chapterId 章节ID
-     * @return 章节详情
-     */
-    Result<ChapterResponse> getChapterById(Long chapterId);
-    
-    /**
-     * 发布章节
-     * 
-     * @param chapterId 章节ID
-     * @param authorId 作者ID
-     * @return 发布结果
-     */
-    Result<ChapterResponse> publishChapter(Long chapterId, Long authorId);
-    
-    // =================== 统计管理 ===================
-    
-    /**
-     * 增加浏览量
-     * 
-     * @param contentId 内容ID
-     * @param increment 增加数量
-     * @return 更新后的浏览量
-     */
-    Result<Long> increaseViewCount(Long contentId, Integer increment);
-    
-    /**
-     * 增加点赞数
-     * 
-     * @param contentId 内容ID
-     * @param increment 增加数量
-     * @return 更新后的点赞数
-     */
-    Result<Long> increaseLikeCount(Long contentId, Integer increment);
-    
-    /**
-     * 增加评论数
-     * 
-     * @param contentId 内容ID
-     * @param increment 增加数量
-     * @return 更新后的评论数
-     */
-    Result<Long> increaseCommentCount(Long contentId, Integer increment);
-    
-    /**
-     * 增加收藏数
-     * 
-     * @param contentId 内容ID
-     * @param increment 增加数量
-     * @return 更新后的收藏数
-     */
-    Result<Long> increaseFavoriteCount(Long contentId, Integer increment);
-    
-    /**
-     * 更新评分
-     * 新增评分时调用，更新评分总数和评分数量
-     * 
-     * @param contentId 内容ID
-     * @param score 评分值（1-10）
-     * @return 更新后的平均评分
-     */
-    Result<Double> updateScore(Long contentId, Integer score);
-    
-    /**
-     * 获取内容统计信息
-     * 
-     * @param contentId 内容ID
-     * @return 统计信息Map
-     */
-    Result<java.util.Map<String, Object>> getContentStatistics(Long contentId);
-    
-    // =================== 内容查询 ===================
-    
-    /**
-     * 根据作者查询内容
-     * 
-     * @param authorId 作者ID
+     * @param authorId 作者ID（可选）
+     * @param categoryId 分类ID（可选）
      * @param contentType 内容类型（可选）
      * @param status 状态（可选）
-     * @param currentPage 页码
+     * @param reviewStatus 审核状态（可选）
+     * @param minScore 最小评分（可选）
+     * @param timeRange 时间范围天数（可选，用于热门内容）
+     * @param orderBy 排序字段（可选：createTime、updateTime、viewCount、likeCount、favoriteCount、shareCount、commentCount、score）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码
      * @param pageSize 页面大小
      * @return 内容列表
      */
-    Result<PageResponse<ContentResponse>> getContentsByAuthor(Long authorId, String contentType, 
-                                                            String status, Integer currentPage, Integer pageSize);
+    Result<PageResponse<ContentResponse>> queryContentsByConditions(Long authorId, Long categoryId, String contentType,
+                                                                   String status, String reviewStatus, Double minScore,
+                                                                   Integer timeRange, String orderBy, String orderDirection,
+                                                                   Integer currentPage, Integer pageSize);
     
     /**
-     * 根据分类查询内容
-     * 
-     * @param categoryId 分类ID
-     * @param contentType 内容类型（可选）
-     * @param currentPage 页码
-     * @param pageSize 页面大小
-     * @return 内容列表
-     */
-    Result<PageResponse<ContentResponse>> getContentsByCategory(Long categoryId, String contentType,
-                                                              Integer currentPage, Integer pageSize);
-    
-    /**
-     * 搜索内容
-     * 根据标题、描述、标签进行搜索
-     * 
-     * @param keyword 搜索关键词
-     * @param contentType 内容类型（可选）
-     * @param currentPage 页码
-     * @param pageSize 页面大小
-     * @return 搜索结果
+     * 搜索内容 - 根据标题、描述、标签进行搜索
      */
     Result<PageResponse<ContentResponse>> searchContents(String keyword, String contentType,
                                                        Integer currentPage, Integer pageSize);
     
     /**
-     * 获取热门内容
-     * 根据浏览量、点赞数等综合排序
-     * 
-     * @param contentType 内容类型（可选）
-     * @param timeRange 时间范围（天）
-     * @param currentPage 页码
-     * @param pageSize 页面大小
-     * @return 热门内容列表
+     * 获取推荐内容 - 基于用户行为和内容特征
      */
-    Result<PageResponse<ContentResponse>> getPopularContents(String contentType, Integer timeRange,
-                                                           Integer currentPage, Integer pageSize);
+    Result<List<ContentResponse>> getRecommendedContents(Long userId, List<Long> excludeContentIds, Integer limit);
+    
+    // =================== 状态管理功能（2个方法）===================
     
     /**
-     * 获取最新内容
-     * 按发布时间排序
-     * 
-     * @param contentType 内容类型（可选）
-     * @param currentPage 页码
-     * @param pageSize 页面大小
-     * @return 最新内容列表
+     * 更新内容状态 - 统一状态管理
+     * 可实现：publishContent, reviewContent, offlineContent等
      */
-    Result<PageResponse<ContentResponse>> getLatestContents(String contentType, Integer currentPage, Integer pageSize);
-    
-    // =================== 数据同步 ===================
+    Result<Boolean> updateContentStatus(Long contentId, String status, String reviewStatus, 
+                                       Long operatorId, String comment);
     
     /**
-     * 更新作者信息（冗余字段）
-     * 当作者信息变更时，同步更新内容表中的冗余信息
-     * 
-     * @param authorId 作者ID
-     * @param nickname 新昵称
-     * @param avatar 新头像
-     * @return 更新成功的记录数
+     * 批量更新状态
      */
-    Result<Integer> updateAuthorInfo(Long authorId, String nickname, String avatar);
+    Result<Boolean> batchUpdateStatus(List<Long> ids, String status);
+    
+    // =================== 统计管理功能（2个方法）===================
     
     /**
-     * 更新分类信息（冗余字段）
-     * 当分类信息变更时，同步更新内容表中的冗余信息
-     * 
-     * @param categoryId 分类ID
-     * @param categoryName 新分类名称
-     * @return 更新成功的记录数
+     * 更新内容统计信息 - 统一统计管理
+     * 可实现：increaseViewCount, increaseLikeCount, increaseCommentCount, increaseFavoriteCount, updateScore等
      */
-    Result<Integer> updateCategoryInfo(Long categoryId, String categoryName);
+    Result<Boolean> updateContentStats(Long contentId, Long viewCount, Long likeCount, 
+                                      Long commentCount, Long favoriteCount, Double score);
     
     /**
-     * 内容审核
-     * 更新审核状态
-     * 
-     * @param contentId 内容ID
-     * @param reviewStatus 审核状态：APPROVED、REJECTED
-     * @param reviewerId 审核人ID
-     * @param reviewComment 审核意见
-     * @return 审核结果
+     * 增加浏览量（最常用的统计操作单独提供）
      */
-    Result<ContentResponse> reviewContent(Long contentId, String reviewStatus, 
-                                        Long reviewerId, String reviewComment);
-} 
+    Result<Long> increaseViewCount(Long contentId, Integer increment);
+    
+    // =================== 数据同步功能（1个方法）===================
+    
+    /**
+     * 同步外部数据 - 统一数据同步
+     * 可实现：updateAuthorInfo, updateCategoryInfo等
+     * 
+     * @param syncType 同步类型（AUTHOR、CATEGORY）
+     * @param targetId 目标ID（作者ID或分类ID）
+     * @param syncData 同步数据Map
+     */
+    Result<Integer> syncExternalData(String syncType, Long targetId, java.util.Map<String, Object> syncData);
+}

@@ -18,225 +18,105 @@ import java.util.*;
 @Mapper
 public interface ContentMapper extends BaseMapper<Content> {
 
-    // =================== C端必需的基础查询方法 ===================
+    // =================== C端必需的通用查询方法 ===================
 
     /**
-     * 根据作者ID查询内容列表
+     * 通用条件查询内容列表
+     * @param authorId 作者ID（可选）
+     * @param categoryId 分类ID（可选）
+     * @param contentType 内容类型（可选）
+     * @param status 状态（可选）
+     * @param reviewStatus 审核状态（可选）
+     * @param minScore 最低评分（可选）
+     * @param timeRange 时间范围天数（可选，用于热门内容筛选）
+     * @param orderBy 排序字段（可选：createTime、updateTime、viewCount、likeCount、favoriteCount、shareCount、commentCount、score）
+     * @param orderDirection 排序方向（可选：ASC、DESC）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      */
-    List<Content> getContentsByAuthor(@Param("authorId") Long authorId);
+    List<Content> selectContentsByConditions(@Param("authorId") Long authorId,
+                                           @Param("categoryId") Long categoryId,
+                                           @Param("contentType") String contentType,
+                                           @Param("status") String status,
+                                           @Param("reviewStatus") String reviewStatus,
+                                           @Param("minScore") Double minScore,
+                                           @Param("timeRange") Integer timeRange,
+                                           @Param("orderBy") String orderBy,
+                                           @Param("orderDirection") String orderDirection,
+                                           @Param("currentPage") Integer currentPage,
+                                           @Param("pageSize") Integer pageSize);
 
     /**
-     * 根据分类ID查询内容列表
+     * 通用搜索内容
+     * @param keyword 搜索关键词（标题、内容、标签）
+     * @param contentType 内容类型（可选）
+     * @param categoryId 分类ID（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
      */
-    List<Content> getContentsByCategory(@Param("categoryId") Long categoryId);
+    List<Content> searchContents(@Param("keyword") String keyword,
+                               @Param("contentType") String contentType,
+                               @Param("categoryId") Long categoryId,
+                               @Param("currentPage") Integer currentPage,
+                               @Param("pageSize") Integer pageSize);
+
+    // =================== C端必需的特殊查询方法 ===================
 
     /**
-     * 根据内容类型查询内容列表
+     * 推荐内容（基于用户行为的个性化推荐）
      */
-    List<Content> getContentsByContentType(@Param("contentType") String contentType);
+    List<Content> getRecommendedContents(@Param("userId") Long userId,
+                                        @Param("excludeContentIds") List<Long> excludeContentIds,
+                                        @Param("limit") Integer limit);
 
     /**
-     * 根据状态查询内容列表
+     * 相似内容（基于分类和标签的相似度推荐）
      */
-    List<Content> getContentsByStatus(@Param("status") String status);
-
-    /**
-     * 根据审核状态查询内容列表
-     */
-    List<Content> getContentsByReviewStatus(@Param("reviewStatus") String reviewStatus);
-
-    /**
-     * 分页查询已发布且审核通过的内容
-     */
-    List<Content> getPublishedContents(@Param("currentPage") Integer currentPage,
-                                       @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据标题模糊搜索内容
-     */
-    List<Content> searchContentsByTitle(@Param("title") String title,
-                                        @Param("currentPage") Integer currentPage,
-                                        @Param("pageSize") Integer pageSize);
-
-    /**
-     * 根据标签搜索内容
-     */
-    List<Content> searchContentsByTags(@Param("tags") String tags,
-                                       @Param("currentPage") Integer currentPage,
-                                       @Param("pageSize") Integer pageSize);
-
-    /**
-     * 查询热门内容（按查看数排序）
-     */
-    List<Content> getPopularContents(@Param("limit") Integer limit);
-
-    /**
-     * 查询最新内容（按发布时间排序）
-     */
-    List<Content> getLatestContents(@Param("limit") Integer limit);
-
-    /**
-     * 查询高评分内容
-     */
-    List<Content> getContentsByScore(@Param("minScore") Double minScore,
+    List<Content> getSimilarContents(@Param("contentId") Long contentId,
                                     @Param("limit") Integer limit);
 
-    // =================== C端必需的统计增加方法 ===================
+    // =================== C端必需的CRUD操作方法 ===================
 
     /**
-     * 增加浏览量
+     * 更新内容状态
      */
-    int increaseViewCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+    int updateContentStatus(@Param("id") Long id, @Param("status") String status);
 
     /**
-     * 增加点赞数
+     * 更新审核状态
      */
-    int increaseLikeCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+    int updateReviewStatus(@Param("id") Long id, @Param("reviewStatus") String reviewStatus);
 
     /**
-     * 增加评论数
+     * 更新内容基本信息
      */
-    int increaseCommentCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+    int updateContentInfo(@Param("id") Long id,
+                         @Param("title") String title,
+                         @Param("description") String description,
+                         @Param("tags") String tags,
+                         @Param("coverImage") String coverImage);
 
     /**
-     * 增加收藏数
+     * 更新内容统计信息
      */
-    int increaseFavoriteCount(@Param("contentId") Long contentId, @Param("increment") Integer increment);
+    int updateContentStats(@Param("id") Long id,
+                          @Param("viewCount") Long viewCount,
+                          @Param("likeCount") Long likeCount,
+                          @Param("commentCount") Long commentCount,
+                          @Param("favoriteCount") Long favoriteCount);
 
     /**
-     * 添加评分
+     * 批量更新状态
      */
-    int addScore(@Param("contentId") Long contentId, @Param("score") Integer score);
-
-    // =================== C端必需的统计减少方法 ===================
+    int batchUpdateStatus(@Param("ids") List<Long> ids, @Param("status") String status);
 
     /**
-     * 减少浏览量
+     * 软删除内容
      */
-    int decreaseViewCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
+    int softDeleteContent(@Param("id") Long id);
 
     /**
-     * 减少点赞数
+     * 批量软删除内容
      */
-    int decreaseLikeCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
-
-    /**
-     * 减少评论数
-     */
-    int decreaseCommentCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
-
-    /**
-     * 减少收藏数
-     */
-    int decreaseFavoriteCount(@Param("contentId") Long contentId, @Param("decrement") Integer decrement);
-
-    /**
-     * 移除评分
-     */
-    int removeScore(@Param("contentId") Long contentId, @Param("score") Integer score);
-
-    // =================== C端必需的统计更新方法 ===================
-
-    /**
-     * 更新查看数
-     */
-    int updateViewCount(@Param("id") Long id, @Param("increment") Long increment);
-
-    /**
-     * 更新点赞数
-     */
-    int updateLikeCount(@Param("id") Long id, @Param("increment") Long increment);
-
-    /**
-     * 更新评论数
-     */
-    int updateCommentCount(@Param("id") Long id, @Param("increment") Long increment);
-
-    /**
-     * 更新收藏数
-     */
-    int updateFavoriteCount(@Param("id") Long id, @Param("increment") Long increment);
-
-    /**
-     * 更新评分统计
-     */
-    int updateScoreStats(@Param("id") Long id, 
-                        @Param("scoreCount") Long scoreCount,
-                        @Param("scoreTotal") Long scoreTotal);
-
-    // =================== C端必需的数据同步方法 ===================
-
-    /**
-     * 更新作者信息
-     */
-    int updateAuthorInfo(@Param("authorId") Long authorId,
-                        @Param("nickname") String nickname,
-                        @Param("avatar") String avatar);
-
-    /**
-     * 更新分类信息
-     */
-    int updateCategoryInfo(@Param("categoryId") Long categoryId,
-                          @Param("categoryName") String categoryName);
-
-    // =================== C端必需的高级查询方法 ===================
-
-    /**
-     * 推荐内容
-     */
-    List<Content> getRecommendedContents(@Param("currentPage") Integer currentPage,
-                                        @Param("pageSize") Integer pageSize,
-                                        @Param("contentType") String contentType,
-                                        @Param("excludeAuthorId") Long excludeAuthorId);
-
-    /**
-     * 相似内容
-     */
-    List<Content> getSimilarContents(@Param("categoryId") Long categoryId,
-                                    @Param("contentType") String contentType,
-                                    @Param("contentId") Long contentId,
-                                    @Param("limit") Integer limit);
-
-    /**
-     * 需要章节管理的内容
-     */
-    List<Content> getNeedsChapterManagement(@Param("authorId") Long authorId);
-
-    /**
-     * 按作者统计
-     */
-    Long countByAuthor(@Param("authorId") Long authorId, @Param("status") String status);
-
-    /**
-     * 按分类统计
-     */
-    Long countByCategory(@Param("categoryId") Long categoryId, @Param("status") String status);
-
-    /**
-     * 内容类型统计
-     */
-    List<Map<String, Object>> getContentTypeStats();
-
-    // =================== 分页查询总数支持方法 ===================
-
-    /**
-     * 查询已发布内容总数
-     */
-    Long countPublishedContent();
-
-    /**
-     * 根据标题搜索内容总数
-     */
-    Long countContentsByTitle(@Param("title") String title);
-
-    /**
-     * 根据标签搜索内容总数
-     */
-    Long countContentsByTags(@Param("tags") String tags);
-
-    /**
-     * 推荐内容总数
-     */
-    Long countRecommendedContents(@Param("contentType") String contentType,
-                                 @Param("excludeAuthorId") Long excludeAuthorId);
+    int batchSoftDeleteContent(@Param("ids") List<Long> ids);
 }

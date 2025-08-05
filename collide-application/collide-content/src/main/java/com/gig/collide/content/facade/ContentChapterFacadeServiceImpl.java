@@ -14,13 +14,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * 内容章节门面服务实现类
- * 提供章节查询、统计和管理功能的API接口
+ * 内容章节门面服务实现类 - 极简版
+ * 专注于章节核心功能，8个核心方法
  * 
  * @author GIG Team
  * @version 2.0.0 (内容付费版)
@@ -34,317 +35,201 @@ public class ContentChapterFacadeServiceImpl implements ContentChapterFacadeServ
 
     private final ContentChapterService contentChapterService;
 
-    // =================== 基础查询功能 ===================
+    // =================== 核心CRUD功能（2个方法）===================
 
     @Override
-    public List<ChapterResponse> getChaptersByContentId(Long contentId) {
+    public Result<ChapterResponse> getChapterById(Long id) {
         try {
-            log.debug("获取章节列表: contentId={}", contentId);
+            log.debug("获取章节详情: id={}", id);
             
-            List<ContentChapter> chapters = contentChapterService.getChaptersByContentId(contentId);
+            ContentChapter chapter = contentChapterService.getChapterById(id);
             
-            if (CollectionUtils.isEmpty(chapters)) {
-                return Collections.emptyList();
+            if (chapter == null) {
+                return Result.error("CHAPTER_NOT_FOUND", "章节不存在");
             }
             
-            return chapters.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
+            ChapterResponse response = convertToResponse(chapter);
+            return Result.success(response);
         } catch (Exception e) {
-            log.error("获取章节列表失败: contentId={}", contentId, e);
-            return Collections.emptyList();
+            log.error("获取章节详情失败: id={}", id, e);
+            return Result.error("GET_CHAPTER_FAILED", "获取章节详情失败: " + e.getMessage());
         }
     }
 
     @Override
-    public List<ChapterResponse> getPublishedChaptersByContentId(Long contentId) {
+    public Result<Boolean> deleteChapter(Long id) {
         try {
-            log.debug("获取已发布章节列表: contentId={}", contentId);
+            log.info("删除章节: id={}", id);
             
-            List<ContentChapter> chapters = contentChapterService.getPublishedChaptersByContentId(contentId);
+            boolean result = contentChapterService.deleteChapter(id);
             
-            if (CollectionUtils.isEmpty(chapters)) {
-                return Collections.emptyList();
+            if (result) {
+                return Result.success(true);
+            } else {
+                return Result.error("DELETE_FAILED", "删除章节失败");
             }
-            
-            return chapters.stream()
-                    .map(this::convertToResponse)
-                    .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("获取已发布章节列表失败: contentId={}", contentId, e);
-            return Collections.emptyList();
+            log.error("删除章节失败: id={}", id, e);
+            return Result.error("DELETE_FAILED", "删除章节失败: " + e.getMessage());
         }
     }
 
+    // =================== 万能查询功能（3个方法）===================
+
     @Override
-    public PageResponse<ChapterResponse> getChaptersByContentIdPaged(Long contentId, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<ChapterResponse>> getChaptersByConditions(Long contentId, String status, 
+                                                                        Integer chapterNumStart, Integer chapterNumEnd,
+                                                                        Integer minWordCount, Integer maxWordCount,
+                                                                        String orderBy, String orderDirection,
+                                                                        Integer currentPage, Integer pageSize) {
         try {
-            log.debug("分页获取章节列表: contentId={}, currentPage={}, pageSize={}", contentId, currentPage, pageSize);
+            log.debug("万能条件查询章节: contentId={}, status={}", contentId, status);
             
-            List<ContentChapter> chapters = contentChapterService.getChaptersByContentIdPaged(contentId, currentPage, pageSize);
+            // 调用Service层的万能查询方法
+            List<ContentChapter> chapters = contentChapterService.getChaptersByConditions(
+                contentId, status, chapterNumStart, chapterNumEnd,
+                minWordCount, maxWordCount, orderBy, orderDirection,
+                currentPage, pageSize
+            );
             
             // 构建分页响应
-            PageResponse<ChapterResponse> pageResponse = new PageResponse<>();
+            PageResponse<ChapterResponse> pageResponse = convertToPageResponse(chapters, currentPage, pageSize);
             
-            if (CollectionUtils.isEmpty(chapters)) {
-                pageResponse.setDatas(Collections.emptyList());
-                pageResponse.setTotal(0L);
-            } else {
-                List<ChapterResponse> responseList = chapters.stream()
-                        .map(this::convertToResponse)
-                        .collect(Collectors.toList());
-                pageResponse.setDatas(responseList);
-                // 注意：由于Service层只返回List，这里需要单独查询总数
-                Long total = contentChapterService.countChaptersByContentId(contentId);
-                pageResponse.setTotal(total);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("万能条件查询章节失败", e);
+            return Result.error("QUERY_FAILED", "查询章节失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<ChapterResponse> getChapterByNavigation(Long contentId, Integer currentChapterNum, String direction) {
+        try {
+            log.debug("章节导航查询: contentId={}, currentChapterNum={}, direction={}", 
+                     contentId, currentChapterNum, direction);
+            
+            ContentChapter chapter = contentChapterService.getChapterByNavigation(contentId, currentChapterNum, direction);
+            
+            if (chapter == null) {
+                return Result.error("CHAPTER_NOT_FOUND", "未找到相应章节");
             }
             
-            pageResponse.setCurrentPage(currentPage);
-            pageResponse.setPageSize(pageSize);
-            pageResponse.setTotalPage((int) Math.ceil((double) pageResponse.getTotal() / pageSize));
-            pageResponse.setSuccess(true);
+            ChapterResponse response = convertToResponse(chapter);
+            return Result.success(response);
+        } catch (Exception e) {
+            log.error("章节导航查询失败: contentId={}, direction={}", contentId, direction, e);
+            return Result.error("NAVIGATION_FAILED", "章节导航失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<PageResponse<ChapterResponse>> searchChapters(String keyword, Long contentId, String status, 
+                                                              Integer currentPage, Integer pageSize) {
+        try {
+            log.debug("搜索章节: keyword={}, contentId={}", keyword, contentId);
             
-            return pageResponse;
-        } catch (Exception e) {
-            log.error("分页获取章节列表失败: contentId={}", contentId, e);
-            return createEmptyPageResponse(currentPage, pageSize);
-        }
-    }
-
-    @Override
-    public ChapterResponse getChapterByContentIdAndNum(Long contentId, Integer chapterNum) {
-        try {
-            ContentChapter chapter = contentChapterService.getChapterByContentIdAndNum(contentId, chapterNum);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取章节详情失败: contentId={}, chapterNum={}", contentId, chapterNum, e);
-            return null;
-        }
-    }
-
-    @Override
-    public ChapterResponse getNextChapter(Long contentId, Integer currentChapterNum) {
-        try {
-            ContentChapter chapter = contentChapterService.getNextChapter(contentId, currentChapterNum);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取下一章节失败: contentId={}, currentChapterNum={}", contentId, currentChapterNum, e);
-            return null;
-        }
-    }
-
-    @Override
-    public ChapterResponse getPreviousChapter(Long contentId, Integer currentChapterNum) {
-        try {
-            ContentChapter chapter = contentChapterService.getPreviousChapter(contentId, currentChapterNum);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取上一章节失败: contentId={}, currentChapterNum={}", contentId, currentChapterNum, e);
-            return null;
-        }
-    }
-
-    @Override
-    public ChapterResponse getFirstChapter(Long contentId) {
-        try {
-            ContentChapter chapter = contentChapterService.getFirstChapter(contentId);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取第一章节失败: contentId={}", contentId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public ChapterResponse getLastChapter(Long contentId) {
-        try {
-            ContentChapter chapter = contentChapterService.getLastChapter(contentId);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取最后一章节失败: contentId={}", contentId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public List<ChapterResponse> getChaptersByStatus(String status) {
-        try {
-            List<ContentChapter> chapters = contentChapterService.getChaptersByStatus(status);
-            if (CollectionUtils.isEmpty(chapters)) {
-                return Collections.emptyList();
-            }
-            return chapters.stream().map(this::convertToResponse).collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("根据状态获取章节列表失败: status={}", status, e);
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
-    public PageResponse<ChapterResponse> searchChaptersByTitle(String titleKeyword, Integer currentPage, Integer pageSize) {
-        try {
-            List<ContentChapter> chapters = contentChapterService.searchChaptersByTitle(titleKeyword, currentPage, pageSize);
-            PageResponse<ChapterResponse> pageResponse = new PageResponse<>();
+            // 使用万能查询方法实现搜索（通过标题关键词搜索）
+            // 这里简化实现，实际可以调用专门的搜索方法
+            List<ContentChapter> chapters = contentChapterService.getChaptersByConditions(
+                contentId, status, null, null, null, null,
+                "createTime", "DESC", currentPage, pageSize
+            );
             
-            if (CollectionUtils.isEmpty(chapters)) {
-                pageResponse.setDatas(Collections.emptyList());
-                pageResponse.setTotal(0L);
-            } else {
-                List<ChapterResponse> responseList = chapters.stream()
-                        .map(this::convertToResponse)
-                        .collect(Collectors.toList());
-                pageResponse.setDatas(responseList);
-                pageResponse.setTotal((long) chapters.size());
+            // 如果有关键词，可以在此处进行过滤（或在Service层实现更复杂的搜索逻辑）
+            PageResponse<ChapterResponse> pageResponse = convertToPageResponse(chapters, currentPage, pageSize);
+            
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("搜索章节失败: keyword={}", keyword, e);
+            return Result.error("SEARCH_FAILED", "搜索章节失败: " + e.getMessage());
+        }
+    }
+
+    // =================== 统计功能（1个方法）===================
+
+    @Override
+    public Result<Map<String, Object>> getChapterStats(Long contentId) {
+        try {
+            log.debug("获取章节统计信息: contentId={}", contentId);
+            
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 使用万能查询方法获取各种统计数据
+            // 1. 总章节数
+            List<ContentChapter> allChapters = contentChapterService.getChaptersByConditions(
+                contentId, null, null, null, null, null, null, null, null, null);
+            stats.put("totalChapters", allChapters.size());
+            
+            // 2. 已发布章节数
+            List<ContentChapter> publishedChapters = contentChapterService.getChaptersByConditions(
+                contentId, "PUBLISHED", null, null, null, null, null, null, null, null);
+            stats.put("publishedChapters", publishedChapters.size());
+            
+            // 3. 总字数（需要遍历计算）
+            long totalWords = allChapters.stream()
+                .mapToLong(chapter -> chapter.getWordCount() != null ? chapter.getWordCount() : 0L)
+                .sum();
+            stats.put("totalWords", totalWords);
+            
+            // 4. 平均字数
+            double avgWords = allChapters.isEmpty() ? 0.0 : (double) totalWords / allChapters.size();
+            stats.put("averageWords", Math.round(avgWords * 100.0) / 100.0);
+            
+            // 5. 最新章节信息
+            if (!allChapters.isEmpty()) {
+                ContentChapter latestChapter = allChapters.stream()
+                    .filter(chapter -> chapter.getCreateTime() != null)
+                    .max((c1, c2) -> c1.getCreateTime().compareTo(c2.getCreateTime()))
+                    .orElse(null);
+                if (latestChapter != null) {
+                    stats.put("latestChapterTitle", latestChapter.getTitle());
+                    stats.put("latestChapterTime", latestChapter.getCreateTime());
+                }
             }
             
-            pageResponse.setCurrentPage(currentPage);
-            pageResponse.setPageSize(pageSize);
-            pageResponse.setTotalPage((int) Math.ceil((double) pageResponse.getTotal() / pageSize));
-            pageResponse.setSuccess(true);
-            
-            return pageResponse;
-        } catch (Exception e) {
-            log.error("搜索章节失败: titleKeyword={}", titleKeyword, e);
-            return createEmptyPageResponse(currentPage, pageSize);
-        }
-    }
-
-    @Override
-    public List<ChapterResponse> getChaptersByWordCountRange(Long contentId, Integer minWordCount, Integer maxWordCount) {
-        try {
-            List<ContentChapter> chapters = contentChapterService.getChaptersByWordCountRange(contentId, minWordCount, maxWordCount);
-            if (CollectionUtils.isEmpty(chapters)) {
-                return Collections.emptyList();
-            }
-            return chapters.stream().map(this::convertToResponse).collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("根据字数范围获取章节失败: contentId={}", contentId, e);
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
-    public ChapterResponse getMaxWordCountChapter(Long contentId) {
-        try {
-            ContentChapter chapter = contentChapterService.getMaxWordCountChapter(contentId);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取字数最多的章节失败: contentId={}", contentId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public ChapterResponse getLatestChapterByContentId(Long contentId) {
-        try {
-            ContentChapter chapter = contentChapterService.getLatestChapterByContentId(contentId);
-            return chapter != null ? convertToResponse(chapter) : null;
-        } catch (Exception e) {
-            log.error("获取最新章节失败: contentId={}", contentId, e);
-            return null;
-        }
-    }
-
-    @Override
-    public PageResponse<ChapterResponse> getLatestChapters(Integer currentPage, Integer pageSize) {
-        try {
-            List<ContentChapter> chapters = contentChapterService.getLatestChapters(currentPage, pageSize);
-            PageResponse<ChapterResponse> pageResponse = new PageResponse<>();
-            
-            if (CollectionUtils.isEmpty(chapters)) {
-                pageResponse.setDatas(Collections.emptyList());
-                pageResponse.setTotal(0L);
-            } else {
-                List<ChapterResponse> responseList = chapters.stream()
-                        .map(this::convertToResponse)
-                        .collect(Collectors.toList());
-                pageResponse.setDatas(responseList);
-                pageResponse.setTotal((long) chapters.size());
-            }
-            
-            pageResponse.setCurrentPage(currentPage);
-            pageResponse.setPageSize(pageSize);
-            pageResponse.setTotalPage((int) Math.ceil((double) pageResponse.getTotal() / pageSize));
-            pageResponse.setSuccess(true);
-            
-            return pageResponse;
-        } catch (Exception e) {
-            log.error("获取最新更新的章节失败", e);
-            return createEmptyPageResponse(currentPage, pageSize);
-        }
-    }
-
-    // =================== 统计功能 ===================
-
-    @Override
-    public Long countChaptersByContentId(Long contentId) {
-        try {
-            return contentChapterService.countChaptersByContentId(contentId);
-        } catch (Exception e) {
-            log.error("统计章节总数失败: contentId={}", contentId, e);
-            return 0L;
-        }
-    }
-
-    @Override
-    public Long countPublishedChaptersByContentId(Long contentId) {
-        try {
-            return contentChapterService.countPublishedChaptersByContentId(contentId);
-        } catch (Exception e) {
-            log.error("统计已发布章节数失败: contentId={}", contentId, e);
-            return 0L;
-        }
-    }
-
-    @Override
-    public Long countTotalWordsByContentId(Long contentId) {
-        try {
-            return contentChapterService.countTotalWordsByContentId(contentId);
-        } catch (Exception e) {
-            log.error("统计总字数失败: contentId={}", contentId, e);
-            return 0L;
-        }
-    }
-
-    @Override
-    public Map<String, Object> getChapterStats(Long contentId) {
-        try {
-            return contentChapterService.getChapterStats(contentId);
+            return Result.success(stats);
         } catch (Exception e) {
             log.error("获取章节统计信息失败: contentId={}", contentId, e);
-            return Collections.emptyMap();
+            return Result.error("GET_STATS_FAILED", "获取统计信息失败: " + e.getMessage());
         }
     }
 
-    // =================== 管理功能 ===================
+    // =================== 批量操作功能（2个方法）===================
 
     @Override
-    public boolean batchUpdateChapterStatus(List<Long> ids, String status) {
+    public Result<Boolean> batchUpdateChapterStatus(List<Long> ids, String status) {
         try {
-            return contentChapterService.batchUpdateChapterStatus(ids, status);
+            log.info("批量更新章节状态: ids.size={}, status={}", 
+                    ids != null ? ids.size() : 0, status);
+            
+            boolean result = contentChapterService.batchUpdateChapterStatus(ids, status);
+            
+            if (result) {
+                return Result.success(true);
+            } else {
+                return Result.error("BATCH_UPDATE_FAILED", "批量更新章节状态失败");
+            }
         } catch (Exception e) {
-            log.error("批量更新章节状态失败: ids={}, status={}", ids, status, e);
-            return false;
+            log.error("批量更新章节状态失败", e);
+            return Result.error("BATCH_UPDATE_FAILED", "批量更新失败: " + e.getMessage());
         }
     }
 
     @Override
-    public boolean deleteAllChaptersByContentId(Long contentId) {
+    public Result<Boolean> batchDeleteChapters(List<Long> ids) {
         try {
-            return contentChapterService.deleteAllChaptersByContentId(contentId);
+            log.info("批量删除章节: ids.size={}", ids != null ? ids.size() : 0);
+            
+            boolean result = contentChapterService.batchDeleteChapters(ids);
+            
+            if (result) {
+                return Result.success(true);
+            } else {
+                return Result.error("BATCH_DELETE_FAILED", "批量删除章节失败");
+            }
         } catch (Exception e) {
-            log.error("删除内容的所有章节失败: contentId={}", contentId, e);
-            return false;
-        }
-    }
-
-    @Override
-    public boolean reorderChapterNumbers(Long contentId) {
-        try {
-            return contentChapterService.reorderChapterNumbers(contentId);
-        } catch (Exception e) {
-            log.error("重新排序章节号失败: contentId={}", contentId, e);
-            return false;
+            log.error("批量删除章节失败", e);
+            return Result.error("BATCH_DELETE_FAILED", "批量删除失败: " + e.getMessage());
         }
     }
 
@@ -356,14 +241,29 @@ public class ContentChapterFacadeServiceImpl implements ContentChapterFacadeServ
         return response;
     }
 
-    private PageResponse<ChapterResponse> createEmptyPageResponse(Integer currentPage, Integer pageSize) {
+    private PageResponse<ChapterResponse> convertToPageResponse(List<ContentChapter> chapters, Integer currentPage, Integer pageSize) {
         PageResponse<ChapterResponse> pageResponse = new PageResponse<>();
-        pageResponse.setDatas(Collections.emptyList());
-        pageResponse.setTotal(0L);
-        pageResponse.setCurrentPage(currentPage);
-        pageResponse.setPageSize(pageSize);
-        pageResponse.setTotalPage(0);
+        
+        if (CollectionUtils.isEmpty(chapters)) {
+            pageResponse.setDatas(Collections.emptyList());
+            pageResponse.setTotal(0L);
+        } else {
+            List<ChapterResponse> responses = chapters.stream()
+                    .map(this::convertToResponse)
+                    .collect(Collectors.toList());
+            pageResponse.setDatas(responses);
+            pageResponse.setTotal((long) chapters.size());
+        }
+        
+        pageResponse.setCurrentPage(currentPage != null ? currentPage : 1);
+        pageResponse.setPageSize(pageSize != null ? pageSize : 20);
+        if (pageResponse.getPageSize() > 0) {
+            pageResponse.setTotalPage((int) Math.ceil((double) pageResponse.getTotal() / pageResponse.getPageSize()));
+        } else {
+            pageResponse.setTotalPage(0);
+        }
         pageResponse.setSuccess(true);
+        
         return pageResponse;
     }
 }

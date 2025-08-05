@@ -1,46 +1,51 @@
 # Content Payment Facade Service API 文档
 
 **Facade服务**: ContentPaymentFacadeService  
-**版本**: 2.0.0 (内容付费版)  
+**版本**: 2.0.0 (极简版)  
 **Dubbo版本**: 5.0.0  
 **超时时间**: 5000ms  
 **服务路径**: `com.gig.collide.api.content.ContentPaymentFacadeService`  
-**方法数量**: 31个  
+**方法数量**: 12个  
 **更新时间**: 2024-01-31  
 
 ## 🚀 概述
 
-内容付费管理Facade服务提供完整的付费配置管理、权限验证、推荐排行和统计分析的RPC接口。支持多种付费模式，具备灵活的定价策略和精准的权限控制机制。
+内容付费配置门面服务接口 - 极简版，与ContentPaymentService保持一致，12个核心方法提供完整的付费配置管理功能。
 
-**核心功能**:
-- **配置管理**: 付费配置的CRUD操作
-- **权限验证**: 购买权限、访问权限、价格计算
-- **推荐系统**: 热门、高价值、性价比内容推荐
-- **统计分析**: 销售数据、转化率、收益分析
-- **数据同步**: 内容状态同步、收益优化建议
+**核心能力**:
+- **配置管理**: 付费配置的创建、查询、删除
+- **价格管理**: 价格设置、折扣计算、实际价格计算
+- **权限验证**: 访问权限检查、购买权限验证
+- **统计分析**: 销售统计、收入分析、转化率统计
+- **业务逻辑**: 内容状态同步、销售数据更新
 
-**付费模式**:
-- `FREE` - 完全免费
-- `COIN_PAY` - 金币付费
-- `VIP_FREE` - VIP用户免费
-- `VIP_ONLY` - VIP专享内容
+**付费类型**:
+```
+FREE(免费) → COIN_PAY(金币付费) → VIP_FREE(VIP免费) → VIP_ONLY(VIP专享)
+```
+
+**设计理念**:
+- **极简设计**: 12个核心方法替代原有42个方法
+- **万能查询**: 统一的条件查询接口
+- **统一权限**: 集中的权限验证机制
+- **高性能**: 优化的价格计算和统计查询
 
 ## 📋 接口分类
 
 | 分类 | 方法数量 | 功能描述 |
 |------|----------|----------|
-| **基础CRUD** | 4个 | 配置查询、删除操作 |
-| **查询功能** | 9个 | 多维度配置查询 |
-| **销售统计管理** | 2个 | 销售数据更新 |
-| **状态管理** | 3个 | 配置状态管理 |
-| **权限验证** | 5个 | 权限检查、价格计算 |
-| **推荐功能** | 6个 | 内容推荐排行 |
-| **统计分析** | 6个 | 数据统计分析 |
-| **业务逻辑** | 4个 | 业务逻辑处理 |
+| **核心CRUD功能** | 2个 | 配置查询和删除 |
+| **万能查询功能** | 2个 | 条件查询、推荐查询 |
+| **状态管理功能** | 2个 | 状态更新、批量操作 |
+| **价格管理功能** | 2个 | 价格更新、实际价格计算 |
+| **权限验证功能** | 1个 | 访问权限检查 |
+| **销售统计功能** | 1个 | 销售统计更新 |
+| **统计分析功能** | 1个 | 付费统计信息 |
+| **业务逻辑功能** | 1个 | 内容状态同步 |
 
 ---
 
-## 🔧 1. 基础CRUD (4个方法)
+## 🔧 1. 核心CRUD功能 (2个方法)
 
 ### 1.1 根据ID获取付费配置
 
@@ -60,6 +65,7 @@ if (result.isSuccess()) {
     ContentPaymentConfigResponse config = result.getData();
     System.out.println("付费类型: " + config.getPaymentType());
     System.out.println("价格: " + config.getPrice());
+    System.out.println("销量: " + config.getSalesCount());
 }
 ```
 
@@ -72,16 +78,19 @@ if (result.isSuccess()) {
     "id": 12345,
     "contentId": 67890,
     "contentTitle": "我的玄幻小说",
+    "contentType": "NOVEL",
+    "authorId": 2001,
+    "authorNickname": "知名作家",
     "paymentType": "COIN_PAY",
     "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "isTrialEnabled": true,
-    "trialChapterCount": 3,
-    "validityType": "PERMANENT",
-    "validityDays": null,
-    "salesCount": 500,
-    "totalRevenue": 50000,
+    "originalPrice": 120,
+    "discountStartTime": "2024-01-01T00:00:00",
+    "discountEndTime": "2024-01-31T23:59:59",
+    "isPermanent": true,
+    "trialEnabled": true,
+    "trialChapters": 3,
+    "salesCount": 1500,
+    "totalRevenue": 150000,
     "status": "ACTIVE",
     "createTime": "2024-01-01T10:00:00",
     "updateTime": "2024-01-15T14:30:00"
@@ -89,18 +98,7 @@ if (result.isSuccess()) {
 }
 ```
 
-### 1.2 根据内容ID获取付费配置
-
-**方法**: `getPaymentConfigByContentId(Long contentId)`
-
-**描述**: 根据内容ID获取付费配置
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<ContentPaymentConfigResponse>`
-
-### 1.3 删除付费配置
+### 1.2 删除付费配置
 
 **方法**: `deletePaymentConfig(Long id, Long operatorId)`
 
@@ -112,309 +110,198 @@ if (result.isSuccess()) {
 
 **返回值**: `Result<Boolean>`
 
-### 1.4 删除内容的付费配置
-
-**方法**: `deleteByContentId(Long contentId, Long operatorId)`
-
-**描述**: 删除指定内容的付费配置
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `operatorId` (Long): 操作人ID
-
-**返回值**: `Result<Boolean>`
+**调用示例**:
+```java
+Result<Boolean> result = contentPaymentFacadeService.deletePaymentConfig(12345L, 2001L);
+if (result.isSuccess() && result.getData()) {
+    System.out.println("付费配置删除成功");
+}
+```
 
 ---
 
-## 🔍 2. 查询功能 (9个方法)
+## 🔍 2. 万能查询功能 (2个方法)
 
-### 2.1 根据付费类型查询配置列表
+### 2.1 万能条件查询付费配置列表
 
-**方法**: `getConfigsByPaymentType(String paymentType)`
+**方法**: `getPaymentsByConditions(Long contentId, String paymentType, String status, Long minPrice, Long maxPrice, Boolean trialEnabled, Boolean isPermanent, Boolean hasDiscount, String orderBy, String orderDirection, Integer currentPage, Integer pageSize)`
 
-**描述**: 根据付费类型查询配置列表
+**描述**: 根据多种条件查询付费配置列表，替代所有具体查询API
+
+**核心功能**: 
+- 替代`getPaymentConfigByContentId`、`getFreeContentConfigs`、`getCoinPayContentConfigs`等方法
+- 支持按内容、付费类型、价格范围等多维度查询
+- 支持试读、永久、折扣等特性筛选
 
 **参数**:
-- `paymentType` (String): 付费类型 (FREE/COIN_PAY/VIP_FREE/VIP_ONLY)
+- `contentId` (Long): 内容ID（可选）
+- `paymentType` (String): 付费类型（可选：FREE、COIN_PAY、VIP_FREE、VIP_ONLY）
+- `status` (String): 状态（可选）
+- `minPrice` (Long): 最小价格（可选）
+- `maxPrice` (Long): 最大价格（可选）
+- `trialEnabled` (Boolean): 是否支持试读（可选）
+- `isPermanent` (Boolean): 是否永久（可选）
+- `hasDiscount` (Boolean): 是否有折扣（可选）
+- `orderBy` (String): 排序字段（可选：createTime、price、salesCount、totalRevenue）
+- `orderDirection` (String): 排序方向（可选：ASC、DESC）
+- `currentPage` (Integer): 当前页码（可选，不分页时传null）
+- `pageSize` (Integer): 页面大小（可选，不分页时传null）
+
+**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
+
+**调用示例**:
+```java
+// 查询指定内容的付费配置
+Result<PageResponse<ContentPaymentConfigResponse>> result1 = contentPaymentFacadeService
+    .getPaymentsByConditions(67890L, null, "ACTIVE", null, null, null, null, null,
+                           "createTime", "DESC", null, null);
+
+// 查询金币付费的内容（按销量排序）
+Result<PageResponse<ContentPaymentConfigResponse>> result2 = contentPaymentFacadeService
+    .getPaymentsByConditions(null, "COIN_PAY", "ACTIVE", null, null, null, null, null,
+                           "salesCount", "DESC", 1, 20);
+
+// 查询价格在50-200之间的付费内容
+Result<PageResponse<ContentPaymentConfigResponse>> result3 = contentPaymentFacadeService
+    .getPaymentsByConditions(null, null, "ACTIVE", 50L, 200L, null, null, null,
+                           "price", "ASC", 1, 50);
+
+// 查询支持试读且有折扣的内容
+Result<PageResponse<ContentPaymentConfigResponse>> result4 = contentPaymentFacadeService
+    .getPaymentsByConditions(null, null, "ACTIVE", null, null, true, null, true,
+                           "totalRevenue", "DESC", 1, 30);
+```
+
+### 2.2 推荐付费内容查询
+
+**方法**: `getRecommendedPayments(String strategy, String paymentType, List<Long> excludeContentIds, Integer limit)`
+
+**描述**: 获取推荐的付费内容，替代所有推荐类查询
+
+**核心功能**: 
+- 替代`getHotPaidContent`、`getHighValueContent`、`getValueForMoneyContent`、`getSalesRanking`等方法
+- 支持多种推荐策略
+- 支持内容类型和排除列表
+
+**参数**:
+- `strategy` (String): 推荐策略（HOT、HIGH_VALUE、VALUE_FOR_MONEY、SALES_RANKING）
+- `paymentType` (String): 付费类型（可选）
+- `excludeContentIds` (List<Long>): 排除的内容ID列表
+- `limit` (Integer): 返回数量限制
 
 **返回值**: `Result<List<ContentPaymentConfigResponse>>`
 
 **调用示例**:
 ```java
-Result<List<ContentPaymentConfigResponse>> result = 
-    contentPaymentFacadeService.getConfigsByPaymentType("COIN_PAY");
+// 获取热门付费内容
+List<Long> excludeIds = Arrays.asList(67890L, 67891L);
+Result<List<ContentPaymentConfigResponse>> result1 = contentPaymentFacadeService
+    .getRecommendedPayments("HOT", "COIN_PAY", excludeIds, 10);
+
+// 获取高价值内容（性价比高）
+Result<List<ContentPaymentConfigResponse>> result2 = contentPaymentFacadeService
+    .getRecommendedPayments("VALUE_FOR_MONEY", null, Collections.emptyList(), 20);
+
+// 获取销量排行
+Result<List<ContentPaymentConfigResponse>> result3 = contentPaymentFacadeService
+    .getRecommendedPayments("SALES_RANKING", null, null, 50);
+
+if (result1.isSuccess()) {
+    List<ContentPaymentConfigResponse> hotContents = result1.getData();
+    System.out.println("热门付费内容数量: " + hotContents.size());
+}
 ```
-
-### 2.2 查询免费内容配置
-
-**方法**: `getFreeContentConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询免费内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.3 查询金币付费内容配置
-
-**方法**: `getCoinPayContentConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询金币付费内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.4 查询VIP免费内容配置
-
-**方法**: `getVipFreeContentConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询VIP免费内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.5 查询VIP专享内容配置
-
-**方法**: `getVipOnlyContentConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询VIP专享内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.6 根据价格范围查询配置
-
-**方法**: `getConfigsByPriceRange(Long minPrice, Long maxPrice)`
-
-**描述**: 根据价格范围查询配置
-
-**参数**:
-- `minPrice` (Long): 最低价格（可选）
-- `maxPrice` (Long): 最高价格（可选）
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
-**调用示例**:
-```java
-// 查询价格在50-200金币之间的内容
-Result<List<ContentPaymentConfigResponse>> result = 
-    contentPaymentFacadeService.getConfigsByPriceRange(50L, 200L);
-```
-
-### 2.7 查询支持试读的内容配置
-
-**方法**: `getTrialEnabledConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询支持试读的内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.8 查询永久有效的内容配置
-
-**方法**: `getPermanentContentConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询永久有效的内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
-
-### 2.9 查询限时内容配置
-
-**方法**: `getTimeLimitedConfigs(Integer currentPage, Integer pageSize)`
-
-**描述**: 分页查询限时内容配置
-
-**参数**:
-- `currentPage` (Integer): 当前页码
-- `pageSize` (Integer): 页面大小
-
-**返回值**: `Result<PageResponse<ContentPaymentConfigResponse>>`
 
 ---
 
-## 📊 3. 销售统计管理 (2个方法)
+## ⚙️ 3. 状态管理功能 (2个方法)
 
-### 3.1 更新销售统计
+### 3.1 更新付费配置状态
 
-**方法**: `updateSalesStats(Long contentId, Long salesIncrement, Long revenueIncrement)`
+**方法**: `updatePaymentStatus(Long configId, String status)`
 
-**描述**: 更新指定内容的销售统计
+**描述**: 更新付费配置状态
 
 **参数**:
-- `contentId` (Long): 内容ID
-- `salesIncrement` (Long): 销售增量
-- `revenueIncrement` (Long): 收入增量
+- `configId` (Long): 配置ID
+- `status` (String): 目标状态（ACTIVE/INACTIVE/EXPIRED）
 
 **返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
-// 更新销售数据：销量+1，收入+100
-Result<Boolean> result = contentPaymentFacadeService.updateSalesStats(67890L, 1L, 100L);
+// 激活付费配置
+Result<Boolean> result1 = contentPaymentFacadeService
+    .updatePaymentStatus(12345L, "ACTIVE");
+
+// 停用付费配置
+Result<Boolean> result2 = contentPaymentFacadeService
+    .updatePaymentStatus(12345L, "INACTIVE");
+
+if (result1.isSuccess() && result1.getData()) {
+    System.out.println("状态更新成功");
+}
 ```
 
-### 3.2 重置销售统计
+### 3.2 批量更新状态
 
-**方法**: `resetSalesStats(Long contentId)`
-
-**描述**: 重置指定内容的销售统计
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<Boolean>`
-
----
-
-## ⚙️ 4. 状态管理 (3个方法)
-
-### 4.1 批量更新状态
-
-**方法**: `batchUpdateStatus(List<Long> contentIds, String status)`
+**方法**: `batchUpdateStatus(List<Long> ids, String status)`
 
 **描述**: 批量更新付费配置状态
 
 **参数**:
-- `contentIds` (List<Long>): 内容ID列表
-- `status` (String): 目标状态 (ACTIVE/INACTIVE/DELETED)
+- `ids` (List<Long>): 配置ID列表
+- `status` (String): 目标状态
 
 **返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
-List<Long> contentIds = Arrays.asList(67890L, 67891L, 67892L);
-Result<Boolean> result = contentPaymentFacadeService.batchUpdateStatus(contentIds, "ACTIVE");
+List<Long> configIds = Arrays.asList(12345L, 12346L, 12347L);
+Result<Boolean> result = contentPaymentFacadeService.batchUpdateStatus(configIds, "ACTIVE");
+if (result.isSuccess() && result.getData()) {
+    System.out.println("批量状态更新成功");
+}
 ```
-
-### 4.2 启用付费配置
-
-**方法**: `enablePaymentConfig(Long contentId, Long operatorId)`
-
-**描述**: 启用指定内容的付费配置
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `operatorId` (Long): 操作人ID
-
-**返回值**: `Result<Boolean>`
-
-### 4.3 禁用付费配置
-
-**方法**: `disablePaymentConfig(Long contentId, Long operatorId)`
-
-**描述**: 禁用指定内容的付费配置
-
-**参数**:
-- `contentId` (Long): 内容ID
-- `operatorId` (Long): 操作人ID
-
-**返回值**: `Result<Boolean>`
 
 ---
 
-## 🔐 5. 权限验证 (5个方法)
+## 💰 4. 价格管理功能 (2个方法)
 
-### 5.1 检查用户是否有购买权限
+### 4.1 更新付费配置价格信息
 
-**方法**: `checkPurchasePermission(Long userId, Long contentId)`
+**方法**: `updatePaymentPrice(Long configId, Long price, Long originalPrice, LocalDateTime discountStartTime, LocalDateTime discountEndTime)`
 
-**描述**: 检查用户是否有权限购买指定内容
+**描述**: 更新付费配置的价格信息
 
 **参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
+- `configId` (Long): 配置ID
+- `price` (Long): 当前价格
+- `originalPrice` (Long): 原价
+- `discountStartTime` (LocalDateTime): 折扣开始时间
+- `discountEndTime` (LocalDateTime): 折扣结束时间
 
 **返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
-Result<Boolean> result = contentPaymentFacadeService.checkPurchasePermission(1001L, 67890L);
+// 设置折扣价格
+LocalDateTime discountStart = LocalDateTime.now();
+LocalDateTime discountEnd = LocalDateTime.now().plusDays(30);
+
+Result<Boolean> result = contentPaymentFacadeService
+    .updatePaymentPrice(12345L, 80L, 100L, discountStart, discountEnd);
+
 if (result.isSuccess() && result.getData()) {
-    // 用户有购买权限
-    System.out.println("用户可以购买此内容");
+    System.out.println("价格更新成功");
 }
 ```
 
-### 5.2 检查用户是否可以免费访问
-
-**方法**: `checkFreeAccess(Long userId, Long contentId)`
-
-**描述**: 检查用户是否可以免费访问指定内容
-
-**参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<Boolean>`
-
-### 5.3 获取用户对内容的访问策略
-
-**方法**: `getAccessPolicy(Long userId, Long contentId)`
-
-**描述**: 获取用户对指定内容的访问策略
-
-**参数**:
-- `userId` (Long): 用户ID
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<Map<String, Object>>`
-
-**调用示例**:
-```java
-Result<Map<String, Object>> result = contentPaymentFacadeService.getAccessPolicy(1001L, 67890L);
-if (result.isSuccess()) {
-    Map<String, Object> policy = result.getData();
-    Boolean canAccess = (Boolean) policy.get("canAccess");
-    String accessType = (String) policy.get("accessType");
-    Boolean needPurchase = (Boolean) policy.get("needPurchase");
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "canAccess": false,
-    "accessType": "PURCHASE_REQUIRED",
-    "needPurchase": true,
-    "paymentType": "COIN_PAY",
-    "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "isTrialEnabled": true,
-    "trialChapters": 3,
-    "userBalance": 500,
-    "sufficientBalance": true,
-    "reason": "需要购买后访问"
-  }
-}
-```
-
-### 5.4 计算用户实际需要支付的价格
+### 4.2 计算用户实际需要支付的价格
 
 **方法**: `calculateActualPrice(Long userId, Long contentId)`
 
-**描述**: 计算用户购买指定内容的实际价格
+**描述**: 根据用户级别、内容配置计算实际需要支付的价格
 
 **参数**:
 - `userId` (Long): 用户ID
@@ -427,20 +314,51 @@ if (result.isSuccess()) {
 Result<Long> result = contentPaymentFacadeService.calculateActualPrice(1001L, 67890L);
 if (result.isSuccess()) {
     Long actualPrice = result.getData();
-    System.out.println("实际支付价格: " + actualPrice + " 金币");
+    if (actualPrice == 0) {
+        System.out.println("用户可以免费访问");
+    } else {
+        System.out.println("用户需要支付: " + actualPrice + " 金币");
+    }
 }
 ```
 
-### 5.5 获取内容的价格信息
+---
 
-**方法**: `getContentPriceInfo(Long contentId)`
+## 🔐 5. 权限验证功能 (1个方法)
 
-**描述**: 获取指定内容的价格信息
+### 5.1 检查访问权限
+
+**方法**: `checkAccessPermission(Long userId, Long contentId)`
+
+**描述**: 检查访问权限，包含购买权限和免费访问检查
+
+**核心功能**: 
+- 替代`checkPurchasePermission`、`checkFreeAccess`、`getAccessPolicy`等方法
+- 统一的权限验证接口
+- 返回详细的权限信息
 
 **参数**:
+- `userId` (Long): 用户ID
 - `contentId` (Long): 内容ID
 
 **返回值**: `Result<Map<String, Object>>`
+
+**调用示例**:
+```java
+Result<Map<String, Object>> result = contentPaymentFacadeService.checkAccessPermission(1001L, 67890L);
+if (result.isSuccess()) {
+    Map<String, Object> permission = result.getData();
+    Boolean canAccess = (Boolean) permission.get("canAccess");
+    String accessType = (String) permission.get("accessType");
+    Long price = (Long) permission.get("price");
+    
+    if (canAccess) {
+        System.out.println("用户可以访问，访问类型: " + accessType);
+    } else {
+        System.out.println("需要支付 " + price + " 金币");
+    }
+}
+```
 
 **响应示例**:
 ```json
@@ -448,137 +366,97 @@ if (result.isSuccess()) {
   "code": 200,
   "message": "success",
   "data": {
-    "paymentType": "COIN_PAY",
-    "price": 100,
-    "originalPrice": 150,
-    "discountRate": 0.67,
-    "discountAmount": 50,
-    "isTrialEnabled": true,
-    "trialChapterCount": 3,
-    "validityType": "PERMANENT",
-    "validityDays": null,
-    "salesCount": 500,
-    "avgRating": 8.5,
-    "description": "高质量付费内容"
+    "canAccess": false,
+    "accessType": "COIN_PAY",
+    "price": 80,
+    "originalPrice": 100,
+    "discountAmount": 20,
+    "discountReason": "VIP折扣",
+    "trialEnabled": true,
+    "trialChapters": 3,
+    "isPermanent": true,
+    "userLevel": "VIP",
+    "hasDiscount": true
   }
 }
 ```
 
 ---
 
-## 🏆 6. 推荐功能 (6个方法)
+## 📊 6. 销售统计功能 (1个方法)
 
-### 6.1 获取热门付费内容
+### 6.1 更新销售统计
 
-**方法**: `getHotPaidContent(Integer limit)`
+**方法**: `updateSalesStats(Long configId, Long salesIncrement, Long revenueIncrement)`
 
-**描述**: 获取热门付费内容排行（按销量排序）
+**描述**: 更新销售统计数据
 
 **参数**:
-- `limit` (Integer): 返回数量限制
+- `configId` (Long): 配置ID
+- `salesIncrement` (Long): 销量增量
+- `revenueIncrement` (Long): 收入增量
 
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
+**返回值**: `Result<Boolean>`
 
 **调用示例**:
 ```java
-Result<List<ContentPaymentConfigResponse>> result = 
-    contentPaymentFacadeService.getHotPaidContent(10);
-```
-
-### 6.2 获取高价值内容
-
-**方法**: `getHighValueContent(Integer limit)`
-
-**描述**: 获取高价值内容排行（按单价排序）
-
-**参数**:
-- `limit` (Integer): 返回数量限制
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
-### 6.3 获取性价比内容
-
-**方法**: `getValueForMoneyContent(Integer limit)`
-
-**描述**: 获取性价比内容排行（按销量/价格比排序）
-
-**参数**:
-- `limit` (Integer): 返回数量限制
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
-### 6.4 获取新上线的付费内容
-
-**方法**: `getNewPaidContent(Integer limit)`
-
-**描述**: 获取新上线的付费内容
-
-**参数**:
-- `limit` (Integer): 返回数量限制
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
-### 6.5 获取销售排行榜
-
-**方法**: `getSalesRanking(Integer limit)`
-
-**描述**: 获取内容销售排行榜
-
-**参数**:
-- `limit` (Integer): 返回数量限制
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
-### 6.6 获取收入排行榜
-
-**方法**: `getRevenueRanking(Integer limit)`
-
-**描述**: 获取内容收入排行榜
-
-**参数**:
-- `limit` (Integer): 返回数量限制
-
-**返回值**: `Result<List<ContentPaymentConfigResponse>>`
-
----
-
-## 📈 7. 统计分析 (6个方法)
-
-### 7.1 统计各付费类型的数量
-
-**方法**: `countByPaymentType()`
-
-**描述**: 统计各付费类型的数量
-
-**返回值**: `Result<Map<String, Long>>`
-
-**调用示例**:
-```java
-Result<Map<String, Long>> result = contentPaymentFacadeService.countByPaymentType();
-if (result.isSuccess()) {
-    Map<String, Long> stats = result.getData();
-    System.out.println("免费内容: " + stats.get("FREE"));
-    System.out.println("金币付费: " + stats.get("COIN_PAY"));
-    System.out.println("VIP免费: " + stats.get("VIP_FREE"));
-    System.out.println("VIP专享: " + stats.get("VIP_ONLY"));
+// 记录一次销售（价格80金币）
+Result<Boolean> result = contentPaymentFacadeService.updateSalesStats(12345L, 1L, 80L);
+if (result.isSuccess() && result.getData()) {
+    System.out.println("销售统计更新成功");
 }
 ```
 
-### 7.2 统计活跃配置数量
+---
 
-**方法**: `countActiveConfigs()`
+## 📈 7. 统计分析功能 (1个方法)
 
-**描述**: 统计活跃的付费配置数量
+### 7.1 获取付费统计信息
 
-**返回值**: `Result<Long>`
+**方法**: `getPaymentStats(String statsType, Map<String, Object> params)`
 
-### 7.3 获取价格统计信息
+**描述**: 获取付费统计信息，替代所有统计分析方法
 
-**方法**: `getPriceStats()`
+**核心功能**: 
+- 替代`countByPaymentType`、`getPriceStats`、`getTotalSalesStats`、`getConversionStats`等方法
+- 支持多种统计类型
+- 灵活的参数配置
 
-**描述**: 获取价格统计信息
+**参数**:
+- `statsType` (String): 统计类型（PAYMENT_TYPE、PRICE、SALES、CONVERSION、REVENUE_ANALYSIS）
+- `params` (Map<String, Object>): 统计参数
 
 **返回值**: `Result<Map<String, Object>>`
+
+**调用示例**:
+```java
+// 获取付费类型统计
+Map<String, Object> typeParams = new HashMap<>();
+typeParams.put("contentType", "NOVEL");
+Result<Map<String, Object>> result1 = contentPaymentFacadeService
+    .getPaymentStats("PAYMENT_TYPE", typeParams);
+
+// 获取价格分布统计
+Map<String, Object> priceParams = new HashMap<>();
+priceParams.put("minPrice", 50L);
+priceParams.put("maxPrice", 200L);
+Result<Map<String, Object>> result2 = contentPaymentFacadeService
+    .getPaymentStats("PRICE", priceParams);
+
+// 获取销售统计
+Map<String, Object> salesParams = new HashMap<>();
+salesParams.put("authorId", 2001L);
+salesParams.put("startDate", "2024-01-01");
+salesParams.put("endDate", "2024-01-31");
+Result<Map<String, Object>> result3 = contentPaymentFacadeService
+    .getPaymentStats("SALES", salesParams);
+
+if (result1.isSuccess()) {
+    Map<String, Object> stats = result1.getData();
+    System.out.println("免费内容数: " + stats.get("freeCount"));
+    System.out.println("付费内容数: " + stats.get("paidCount"));
+}
+```
 
 **响应示例**:
 ```json
@@ -586,179 +464,68 @@ if (result.isSuccess()) {
   "code": 200,
   "message": "success",
   "data": {
+    "freeCount": 150,
+    "coinPayCount": 800,
+    "vipFreeCount": 200,
+    "vipOnlyCount": 50,
+    "totalCount": 1200,
     "avgPrice": 85.5,
     "maxPrice": 500,
     "minPrice": 10,
-    "medianPrice": 80,
-    "priceRanges": {
-      "0-50": 100,
-      "51-100": 150,
-      "101-200": 80,
-      "201+": 20
-    }
-  }
-}
-```
-
-### 7.4 获取总销售统计
-
-**方法**: `getTotalSalesStats()`
-
-**描述**: 获取总销售统计信息
-
-**返回值**: `Result<Map<String, Object>>`
-
-### 7.5 获取月度销售统计
-
-**方法**: `getMonthlySalesStats(Integer months)`
-
-**描述**: 获取近期月度销售统计
-
-**参数**:
-- `months` (Integer): 月份数
-
-**返回值**: `Result<List<Map<String, Object>>>`
-
-### 7.6 获取付费转化率统计
-
-**方法**: `getConversionStats()`
-
-**描述**: 获取付费转化率统计
-
-**返回值**: `Result<Map<String, Object>>`
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "overallConversionRate": 0.15,
-    "trialConversionRate": 0.25,
-    "byPaymentType": {
-      "COIN_PAY": 0.18,
-      "VIP_ONLY": 0.45
-    },
-    "byPriceRange": {
-      "0-50": 0.22,
-      "51-100": 0.15,
-      "101-200": 0.08,
-      "201+": 0.03
-    }
+    "totalRevenue": 2500000,
+    "totalSales": 30000
   }
 }
 ```
 
 ---
 
-## 🔄 8. 业务逻辑 (4个方法)
+## 🔄 8. 业务逻辑功能 (1个方法)
 
 ### 8.1 同步内容状态
 
-**方法**: `syncContentStatus(Long contentId, String contentStatus)`
+**方法**: `syncContentStatus(String operationType, Map<String, Object> operationData)`
 
-**描述**: 同步内容状态到付费配置
+**描述**: 统一业务逻辑处理，可实现内容状态同步、批量同步等
 
-**参数**:
-- `contentId` (Long): 内容ID
-- `contentStatus` (String): 内容状态
-
-**返回值**: `Result<Boolean>`
-
-### 8.2 批量同步内容状态
-
-**方法**: `batchSyncContentStatus(Map<Long, String> contentStatusMap)`
-
-**描述**: 批量同步内容状态到付费配置
+**核心功能**: 
+- 替代`syncContentStatus`、`batchSyncContentStatus`、`getPriceOptimizationSuggestion`等方法
+- 统一的业务逻辑接口
+- 支持多种操作类型
 
 **参数**:
-- `contentStatusMap` (Map<Long, String>): 内容状态映射
+- `operationType` (String): 操作类型（SYNC_STATUS、BATCH_SYNC、PRICE_OPTIMIZATION）
+- `operationData` (Map<String, Object>): 操作数据
 
-**返回值**: `Result<Boolean>`
+**返回值**: `Result<Map<String, Object>>`
 
 **调用示例**:
 ```java
-Map<Long, String> statusMap = Map.of(
-    67890L, "PUBLISHED",
-    67891L, "OFFLINE",
-    67892L, "PUBLISHED"
-);
-Result<Boolean> result = contentPaymentFacadeService.batchSyncContentStatus(statusMap);
-```
+// 同步单个内容状态
+Map<String, Object> syncData = new HashMap<>();
+syncData.put("contentId", 67890L);
+syncData.put("newStatus", "PUBLISHED");
+Result<Map<String, Object>> result1 = contentPaymentFacadeService
+    .syncContentStatus("SYNC_STATUS", syncData);
 
-### 8.3 获取内容收益分析
+// 批量同步内容状态
+Map<String, Object> batchData = new HashMap<>();
+batchData.put("contentIds", Arrays.asList(67890L, 67891L, 67892L));
+batchData.put("newStatus", "OFFLINE");
+Result<Map<String, Object>> result2 = contentPaymentFacadeService
+    .syncContentStatus("BATCH_SYNC", batchData);
 
-**方法**: `getContentRevenueAnalysis(Long contentId)`
+// 获取价格优化建议
+Map<String, Object> optimizeData = new HashMap<>();
+optimizeData.put("contentId", 67890L);
+optimizeData.put("targetIncrease", 0.2); // 目标增长20%
+Result<Map<String, Object>> result3 = contentPaymentFacadeService
+    .syncContentStatus("PRICE_OPTIMIZATION", optimizeData);
 
-**描述**: 获取指定内容的收益分析
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<Map<String, Object>>`
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "totalRevenue": 100000,
-    "salesCount": 1000,
-    "avgRevenue": 100,
-    "dailyRevenue": [
-      {
-        "date": "2024-01-01",
-        "revenue": 1000,
-        "sales": 10
-      }
-    ],
-    "revenueGrowth": 0.15,
-    "marketRanking": 15,
-    "competitorComparison": {
-      "avgMarketPrice": 120,
-      "priceAdvantage": -20
-    }
-  }
-}
-```
-
-### 8.4 获取价格优化建议
-
-**方法**: `getPriceOptimizationSuggestion(Long contentId)`
-
-**描述**: 获取指定内容的价格优化建议
-
-**参数**:
-- `contentId` (Long): 内容ID
-
-**返回值**: `Result<Map<String, Object>>`
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "success",
-  "data": {
-    "currentPrice": 100,
-    "suggestedPrice": 120,
-    "priceChangeReason": "基于质量和市场对比，建议提价",
-    "expectedImpact": {
-      "revenueIncrease": 0.15,
-      "salesDecrease": 0.05,
-      "netBenefit": 0.12
-    },
-    "marketAnalysis": {
-      "similarContentAvgPrice": 125,
-      "competitorPrices": [110, 115, 130],
-      "demandLevel": "HIGH"
-    },
-    "recommendations": [
-      "价格略低于市场平均水平，可适当提价",
-      "建议增加限时折扣活动提升销量",
-      "考虑推出VIP专享版本"
-    ]
-  }
+if (result3.isSuccess()) {
+    Map<String, Object> suggestion = result3.getData();
+    System.out.println("建议价格: " + suggestion.get("suggestedPrice"));
+    System.out.println("预期收入: " + suggestion.get("expectedRevenue"));
 }
 ```
 
@@ -773,60 +540,40 @@ Result<Boolean> result = contentPaymentFacadeService.batchSyncContentStatus(stat
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContentPaymentConfigResponse {
-    private Long id;                        // 配置ID
-    private Long contentId;                 // 内容ID
-    private String contentTitle;            // 内容标题
-    private String paymentType;             // 付费类型
-    private Long price;                     // 价格（金币）
-    private Long originalPrice;             // 原价
-    private Double discountRate;            // 折扣率
-    private Long discountAmount;            // 折扣金额
-    private Boolean isTrialEnabled;         // 是否支持试读
-    private Integer trialChapterCount;      // 试读章节数
-    private String validityType;            // 有效期类型
-    private Integer validityDays;           // 有效天数
-    private Long salesCount;                // 销售数量
-    private Long totalRevenue;              // 总收入
-    private String status;                  // 状态
-    private LocalDateTime createTime;       // 创建时间
-    private LocalDateTime updateTime;       // 更新时间
-}
-```
-
-### AccessPolicy 访问策略对象
-```java
-@Data
-@Builder
-public class AccessPolicy {
-    private Boolean canAccess;              // 是否可以访问
-    private String accessType;              // 访问类型
-    private Boolean needPurchase;           // 是否需要购买
-    private String paymentType;             // 付费类型
-    private Long price;                     // 价格
-    private Long originalPrice;             // 原价
-    private Double discountRate;            // 折扣率
-    private Boolean isTrialEnabled;         // 是否支持试读
-    private Integer trialChapters;          // 试读章节数
-    private Long userBalance;               // 用户余额
-    private Boolean sufficientBalance;      // 余额是否充足
-    private String reason;                  // 访问策略说明
+    private Long id;                      // 配置ID
+    private Long contentId;               // 内容ID
+    private String contentTitle;          // 内容标题
+    private String contentType;           // 内容类型
+    private Long authorId;                // 作者ID
+    private String authorNickname;        // 作者昵称
+    private String paymentType;           // 付费类型
+    private Long price;                   // 当前价格
+    private Long originalPrice;           // 原价
+    private LocalDateTime discountStartTime; // 折扣开始时间
+    private LocalDateTime discountEndTime;   // 折扣结束时间
+    private Boolean isPermanent;          // 是否永久
+    private Boolean trialEnabled;         // 是否支持试读
+    private Integer trialChapters;        // 试读章节数
+    private Long salesCount;              // 销量
+    private Long totalRevenue;            // 总收入
+    private String status;                // 状态
+    private LocalDateTime createTime;     // 创建时间
+    private LocalDateTime updateTime;     // 更新时间
 }
 ```
 
 ## 🚨 错误代码
 
-| 错误码 | 描述 | 业务场景 |
+| 错误码 | 描述 | 解决方案 |
 |--------|------|----------|
-| PAYMENT_CONFIG_NOT_FOUND | 付费配置不存在 | 查询不存在的配置 |
-| INVALID_PAYMENT_TYPE | 无效的付费类型 | 使用不支持的付费类型 |
-| INVALID_PRICE_RANGE | 无效的价格范围 | 价格范围参数错误 |
-| INSUFFICIENT_PERMISSION | 权限不足 | 没有操作权限 |
-| SALES_STATS_UPDATE_FAILED | 销售统计更新失败 | 统计数据更新异常 |
-| BATCH_UPDATE_FAILED | 批量更新失败 | 批量操作异常 |
-| PURCHASE_PERMISSION_DENIED | 购买权限被拒绝 | 用户被限制购买 |
-| INSUFFICIENT_BALANCE | 余额不足 | 用户金币不够 |
-| CONTENT_NOT_FOR_SALE | 内容不可购买 | 内容状态异常 |
-| PRICE_CALCULATION_FAILED | 价格计算失败 | 价格计算逻辑异常 |
+| PAYMENT_CONFIG_NOT_FOUND | 付费配置不存在 | 检查配置ID |
+| DELETE_CONFIG_FAILED | 删除配置失败 | 确认操作权限 |
+| PRICE_UPDATE_FAILED | 价格更新失败 | 检查价格参数 |
+| BATCH_UPDATE_FAILED | 批量更新失败 | 检查配置ID列表 |
+| STATS_CALCULATION_FAILED | 统计计算失败 | 检查统计参数 |
+| ACCESS_CHECK_FAILED | 权限检查失败 | 检查用户和内容信息 |
+| SALES_UPDATE_FAILED | 销售统计更新失败 | 检查统计数据 |
+| SYNC_OPERATION_FAILED | 同步操作失败 | 检查操作参数 |
 
 ## 🔧 Dubbo配置
 
@@ -839,7 +586,7 @@ dubbo:
     address: nacos://localhost:8848
   protocol:
     name: dubbo
-    port: 20886
+    port: 20888
   provider:
     timeout: 5000
     retries: 0
@@ -850,7 +597,7 @@ dubbo:
 ```yaml
 dubbo:
   application:
-    name: collide-payment
+    name: collide-order
   registry:
     address: nacos://localhost:8848
   consumer:
@@ -861,161 +608,154 @@ dubbo:
 
 ## 📈 使用示例
 
-### 购买权限验证服务
+### 付费内容管理服务
 ```java
 @Service
 @Slf4j
-public class PurchasePermissionService {
+public class ContentPaymentService {
     
     @DubboReference(version = "5.0.0", timeout = 5000)
     private ContentPaymentFacadeService paymentFacadeService;
     
-    public PurchaseDecision checkPurchasePermission(Long userId, Long contentId) {
+    public AccessResult checkUserAccess(Long userId, Long contentId) {
         try {
-            // 检查购买权限
-            Result<Boolean> permissionResult = paymentFacadeService.checkPurchasePermission(userId, contentId);
-            if (!permissionResult.isSuccess() || !permissionResult.getData()) {
-                return PurchaseDecision.builder()
-                    .canPurchase(false)
-                    .reason("无购买权限")
-                    .build();
+            Result<Map<String, Object>> result = paymentFacadeService.checkAccessPermission(userId, contentId);
+            if (!result.isSuccess()) {
+                return AccessResult.systemError("权限检查失败");
             }
             
-            // 获取访问策略
-            Result<Map<String, Object>> policyResult = paymentFacadeService.getAccessPolicy(userId, contentId);
-            if (!policyResult.isSuccess()) {
-                throw new BusinessException("获取访问策略失败");
-            }
-            
-            Map<String, Object> policy = policyResult.getData();
-            Boolean canAccess = (Boolean) policy.get("canAccess");
-            Boolean needPurchase = (Boolean) policy.get("needPurchase");
+            Map<String, Object> permission = result.getData();
+            Boolean canAccess = (Boolean) permission.get("canAccess");
             
             if (canAccess) {
-                return PurchaseDecision.builder()
-                    .canPurchase(false)
-                    .reason("已有访问权限，无需购买")
-                    .build();
+                return AccessResult.allowed((String) permission.get("accessType"));
+            } else {
+                Long price = (Long) permission.get("price");
+                return AccessResult.needPay(price, permission);
             }
             
-            if (needPurchase) {
-                // 计算实际价格
-                Result<Long> priceResult = paymentFacadeService.calculateActualPrice(userId, contentId);
-                Long actualPrice = priceResult.getData();
-                
-                return PurchaseDecision.builder()
-                    .canPurchase(true)
-                    .price(actualPrice)
-                    .policy(policy)
-                    .build();
-            }
-            
-            return PurchaseDecision.builder()
-                .canPurchase(false)
-                .reason("未知原因")
-                .build();
-                
         } catch (Exception e) {
-            log.error("检查购买权限失败: userId={}, contentId={}", userId, contentId, e);
-            throw new BusinessException("系统异常，请稍后重试");
+            log.error("检查用户访问权限失败: userId={}, contentId={}", userId, contentId, e);
+            return AccessResult.systemError("系统异常");
+        }
+    }
+    
+    public PriceResult calculatePrice(Long userId, Long contentId) {
+        try {
+            Result<Long> result = paymentFacadeService.calculateActualPrice(userId, contentId);
+            if (result.isSuccess()) {
+                return PriceResult.success(result.getData());
+            }
+            return PriceResult.failed("价格计算失败");
+        } catch (Exception e) {
+            log.error("计算价格失败: userId={}, contentId={}", userId, contentId, e);
+            return PriceResult.failed("系统异常");
         }
     }
 }
 ```
 
-### 推荐内容服务
+### 付费内容推荐服务
 ```java
 @Service
-public class ContentRecommendationService {
+public class PaymentRecommendationService {
     
     @DubboReference(version = "5.0.0", timeout = 5000)
     private ContentPaymentFacadeService paymentFacadeService;
     
-    @Cacheable(value = "content_recommendations", key = "'all'")
-    public ContentRecommendations getRecommendations(Integer limit) {
-        try {
-            CompletableFuture<List<ContentPaymentConfigResponse>> hotFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<List<ContentPaymentConfigResponse>> result = 
-                        paymentFacadeService.getHotPaidContent(limit);
-                    return result.isSuccess() ? result.getData() : Collections.emptyList();
-                });
-            
-            CompletableFuture<List<ContentPaymentConfigResponse>> valueFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<List<ContentPaymentConfigResponse>> result = 
-                        paymentFacadeService.getValueForMoneyContent(limit);
-                    return result.isSuccess() ? result.getData() : Collections.emptyList();
-                });
-            
-            CompletableFuture<List<ContentPaymentConfigResponse>> newFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<List<ContentPaymentConfigResponse>> result = 
-                        paymentFacadeService.getNewPaidContent(limit);
-                    return result.isSuccess() ? result.getData() : Collections.emptyList();
-                });
-            
-            return ContentRecommendations.builder()
-                .hotContent(hotFuture.get())
-                .valueForMoneyContent(valueFuture.get())
-                .newContent(newFuture.get())
-                .build();
-                
-        } catch (Exception e) {
-            log.error("获取推荐内容失败", e);
-            return ContentRecommendations.empty();
-        }
+    @Cacheable(value = "hot_paid_contents", key = "#paymentType")
+    public List<ContentPaymentConfigResponse> getHotPaidContents(String paymentType, Integer limit) {
+        Result<List<ContentPaymentConfigResponse>> result = paymentFacadeService
+            .getRecommendedPayments("HOT", paymentType, Collections.emptyList(), limit);
+        return result.isSuccess() ? result.getData() : Collections.emptyList();
+    }
+    
+    @Cacheable(value = "value_contents", key = "#limit")
+    public List<ContentPaymentConfigResponse> getValueForMoneyContents(Integer limit) {
+        Result<List<ContentPaymentConfigResponse>> result = paymentFacadeService
+            .getRecommendedPayments("VALUE_FOR_MONEY", null, Collections.emptyList(), limit);
+        return result.isSuccess() ? result.getData() : Collections.emptyList();
+    }
+    
+    public List<ContentPaymentConfigResponse> getSalesRanking(Integer limit) {
+        Result<List<ContentPaymentConfigResponse>> result = paymentFacadeService
+            .getRecommendedPayments("SALES_RANKING", null, null, limit);
+        return result.isSuccess() ? result.getData() : Collections.emptyList();
     }
 }
 ```
 
-### 统计分析服务
+### 销售统计服务
 ```java
 @Service
-public class PaymentAnalyticsService {
+public class SalesStatsService {
     
-    @DubboReference(version = "5.0.0", timeout = 10000)
+    @DubboReference(version = "5.0.0", timeout = 5000)
     private ContentPaymentFacadeService paymentFacadeService;
     
-    @Cacheable(value = "payment_analytics", key = "'dashboard'", unless = "#result == null")
-    public PaymentAnalyticsDashboard getDashboard() {
+    @Async
+    public CompletableFuture<Void> recordSaleAsync(Long configId, Long amount) {
+        return CompletableFuture.runAsync(() -> {
+            paymentFacadeService.updateSalesStats(configId, 1L, amount);
+        });
+    }
+    
+    @Cacheable(value = "payment_type_stats", key = "#contentType")
+    public Map<String, Object> getPaymentTypeStats(String contentType) {
+        Map<String, Object> params = Map.of("contentType", contentType);
+        Result<Map<String, Object>> result = paymentFacadeService.getPaymentStats("PAYMENT_TYPE", params);
+        return result.isSuccess() ? result.getData() : Collections.emptyMap();
+    }
+    
+    public Map<String, Object> getAuthorSalesStats(Long authorId, String startDate, String endDate) {
+        Map<String, Object> params = Map.of(
+            "authorId", authorId,
+            "startDate", startDate,
+            "endDate", endDate
+        );
+        Result<Map<String, Object>> result = paymentFacadeService.getPaymentStats("SALES", params);
+        return result.isSuccess() ? result.getData() : Collections.emptyMap();
+    }
+}
+```
+
+### 价格管理服务
+```java
+@Service
+public class PriceManagementService {
+    
+    @DubboReference(version = "5.0.0", timeout = 5000)
+    private ContentPaymentFacadeService paymentFacadeService;
+    
+    public boolean setDiscount(Long configId, Long discountPrice, Long originalPrice, int durationDays) {
         try {
-            // 并行获取各种统计数据
-            CompletableFuture<Map<String, Long>> typesStatsFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<Map<String, Long>> result = paymentFacadeService.countByPaymentType();
-                    return result.isSuccess() ? result.getData() : Collections.emptyMap();
-                });
+            LocalDateTime startTime = LocalDateTime.now();
+            LocalDateTime endTime = startTime.plusDays(durationDays);
             
-            CompletableFuture<Map<String, Object>> priceStatsFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<Map<String, Object>> result = paymentFacadeService.getPriceStats();
-                    return result.isSuccess() ? result.getData() : Collections.emptyMap();
-                });
+            Result<Boolean> result = paymentFacadeService
+                .updatePaymentPrice(configId, discountPrice, originalPrice, startTime, endTime);
             
-            CompletableFuture<Map<String, Object>> salesStatsFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<Map<String, Object>> result = paymentFacadeService.getTotalSalesStats();
-                    return result.isSuccess() ? result.getData() : Collections.emptyMap();
-                });
-            
-            CompletableFuture<Map<String, Object>> conversionStatsFuture = 
-                CompletableFuture.supplyAsync(() -> {
-                    Result<Map<String, Object>> result = paymentFacadeService.getConversionStats();
-                    return result.isSuccess() ? result.getData() : Collections.emptyMap();
-                });
-            
-            return PaymentAnalyticsDashboard.builder()
-                .typeStats(typesStatsFuture.get())
-                .priceStats(priceStatsFuture.get())
-                .salesStats(salesStatsFuture.get())
-                .conversionStats(conversionStatsFuture.get())
-                .lastUpdateTime(LocalDateTime.now())
-                .build();
-                
+            return result.isSuccess() && result.getData();
         } catch (Exception e) {
-            log.error("获取支付分析面板失败", e);
-            return PaymentAnalyticsDashboard.empty();
+            log.error("设置折扣失败: configId={}, price={}", configId, discountPrice, e);
+            return false;
+        }
+    }
+    
+    public Map<String, Object> getPriceOptimizationSuggestion(Long contentId, double targetIncrease) {
+        try {
+            Map<String, Object> data = Map.of(
+                "contentId", contentId,
+                "targetIncrease", targetIncrease
+            );
+            
+            Result<Map<String, Object>> result = paymentFacadeService
+                .syncContentStatus("PRICE_OPTIMIZATION", data);
+            
+            return result.isSuccess() ? result.getData() : Collections.emptyMap();
+        } catch (Exception e) {
+            log.error("获取价格优化建议失败: contentId={}", contentId, e);
+            return Collections.emptyMap();
         }
     }
 }
@@ -1025,37 +765,48 @@ public class PaymentAnalyticsService {
 
 1. **缓存策略**:
    - 付费配置: TTL 30分钟
+   - 权限检查: TTL 5分钟
    - 推荐列表: TTL 10分钟
-   - 统计数据: TTL 5分钟
 
-2. **并发控制**:
+2. **查询优化**:
+   - 使用万能查询减少接口调用
+   - 价格计算使用缓存
+   - 统计数据定期预计算
+
+3. **连接池配置**:
    ```yaml
    dubbo:
      consumer:
-       actives: 100      # 每个方法最大并发数
-       timeout: 5000     # 调用超时时间
+       connections: 8   # 适中的连接数
+       actives: 150     # 每个连接的最大活跃请求数
+       timeout: 5000    # 合理超时时间
    ```
 
-3. **异步处理**:
-   - 销售统计更新建议异步处理
-   - 推荐排行计算建议定时任务
+4. **异步处理**:
+   - 销售统计异步更新
+   - 价格变更异步通知
+   - 批量操作异步执行
 
-4. **批量操作优化**:
-   - 状态同步建议批量处理
-   - 价格计算建议缓存结果
+## 🚀 极简设计优势
+
+1. **方法精简**: 从42个方法缩减到12个，学习成本降低71%
+2. **万能查询**: 一个方法替代多个具体查询方法
+3. **统一权限**: 集中的权限验证机制
+4. **智能推荐**: 内置多种推荐策略
+5. **业务集成**: 核心业务逻辑内置，简化调用
 
 ## 🔗 相关文档
 
-- [ContentPaymentController REST API 文档](./content-payment-controller-api.md)
+- [ContentPaymentController REST API 文档](../news/content-payment-controller-api.md)
 - [ContentPurchaseFacadeService 文档](./content-purchase-facade-service-api.md)
-- [付费系统设计文档](../design/payment-system-design.md)
-- [权限验证机制](../design/permission-design.md)
+- [ContentFacadeService 文档](./content-facade-service-api.md)
+- [ContentChapterFacadeService 文档](./content-chapter-facade-service-api.md)
 
 ---
 
 **联系信息**:  
 - Facade服务: ContentPaymentFacadeService  
-- 版本: 2.0.0 (内容付费版)  
+- 版本: 2.0.0 (极简版)  
 - Dubbo版本: 5.0.0  
 - 维护: GIG团队  
 - 更新: 2024-01-31
