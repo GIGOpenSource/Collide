@@ -67,7 +67,7 @@
             AND status = #{status}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -81,7 +81,7 @@
         FROM t_payment
         WHERE pay_method = #{payMethod}
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -147,7 +147,7 @@
         FROM t_payment
         WHERE status = 'success'
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -167,7 +167,7 @@
         FROM t_payment
         WHERE 1=1
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -188,7 +188,7 @@
         FROM t_payment
         WHERE 1=1
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -205,12 +205,12 @@
     <select id="selectLargeAmountPayments" resultType="com.gig.collide.payment.domain.entity.Payment">
         SELECT <include refid="Base_Column_List"/>
         FROM t_payment
-        WHERE amount >= #{minAmount}
+        WHERE amount &gt;= #{minAmount}
         <if test="status != null and status != ''">
             AND status = #{status}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -233,7 +233,7 @@
             AND pay_method = #{payMethod}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -272,7 +272,7 @@
         FROM t_payment
         WHERE 1=1
         <if test="timeRange != null">
-            AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} HOUR)
+            AND create_time &gt;= DATE_SUB(NOW(), INTERVAL #{timeRange} HOUR)
         </if>
         GROUP BY order_id, user_id
         HAVING COUNT(*) &gt; 1
@@ -295,7 +295,7 @@
             AND pay_method = #{payMethod}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}

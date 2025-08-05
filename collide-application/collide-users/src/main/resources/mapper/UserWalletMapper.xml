@@ -27,7 +27,7 @@
         update_time = NOW()
         WHERE user_id = #{userId}
         <if test="!isAdd">
-            AND balance >= #{amount}
+            AND balance &gt;= #{amount}
         </if>
     </update>
 
@@ -44,7 +44,7 @@
         update_time = NOW()
         WHERE user_id = #{userId}
         <if test="!isAdd">
-            AND frozen_amount >= #{amount}
+            AND frozen_amount &gt;= #{amount}
         </if>
     </update>
 
@@ -71,7 +71,7 @@
             total_expense = total_expense + #{amount},
             update_time = NOW()
         WHERE user_id = #{userId}
-          AND balance >= #{amount}
+          AND balance &gt;= #{amount}
           AND status = 'active'
     </update>
 

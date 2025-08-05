@@ -92,10 +92,10 @@
         <if test="minPrice != null">
             <choose>
                 <when test="goodsType == 'content'">
-                    AND coin_price >= #{minPrice}
+                    AND coin_price &gt;= #{minPrice}
                 </when>
                 <otherwise>
-                    AND price >= #{minPrice}
+                    AND price &gt;= #{minPrice}
                 </otherwise>
             </choose>
         </if>
@@ -134,7 +134,7 @@
         SET stock = stock - #{quantity},
             update_time = NOW()
         WHERE id = #{goodsId}
-        AND stock >= #{quantity}
+        AND stock &gt;= #{quantity}
     </update>
 
     <!-- 增加销量 - 使用主键索引 -->
@@ -216,13 +216,13 @@
             AND (name LIKE CONCAT('%', #{nameKeyword}, '%') OR description LIKE CONCAT('%', #{nameKeyword}, '%'))
         </if>
         <if test="minPrice != null">
-            AND price >= #{minPrice}
+            AND price &gt;= #{minPrice}
         </if>
         <if test="maxPrice != null">
             AND price &lt;= #{maxPrice}
         </if>
         <if test="minCoinPrice != null">
-            AND coin_price >= #{minCoinPrice}
+            AND coin_price &gt;= #{minCoinPrice}
         </if>
         <if test="maxCoinPrice != null">
             AND coin_price &lt;= #{maxCoinPrice}

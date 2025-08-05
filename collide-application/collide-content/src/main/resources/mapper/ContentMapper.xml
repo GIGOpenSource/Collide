@@ -33,10 +33,10 @@
                 AND review_status = #{reviewStatus}
             </if>
             <if test="minScore != null">
-                AND score_count > 0 AND (score_total / score_count) >= #{minScore}
+                AND score_count &gt; 0 AND (score_total / score_count) &gt;= #{minScore}
             </if>
-            <if test="timeRange != null and timeRange > 0">
-                AND create_time >= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
+            <if test="timeRange != null and timeRange &gt; 0">
+                AND create_time &gt;= DATE_SUB(NOW(), INTERVAL #{timeRange} DAY)
             </if>
         </where>
         <choose>
@@ -153,7 +153,7 @@
         FROM t_content
         <where>
             AND status = 'PUBLISHED' AND review_status = 'APPROVED'
-            <if test="excludeContentIds != null and excludeContentIds.size() > 0">
+            <if test="excludeContentIds != null and excludeContentIds.size() &gt; 0">
                 AND id NOT IN
                 <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
                     #{contentId}

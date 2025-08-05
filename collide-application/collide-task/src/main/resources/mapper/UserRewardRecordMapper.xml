@@ -333,13 +333,13 @@
 
     <!-- 检查用户是否有待发放奖励（使用数字常量1=pending） -->
     <select id="hasPendingRewards" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_user_reward_record 
+        SELECT COUNT(*) &gt; 0 FROM t_user_reward_record 
         WHERE user_id = #{userId} AND status = 1
     </select>
 
     <!-- 检查任务记录是否已发放奖励（使用数字常量2=success） -->
     <select id="hasRewardGranted" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_user_reward_record 
+        SELECT COUNT(*) &gt; 0 FROM t_user_reward_record 
         WHERE task_record_id = #{taskRecordId} AND status = 2
     </select>
 

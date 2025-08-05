@@ -220,7 +220,7 @@
           </if>
           <if test="queryType == 'popular'">
               GROUP BY target_id, favorite_type
-              HAVING COUNT(*) > 1
+              HAVING COUNT(*) &gt; 1
           </if>
         <choose>
             <when test="orderBy == 'update_time' and orderDirection == 'ASC'">

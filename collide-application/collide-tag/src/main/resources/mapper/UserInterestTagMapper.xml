@@ -63,7 +63,7 @@
         WHERE user_id = #{userId} 
         AND status = 'active'
         <if test="minScore != null">
-            AND interest_score >= #{minScore}
+            AND interest_score &gt;= #{minScore}
         </if>
         ORDER BY interest_score DESC, create_time DESC
     </select>

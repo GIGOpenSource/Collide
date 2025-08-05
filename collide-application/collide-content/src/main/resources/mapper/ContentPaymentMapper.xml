@@ -29,10 +29,10 @@
                 AND status = #{status}
             </if>
             <if test="minPrice != null">
-                AND coin_price >= #{minPrice}
+                AND coin_price &gt;= #{minPrice}
             </if>
             <if test="maxPrice != null">
-                AND coin_price <= #{maxPrice}
+                AND coin_price &lt;= #{maxPrice}
             </if>
             <if test="trialEnabled != null">
                 AND trial_enabled = #{trialEnabled}
@@ -46,7 +46,7 @@
         </where>
         <choose>
             <when test="orderBy == 'price'">
-                ORDER BY coin_price 
+                ORDER BY coin_price
                 <if test="orderDirection != null and orderDirection != ''">
                     ${orderDirection}
                 </if>
@@ -55,7 +55,7 @@
                 </if>
             </when>
             <when test="orderBy == 'salesCount'">
-                ORDER BY total_sales 
+                ORDER BY total_sales
                 <if test="orderDirection != null and orderDirection != ''">
                     ${orderDirection}
                 </if>
@@ -64,7 +64,7 @@
                 </if>
             </when>
             <when test="orderBy == 'createTime'">
-                ORDER BY create_time 
+                ORDER BY create_time
                 <if test="orderDirection != null and orderDirection != ''">
                     ${orderDirection}
                 </if>
@@ -73,7 +73,7 @@
                 </if>
             </when>
             <when test="orderBy == 'revenue'">
-                ORDER BY total_revenue 
+                ORDER BY total_revenue
                 <if test="orderDirection != null and orderDirection != ''">
                     ${orderDirection}
                 </if>
@@ -141,9 +141,9 @@
     <!-- 更新付费配置价格信息 -->
     <update id="updatePaymentPrice">
         UPDATE t_content_payment
-        SET coin_price = #{price}, 
-            original_price = #{originalPrice}, 
-            discount_start_time = #{discountStartTime}, 
+        SET coin_price = #{price},
+            original_price = #{originalPrice},
+            discount_start_time = #{discountStartTime},
             discount_end_time = #{discountEndTime}
         WHERE id = #{id}
         <!-- 使用主键索引 -->

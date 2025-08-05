@@ -31,7 +31,7 @@
             AND is_archived = #{isArchived}
         </if>
         <if test="hasUnread != null and hasUnread == true">
-            AND unread_count > 0
+            AND unread_count &gt; 0
         </if>
         <if test="hasUnread != null and hasUnread == false">
             AND unread_count = 0
@@ -61,7 +61,7 @@
         SELECT * FROM t_message_session
         WHERE user_id = #{userId}
         <if test="sinceTime != null">
-            AND last_message_time >= #{sinceTime}
+            AND last_message_time &gt;= #{sinceTime}
         </if>
         ORDER BY last_message_time DESC
     </select>
@@ -70,7 +70,7 @@
     <!-- 索引使用: idx_unread_sessions_count(user_id, unread_count) - 未读会话统计优化 -->
     <select id="countUnreadSessions" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message_session
-        WHERE user_id = #{userId} AND unread_count > 0
+        WHERE user_id = #{userId} AND unread_count &gt; 0
     </select>
 
     <!-- 统计用户的总会话数 -->

@@ -65,13 +65,13 @@
                 </choose>
             </if>
             <if test="minAmount != null">
-                AND coin_amount >= #{minAmount}
+                AND coin_amount &gt;= #{minAmount}
             </if>
             <if test="maxAmount != null">
                 AND coin_amount &lt;= #{maxAmount}
             </if>
             <if test="minAccessCount != null">
-                AND access_count >= #{minAccessCount}
+                AND access_count &gt;= #{minAccessCount}
             </if>
             <if test="isUnread != null">
                 <choose>
@@ -79,7 +79,7 @@
                         AND (access_count = 0 OR access_count IS NULL)
                     </when>
                     <when test="isUnread == false">
-                        AND access_count > 0
+                        AND access_count &gt; 0
                     </when>
                 </choose>
             </if>
@@ -142,7 +142,7 @@
             <if test="contentType != null and contentType != ''">
                 AND content_type = #{contentType}
             </if>
-            <if test="excludeContentIds != null and excludeContentIds.size() > 0">
+            <if test="excludeContentIds != null and excludeContentIds.size() &gt; 0">
                 AND content_id NOT IN
                 <foreach collection="excludeContentIds" item="contentId" open="(" separator="," close=")">
                     #{contentId}

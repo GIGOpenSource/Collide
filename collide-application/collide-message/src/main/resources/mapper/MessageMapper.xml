@@ -75,7 +75,7 @@
                 AND MATCH(content) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
             </if>
             <if test="startTime != null">
-                AND create_time >= #{startTime}
+                AND create_time &gt;= #{startTime}
             </if>
             <if test="endTime != null">
                 AND create_time &lt;= #{endTime}
@@ -159,7 +159,7 @@
         SELECT COUNT(*) FROM t_message
         WHERE sender_id = #{senderId}
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -172,7 +172,7 @@
         SELECT COUNT(*) FROM t_message
         WHERE receiver_id = #{receiverId}
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -264,7 +264,7 @@
         WHERE (sender_id = #{userId} OR receiver_id = #{userId})
           AND status != 'deleted'
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>

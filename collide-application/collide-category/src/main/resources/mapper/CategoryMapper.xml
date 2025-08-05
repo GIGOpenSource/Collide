@@ -135,7 +135,7 @@
         )
         SELECT id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
         FROM category_ancestors
-        WHERE level > 0
+        WHERE level &gt; 0
         <if test="includeInactive != null and !includeInactive">
             AND status = 'active'
         </if>
@@ -162,7 +162,7 @@
         )
         SELECT id, name, description, parent_id, icon_url, sort, content_count, status, create_time, update_time
         FROM category_descendants
-        WHERE level > 0
+        WHERE level &gt; 0
         <if test="includeInactive != null and !includeInactive">
             AND status = 'active'
         </if>
@@ -349,7 +349,7 @@
             CASE WHEN name = #{keyword} THEN 1 ELSE 2 END,
             content_count DESC,
             sort ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -435,7 +435,7 @@
         FROM t_category
         WHERE 1=1
         <if test="minContentCount != null">
-            AND content_count >= #{minContentCount}
+            AND content_count &gt;= #{minContentCount}
         </if>
         <if test="maxContentCount != null">
             AND content_count &lt;= #{maxContentCount}
@@ -468,7 +468,7 @@
         FROM t_category
         WHERE 1=1
         <if test="minSort != null">
-            AND sort >= #{minSort}
+            AND sort &gt;= #{minSort}
         </if>
         <if test="maxSort != null">
             AND sort &lt;= #{maxSort}

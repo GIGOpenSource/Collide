@@ -58,7 +58,7 @@
         WHERE user_id = #{userId}
         AND status = 'normal'
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -71,7 +71,7 @@
         WHERE dynamic_type = #{dynamicType}
         AND status = 'normal'
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -86,7 +86,7 @@
         ORDER BY 
             (like_count * 0.4 + comment_count * 0.3 + share_count * 0.3) DESC,
             create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -98,11 +98,11 @@
         FROM t_social_dynamic
         WHERE status = 'normal'
         AND like_count &gt; 0
-        AND create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        AND create_time &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY)
         ORDER BY 
             (like_count * 0.5 + comment_count * 0.3 + share_count * 0.2) DESC,
             create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -119,10 +119,10 @@
         </foreach>
         AND status = 'normal'
         ORDER BY create_time DESC
-        <if test="offset != null and offset > 0">
+        <if test="offset != null and offset &gt; 0">
             OFFSET #{offset}
         </if>
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -197,7 +197,7 @@
         WHERE user_id = #{userId}
         AND status = 'normal'
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -221,7 +221,7 @@
             AND user_id = #{userId}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -242,7 +242,7 @@
         FROM t_social_dynamic
         WHERE status = 'normal'
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -261,13 +261,13 @@
             AND dynamic_type = #{dynamicType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
         </if>
         ORDER BY (like_count + comment_count * 2 + share_count * 3) DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -280,13 +280,13 @@
             SELECT user_id, COUNT(*) as dynamic_count
             FROM t_social_dynamic
             WHERE status = 'normal'
-            AND create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+            AND create_time &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
             GROUP BY user_id
-            HAVING COUNT(*) >= #{minDynamics}
+            HAVING COUNT(*) &gt;= #{minDynamics}
         ) active_users ON sd.user_id = active_users.user_id
         WHERE sd.status = 'normal'
         ORDER BY sd.create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -303,7 +303,7 @@
             AND share_target_type = #{shareTargetType}
         </if>
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -318,7 +318,7 @@
         AND share_target_id = #{targetId}
         AND status = 'normal'
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -335,7 +335,7 @@
             AND dynamic_type = #{dynamicType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -358,7 +358,7 @@
             AND dynamic_type = #{dynamicType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -392,7 +392,7 @@
         DELETE FROM t_social_dynamic
         WHERE status = 'deleted'
         AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </delete>
@@ -416,7 +416,7 @@
         WHERE create_time &lt; #{beforeTime}
         AND status IN ('normal', 'hidden')
         ORDER BY create_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>

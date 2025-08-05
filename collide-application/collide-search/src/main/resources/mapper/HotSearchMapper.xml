@@ -15,7 +15,7 @@
         FROM t_hot_search
         WHERE status = 'active'
         ORDER BY search_count DESC, trend_score DESC, update_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -32,7 +32,7 @@
         ) sh ON hs.keyword = sh.keyword
         WHERE hs.status = 'active'
         ORDER BY (hs.search_count * 0.7 + sh.type_count * 0.3) DESC, hs.trend_score DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -49,12 +49,12 @@
         SELECT <include refid="Base_Column_List"/>
         FROM t_hot_search
         WHERE status = 'active'
-        AND search_count > 0
-        AND trend_score > 0
+        AND search_count &gt; 0
+        AND trend_score &gt; 0
         ORDER BY 
             (search_count * 0.6 + trend_score * 0.4) DESC,
             update_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -93,9 +93,9 @@
         SELECT <include refid="Base_Column_List"/>
         FROM t_hot_search
         WHERE status = 'active'
-        AND trend_score > 1.0
+        AND trend_score &gt; 1.0
         ORDER BY trend_score DESC, search_count DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -107,13 +107,13 @@
         INNER JOIN (
             SELECT keyword, COUNT(*) as recent_count
             FROM t_search_history
-            WHERE create_time >= DATE_SUB(NOW(), INTERVAL 1 HOUR)
+            WHERE create_time &gt;= DATE_SUB(NOW(), INTERVAL 1 HOUR)
             GROUP BY keyword
-            HAVING COUNT(*) >= #{minSurgeCount}
+            HAVING COUNT(*) &gt;= #{minSurgeCount}
         ) recent ON hs.keyword = recent.keyword
         WHERE hs.status = 'active'
         ORDER BY recent.recent_count DESC, hs.search_count DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -125,7 +125,7 @@
         WHERE status = 'active'
         AND keyword LIKE CONCAT(#{prefix}, '%')
         ORDER BY search_count DESC, trend_score DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -136,7 +136,7 @@
         FROM t_hot_search
         WHERE status = 'active'
         <if test="minSearchCount != null">
-            AND search_count >= #{minSearchCount}
+            AND search_count &gt;= #{minSearchCount}
         </if>
     </select>
 
@@ -183,13 +183,13 @@
                 keyword,
                 COUNT(*) as recent_count,
                 CASE 
-                    WHEN COUNT(*) > 100 THEN 3.0
-                    WHEN COUNT(*) > 50 THEN 2.0
-                    WHEN COUNT(*) > 10 THEN 1.5
+                            WHEN COUNT(*) &gt; 100 THEN 3.0
+        WHEN COUNT(*) &gt; 50 THEN 2.0
+        WHEN COUNT(*) &gt; 10 THEN 1.5
                     ELSE 1.0
                 END as new_trend_score
             FROM t_search_history
-            WHERE create_time >= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
+            WHERE create_time &gt;= DATE_SUB(NOW(), INTERVAL #{hours} HOUR)
             GROUP BY keyword
         ) trend ON hs.keyword = trend.keyword
         SET hs.trend_score = trend.new_trend_score,
@@ -204,7 +204,7 @@
         WHERE status = 'inactive'
         AND update_time &lt; #{beforeTime}
         ORDER BY update_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>

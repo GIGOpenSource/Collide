@@ -160,7 +160,7 @@
         AND LOWER(status) = 'normal'
         AND like_count &gt; 0
         ORDER BY (like_count * 0.7 + reply_count * 0.3) DESC, create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -181,7 +181,7 @@
         </if>
         AND LOWER(status) = 'normal'
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -289,7 +289,7 @@
             AND user_id = #{userId}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -363,7 +363,7 @@
         FROM t_comment
         WHERE 1=1
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -392,7 +392,7 @@
         FROM t_comment
         WHERE 1=1
         <if test="minLikeCount != null">
-            AND like_count >= #{minLikeCount}
+            AND like_count &gt;= #{minLikeCount}
         </if>
         <if test="maxLikeCount != null">
             AND like_count &lt;= #{maxLikeCount}
@@ -421,7 +421,7 @@
             AND LOWER(comment_type) = LOWER(#{commentType})
         </if>
         ORDER BY create_time ASC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -441,7 +441,7 @@
             AND (user_id = #{userId} OR reply_to_user_id = #{userId})
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -471,15 +471,15 @@
             AND target_id = #{targetId}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
         </if>
         AND LOWER(status) = 'normal'
-        AND (like_count > 0 OR reply_count > 0)
+        AND (like_count &gt; 0 OR reply_count &gt; 0)
         ORDER BY (like_count * 0.7 + reply_count * 0.3) DESC, create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -491,7 +491,7 @@
         DELETE FROM t_comment
         WHERE LOWER(status) = 'deleted'
         AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </delete>

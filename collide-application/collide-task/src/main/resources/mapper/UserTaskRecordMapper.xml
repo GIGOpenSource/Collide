@@ -183,8 +183,8 @@
     <update id="updateTaskProgress">
         UPDATE t_user_task_record 
         SET current_count = LEAST(current_count + #{incrementCount}, target_count),
-            is_completed = CASE WHEN current_count + #{incrementCount} >= target_count THEN 1 ELSE is_completed END,
-            complete_time = CASE WHEN current_count + #{incrementCount} >= target_count AND complete_time IS NULL THEN NOW() ELSE complete_time END,
+            is_completed = CASE                 WHEN current_count + #{incrementCount} &gt;= target_count THEN 1 ELSE is_completed END,
+            complete_time = CASE WHEN current_count + #{incrementCount} &gt;= target_count AND complete_time IS NULL THEN NOW() ELSE complete_time END,
             update_time = NOW()
         WHERE user_id = #{userId} AND task_id = #{taskId} AND task_date = #{taskDate}
     </update>

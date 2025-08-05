@@ -228,13 +228,13 @@
 
     <!-- 检查任务是否有主要奖励 -->
     <select id="hasMainReward" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_task_reward 
+        SELECT COUNT(*) &gt; 0 FROM t_task_reward 
         WHERE task_id = #{taskId} AND is_main_reward = 1
     </select>
 
     <!-- 检查任务是否有指定类型的奖励 -->
     <select id="hasRewardOfType" resultType="boolean">
-        SELECT COUNT(*) > 0 FROM t_task_reward 
+        SELECT COUNT(*) &gt; 0 FROM t_task_reward 
         WHERE task_id = #{taskId} AND reward_type = #{rewardType}
     </select>
 

@@ -15,7 +15,7 @@
         FROM t_search_history
         WHERE user_id = #{userId}
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -27,7 +27,7 @@
         WHERE user_id = #{userId}
         AND search_type = #{searchType}
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -45,7 +45,7 @@
         WHERE user_id = #{userId}
         GROUP BY user_id, keyword, search_type
         ORDER BY COUNT(*) DESC, MAX(create_time) DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -62,10 +62,10 @@
     <select id="selectHotKeywords" resultType="java.lang.String">
         SELECT keyword
         FROM t_search_history
-        WHERE create_time >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        WHERE create_time &gt;= DATE_SUB(NOW(), INTERVAL 7 DAY)
         GROUP BY keyword
         ORDER BY COUNT(*) DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -75,11 +75,11 @@
         SELECT DISTINCT keyword
         FROM t_search_history
         WHERE keyword LIKE CONCAT(#{prefix}, '%')
-        AND create_time >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+        AND create_time &gt;= DATE_SUB(NOW(), INTERVAL 30 DAY)
         ORDER BY 
             (SELECT COUNT(*) FROM t_search_history sh2 WHERE sh2.keyword = t_search_history.keyword) DESC,
             create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -104,7 +104,7 @@
         FROM t_search_history
         WHERE user_id = #{userId}
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -121,7 +121,7 @@
         FROM t_search_history
         WHERE user_id = #{userId}
         <if test="days != null">
-            AND create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+            AND create_time &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
         </if>
         GROUP BY HOUR(create_time)
         ORDER BY search_hour ASC
@@ -141,7 +141,7 @@
             AND search_type = #{searchType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -162,13 +162,13 @@
         WHERE sh1.user_id = #{userId}
         AND sh2.user_id != #{userId}
         <if test="days != null">
-            AND sh1.create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
-            AND sh2.create_time >= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+            AND sh1.create_time &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
+            AND sh2.create_time &gt;= DATE_SUB(NOW(), INTERVAL #{days} DAY)
         </if>
         GROUP BY sh2.user_id
-        HAVING common_keywords >= #{minCommonKeywords}
+        HAVING common_keywords &gt;= #{minCommonKeywords}
         ORDER BY similarity_score DESC, common_keywords DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -197,7 +197,7 @@
             AND search_type = #{searchType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
@@ -215,13 +215,13 @@
             AND search_type = #{searchType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
         </if>
         ORDER BY create_time DESC
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </select>
@@ -232,7 +232,7 @@
     <delete id="cleanOldSearchHistory">
         DELETE FROM t_search_history
         WHERE create_time &lt; DATE_SUB(NOW(), INTERVAL #{days} DAY)
-        <if test="limit != null and limit > 0">
+        <if test="limit != null and limit &gt; 0">
             LIMIT #{limit}
         </if>
     </delete>
@@ -241,7 +241,7 @@
     <delete id="cleanDuplicateSearchHistory">
         DELETE sh1 FROM t_search_history sh1
         INNER JOIN t_search_history sh2
-        WHERE sh1.id > sh2.id
+        WHERE sh1.id &gt; sh2.id
         AND sh1.user_id = sh2.user_id
         AND sh1.keyword = sh2.keyword
         AND sh1.search_type = sh2.search_type
@@ -260,7 +260,7 @@
             AND search_type = #{searchType}
         </if>
         <if test="startTime != null">
-            AND create_time >= #{startTime}
+            AND create_time &gt;= #{startTime}
         </if>
         <if test="endTime != null">
             AND create_time &lt;= #{endTime}
