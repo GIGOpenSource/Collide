@@ -1,27 +1,18 @@
 package com.gig.collide.api.tag.request;
 
-import jakarta.validation.constraints.Min;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-
-import java.io.Serializable;
+import com.gig.collide.base.request.PageRequest;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
- * 标签查询请求 - 简洁版
- * 基于tag-simple.sql的字段，支持多种查询条件
- * 
+ * 标签查询请求
+ *
  * @author GIG Team
- * @version 2.0.0
+ * @version 3.0.0
  */
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
-public class TagQueryRequest implements Serializable {
+@Data
+@EqualsAndHashCode(callSuper = true)
+public class TagQueryRequest extends PageRequest {
 
     /**
      * 标签名称（模糊搜索）
@@ -29,12 +20,12 @@ public class TagQueryRequest implements Serializable {
     private String name;
 
     /**
-     * 标签类型：content、interest、system
+     * 标签类型
      */
     private String tagType;
 
     /**
-     * 分类ID
+     * 所属分类ID
      */
     private Long categoryId;
 
@@ -43,27 +34,23 @@ public class TagQueryRequest implements Serializable {
      */
     private String status;
 
-    // =================== 分页参数 ===================
+    /**
+     * 最小使用次数
+     */
+    private Long minUsageCount;
 
     /**
-     * 页码，从1开始
+     * 最大使用次数
      */
-    @Min(value = 1, message = "页码必须大于0")
-    private Integer currentPage = 1;
+    private Long maxUsageCount;
 
     /**
-     * 页面大小
+     * 排序字段
      */
-    @Min(value = 1, message = "页面大小必须大于0")
-    private Integer pageSize = 20;
+    private String sortBy;
 
     /**
-     * 排序字段：create_time、update_time、usage_count、name
+     * 排序方向：asc、desc
      */
-    private String orderBy = "create_time";
-
-    /**
-     * 排序方向：ASC、DESC
-     */
-    private String orderDirection = "DESC";
-} 
+    private String sortDirection;
+}

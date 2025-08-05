@@ -3,38 +3,43 @@ package com.gig.collide.api.tag.request;
 import lombok.Data;
 
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
-import java.io.Serializable;
-
 /**
- * 标签更新请求 - 简洁版
- * 基于t_tag表结构
- * 
+ * 标签更新请求
+ *
  * @author GIG Team
- * @version 2.0.0
+ * @version 3.0.0
  */
 @Data
-public class TagUpdateRequest implements Serializable {
+public class TagUpdateRequest {
 
+    /**
+     * 标签ID
+     */
     @NotNull(message = "标签ID不能为空")
     private Long id;
 
+    /**
+     * 标签名称
+     */
     @Size(max = 100, message = "标签名称长度不能超过100字符")
     private String name;
 
+    /**
+     * 标签描述
+     */
     @Size(max = 500, message = "标签描述长度不能超过500字符")
     private String description;
 
-    @Pattern(regexp = "^(content|interest|system)$", message = "标签类型只能是content、interest或system")
-    private String tagType;
-
     /**
-     * 所属分类ID（可选）
+     * 所属分类ID
      */
     private Long categoryId;
 
-    @Pattern(regexp = "^(active|inactive)$", message = "状态只能是active或inactive")
-    private String status;
-} 
+    /**
+     * 操作人ID
+     */
+    @NotNull(message = "操作人ID不能为空")
+    private Long operatorId;
+}

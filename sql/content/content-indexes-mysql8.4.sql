@@ -1,6 +1,7 @@
 -- ==========================================
--- MySQL 8.4 优化索引文件 
+-- 内容模块优化索引文件 
 -- 专门针对内容模块的高性能索引设计
+-- 兼容MySQL 5.7+版本
 -- ==========================================
 
 USE collide;
@@ -15,7 +16,7 @@ DROP INDEX IF EXISTS `idx_content_type`,
 DROP INDEX IF EXISTS `idx_status`,
 DROP INDEX IF EXISTS `idx_publish_time`;
 
--- 添加 MySQL 8.4 优化索引
+-- 添加通用MySQL优化索引
 
 -- 1. 作者相关复合索引 (最左前缀匹配，支持多维度查询)
 ALTER TABLE t_content ADD INDEX `idx_author_status_publish` (`author_id`, `status`, `publish_time` DESC);
@@ -38,11 +39,8 @@ ALTER TABLE t_content ADD INDEX `idx_hot_content` (`view_count` DESC, `like_coun
 -- 7. 评分统计索引
 ALTER TABLE t_content ADD INDEX `idx_score_stats` (`score_count` DESC, `score_total` DESC);
 
--- 8. MySQL 8 函数索引 (支持标题搜索，不区分大小写)
-ALTER TABLE t_content ADD INDEX `idx_title_search` ((LOWER(`title`)));
-
--- 9. MySQL 8 JSON 函数索引 (支持标签搜索)  
-ALTER TABLE t_content ADD INDEX `idx_tags_search` ((JSON_EXTRACT(`tags`, '$')));
+-- 8. 标题搜索索引 (通用MySQL版本兼容)
+ALTER TABLE t_content ADD INDEX `idx_title` (`title`);
 
 -- =================== t_content_chapter 表索引优化 ===================
 
@@ -51,7 +49,7 @@ ALTER TABLE t_content_chapter
 DROP INDEX IF EXISTS `idx_content_id`,
 DROP INDEX IF EXISTS `idx_status`;
 
--- 添加 MySQL 8.4 优化索引
+-- 添加通用MySQL优化索引
 
 -- 1. 内容状态复合索引 (支持内容查询、状态筛选、章节号排序)
 ALTER TABLE t_content_chapter ADD INDEX `idx_content_status` (`content_id`, `status`, `chapter_num` ASC);
@@ -65,8 +63,8 @@ ALTER TABLE t_content_chapter ADD INDEX `idx_status_time` (`status`, `create_tim
 -- 4. 字数统计索引 (支持字数查询和排序)
 ALTER TABLE t_content_chapter ADD INDEX `idx_word_count` (`content_id`, `word_count` DESC);
 
--- 5. MySQL 8 函数索引 (支持章节标题搜索)
-ALTER TABLE t_content_chapter ADD INDEX `idx_title_search` ((LOWER(`title`)));
+-- 5. 章节标题索引 (通用MySQL版本兼容)
+ALTER TABLE t_content_chapter ADD INDEX `idx_chapter_title` (`title`);
 
 -- =================== t_user_content_purchase 表索引优化 ===================
 
@@ -79,7 +77,7 @@ DROP INDEX IF EXISTS `idx_order_no`,
 DROP INDEX IF EXISTS `idx_status`,
 DROP INDEX IF EXISTS `idx_purchase_time`;
 
--- 添加 MySQL 8.4 优化索引
+-- 添加通用MySQL优化索引
 
 -- 1. 用户状态复合索引 (支持用户购买记录查询、状态筛选、购买时间排序)
 ALTER TABLE t_user_content_purchase ADD INDEX `idx_user_status` (`user_id`, `status`, `purchase_time` DESC);
@@ -113,7 +111,7 @@ DROP INDEX IF EXISTS `idx_payment_type`,
 DROP INDEX IF EXISTS `idx_coin_price`,
 DROP INDEX IF EXISTS `idx_status`;
 
--- 添加 MySQL 8.4 优化索引
+-- 添加通用MySQL优化索引
 
 -- 1. 付费类型状态复合索引 (支持付费类型查询、状态筛选、创建时间排序)
 ALTER TABLE t_content_payment ADD INDEX `idx_payment_status` (`payment_type`, `status`, `create_time` DESC);
@@ -133,11 +131,8 @@ ALTER TABLE t_content_payment ADD INDEX `idx_permanent_status` (`is_permanent`, 
 -- 6. 销售统计索引 (支持销售排行和收入统计)
 ALTER TABLE t_content_payment ADD INDEX `idx_sales_stats` (`total_sales` DESC, `total_revenue` DESC, `status`);
 
--- 7. MySQL 8 函数索引 (支持折扣计算查询)
-ALTER TABLE t_content_payment ADD INDEX `idx_discount_calc` ((((`original_price` - `coin_price`) / `original_price`) DESC));
-
--- 8. MySQL 8 函数索引 (支持性价比计算)
-ALTER TABLE t_content_payment ADD INDEX `idx_value_ratio` (((`total_sales` / `coin_price`) DESC));
+-- 7. 价格相关索引 (通用MySQL版本兼容)
+ALTER TABLE t_content_payment ADD INDEX `idx_price_stats` (`coin_price`, `original_price`);
 
 -- =================== 索引使用建议和查询优化 ===================
 
@@ -148,13 +143,13 @@ ALTER TABLE t_content_payment ADD INDEX `idx_value_ratio` (((`total_sales` / `co
      * WHERE author_id = ? AND status = ?  
      * WHERE author_id = ? AND status = ? ORDER BY publish_time DESC
 
-2. 函数索引使用：
-   - 标题搜索：WHERE LOWER(title) LIKE '%keyword%'
-   - JSON标签搜索：WHERE JSON_EXTRACT(tags, '$') LIKE '%tag%'
-   - 折扣计算：ORDER BY ((original_price - coin_price) / original_price) DESC
+2. 查询优化建议：
+   - 标题搜索：WHERE title LIKE '%keyword%'
+   - 利用复合索引进行多条件查询
+   - 使用ORDER BY时注意索引字段顺序
 
-3. 降序索引利用：
-   - MySQL 8支持真正的降序索引，提升ORDER BY性能
+3. 索引优化：
+   - 利用复合索引覆盖多维度查询
    - 特别是时间字段和统计字段的排序查询
 
 4. 索引统计信息更新：
@@ -165,4 +160,5 @@ ALTER TABLE t_content_payment ADD INDEX `idx_value_ratio` (((`total_sales` / `co
    - 避免SELECT * ，明确指定需要的字段
    - 合理使用LIMIT，特别是大数据量分页
    - 利用覆盖索引，减少回表查询
+   - 对于大文本字段（如content_data URL），建议分离存储
 */

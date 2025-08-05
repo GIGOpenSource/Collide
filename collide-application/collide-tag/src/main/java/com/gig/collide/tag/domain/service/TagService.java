@@ -1,20 +1,20 @@
 package com.gig.collide.tag.domain.service;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gig.collide.tag.domain.entity.Tag;
-import com.gig.collide.tag.domain.entity.UserInterestTag;
-import com.gig.collide.tag.domain.entity.ContentTag;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 /**
- * 标签服务接口 - 简洁版
+ * 标签服务接口 - 严格对应TagMapper
+ * 基于TagMapper的所有方法，提供标签相关的业务逻辑
  *
  * @author GIG Team
- * @version 2.0.0
+ * @version 3.0.0
  */
 public interface TagService {
+
+    // =================== 基础CRUD操作（继承自BaseMapper） ===================
 
     /**
      * 创建标签
@@ -27,9 +27,9 @@ public interface TagService {
     Tag updateTag(Tag tag);
 
     /**
-     * 删除标签（逻辑删除）
+     * 根据ID删除标签
      */
-    void deleteTag(Long tagId);
+    boolean deleteTagById(Long tagId);
 
     /**
      * 根据ID查询标签
@@ -37,62 +37,106 @@ public interface TagService {
     Tag getTagById(Long tagId);
 
     /**
-     * 分页查询标签
+     * 查询所有标签
      */
-    IPage<Tag> queryTags(int pageNum, int pageSize, String name, String tagType, Long categoryId, String status);
+    List<Tag> getAllTags();
+
+    // =================== 核心查询方法（对应Mapper自定义方法） ===================
 
     /**
-     * 根据类型获取标签列表
+     * 根据类型查询标签列表
+     * 对应Mapper: selectByTagType
      */
-    List<Tag> getTagsByType(String tagType);
+    List<Tag> selectByTagType(String tagType);
 
     /**
-     * 搜索标签
+     * 按名称模糊搜索标签（全文搜索）
+     * 对应Mapper: searchByName
      */
-    List<Tag> searchTags(String keyword, Integer limit);
+    List<Tag> searchByName(String keyword, Integer limit);
 
     /**
-     * 获取热门标签
+     * 按名称精确搜索标签（大小写不敏感）
+     * 对应Mapper: searchByNameExact
      */
-    List<Tag> getHotTags(Integer limit);
+    List<Tag> searchByNameExact(String keyword, Integer limit);
+
+    /**
+     * 获取热门标签（按使用次数排序）
+     * 对应Mapper: selectHotTags
+     */
+    List<Tag> selectHotTags(Integer limit);
+
+    /**
+     * 根据分类查询标签
+     * 对应Mapper: selectByCategoryId
+     */
+    List<Tag> selectByCategoryId(Long categoryId);
+
+    // =================== 统计和计数方法 ===================
+
+    /**
+     * 检查标签名称是否存在
+     * 对应Mapper: countByNameAndType
+     */
+    boolean existsByNameAndType(String name, String tagType);
+
+    /**
+     * 获取标签使用统计（性能优化）
+     * 对应Mapper: getTagUsageStats
+     */
+    List<Map<String, Object>> getTagUsageStats(String tagType, Integer limit);
+
+    /**
+     * 批量获取标签基本信息（覆盖索引优化）
+     * 对应Mapper: selectTagSummary
+     */
+    List<Map<String, Object>> selectTagSummary(List<Long> tagIds);
+
+    // =================== 更新操作方法 ===================
 
     /**
      * 增加标签使用次数
+     * 对应Mapper: increaseUsageCount
      */
-    void increaseTagUsage(Long tagId);
+    boolean increaseUsageCount(Long tagId);
 
     /**
-     * 获取用户兴趣标签
+     * 减少标签使用次数
+     * 对应Mapper: decreaseUsageCount
      */
-    List<Tag> getUserInterestTags(Long userId);
+    boolean decreaseUsageCount(Long tagId);
 
     /**
-     * 添加用户兴趣标签
+     * 批量更新标签状态
+     * 对应Mapper: batchUpdateStatus
      */
-    void addUserInterestTag(Long userId, Long tagId, BigDecimal interestScore);
+    int batchUpdateStatus(List<Long> tagIds, String status);
+
+    // =================== 业务逻辑方法 ===================
 
     /**
-     * 移除用户兴趣标签
+     * 创建标签（带唯一性检查）
      */
-    void removeUserInterestTag(Long userId, Long tagId);
+    Tag createTagSafely(String name, String tagType, String description, Long categoryId);
 
     /**
-     * 更新用户兴趣分数
+     * 激活标签
      */
-    void updateUserInterestScore(Long userId, Long tagId, BigDecimal interestScore);
+    boolean activateTag(Long tagId);
 
     /**
-     * 为内容添加标签
+     * 停用标签
      */
-    void addContentTag(Long contentId, Long tagId);
+    boolean deactivateTag(Long tagId);
 
     /**
-     * 移除内容标签
+     * 获取分类下的活跃标签
      */
-    void removeContentTag(Long contentId, Long tagId);
+    List<Tag> getActiveTags(Long categoryId);
 
     /**
-     * 获取内容的标签列表
+     * 搜索标签（智能搜索，先精确后模糊）
      */
-    List<Tag> getContentTags(Long contentId);
+    List<Tag> intelligentSearch(String keyword, Integer limit);
 } 

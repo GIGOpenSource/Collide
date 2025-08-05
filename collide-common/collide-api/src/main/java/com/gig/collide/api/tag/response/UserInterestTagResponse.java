@@ -2,46 +2,47 @@ package com.gig.collide.api.tag.response;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 标签响应
+ * 用户兴趣标签响应
  *
  * @author GIG Team
  * @version 3.0.0
  */
 @Data
-public class TagResponse {
+public class UserInterestTagResponse {
 
     /**
-     * 标签ID
+     * 记录ID
      */
     private Long id;
 
     /**
+     * 用户ID
+     */
+    private Long userId;
+
+    /**
+     * 标签ID
+     */
+    private Long tagId;
+
+    /**
      * 标签名称
      */
-    private String name;
+    private String tagName;
 
     /**
-     * 标签描述
-     */
-    private String description;
-
-    /**
-     * 标签类型：content、interest、system
+     * 标签类型
      */
     private String tagType;
 
     /**
-     * 所属分类ID
+     * 兴趣分数（0-100）
      */
-    private Long categoryId;
-
-    /**
-     * 使用次数
-     */
-    private Long usageCount;
+    private BigDecimal interestScore;
 
     /**
      * 状态：active、inactive
@@ -52,9 +53,4 @@ public class TagResponse {
      * 创建时间
      */
     private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    private LocalDateTime updateTime;
 }

@@ -12,9 +12,9 @@ CREATE TABLE `t_content` (
     `title`           VARCHAR(200) NOT NULL                COMMENT '内容标题',
     `description`     TEXT                                 COMMENT '内容描述',
     `content_type`    VARCHAR(50)  NOT NULL                COMMENT '内容类型：NOVEL、COMIC、VIDEO、ARTICLE、AUDIO',
-    `content_data`    LONGTEXT                             COMMENT '内容数据，JSON格式',
+    `content_data`    VARCHAR(500)                         COMMENT '内容数据URL',
     `cover_url`       VARCHAR(500)                         COMMENT '封面图片URL',
-    `tags`            TEXT                                 COMMENT '标签，JSON数组格式',
+    `tags`            TEXT                                 COMMENT '标签，逗号分隔或JSON格式',
     
     -- 作者信息（冗余字段，避免连表）
     `author_id`       BIGINT       NOT NULL                COMMENT '作者用户ID',
@@ -42,36 +42,7 @@ CREATE TABLE `t_content` (
     `create_time`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time`     TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
-    PRIMARY KEY (`id`),
-    
-    -- =================== MySQL 8 优化索引设计 ===================
-    
-    -- 作者相关复合索引 (支持作者内容查询、状态筛选、发布时间排序)
-    KEY `idx_author_status_publish` (`author_id`, `status`, `publish_time` DESC),
-    
-    -- 分类相关复合索引 (支持分类内容查询、状态筛选、发布时间排序)
-    KEY `idx_category_status_publish` (`category_id`, `status`, `publish_time` DESC),
-    
-    -- 内容类型复合索引 (支持类型查询、状态筛选、发布时间排序)  
-    KEY `idx_type_status_publish` (`content_type`, `status`, `publish_time` DESC),
-    
-    -- 内容状态复合索引 (支持状态查询、审核状态、发布时间排序)
-    KEY `idx_content_status_publish` (`status`, `review_status`, `publish_time` DESC),
-    
-    -- 审核状态索引 (支持审核状态查询)
-    KEY `idx_review_status` (`review_status`, `status`),
-    
-    -- 热门内容复合索引 (支持按热度排序查询)
-    KEY `idx_hot_content` (`view_count` DESC, `like_count` DESC, `publish_time` DESC),
-    
-    -- 评分统计索引 (支持评分查询和排序)
-    KEY `idx_score_stats` (`score_count` DESC, `score_total` DESC),
-    
-    -- MySQL 8 函数索引 (支持标题搜索)
-    KEY `idx_title_search` ((LOWER(`title`))),
-    
-    -- MySQL 8 JSON 函数索引 (支持标签搜索)  
-    KEY `idx_tags_search` ((JSON_EXTRACT(`tags`, '$')))
+    PRIMARY KEY (`id`)
     
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内容主表';
 
@@ -89,24 +60,7 @@ CREATE TABLE `t_content_chapter` (
     `update_time`  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_content_chapter` (`content_id`, `chapter_num`),
-    
-    -- =================== MySQL 8 优化索引设计 ===================
-    
-    -- 内容状态复合索引 (支持内容查询、状态筛选、章节号排序)
-    KEY `idx_content_status` (`content_id`, `status`, `chapter_num` ASC),
-    
-    -- 章节范围查询索引 (支持上一章、下一章查询)
-    KEY `idx_chapter_range` (`content_id`, `chapter_num` ASC, `status`),
-    
-    -- 状态时间索引 (支持状态查询、时间排序)
-    KEY `idx_status_time` (`status`, `create_time` DESC),
-    
-    -- 字数统计索引 (支持字数查询和排序)
-    KEY `idx_word_count` (`content_id`, `word_count` DESC),
-    
-    -- MySQL 8 函数索引 (支持章节标题搜索)
-    KEY `idx_title_search` ((LOWER(`title`)))
+    UNIQUE KEY `uk_content_chapter` (`content_id`, `chapter_num`)
     
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内容章节表';
 
@@ -147,33 +101,7 @@ CREATE TABLE `t_user_content_purchase` (
     `update_time`       TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_user_content` (`user_id`, `content_id`),
-    
-    -- =================== MySQL 8 优化索引设计 ===================
-    
-    -- 用户状态复合索引 (支持用户购买记录查询、状态筛选、购买时间排序)
-    KEY `idx_user_status` (`user_id`, `status`, `purchase_time` DESC),
-    
-    -- 内容销售复合索引 (支持内容销售查询、状态筛选、购买时间排序)
-    KEY `idx_content_sales` (`content_id`, `status`, `purchase_time` DESC),
-    
-    -- 订单信息索引 (支持订单查询)
-    KEY `idx_order_info` (`order_id`, `order_no`),
-    
-    -- 内容类型索引 (支持按内容类型查询购买记录)
-    KEY `idx_content_type` (`user_id`, `content_type`, `purchase_time` DESC),
-    
-    -- 作者购买索引 (支持用户查询特定作者的购买记录)
-    KEY `idx_author_purchase` (`user_id`, `author_id`, `purchase_time` DESC),
-    
-    -- 过期时间索引 (支持过期记录查询和批量处理)
-    KEY `idx_expire_time` (`status`, `expire_time`),
-    
-    -- 金币金额索引 (支持高价值购买查询和统计)
-    KEY `idx_coin_amount` (`coin_amount` DESC, `purchase_time` DESC),
-    
-    -- 访问统计索引 (支持访问次数查询和统计)
-    KEY `idx_access_stats` (`access_count` DESC, `last_access_time` DESC)
+    UNIQUE KEY `uk_user_content` (`user_id`, `content_id`)
     
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户内容购买记录表';
 
@@ -211,32 +139,6 @@ CREATE TABLE `t_content_payment` (
     `update_time`     TIMESTAMP   NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_content_id` (`content_id`),
-    
-    -- =================== MySQL 8 优化索引设计 ===================
-    
-    -- 付费类型状态复合索引 (支持付费类型查询、状态筛选、创建时间排序)
-    KEY `idx_payment_status` (`payment_type`, `status`, `create_time` DESC),
-    
-    -- VIP相关复合索引 (支持VIP免费和VIP专享查询)
-    KEY `idx_vip_status` (`vip_free`, `vip_only`, `status`),
-    
-    -- 价格范围索引 (支持价格范围查询和排序)
-    KEY `idx_price_range` (`payment_type`, `coin_price` ASC, `status`),
-    
-    -- 试读功能索引 (支持试读内容查询)
-    KEY `idx_trial_status` (`trial_enabled`, `status`, `create_time` DESC),
-    
-    -- 永久/限时索引 (支持永久和限时内容查询)
-    KEY `idx_permanent_status` (`is_permanent`, `valid_days`, `status`),
-    
-    -- 销售统计索引 (支持销售排行和收入统计)
-    KEY `idx_sales_stats` (`total_sales` DESC, `total_revenue` DESC, `status`),
-    
-    -- MySQL 8 函数索引 (支持折扣计算查询)
-    KEY `idx_discount_calc` ((((`original_price` - `coin_price`) / `original_price`) DESC)),
-    
-    -- MySQL 8 函数索引 (支持性价比计算)
-    KEY `idx_value_ratio` (((`total_sales` / `coin_price`) DESC))
+    UNIQUE KEY `uk_content_id` (`content_id`)
     
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='内容付费配置表'; 

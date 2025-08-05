@@ -1,64 +1,63 @@
 package com.gig.collide.tag.facade;
 
-import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gig.collide.api.tag.TagFacadeService;
 import com.gig.collide.api.tag.request.TagCreateRequest;
 import com.gig.collide.api.tag.request.TagQueryRequest;
 import com.gig.collide.api.tag.request.TagUpdateRequest;
 import com.gig.collide.api.tag.response.TagResponse;
-import com.gig.collide.api.user.UserFacadeService;
-import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.tag.domain.entity.Tag;
 import com.gig.collide.tag.domain.service.TagService;
 import com.gig.collide.web.vo.Result;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import com.alicp.jetcache.anno.Cached;
-import com.alicp.jetcache.anno.CacheInvalidate;
-import com.alicp.jetcache.anno.CacheUpdate;
-import com.alicp.jetcache.anno.CacheType;
-import com.gig.collide.tag.infrastructure.cache.TagCacheConstant;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.concurrent.TimeUnit;
 
 /**
- * 标签门面服务实现类 - 缓存增强版
- * 基于JetCache双级缓存，实现高性能标签管理服务
+ * 标签门面服务实现类 - 基础标签管理
+ * 专注于标签本身的管理功能，参数验证、结果转换和错误处理
  *
  * @author GIG Team
- * @version 2.0.0 (缓存增强版)
+ * @version 3.0.0
  */
 @Slf4j
-@DubboService(version = "1.0.0")
+@Service
+@DubboService
+@RequiredArgsConstructor
 public class TagFacadeServiceImpl implements TagFacadeService {
 
-    @Autowired
-    private TagService tagService;
-
-    @Autowired
-    private UserFacadeService userFacadeService;
+    private final TagService tagService;
 
     @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_LIST_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_TYPE_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    public Result<Void> createTag(TagCreateRequest request) {
+    public Result<TagResponse> createTag(TagCreateRequest request) {
         try {
-            log.info("创建标签请求: {}", request.getName());
+            log.info("创建标签请求: 名称={}, 类型={}", request.getName(), request.getTagType());
             
-            Tag tag = new Tag();
-            BeanUtils.copyProperties(request, tag);
+            if (!StringUtils.hasText(request.getName())) {
+                return Result.error("INVALID_PARAM", "标签名称不能为空");
+            }
+            if (!StringUtils.hasText(request.getTagType())) {
+                return Result.error("INVALID_PARAM", "标签类型不能为空");
+            }
             
-            Tag savedTag = tagService.createTag(tag);
+            if (tagService.existsByNameAndType(request.getName(), request.getTagType())) {
+                return Result.error("TAG_ALREADY_EXISTS", "标签名称已存在");
+            }
             
-            log.info("标签创建成功: ID={}", savedTag.getId());
-            return Result.success(null);
+            Tag tag = tagService.createTagSafely(request.getName(), request.getTagType(), 
+                    request.getDescription(), request.getCategoryId());
+            
+            TagResponse response = convertToTagResponse(tag);
+            log.info("标签创建成功: ID={}", tag.getId());
+            return Result.success(response);
+            
         } catch (Exception e) {
             log.error("创建标签失败", e);
             return Result.error("TAG_CREATE_ERROR", "创建标签失败: " + e.getMessage());
@@ -66,25 +65,35 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @CacheUpdate(name = TagCacheConstant.TAG_DETAIL_CACHE,
-                 key = TagCacheConstant.TAG_DETAIL_KEY,
-                 value = "#result.data")
-    @CacheInvalidate(name = TagCacheConstant.TAG_LIST_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_TYPE_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_SEARCH_CACHE)
     public Result<TagResponse> updateTag(TagUpdateRequest request) {
         try {
             log.info("更新标签请求: ID={}", request.getId());
             
-            Tag tag = new Tag();
-            BeanUtils.copyProperties(request, tag);
+            if (request.getId() == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
             
-            Tag updatedTag = tagService.updateTag(tag);
-            TagResponse response = convertToResponse(updatedTag);
+            Tag existingTag = tagService.getTagById(request.getId());
+            if (existingTag == null) {
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
+            if (StringUtils.hasText(request.getName())) {
+                existingTag.setName(request.getName());
+            }
+            if (StringUtils.hasText(request.getDescription())) {
+                existingTag.setDescription(request.getDescription());
+            }
+            if (request.getCategoryId() != null) {
+                existingTag.setCategoryId(request.getCategoryId());
+            }
+            
+            Tag updatedTag = tagService.updateTag(existingTag);
+            TagResponse response = convertToTagResponse(updatedTag);
             
             log.info("标签更新成功: ID={}", updatedTag.getId());
             return Result.success(response);
+            
         } catch (Exception e) {
             log.error("更新标签失败", e);
             return Result.error("TAG_UPDATE_ERROR", "更新标签失败: " + e.getMessage());
@@ -92,21 +101,27 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_DETAIL_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_LIST_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_TYPE_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_SEARCH_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_CONTENT_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_USER_INTEREST_CACHE)
-    public Result<Void> deleteTag(Long tagId) {
+    public Result<Void> deleteTag(Long tagId, Long operatorId) {
         try {
-            log.info("删除标签请求: ID={}", tagId);
+            log.info("删除标签请求: ID={}, 操作人={}", tagId, operatorId);
             
-            tagService.deleteTag(tagId);
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
             
-            log.info("标签删除成功: ID={}", tagId);
-            return Result.success(null);
+            Tag existingTag = tagService.getTagById(tagId);
+            if (existingTag == null) {
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
+            boolean success = tagService.deleteTagById(tagId);
+            if (success) {
+                log.info("标签删除成功: ID={}", tagId);
+                return Result.success();
+            } else {
+                return Result.error("TAG_DELETE_ERROR", "标签删除失败");
+            }
+            
         } catch (Exception e) {
             log.error("删除标签失败", e);
             return Result.error("TAG_DELETE_ERROR", "删除标签失败: " + e.getMessage());
@@ -114,49 +129,57 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_DETAIL_CACHE,
-            key = TagCacheConstant.TAG_DETAIL_KEY,
-            expire = TagCacheConstant.TAG_DETAIL_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
     public Result<TagResponse> getTagById(Long tagId) {
         try {
-            log.debug("获取标签详情: ID={}", tagId);
+            log.debug("查询标签详情: ID={}", tagId);
+            
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
             
             Tag tag = tagService.getTagById(tagId);
             if (tag == null) {
                 return Result.error("TAG_NOT_FOUND", "标签不存在");
             }
             
-            TagResponse response = convertToResponse(tag);
+            TagResponse response = convertToTagResponse(tag);
             return Result.success(response);
+            
         } catch (Exception e) {
-            log.error("查询标签失败", e);
-            return Result.error("TAG_QUERY_ERROR", "查询标签失败: " + e.getMessage());
+            log.error("查询标签详情失败", e);
+            return Result.error("TAG_QUERY_ERROR", "查询标签详情失败: " + e.getMessage());
         }
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_LIST_CACHE,
-            key = TagCacheConstant.TAG_LIST_KEY,
-            expire = TagCacheConstant.TAG_LIST_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
     public Result<PageResponse<TagResponse>> queryTags(TagQueryRequest request) {
         try {
-            log.debug("分页查询标签: currentPage={}, pageSize={}", request.getCurrentPage(), request.getPageSize());
+            log.debug("分页查询标签: 页码={}, 大小={}", request.getCurrentPage(), request.getPageSize());
             
-            IPage<Tag> page = tagService.queryTags(
-                request.getCurrentPage(),
-                request.getPageSize(),
-                request.getName(),
-                request.getTagType(),
-                request.getCategoryId(),
-                request.getStatus()
-            );
+            // 委托给TagService处理复杂分页逻辑
+            List<Tag> allTags = tagService.getAllTags();
+            List<Tag> filteredTags = allTags.stream()
+                    .filter(tag -> filterTag(tag, request))
+                    .collect(Collectors.toList());
             
-            PageResponse<TagResponse> result = convertToPageResponse(page);
-            return Result.success(result);
+            int total = filteredTags.size();
+            int start = (request.getCurrentPage() - 1) * request.getPageSize();
+            int end = Math.min(start + request.getPageSize(), total);
+            
+            List<Tag> pagedTags = filteredTags.subList(start, end);
+            List<TagResponse> responses = pagedTags.stream()
+                    .map(this::convertToTagResponse)
+                    .collect(Collectors.toList());
+            
+            PageResponse<TagResponse> pageResponse = new PageResponse<>();
+            pageResponse.setDatas(responses);
+            pageResponse.setTotal((long) total);
+            pageResponse.setCurrentPage(request.getCurrentPage());
+            pageResponse.setPageSize(request.getPageSize());
+            pageResponse.setTotal((long) Math.ceil((double) total / request.getPageSize()));
+            
+            return Result.success(pageResponse);
+            
         } catch (Exception e) {
             log.error("分页查询标签失败", e);
             return Result.error("TAG_QUERY_ERROR", "分页查询标签失败: " + e.getMessage());
@@ -164,21 +187,21 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_TYPE_CACHE,
-            key = TagCacheConstant.TAG_TYPE_KEY,
-            expire = TagCacheConstant.TAG_TYPE_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
     public Result<List<TagResponse>> getTagsByType(String tagType) {
         try {
-            log.debug("根据类型查询标签: tagType={}", tagType);
+            log.debug("根据类型查询标签: 类型={}", tagType);
             
-            List<Tag> tags = tagService.getTagsByType(tagType);
+            if (!StringUtils.hasText(tagType)) {
+                return Result.error("INVALID_PARAM", "标签类型不能为空");
+            }
+            
+            List<Tag> tags = tagService.selectByTagType(tagType);
             List<TagResponse> responses = tags.stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToTagResponse)
                     .collect(Collectors.toList());
             
             return Result.success(responses);
+            
         } catch (Exception e) {
             log.error("根据类型查询标签失败", e);
             return Result.error("TAG_QUERY_ERROR", "根据类型查询标签失败: " + e.getMessage());
@@ -186,21 +209,21 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_SEARCH_CACHE,
-            key = TagCacheConstant.TAG_SEARCH_KEY,
-            expire = TagCacheConstant.TAG_SEARCH_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
     public Result<List<TagResponse>> searchTags(String keyword, Integer limit) {
         try {
-            log.debug("搜索标签: keyword={}, limit={}", keyword, limit);
+            log.debug("搜索标签: 关键词={}, 限制数量={}", keyword, limit);
             
-            List<Tag> tags = tagService.searchTags(keyword, limit);
+            if (!StringUtils.hasText(keyword)) {
+                return Result.error("INVALID_PARAM", "搜索关键词不能为空");
+            }
+            
+            List<Tag> tags = tagService.intelligentSearch(keyword, limit);
             List<TagResponse> responses = tags.stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToTagResponse)
                     .collect(Collectors.toList());
             
             return Result.success(responses);
+            
         } catch (Exception e) {
             log.error("搜索标签失败", e);
             return Result.error("TAG_SEARCH_ERROR", "搜索标签失败: " + e.getMessage());
@@ -208,21 +231,39 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_HOT_CACHE,
-            key = TagCacheConstant.TAG_HOT_KEY,
-            expire = TagCacheConstant.TAG_HOT_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
-    public Result<List<TagResponse>> getHotTags(Integer limit) {
+    public Result<List<TagResponse>> searchTagsByNameExact(String keyword, Integer limit) {
         try {
-            log.debug("获取热门标签: limit={}", limit);
+            log.debug("精确搜索标签: 关键词={}, 限制数量={}", keyword, limit);
             
-            List<Tag> tags = tagService.getHotTags(limit);
+            if (!StringUtils.hasText(keyword)) {
+                return Result.error("INVALID_PARAM", "搜索关键词不能为空");
+            }
+            
+            List<Tag> tags = tagService.searchByNameExact(keyword, limit);
             List<TagResponse> responses = tags.stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToTagResponse)
                     .collect(Collectors.toList());
             
             return Result.success(responses);
+            
+        } catch (Exception e) {
+            log.error("精确搜索标签失败", e);
+            return Result.error("TAG_SEARCH_ERROR", "精确搜索标签失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<TagResponse>> getHotTags(Integer limit) {
+        try {
+            log.debug("获取热门标签: 限制数量={}", limit);
+            
+            List<Tag> tags = tagService.selectHotTags(limit);
+            List<TagResponse> responses = tags.stream()
+                    .map(this::convertToTagResponse)
+                    .collect(Collectors.toList());
+            
+            return Result.success(responses);
+            
         } catch (Exception e) {
             log.error("获取热门标签失败", e);
             return Result.error("TAG_QUERY_ERROR", "获取热门标签失败: " + e.getMessage());
@@ -230,228 +271,307 @@ public class TagFacadeServiceImpl implements TagFacadeService {
     }
 
     @Override
-    @Cached(name = TagCacheConstant.TAG_USER_INTEREST_CACHE,
-            key = TagCacheConstant.TAG_USER_INTEREST_KEY,
-            expire = TagCacheConstant.TAG_USER_INTEREST_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
-    public Result<List<TagResponse>> getUserInterestTags(Long userId) {
+    public Result<List<TagResponse>> getTagsByCategory(Long categoryId) {
         try {
-            log.debug("获取用户兴趣标签: userId={}", userId);
+            log.debug("根据分类查询标签: 分类ID={}", categoryId);
             
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法获取兴趣标签: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
+            if (categoryId == null) {
+                return Result.error("INVALID_PARAM", "分类ID不能为空");
             }
             
-            List<Tag> tags = tagService.getUserInterestTags(userId);
+            List<Tag> tags = tagService.selectByCategoryId(categoryId);
             List<TagResponse> responses = tags.stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToTagResponse)
                     .collect(Collectors.toList());
             
             return Result.success(responses);
+            
         } catch (Exception e) {
-            log.error("获取用户兴趣标签失败", e);
-            return Result.error("TAG_QUERY_ERROR", "获取用户兴趣标签失败: " + e.getMessage());
+            log.error("根据分类查询标签失败", e);
+            return Result.error("TAG_QUERY_ERROR", "根据分类查询标签失败: " + e.getMessage());
         }
     }
 
     @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_USER_INTEREST_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    public Result<Void> addUserInterestTag(Long userId, Long tagId, Double interestScore) {
+    public Result<List<TagResponse>> getActiveTags(Long categoryId) {
         try {
-            log.info("添加用户兴趣标签: userId={}, tagId={}, score={}", userId, tagId, interestScore);
+            log.debug("获取活跃标签: 分类ID={}", categoryId);
             
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法添加兴趣标签: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            // 验证标签是否存在
-            Tag tag = tagService.getTagById(tagId);
-            if (tag == null) {
-                log.warn("标签不存在，无法添加兴趣标签: tagId={}", tagId);
-                return Result.error("TAG_NOT_FOUND", "标签不存在");
-            }
-            
-            BigDecimal score = interestScore != null ? BigDecimal.valueOf(interestScore) : null;
-            tagService.addUserInterestTag(userId, tagId, score);
-            
-            log.info("用户兴趣标签添加成功: userId={}, tagId={}, tagName={}", userId, tagId, tag.getName());
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("添加用户兴趣标签失败", e);
-            return Result.error("TAG_INTEREST_ERROR", "添加用户兴趣标签失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_USER_INTEREST_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    public Result<Void> removeUserInterestTag(Long userId, Long tagId) {
-        try {
-            log.info("移除用户兴趣标签: userId={}, tagId={}", userId, tagId);
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法移除兴趣标签: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            // 获取标签信息（用于日志）
-            Tag tag = tagService.getTagById(tagId);
-            String tagName = tag != null ? tag.getName() : "未知标签";
-            
-            tagService.removeUserInterestTag(userId, tagId);
-            
-            log.info("用户兴趣标签移除成功: userId={}, tagId={}, tagName={}", userId, tagId, tagName);
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("移除用户兴趣标签失败", e);
-            return Result.error("TAG_INTEREST_ERROR", "移除用户兴趣标签失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_USER_INTEREST_CACHE)
-    public Result<Void> updateUserInterestScore(Long userId, Long tagId, Double interestScore) {
-        try {
-            log.info("更新用户兴趣分数: userId={}, tagId={}, score={}", userId, tagId, interestScore);
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法更新兴趣分数: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            // 验证标签是否存在
-            Tag tag = tagService.getTagById(tagId);
-            if (tag == null) {
-                log.warn("标签不存在，无法更新兴趣分数: tagId={}", tagId);
-                return Result.error("TAG_NOT_FOUND", "标签不存在");
-            }
-            
-            BigDecimal score = BigDecimal.valueOf(interestScore);
-            tagService.updateUserInterestScore(userId, tagId, score);
-            
-            log.info("用户兴趣分数更新成功: userId={}, tagId={}, tagName={}, newScore={}", 
-                    userId, tagId, tag.getName(), interestScore);
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("更新用户兴趣分数失败", e);
-            return Result.error("TAG_INTEREST_ERROR", "更新用户兴趣分数失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_CONTENT_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    public Result<Void> addContentTag(Long contentId, Long tagId) {
-        try {
-            log.info("为内容添加标签: contentId={}, tagId={}", contentId, tagId);
-            
-            tagService.addContentTag(contentId, tagId);
-            
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("为内容添加标签失败", e);
-            return Result.error("TAG_CONTENT_ERROR", "为内容添加标签失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_CONTENT_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
-    public Result<Void> removeContentTag(Long contentId, Long tagId) {
-        try {
-            log.info("移除内容标签: contentId={}, tagId={}", contentId, tagId);
-            
-            tagService.removeContentTag(contentId, tagId);
-            
-            return Result.success(null);
-        } catch (Exception e) {
-            log.error("移除内容标签失败", e);
-            return Result.error("TAG_CONTENT_ERROR", "移除内容标签失败: " + e.getMessage());
-        }
-    }
-
-    @Override
-    @Cached(name = TagCacheConstant.TAG_CONTENT_CACHE,
-            key = TagCacheConstant.TAG_CONTENT_KEY,
-            expire = TagCacheConstant.TAG_CONTENT_EXPIRE,
-            timeUnit = TimeUnit.MINUTES,
-            cacheType = CacheType.BOTH)
-    public Result<List<TagResponse>> getContentTags(Long contentId) {
-        try {
-            log.debug("获取内容标签: contentId={}", contentId);
-            
-            List<Tag> tags = tagService.getContentTags(contentId);
+            List<Tag> tags = tagService.getActiveTags(categoryId);
             List<TagResponse> responses = tags.stream()
-                    .map(this::convertToResponse)
+                    .map(this::convertToTagResponse)
                     .collect(Collectors.toList());
             
             return Result.success(responses);
+            
         } catch (Exception e) {
-            log.error("获取内容标签失败", e);
-            return Result.error("TAG_QUERY_ERROR", "获取内容标签失败: " + e.getMessage());
+            log.error("获取活跃标签失败", e);
+            return Result.error("TAG_QUERY_ERROR", "获取活跃标签失败: " + e.getMessage());
         }
     }
 
     @Override
-    @CacheInvalidate(name = TagCacheConstant.TAG_DETAIL_CACHE)
-    @CacheInvalidate(name = TagCacheConstant.TAG_HOT_CACHE)
+    public Result<Void> activateTag(Long tagId, Long operatorId) {
+        try {
+            log.info("激活标签: ID={}, 操作人={}", tagId, operatorId);
+            
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
+            
+            boolean success = tagService.activateTag(tagId);
+            return success ? Result.success() : Result.error("TAG_ACTIVATE_ERROR", "标签激活失败");
+            
+        } catch (Exception e) {
+            log.error("激活标签失败", e);
+            return Result.error("TAG_ACTIVATE_ERROR", "激活标签失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Void> deactivateTag(Long tagId, Long operatorId) {
+        try {
+            log.info("停用标签: ID={}, 操作人={}", tagId, operatorId);
+            
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
+            
+            boolean success = tagService.deactivateTag(tagId);
+            return success ? Result.success() : Result.error("TAG_DEACTIVATE_ERROR", "标签停用失败");
+            
+        } catch (Exception e) {
+            log.error("停用标签失败", e);
+            return Result.error("TAG_DEACTIVATE_ERROR", "停用标签失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Integer> batchUpdateTagStatus(List<Long> tagIds, String status, Long operatorId) {
+        try {
+            log.info("批量更新标签状态: 数量={}, 状态={}, 操作人={}", tagIds.size(), status, operatorId);
+            
+            if (tagIds == null || tagIds.isEmpty()) {
+                return Result.error("INVALID_PARAM", "标签ID列表不能为空");
+            }
+            if (!StringUtils.hasText(status)) {
+                return Result.error("INVALID_PARAM", "状态不能为空");
+            }
+            
+            int result = tagService.batchUpdateStatus(tagIds, status);
+            log.info("批量更新标签状态完成: 更新数量={}", result);
+            return Result.success(result);
+            
+        } catch (Exception e) {
+            log.error("批量更新标签状态失败", e);
+            return Result.error("TAG_UPDATE_ERROR", "批量更新标签状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
     public Result<Void> increaseTagUsage(Long tagId) {
         try {
-            log.debug("增加标签使用次数: tagId={}", tagId);
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
             
-            tagService.increaseTagUsage(tagId);
+            boolean success = tagService.increaseUsageCount(tagId);
+            return success ? Result.success() : Result.error("TAG_UPDATE_ERROR", "增加标签使用次数失败");
             
-            return Result.success(null);
         } catch (Exception e) {
             log.error("增加标签使用次数失败", e);
             return Result.error("TAG_UPDATE_ERROR", "增加标签使用次数失败: " + e.getMessage());
         }
     }
 
-    /**
-     * 转换为响应对象
-     */
-    private TagResponse convertToResponse(Tag tag) {
+    @Override
+    public Result<Void> decreaseTagUsage(Long tagId) {
+        try {
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
+            
+            boolean success = tagService.decreaseUsageCount(tagId);
+            return success ? Result.success() : Result.error("TAG_UPDATE_ERROR", "减少标签使用次数失败");
+            
+        } catch (Exception e) {
+            log.error("减少标签使用次数失败", e);
+            return Result.error("TAG_UPDATE_ERROR", "减少标签使用次数失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getTagUsageStats(String tagType, Integer limit) {
+        try {
+            List<Map<String, Object>> stats = tagService.getTagUsageStats(tagType, limit);
+            return Result.success(stats);
+        } catch (Exception e) {
+            log.error("获取标签使用统计失败", e);
+            return Result.error("TAG_STATS_ERROR", "获取标签使用统计失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getTagSummary(List<Long> tagIds) {
+        try {
+            if (tagIds == null || tagIds.isEmpty()) {
+                return Result.error("INVALID_PARAM", "标签ID列表不能为空");
+            }
+            
+            List<Map<String, Object>> summary = tagService.selectTagSummary(tagIds);
+            return Result.success(summary);
+        } catch (Exception e) {
+            log.error("批量获取标签基本信息失败", e);
+            return Result.error("TAG_QUERY_ERROR", "批量获取标签基本信息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> checkTagExists(String name, String tagType) {
+        try {
+            if (!StringUtils.hasText(name) || !StringUtils.hasText(tagType)) {
+                return Result.error("INVALID_PARAM", "标签名称和类型不能为空");
+            }
+            
+            boolean exists = tagService.existsByNameAndType(name, tagType);
+            return Result.success(exists);
+        } catch (Exception e) {
+            log.error("检查标签是否存在失败", e);
+            return Result.error("TAG_CHECK_ERROR", "检查标签是否存在失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Boolean> canDeleteTag(Long tagId) {
+        try {
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
+            
+            Tag tag = tagService.getTagById(tagId);
+            if (tag == null) {
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
+            // 简化实现：基于使用次数判断
+            boolean canDelete = tag.getUsageCount() == null || tag.getUsageCount() == 0;
+            return Result.success(canDelete);
+        } catch (Exception e) {
+            log.error("检查标签是否可以删除失败", e);
+            return Result.error("TAG_CHECK_ERROR", "检查标签是否可以删除失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<Map<String, Object>>> getTagCloud(String tagType, Integer limit) {
+        try {
+            List<Map<String, Object>> tagStats = tagService.getTagUsageStats(tagType, limit);
+            return Result.success(tagStats);
+        } catch (Exception e) {
+            log.error("获取标签云失败", e);
+            return Result.error("TAG_CLOUD_ERROR", "获取标签云失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<List<TagResponse>> getSimilarTags(Long tagId, Integer limit) {
+        try {
+            if (tagId == null) {
+                return Result.error("INVALID_PARAM", "标签ID不能为空");
+            }
+            
+            Tag tag = tagService.getTagById(tagId);
+            if (tag == null) {
+                return Result.error("TAG_NOT_FOUND", "标签不存在");
+            }
+            
+            // 简化实现：基于相同类型和分类获取相似标签
+            List<Tag> similarTags = tagService.selectByCategoryId(tag.getCategoryId())
+                    .stream()
+                    .filter(t -> !t.getId().equals(tagId))
+                    .limit(limit != null ? limit : 10)
+                    .collect(Collectors.toList());
+            
+            List<TagResponse> responses = similarTags.stream()
+                    .map(this::convertToTagResponse)
+                    .collect(Collectors.toList());
+            
+            return Result.success(responses);
+        } catch (Exception e) {
+            log.error("获取相似标签失败", e);
+            return Result.error("TAG_QUERY_ERROR", "获取相似标签失败: " + e.getMessage());
+        }
+    }
+
+    // 其他方法简化实现
+    @Override
+    public Result<Integer> recalculateTagUsageCounts(Long operatorId) {
+        return Result.error("NOT_IMPLEMENTED", "功能暂未实现");
+    }
+
+    @Override
+    public Result<Integer> mergeDuplicateTags(Long mainTagId, List<Long> duplicateTagIds, Long operatorId) {
+        return Result.error("NOT_IMPLEMENTED", "功能暂未实现");
+    }
+
+    @Override
+    public Result<Integer> cleanupUnusedTags(Long operatorId) {
+        return Result.error("NOT_IMPLEMENTED", "功能暂未实现");
+    }
+
+    @Override
+    public Result<List<String>> getAllTagTypes() {
+        try {
+            List<String> tagTypes = tagService.getAllTags().stream()
+                    .map(Tag::getTagType)
+                    .distinct()
+                    .collect(Collectors.toList());
+            return Result.success(tagTypes);
+        } catch (Exception e) {
+            return Result.error("TAG_QUERY_ERROR", "获取所有标签类型失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<Map<String, Object>> getTagSystemStats() {
+        return Result.error("NOT_IMPLEMENTED", "功能暂未实现");
+    }
+
+    @Override
+    public Result<String> healthCheck() {
+        try {
+            List<Tag> allTags = tagService.getAllTags();
+            long activeTagCount = allTags.stream()
+                    .filter(tag -> "active".equals(tag.getStatus()))
+                    .count();
+            
+            String healthStatus = String.format("标签系统运行正常。活跃标签数量: %d", activeTagCount);
+            return Result.success(healthStatus);
+        } catch (Exception e) {
+            return Result.error("HEALTH_CHECK_ERROR", "健康检查失败: " + e.getMessage());
+        }
+    }
+
+    // 私有工具方法
+    private TagResponse convertToTagResponse(Tag tag) {
         TagResponse response = new TagResponse();
         BeanUtils.copyProperties(tag, response);
         return response;
     }
 
-    /**
-     * 转换分页结果
-     */
-    private PageResponse<TagResponse> convertToPageResponse(IPage<Tag> page) {
-        PageResponse<TagResponse> response = new PageResponse<>();
-        response.setSuccess(true);  // 设置成功状态
-        response.setDatas(convertToResponseList(page.getRecords()));
-        response.setTotalPage((int) page.getPages());
-        response.setCurrentPage((int) page.getCurrent());
-        response.setPageSize((int) page.getSize());
-        response.setTotal(page.getTotal());
-        return response;
-    }
-
-    /**
-     * 转换实体列表为响应列表
-     */
-    private List<TagResponse> convertToResponseList(List<Tag> tags) {
-        if (tags == null) {
-            return null;
+    private boolean filterTag(Tag tag, TagQueryRequest request) {
+        if (StringUtils.hasText(request.getName()) && !tag.getName().contains(request.getName())) {
+            return false;
         }
-        return tags.stream()
-                .map(this::convertToResponse)
-                .collect(Collectors.toList());
+        if (StringUtils.hasText(request.getTagType()) && !request.getTagType().equals(tag.getTagType())) {
+            return false;
+        }
+        if (request.getCategoryId() != null && !request.getCategoryId().equals(tag.getCategoryId())) {
+            return false;
+        }
+        if (StringUtils.hasText(request.getStatus()) && !request.getStatus().equals(tag.getStatus())) {
+            return false;
+        }
+        return true;
     }
-} 
+}
