@@ -20,7 +20,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 import java.util.Map;
@@ -28,12 +27,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * 点赞门面服务实现类 - 缓存增强版
- * 对齐order模块设计风格，提供完整的点赞服务
- * 包含缓存功能、跨模块集成、错误处理、数据转换
+ * 点赞门面服务实现类 - MySQL 8.0 优化版
+ * 完全对应LikeFacadeService接口，与底层Service层保持一致
+ * 
+ * 实现特性：
+ * - 与LikeFacadeService接口完全对应
+ * - 支持用户、目标对象、作者三个维度的查询
+ * - 支持时间范围查询和批量操作
+ * - 完整的缓存策略和跨模块集成
+ * - 统一的错误处理和数据转换
  * 
  * @author GIG Team
- * @version 2.0.0 (缓存增强版)
+ * @version 2.0.0 (MySQL 8.0 优化版)
  * @since 2024-01-16
  */
 @Slf4j
@@ -42,17 +47,9 @@ import java.util.stream.Collectors;
 public class LikeFacadeServiceImpl implements LikeFacadeService {
 
     private final LikeService likeService;
-    
-    // =================== 跨模块服务注入（预留扩展） ===================
-    // 注：跨模块服务调用根据业务需要可在此添加
-    @Autowired
-    private UserFacadeService userFacadeService;
-    
-    @Autowired
-    private ContentFacadeService contentFacadeService;
-    
-    @Autowired
-    private CommentFacadeService commentFacadeService;
+    private final UserFacadeService userFacadeService;
+    private final ContentFacadeService contentFacadeService;
+    private final CommentFacadeService commentFacadeService;
 
     // =================== 点赞核心功能 ===================
 
@@ -213,44 +210,92 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     @Override
     @Cached(name = LikeCacheConstant.LIKE_RECORDS_CACHE, key = LikeCacheConstant.LIKE_RECORDS_KEY,
             expire = LikeCacheConstant.LIKE_RECORDS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<PageResponse<LikeResponse>> queryLikes(LikeQueryRequest request) {
+    public Result<PageResponse<LikeResponse>> findUserLikes(Long userId, String likeType, String status, 
+                                                           Integer currentPage, Integer pageSize) {
         try {
-            log.info("分页查询点赞记录: 页码={}, 页大小={}, 用户={}, 类型={}", 
-                    request.getCurrentPage(), request.getPageSize(), request.getUserId(), request.getLikeType());
+            log.info("分页查询用户点赞记录: userId={}, likeType={}, status={}, 页码={}, 页大小={}", 
+                    userId, likeType, status, currentPage, pageSize);
             long startTime = System.currentTimeMillis();
 
-            // 智能验证：只有指定用户ID时才验证（支持管理员查询所有点赞记录）
-            if (request.getUserId() != null) {
-                Result<UserResponse> userResult = userFacadeService.getUserById(request.getUserId());
-                if (userResult == null || !userResult.getSuccess()) {
-                    log.warn("用户不存在，无法查询点赞记录: userId={}", request.getUserId());
-                    return Result.error("USER_NOT_FOUND", "用户不存在");
-                }
+            // 验证用户是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("用户不存在，无法查询点赞记录: userId={}", userId);
+                return Result.error("USER_NOT_FOUND", "用户不存在");
             }
 
             // 调用业务逻辑进行分页查询
-            IPage<Like> likePage = likeService.queryLikes(
-                    request.getCurrentPage(),
-                    request.getPageSize(),
-                    request.getUserId(),
-                    request.getLikeType(),
-                    request.getTargetId(),
-                    request.getTargetAuthorId(),
-                    request.getStatus(),
-                    request.getOrderBy(),
-                    request.getOrderDirection()
-            );
+            IPage<Like> likePage = likeService.findUserLikes(currentPage, pageSize, userId, likeType, status);
 
             // 转换分页响应
             PageResponse<LikeResponse> pageResponse = convertToPageResponse(likePage);
 
             long duration = System.currentTimeMillis() - startTime;
-            log.info("点赞记录查询完成: 总数={}, 当前页={}, 耗时={}ms", 
-                    pageResponse.getTotal(), pageResponse.getCurrentPage(), duration);
+            log.info("用户点赞记录查询完成: 用户={}({}), 总数={}, 当前页={}, 耗时={}ms", 
+                    userId, userResult.getData().getNickname(), pageResponse.getTotal(), pageResponse.getCurrentPage(), duration);
             return Result.success(pageResponse);
         } catch (Exception e) {
-            log.error("分页查询点赞记录失败: 页码={}, 页大小={}", request.getCurrentPage(), request.getPageSize(), e);
-            return Result.error("LIKE_QUERY_ERROR", "查询点赞记录失败: " + e.getMessage());
+            log.error("分页查询用户点赞记录失败: userId={}, 页码={}, 页大小={}", userId, currentPage, pageSize, e);
+            return Result.error("USER_LIKES_QUERY_ERROR", "查询用户点赞记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = LikeCacheConstant.LIKE_RECORDS_CACHE, key = LikeCacheConstant.LIKE_RECORDS_KEY,
+            expire = LikeCacheConstant.LIKE_RECORDS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<PageResponse<LikeResponse>> findTargetLikes(Long targetId, String likeType, String status,
+                                                             Integer currentPage, Integer pageSize) {
+        try {
+            log.info("分页查询目标对象点赞记录: targetId={}, likeType={}, status={}, 页码={}, 页大小={}", 
+                    targetId, likeType, status, currentPage, pageSize);
+            long startTime = System.currentTimeMillis();
+
+            // 调用业务逻辑进行分页查询
+            IPage<Like> likePage = likeService.findTargetLikes(currentPage, pageSize, targetId, likeType, status);
+
+            // 转换分页响应
+            PageResponse<LikeResponse> pageResponse = convertToPageResponse(likePage);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("目标对象点赞记录查询完成: targetId={}, 总数={}, 当前页={}, 耗时={}ms", 
+                    targetId, pageResponse.getTotal(), pageResponse.getCurrentPage(), duration);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("分页查询目标对象点赞记录失败: targetId={}, 页码={}, 页大小={}", targetId, currentPage, pageSize, e);
+            return Result.error("TARGET_LIKES_QUERY_ERROR", "查询目标对象点赞记录失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = LikeCacheConstant.LIKE_RECORDS_CACHE, key = LikeCacheConstant.LIKE_RECORDS_KEY,
+            expire = LikeCacheConstant.LIKE_RECORDS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<PageResponse<LikeResponse>> findAuthorLikes(Long targetAuthorId, String likeType, String status,
+                                                             Integer currentPage, Integer pageSize) {
+        try {
+            log.info("分页查询作者作品点赞记录: targetAuthorId={}, likeType={}, status={}, 页码={}, 页大小={}", 
+                    targetAuthorId, likeType, status, currentPage, pageSize);
+            long startTime = System.currentTimeMillis();
+
+            // 验证作者是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(targetAuthorId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("作者不存在，无法查询作品点赞记录: targetAuthorId={}", targetAuthorId);
+                return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+            }
+
+            // 调用业务逻辑进行分页查询
+            IPage<Like> likePage = likeService.findAuthorLikes(currentPage, pageSize, targetAuthorId, likeType, status);
+
+            // 转换分页响应
+            PageResponse<LikeResponse> pageResponse = convertToPageResponse(likePage);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("作者作品点赞记录查询完成: 作者={}({}), 总数={}, 当前页={}, 耗时={}ms", 
+                    targetAuthorId, userResult.getData().getNickname(), pageResponse.getTotal(), pageResponse.getCurrentPage(), duration);
+            return Result.success(pageResponse);
+        } catch (Exception e) {
+            log.error("分页查询作者作品点赞记录失败: targetAuthorId={}, 页码={}, 页大小={}", targetAuthorId, currentPage, pageSize, e);
+            return Result.error("AUTHOR_LIKES_QUERY_ERROR", "查询作者作品点赞记录失败: " + e.getMessage());
         }
     }
 
@@ -259,40 +304,64 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
     @Override
     @Cached(name = LikeCacheConstant.LIKE_COUNT_CACHE, key = LikeCacheConstant.TARGET_LIKE_COUNT_KEY,
             expire = LikeCacheConstant.LIKE_COUNT_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<Long> getLikeCount(String likeType, Long targetId) {
+    public Result<Long> countTargetLikes(Long targetId, String likeType) {
         try {
-            log.debug("获取点赞数量: 类型={}, 目标={}", likeType, targetId);
+            log.debug("统计目标对象点赞数量: targetId={}, likeType={}", targetId, likeType);
 
-            Long count = likeService.getLikeCount(likeType, targetId);
-            log.debug("点赞数量查询完成: 目标={}, 数量={}", targetId, count);
+            Long count = likeService.countTargetLikes(targetId, likeType);
+            log.debug("目标对象点赞数量统计完成: targetId={}, 数量={}", targetId, count);
             return Result.success(count);
         } catch (Exception e) {
-            log.error("获取点赞数量失败: 类型={}, 目标={}", likeType, targetId, e);
-            return Result.error("LIKE_COUNT_ERROR", "获取点赞数量失败: " + e.getMessage());
+            log.error("统计目标对象点赞数量失败: targetId={}, likeType={}", targetId, likeType, e);
+            return Result.error("TARGET_LIKE_COUNT_ERROR", "统计目标对象点赞数量失败: " + e.getMessage());
         }
     }
 
     @Override
     @Cached(name = LikeCacheConstant.LIKE_COUNT_CACHE, key = LikeCacheConstant.USER_LIKE_COUNT_KEY,
             expire = LikeCacheConstant.LIKE_COUNT_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
-    public Result<Long> getUserLikeCount(Long userId, String likeType) {
+    public Result<Long> countUserLikes(Long userId, String likeType) {
         try {
-            log.debug("获取用户点赞数量: 用户={}, 类型={}", userId, likeType);
+            log.debug("统计用户点赞数量: userId={}, likeType={}", userId, likeType);
 
             // 验证用户是否存在
             Result<UserResponse> userResult = userFacadeService.getUserById(userId);
             if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法获取用户点赞数量: userId={}", userId);
+                log.warn("用户不存在，无法统计用户点赞数量: userId={}", userId);
                 return Result.error("USER_NOT_FOUND", "用户不存在");
             }
 
-            Long count = likeService.getUserLikeCount(userId, likeType);
-            log.debug("用户点赞数量查询完成: 用户={}({}), 数量={}", 
+            Long count = likeService.countUserLikes(userId, likeType);
+            log.debug("用户点赞数量统计完成: 用户={}({}), 数量={}", 
                     userId, userResult.getData().getNickname(), count);
             return Result.success(count);
         } catch (Exception e) {
-            log.error("获取用户点赞数量失败: 用户={}, 类型={}", userId, likeType, e);
-            return Result.error("USER_LIKE_COUNT_ERROR", "获取用户点赞数量失败: " + e.getMessage());
+            log.error("统计用户点赞数量失败: userId={}, likeType={}", userId, likeType, e);
+            return Result.error("USER_LIKE_COUNT_ERROR", "统计用户点赞数量失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = LikeCacheConstant.LIKE_COUNT_CACHE, key = LikeCacheConstant.TARGET_LIKE_COUNT_KEY,
+            expire = LikeCacheConstant.LIKE_COUNT_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<Long> countAuthorLikes(Long targetAuthorId, String likeType) {
+        try {
+            log.debug("统计作者作品被点赞数量: targetAuthorId={}, likeType={}", targetAuthorId, likeType);
+
+            // 验证作者是否存在
+            Result<UserResponse> userResult = userFacadeService.getUserById(targetAuthorId);
+            if (userResult == null || !userResult.getSuccess()) {
+                log.warn("作者不存在，无法统计作品被点赞数量: targetAuthorId={}", targetAuthorId);
+                return Result.error("AUTHOR_NOT_FOUND", "作者不存在");
+            }
+
+            Long count = likeService.countAuthorLikes(targetAuthorId, likeType);
+            log.debug("作者作品被点赞数量统计完成: 作者={}({}), 数量={}", 
+                    targetAuthorId, userResult.getData().getNickname(), count);
+            return Result.success(count);
+        } catch (Exception e) {
+            log.error("统计作者作品被点赞数量失败: targetAuthorId={}, likeType={}", targetAuthorId, likeType, e);
+            return Result.error("AUTHOR_LIKE_COUNT_ERROR", "统计作者作品被点赞数量失败: " + e.getMessage());
         }
     }
 
@@ -322,6 +391,35 @@ public class LikeFacadeServiceImpl implements LikeFacadeService {
         } catch (Exception e) {
             log.error("批量检查点赞状态失败: 用户={}, 类型={}", userId, likeType, e);
             return Result.error("BATCH_CHECK_ERROR", "批量检查点赞状态失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    @Cached(name = LikeCacheConstant.LIKE_RECORDS_CACHE, key = LikeCacheConstant.LIKE_RECORDS_KEY,
+            expire = LikeCacheConstant.LIKE_RECORDS_EXPIRE, timeUnit = TimeUnit.MINUTES, cacheType = CacheType.BOTH)
+    public Result<List<LikeResponse>> findByTimeRange(java.time.LocalDateTime startTime, 
+                                                     java.time.LocalDateTime endTime,
+                                                     String likeType, String status) {
+        try {
+            log.info("查询时间范围内的点赞记录: startTime={}, endTime={}, likeType={}, status={}", 
+                    startTime, endTime, likeType, status);
+            long queryStartTime = System.currentTimeMillis();
+
+            // 调用业务逻辑进行时间范围查询
+            List<Like> likeList = likeService.findByTimeRange(startTime, endTime, likeType, status);
+
+            // 转换响应对象
+            List<LikeResponse> responseList = likeList.stream()
+                    .map(this::convertToResponse)
+                    .collect(java.util.stream.Collectors.toList());
+
+            long duration = System.currentTimeMillis() - queryStartTime;
+            log.info("时间范围点赞记录查询完成: startTime={}, endTime={}, 数量={}, 耗时={}ms", 
+                    startTime, endTime, responseList.size(), duration);
+            return Result.success(responseList);
+        } catch (Exception e) {
+            log.error("查询时间范围内的点赞记录失败: startTime={}, endTime={}", startTime, endTime, e);
+            return Result.error("TIME_RANGE_QUERY_ERROR", "查询时间范围内的点赞记录失败: " + e.getMessage());
         }
     }
 

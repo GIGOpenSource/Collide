@@ -16,12 +16,14 @@
     </resultMap>
 
     <!-- 根据用户ID和对方用户ID查询会话 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引直接匹配 -->
     <select id="findByUserIds" resultMap="BaseResultMap">
         SELECT * FROM t_message_session
         WHERE user_id = #{userId} AND other_user_id = #{otherUserId}
     </select>
 
     <!-- 查询用户的会话列表 -->
+    <!-- 索引使用: idx_user_sessions_optimized(user_id, is_archived, last_message_time DESC, unread_count) - 会话列表优化 -->
     <select id="findUserSessions" resultMap="BaseResultMap">
         SELECT * FROM t_message_session
         WHERE user_id = #{userId}
@@ -54,6 +56,7 @@
     </select>
 
     <!-- 查询用户的活跃会话 -->
+    <!-- 索引使用: idx_active_sessions_time(user_id, last_message_time DESC) - 活跃会话时间优化 -->
     <select id="findActiveSessions" resultMap="BaseResultMap">
         SELECT * FROM t_message_session
         WHERE user_id = #{userId}
@@ -64,12 +67,14 @@
     </select>
 
     <!-- 统计用户的未读会话数 -->
+    <!-- 索引使用: idx_unread_sessions_count(user_id, unread_count) - 未读会话统计优化 -->
     <select id="countUnreadSessions" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message_session
         WHERE user_id = #{userId} AND unread_count > 0
     </select>
 
     <!-- 统计用户的总会话数 -->
+    <!-- 索引使用: idx_user_sessions_optimized(user_id, is_archived) - 会话总数统计优化 -->
     <select id="countUserSessions" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message_session
         WHERE user_id = #{userId}
@@ -79,6 +84,7 @@
     </select>
 
     <!-- 更新会话的最后消息信息 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
     <update id="updateLastMessage">
         UPDATE t_message_session 
         SET last_message_id = #{lastMessageId}, 
@@ -88,6 +94,7 @@
     </update>
 
     <!-- 增加会话的未读计数 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
     <update id="incrementUnreadCount">
         UPDATE t_message_session 
         SET unread_count = unread_count + 1,
@@ -96,6 +103,7 @@
     </update>
 
     <!-- 清零会话的未读计数 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引定位更新 -->
     <update id="clearUnreadCount">
         UPDATE t_message_session 
         SET unread_count = 0,
@@ -104,6 +112,7 @@
     </update>
 
     <!-- 更新会话归档状态 -->
+    <!-- 索引使用: PRIMARY KEY(id) - 主键直接更新 -->
     <update id="updateArchiveStatus">
         UPDATE t_message_session 
         SET is_archived = #{isArchived},
@@ -112,6 +121,7 @@
     </update>
 
     <!-- 创建或更新会话信息 -->
+    <!-- 索引使用: uk_user_other(user_id, other_user_id) - 唯一索引UPSERT操作 -->
     <insert id="insertOrUpdate">
         INSERT INTO t_message_session (
             user_id, other_user_id, last_message_id, last_message_time, 
@@ -127,6 +137,7 @@
     </insert>
 
     <!-- 删除空会话（没有消息的会话） -->
+    <!-- 索引使用: idx_last_message_ref(last_message_id) + idx_session_cleanup - 关联查询清理 -->
     <delete id="deleteEmptySessions">
         DELETE FROM t_message_session 
         WHERE last_message_id IS NULL 
@@ -136,6 +147,7 @@
     </delete>
 
     <!-- 删除指定时间前的归档会话 -->
+    <!-- 索引使用: idx_session_cleanup(is_archived, update_time) - 归档会话清理优化 -->
     <delete id="deleteArchivedSessions">
         DELETE FROM t_message_session 
         WHERE is_archived = 1 AND update_time &lt; #{beforeTime}

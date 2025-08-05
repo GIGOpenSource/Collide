@@ -17,7 +17,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -361,6 +360,44 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    @CacheInvalidate(name = OrderCacheConstant.ORDER_DETAIL_CACHE, 
+                     key = OrderCacheConstant.ORDER_DETAIL_KEY + "#orderId")
+    @CacheInvalidate(name = OrderCacheConstant.USER_ORDER_CACHE)
+    public boolean updatePaymentInfo(Long orderId, String payStatus, String payMethod, LocalDateTime payTime) {
+        log.info("更新订单支付信息: orderId={}, payStatus={}, payMethod={}, payTime={}", 
+                orderId, payStatus, payMethod, payTime);
+        
+        try {
+            int result = orderMapper.updatePaymentInfo(orderId, payStatus, payMethod, payTime);
+            
+            if (result > 0) {
+                // 如果支付成功，更新订单状态
+                if ("paid".equals(payStatus)) {
+                    Order order = getOrderById(orderId);
+                    if (order != null) {
+                        String newStatus = order.isVirtualGoods() ? 
+                                Order.OrderStatus.COMPLETED.getCode() : Order.OrderStatus.PAID.getCode();
+                        updateOrderStatus(orderId, newStatus);
+                        
+                        // 处理支付成功后的业务逻辑
+                        handlePaymentSuccess(order);
+                    }
+                }
+                
+                log.info("订单支付信息更新成功: orderId={}", orderId);
+                return true;
+            } else {
+                log.warn("订单支付信息更新失败: orderId={}", orderId);
+                return false;
+            }
+        } catch (Exception e) {
+            log.error("订单支付信息更新异常: orderId={}", orderId, e);
+            throw e;
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean handlePaymentCallback(String orderNo, String payStatus, String payMethod, 
                                        LocalDateTime payTime, Map<String, Object> extraInfo) {
         log.info("处理支付回调: orderNo={}, payStatus={}, payMethod={}", orderNo, payStatus, payMethod);
@@ -436,7 +473,7 @@ public class OrderServiceImpl implements OrderService {
     @Transactional(rollbackFor = Exception.class)
     @CacheInvalidate(name = OrderCacheConstant.ORDER_LIST_CACHE)
     @CacheInvalidate(name = OrderCacheConstant.USER_ORDER_CACHE)
-    public boolean batchUpdateOrderStatus(List<Long> orderIds, String newStatus) {
+    public boolean batchUpdateStatus(List<Long> orderIds, String newStatus) {
         log.info("批量更新订单状态: count={}, newStatus={}", orderIds.size(), newStatus);
         
         if (CollectionUtils.isEmpty(orderIds)) {
@@ -501,6 +538,17 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
+    public List<Order> getTimeoutOrdersByTime(LocalDateTime timeoutTime) {
+        log.debug("查询超时订单: timeoutTime={}", timeoutTime);
+        
+        if (timeoutTime == null) {
+            timeoutTime = LocalDateTime.now().minusMinutes(30); // 默认30分钟前
+        }
+        
+        return orderMapper.selectTimeoutOrders(timeoutTime);
+    }
+
+    @Override
     @Transactional(rollbackFor = Exception.class)
     public int autoCancelTimeoutOrders(Integer timeoutMinutes) {
         log.info("自动取消超时订单: timeoutMinutes={}", timeoutMinutes);
@@ -547,7 +595,7 @@ public class OrderServiceImpl implements OrderService {
                 .map(Order::getId)
                 .collect(Collectors.toList());
         
-        boolean success = batchUpdateOrderStatus(orderIds, Order.OrderStatus.COMPLETED.getCode());
+        boolean success = batchUpdateStatus(orderIds, Order.OrderStatus.COMPLETED.getCode());
         
         int completeCount = success ? orderIds.size() : 0;
         log.info("自动完成已发货订单完成: count={}", completeCount);
@@ -772,13 +820,93 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public String generateOrderNo(Long userId) {
-        // 格式：ORD + 年月日时分秒 + 用户ID后4位 + 随机3位数
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
-        String timeStr = LocalDateTime.now().format(formatter);
-        String userSuffix = String.format("%04d", userId % 10000);
-        String randomSuffix = String.format("%03d", new Random().nextInt(1000));
+        // 使用雪花算法生成唯一订单号，确保在分布式环境下的唯一性
+        long snowflakeId = generateSnowflakeId();
+        return "ORD" + snowflakeId;
+    }
+
+    /**
+     * 雪花算法生成唯一ID
+     * 64位ID：1位符号位 + 41位时间戳 + 10位工作机器ID + 12位序列号
+     */
+    private static final long EPOCH = 1640995200000L; // 2022-01-01 00:00:00 作为起始时间
+    private static final long WORKER_ID_BITS = 5L;
+    private static final long DATACENTER_ID_BITS = 5L;
+    private static final long MAX_WORKER_ID = ~(-1L << WORKER_ID_BITS);
+    private static final long MAX_DATACENTER_ID = ~(-1L << DATACENTER_ID_BITS);
+    private static final long SEQUENCE_BITS = 12L;
+    private static final long WORKER_ID_SHIFT = SEQUENCE_BITS;
+    private static final long DATACENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
+    private static final long TIMESTAMP_LEFT_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
+    private static final long SEQUENCE_MASK = ~(-1L << SEQUENCE_BITS);
+
+    private static long workerId = 1L; // 工作机器ID，可以从配置获取
+    private static long datacenterId = 1L; // 数据中心ID，可以从配置获取
+    private static long sequence = 0L;
+    private static long lastTimestamp = -1L;
+
+    private synchronized long generateSnowflakeId() {
+        long timestamp = System.currentTimeMillis();
+
+        if (timestamp < lastTimestamp) {
+            throw new RuntimeException("Clock moved backwards. Refusing to generate id");
+        }
+
+        if (lastTimestamp == timestamp) {
+            sequence = (sequence + 1) & SEQUENCE_MASK;
+            if (sequence == 0) {
+                timestamp = tilNextMillis(lastTimestamp);
+            }
+        } else {
+            sequence = 0L;
+        }
+
+        lastTimestamp = timestamp;
+
+        return ((timestamp - EPOCH) << TIMESTAMP_LEFT_SHIFT)
+                | (datacenterId << DATACENTER_ID_SHIFT)
+                | (workerId << WORKER_ID_SHIFT)
+                | sequence;
+    }
+
+    private long tilNextMillis(long lastTimestamp) {
+        long timestamp = System.currentTimeMillis();
+        while (timestamp <= lastTimestamp) {
+            timestamp = System.currentTimeMillis();
+        }
+        return timestamp;
+    }
+
+    // =================== 计数统计 ===================
+
+    @Override
+    @Cached(name = OrderCacheConstant.ORDER_STATISTICS_CACHE,
+            key = "T(com.gig.collide.order.infrastructure.cache.OrderCacheConstant).buildGoodsCountKey(#goodsId, #status)",
+            expire = OrderCacheConstant.STATISTICS_EXPIRE,
+            timeUnit = TimeUnit.MINUTES)
+    public Long countOrdersByGoodsId(Long goodsId, String status) {
+        log.debug("统计商品订单数: goodsId={}, status={}", goodsId, status);
         
-        return "ORD" + timeStr + userSuffix + randomSuffix;
+        if (goodsId == null || goodsId <= 0) {
+            return 0L;
+        }
+        
+        return orderMapper.countByGoodsId(goodsId, status);
+    }
+
+    @Override
+    @Cached(name = OrderCacheConstant.ORDER_STATISTICS_CACHE,
+            key = "T(com.gig.collide.order.infrastructure.cache.OrderCacheConstant).buildUserCountKey(#userId, #status)",
+            expire = OrderCacheConstant.STATISTICS_EXPIRE,
+            timeUnit = TimeUnit.MINUTES)
+    public Long countOrdersByUserId(Long userId, String status) {
+        log.debug("统计用户订单数: userId={}, status={}", userId, status);
+        
+        if (userId == null || userId <= 0) {
+            return 0L;
+        }
+        
+        return orderMapper.countByUserId(userId, status);
     }
 
     // =================== 私有方法 ===================
@@ -787,6 +915,13 @@ public class OrderServiceImpl implements OrderService {
      * 设置订单默认值
      */
     private void setDefaultValues(Order order) {
+        // 订单号统一由系统生成，不接受前端传入
+        if (order.getUserId() != null) {
+            order.setOrderNo(generateOrderNo(order.getUserId()));
+        } else {
+            throw new IllegalArgumentException("用户ID不能为空");
+        }
+        
         if (order.getStatus() == null) {
             order.setStatus(Order.OrderStatus.PENDING);
         }
@@ -797,6 +932,15 @@ public class OrderServiceImpl implements OrderService {
         
         if (order.getQuantity() == null || order.getQuantity() <= 0) {
             order.setQuantity(1);
+        }
+        
+        // 设置创建时间和更新时间
+        LocalDateTime now = LocalDateTime.now();
+        if (order.getCreateTime() == null) {
+            order.setCreateTime(now);
+        }
+        if (order.getUpdateTime() == null) {
+            order.setUpdateTime(now);
         }
     }
 

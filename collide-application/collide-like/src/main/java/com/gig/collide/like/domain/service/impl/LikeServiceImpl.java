@@ -1,6 +1,5 @@
 package com.gig.collide.like.domain.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.gig.collide.like.domain.entity.Like;
@@ -16,14 +15,19 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
- * 点赞业务逻辑实现类 - 简洁版
- * 基于like-simple.sql的业务逻辑，实现核心点赞功能
+ * 点赞业务逻辑实现类 - MySQL 8.0 优化版
+ * 基于like-simple.sql的业务逻辑，与LikeMapper完全对应
+ * 
+ * 实现特性：
+ * - 与LikeMapper方法一一对应
+ * - 支持用户、目标对象、作者三个维度的查询
+ * - 支持时间范围查询和批量操作
+ * - 完整的事务管理和异常处理
  * 
  * @author Collide
- * @version 2.0.0 (简洁版)
+ * @version 2.0.0 (MySQL 8.0 优化版)
  * @since 2024-01-01
  */
 @Slf4j
@@ -136,64 +140,55 @@ public class LikeServiceImpl implements LikeService {
     }
 
     @Override
-    public IPage<Like> queryLikes(Integer pageNum, Integer pageSize, Long userId, String likeType,
-                                 Long targetId, Long targetAuthorId, String status,
-                                 String orderBy, String orderDirection) {
-        log.info("分页查询点赞记录: pageNum={}, pageSize={}, userId={}, likeType={}", 
-                pageNum, pageSize, userId, likeType);
+    public IPage<Like> findUserLikes(Integer pageNum, Integer pageSize, Long userId, String likeType, String status) {
+        log.info("分页查询用户点赞记录: userId={}, likeType={}, status={}, pageNum={}, pageSize={}", 
+                userId, likeType, status, pageNum, pageSize);
 
-        // 构建分页对象
         Page<Like> page = new Page<>(pageNum, pageSize);
-
-        // 构建查询条件
-        LambdaQueryWrapper<Like> queryWrapper = new LambdaQueryWrapper<>();
-        
-        if (userId != null) {
-            queryWrapper.eq(Like::getUserId, userId);
-        }
-        if (StringUtils.hasText(likeType)) {
-            queryWrapper.eq(Like::getLikeType, likeType);
-        }
-        if (targetId != null) {
-            queryWrapper.eq(Like::getTargetId, targetId);
-        }
-        if (targetAuthorId != null) {
-            queryWrapper.eq(Like::getTargetAuthorId, targetAuthorId);
-        }
-        if (StringUtils.hasText(status)) {
-            queryWrapper.eq(Like::getStatus, status);
-        }
-
-        // 设置排序
-        if ("ASC".equalsIgnoreCase(orderDirection)) {
-            if ("update_time".equals(orderBy)) {
-                queryWrapper.orderByAsc(Like::getUpdateTime);
-            } else {
-                queryWrapper.orderByAsc(Like::getCreateTime);
-            }
-        } else {
-            if ("update_time".equals(orderBy)) {
-                queryWrapper.orderByDesc(Like::getUpdateTime);
-            } else {
-                queryWrapper.orderByDesc(Like::getCreateTime);
-            }
-        }
-
-        return likeMapper.selectPage(page, queryWrapper);
+        return likeMapper.findUserLikes(page, userId, likeType, status);
     }
 
     @Override
-    public Long getLikeCount(String likeType, Long targetId) {
+    public IPage<Like> findTargetLikes(Integer pageNum, Integer pageSize, Long targetId, String likeType, String status) {
+        log.info("分页查询目标对象点赞记录: targetId={}, likeType={}, status={}, pageNum={}, pageSize={}", 
+                targetId, likeType, status, pageNum, pageSize);
+
+        Page<Like> page = new Page<>(pageNum, pageSize);
+        return likeMapper.findTargetLikes(page, targetId, likeType, status);
+    }
+
+    @Override
+    public IPage<Like> findAuthorLikes(Integer pageNum, Integer pageSize, Long targetAuthorId, String likeType, String status) {
+        log.info("分页查询作者作品点赞记录: targetAuthorId={}, likeType={}, status={}, pageNum={}, pageSize={}", 
+                targetAuthorId, likeType, status, pageNum, pageSize);
+
+        Page<Like> page = new Page<>(pageNum, pageSize);
+        return likeMapper.findAuthorLikes(page, targetAuthorId, likeType, status);
+    }
+
+    @Override
+    public Long countTargetLikes(Long targetId, String likeType) {
+        log.debug("统计目标对象点赞数量: targetId={}, likeType={}", targetId, likeType);
         return likeMapper.countTargetLikes(targetId, likeType, "active");
     }
 
     @Override
-    public Long getUserLikeCount(Long userId, String likeType) {
+    public Long countUserLikes(Long userId, String likeType) {
+        log.debug("统计用户点赞数量: userId={}, likeType={}", userId, likeType);
         return likeMapper.countUserLikes(userId, likeType, "active");
     }
 
     @Override
+    public Long countAuthorLikes(Long targetAuthorId, String likeType) {
+        log.debug("统计作者作品被点赞数量: targetAuthorId={}, likeType={}", targetAuthorId, likeType);
+        return likeMapper.countAuthorLikes(targetAuthorId, likeType, "active");
+    }
+
+    @Override
     public Map<Long, Boolean> batchCheckLikeStatus(Long userId, String likeType, List<Long> targetIds) {
+        log.debug("批量检查点赞状态: userId={}, likeType={}, targetIds={}", 
+                userId, likeType, targetIds != null ? targetIds.size() : 0);
+        
         if (targetIds == null || targetIds.isEmpty()) {
             return new HashMap<>();
         }
@@ -208,6 +203,14 @@ public class LikeServiceImpl implements LikeService {
         }
 
         return resultMap;
+    }
+
+    @Override
+    public List<Like> findByTimeRange(LocalDateTime startTime, LocalDateTime endTime, String likeType, String status) {
+        log.info("查询时间范围内的点赞记录: startTime={}, endTime={}, likeType={}, status={}", 
+                startTime, endTime, likeType, status);
+
+        return likeMapper.findByTimeRange(startTime, endTime, likeType, status);
     }
 
     @Override

@@ -14,12 +14,14 @@
     </resultMap>
 
     <!-- 根据用户ID查询消息设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引直接查询 -->
     <select id="findByUserId" resultMap="BaseResultMap">
         SELECT * FROM t_message_setting
         WHERE user_id = #{userId}
     </select>
 
     <!-- 更新陌生人消息设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引定位更新 -->
     <update id="updateStrangerMessageSetting">
         UPDATE t_message_setting 
         SET allow_stranger_msg = #{allowStrangerMsg},
@@ -28,6 +30,7 @@
     </update>
 
     <!-- 更新已读回执设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引定位更新 -->
     <update id="updateReadReceiptSetting">
         UPDATE t_message_setting 
         SET auto_read_receipt = #{autoReadReceipt},
@@ -36,6 +39,7 @@
     </update>
 
     <!-- 更新消息通知设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引定位更新 -->
     <update id="updateNotificationSetting">
         UPDATE t_message_setting 
         SET message_notification = #{messageNotification},
@@ -44,6 +48,7 @@
     </update>
 
     <!-- 批量更新用户设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引定位批量更新 -->
     <update id="updateUserSettings">
         UPDATE t_message_setting 
         SET 
@@ -63,6 +68,7 @@
     </update>
 
     <!-- 创建或更新用户设置 -->
+    <!-- 索引使用: uk_user_id(user_id) - 唯一索引UPSERT操作 -->
     <insert id="insertOrUpdate">
         INSERT INTO t_message_setting (
             user_id, allow_stranger_msg, auto_read_receipt, 

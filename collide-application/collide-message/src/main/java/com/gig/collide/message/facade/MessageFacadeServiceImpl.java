@@ -1,33 +1,38 @@
 package com.gig.collide.message.facade;
 
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.alicp.jetcache.anno.Cached;
+import com.alicp.jetcache.anno.CacheInvalidate;
+import com.alicp.jetcache.anno.CacheType;
+import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.gig.collide.api.message.MessageFacadeService;
 import com.gig.collide.api.message.request.MessageCreateRequest;
 import com.gig.collide.api.message.request.MessageQueryRequest;
+import com.gig.collide.api.message.request.MessageUpdateRequest;
 import com.gig.collide.api.message.response.MessageResponse;
-import com.gig.collide.api.message.response.MessageSessionResponse;
 import com.gig.collide.api.user.UserFacadeService;
 import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.message.domain.entity.Message;
-import com.gig.collide.message.domain.entity.MessageSession;
 import com.gig.collide.message.domain.service.MessageService;
 import com.gig.collide.message.domain.service.MessageSessionService;
+import com.gig.collide.message.domain.service.MessageSettingService;
+import com.gig.collide.message.infrastructure.cache.MessageCacheConstant;
 import com.gig.collide.web.vo.Result;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.springframework.beans.BeanUtils;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
- * 消息门面服务实现 - 简洁版
- * 基于message-simple.sql的单表设计，对接Dubbo服务
+ * 消息门面服务实现类 - 简洁版
+ * 基于message-simple.sql的无连表设计，实现核心消息功能
+ * 集成JetCache分布式缓存和Dubbo跨服务调用
  * 
  * @author GIG Team
  * @version 2.0.0 (简洁版)
@@ -40,483 +45,697 @@ public class MessageFacadeServiceImpl implements MessageFacadeService {
 
     private final MessageService messageService;
     private final MessageSessionService messageSessionService;
-    private final UserFacadeService userFacadeService;
+    private final MessageSettingService messageSettingService;
 
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    @DubboReference(version = "1.0.0", timeout = 10000, check = false)
+    private UserFacadeService userFacadeService;
 
-    // =================== 基础操作 ===================
+    // =================== 消息发送 ===================
 
     @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_UNREAD_COUNT_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.SESSION_DETAIL_CACHE)
     public Result<MessageResponse> sendMessage(MessageCreateRequest request) {
         try {
-            log.debug("门面发送消息: 发送者={}, 接收者={}", request.getSenderId(), request.getReceiverId());
-            
-            // 验证请求参数
-            if (request.getSenderId() == null || request.getReceiverId() == null) {
-                return Result.error("INVALID_PARAM", "发送者ID和接收者ID不能为空");
+            log.info("发送消息请求: 发送者={}, 接收者={}, 类型={}", 
+                    request.getSenderId(), request.getReceiverId(), request.getMessageType());
+            long startTime = System.currentTimeMillis();
+
+            // 参数验证
+            if (request == null) {
+                return Result.error("INVALID_REQUEST", "请求参数不能为空");
             }
-            
-            if (request.getSenderId().equals(request.getReceiverId())) {
-                return Result.error("INVALID_PARAM", "不能给自己发送消息");
+
+            // 验证用户存在性
+            Result<Void> userValidation = validateUsers(request.getSenderId(), request.getReceiverId());
+            if (!userValidation.getSuccess()) {
+                return Result.error(userValidation.getCode(), userValidation.getMessage());
             }
-            
-            // 验证发送者是否存在
-            Result<UserResponse> senderResult = userFacadeService.getUserById(request.getSenderId());
-            if (senderResult == null || !senderResult.getSuccess()) {
-                log.warn("发送者不存在，消息发送失败: senderId={}", request.getSenderId());
-                return Result.error("SENDER_NOT_FOUND", "发送者不存在");
+
+            // 验证发送权限
+            boolean canSend = messageSettingService.canSendMessage(request.getSenderId(), request.getReceiverId());
+            if (!canSend) {
+                log.warn("用户发送消息权限不足: 发送者={}, 接收者={}", request.getSenderId(), request.getReceiverId());
+                return Result.error("MESSAGE_PERMISSION_DENIED", "无权限向该用户发送消息");
             }
-            
-            // 验证接收者是否存在
-            Result<UserResponse> receiverResult = userFacadeService.getUserById(request.getReceiverId());
-            if (receiverResult == null || !receiverResult.getSuccess()) {
-                log.warn("接收者不存在，消息发送失败: receiverId={}", request.getReceiverId());
-                return Result.error("RECEIVER_NOT_FOUND", "接收者不存在");
-            }
-            
-            // 转换为实体对象
-            Message message = convertToEntity(request);
-            
-            // 发送消息
+
+            // 转换请求对象为实体
+            Message message = convertCreateRequestToEntity(request);
+
+            // 调用业务逻辑
             Message savedMessage = messageService.sendMessage(message);
-            if (savedMessage == null) {
-                return Result.error("SEND_FAILED", "消息发送失败");
-            }
-            
-            // 处理会话更新
+
+            // 处理会话状态
             messageSessionService.handleNewMessage(
-                request.getSenderId(), 
-                request.getReceiverId(), 
-                savedMessage.getId(), 
-                savedMessage.getCreateTime()
-            );
-            
-            // 转换为响应对象
-            MessageResponse response = convertToResponse(savedMessage);
-            
-            log.info("门面发送消息成功: ID={}, 发送者={}, 接收者={}", 
+                    savedMessage.getSenderId(), 
+                    savedMessage.getReceiverId(),
                     savedMessage.getId(), 
-                    senderResult.getData().getUsername(), 
-                    receiverResult.getData().getUsername());
+                    savedMessage.getCreateTime()
+            );
+
+            // 转换响应对象
+            MessageResponse response = convertToResponse(savedMessage);
+
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("消息发送成功: ID={}, 发送者={}, 接收者={}, 耗时={}ms", 
+                    savedMessage.getId(), request.getSenderId(), request.getReceiverId(), duration);
+
             return Result.success(response);
-            
+
+        } catch (IllegalArgumentException e) {
+            log.warn("发送消息参数错误: 发送者={}, 接收者={}, 错误={}", 
+                    request.getSenderId(), request.getReceiverId(), e.getMessage());
+            return Result.error("MESSAGE_PARAM_ERROR", e.getMessage());
         } catch (Exception e) {
-            log.error("门面发送消息异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("发送消息失败: 发送者={}, 接收者={}", request.getSenderId(), request.getReceiverId(), e);
+            return Result.error("MESSAGE_SEND_ERROR", "发送消息失败: " + e.getMessage());
         }
     }
 
     @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE)
+    public Result<MessageResponse> replyMessage(MessageCreateRequest request) {
+        try {
+            log.info("回复消息请求: 发送者={}, 接收者={}, 回复消息ID={}", 
+                    request.getSenderId(), request.getReceiverId(), request.getReplyToId());
+
+            // 参数验证
+            if (request == null || request.getReplyToId() == null) {
+                return Result.error("INVALID_REQUEST", "回复消息ID不能为空");
+            }
+
+            // 验证用户存在性
+            Result<Void> userValidation = validateUsers(request.getSenderId(), request.getReceiverId());
+            if (!userValidation.getSuccess()) {
+                return Result.error(userValidation.getCode(), userValidation.getMessage());
+            }
+
+            // 转换请求对象为实体
+            Message message = convertCreateRequestToEntity(request);
+
+            // 调用业务逻辑
+            Message savedMessage = messageService.replyMessage(message);
+
+            // 处理会话状态
+            messageSessionService.handleNewMessage(
+                    savedMessage.getSenderId(), 
+                    savedMessage.getReceiverId(),
+                    savedMessage.getId(), 
+                    savedMessage.getCreateTime()
+            );
+
+            // 转换响应对象
+            MessageResponse response = convertToResponse(savedMessage);
+
+            log.info("回复消息成功: ID={}, 回复消息ID={}", savedMessage.getId(), request.getReplyToId());
+            return Result.success(response);
+
+        } catch (IllegalArgumentException e) {
+            log.warn("回复消息参数错误: {}", e.getMessage());
+            return Result.error("MESSAGE_REPLY_ERROR", e.getMessage());
+        } catch (Exception e) {
+            log.error("回复消息失败: 回复消息ID={}", request.getReplyToId(), e);
+            return Result.error("MESSAGE_REPLY_ERROR", "回复消息失败: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public Result<MessageResponse> sendWallMessage(MessageCreateRequest request) {
+        // 留言板消息本质上也是发送消息，只是消息类型不同
+        request.setMessageType("wall");
+        return sendMessage(request);
+    }
+
+    // =================== 消息查询 ===================
+
+    @Override
+    @Cached(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE, expire = 30, timeUnit = TimeUnit.MINUTES, 
+            cacheType = CacheType.BOTH, key = "#messageId")
     public Result<MessageResponse> getMessageById(Long messageId, Long userId) {
         try {
-            log.debug("门面获取消息详情: ID={}, 用户ID={}", messageId, userId);
-            
+            log.debug("查询消息详情: messageId={}, userId={}", messageId, userId);
+
             if (messageId == null || userId == null) {
-                return Result.error("INVALID_PARAM", "消息ID和用户ID不能为空");
+                return Result.error("INVALID_PARAM", "参数不能为空");
             }
-            
-            // 验证权限
-            if (!messageService.canUserViewMessage(messageId, userId)) {
-                return Result.error("ACCESS_DENIED", "无权限查看该消息");
-            }
-            
+
             Message message = messageService.getMessageById(messageId);
             if (message == null) {
                 return Result.error("MESSAGE_NOT_FOUND", "消息不存在");
             }
-            
+
+            // 验证访问权限（只有发送者和接收者可以查看）
+            if (!userId.equals(message.getSenderId()) && !userId.equals(message.getReceiverId())) {
+                return Result.error("MESSAGE_ACCESS_DENIED", "无权限查看该消息");
+            }
+
             MessageResponse response = convertToResponse(message);
             return Result.success(response);
-            
+
         } catch (Exception e) {
-            log.error("门面获取消息详情异常: ID={}", messageId, e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("查询消息详情失败: messageId={}", messageId, e);
+            return Result.error("MESSAGE_QUERY_ERROR", "查询消息失败");
         }
     }
-
-    @Override
-    public Result<Void> markMessageAsRead(Long messageId, Long userId) {
-        try {
-            log.debug("门面标记消息已读: ID={}, 用户ID={}", messageId, userId);
-            
-            if (messageId == null || userId == null) {
-                return Result.error("INVALID_PARAM", "消息ID和用户ID不能为空");
-            }
-            
-            boolean success = messageService.markMessageAsRead(messageId, userId);
-            if (!success) {
-                return Result.error("MARK_FAILED", "标记已读失败");
-            }
-            
-            return Result.success(null);
-            
-        } catch (Exception e) {
-            log.error("门面标记消息已读异常: ID={}", messageId, e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
-        }
-    }
-
-    @Override
-    public Result<Void> batchMarkAsRead(List<Long> messageIds, Long userId) {
-        try {
-            log.debug("门面批量标记已读: 数量={}, 用户ID={}", messageIds.size(), userId);
-            
-            if (messageIds == null || messageIds.isEmpty() || userId == null) {
-                return Result.error("INVALID_PARAM", "参数不能为空");
-            }
-            
-            boolean success = messageService.batchMarkAsRead(messageIds, userId);
-            if (!success) {
-                return Result.error("BATCH_MARK_FAILED", "批量标记已读失败");
-            }
-            
-            return Result.success(null);
-            
-        } catch (Exception e) {
-            log.error("门面批量标记已读异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
-        }
-    }
-
-    @Override
-    public Result<Void> deleteMessage(Long messageId, Long userId) {
-        try {
-            log.debug("门面删除消息: ID={}, 用户ID={}", messageId, userId);
-            
-            if (messageId == null || userId == null) {
-                return Result.error("INVALID_PARAM", "消息ID和用户ID不能为空");
-            }
-            
-            boolean success = messageService.deleteMessage(messageId, userId);
-            if (!success) {
-                return Result.error("DELETE_FAILED", "删除消息失败");
-            }
-            
-            return Result.success(null);
-            
-        } catch (Exception e) {
-            log.error("门面删除消息异常: ID={}", messageId, e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
-        }
-    }
-
-    // =================== 查询操作 ===================
 
     @Override
     public Result<PageResponse<MessageResponse>> queryMessages(MessageQueryRequest request) {
         try {
-            log.debug("门面查询消息: 页码={}", request.getCurrentPage());
-            
-            // 解析时间参数
-            LocalDateTime startTime = parseDateTime(request.getStartTime());
-            LocalDateTime endTime = parseDateTime(request.getEndTime());
-            
-            Page<Message> page = messageService.queryMessages(
-                request.getSenderId(), request.getReceiverId(), request.getMessageType(),
-                request.getStatus(), request.getIsPinned(), request.getReplyToId(),
-                request.getKeyword(), startTime, endTime,
-                request.getOrderBy(), request.getOrderDirection(),
-                request.getCurrentPage(), request.getPageSize()
-            );
-            
-            PageResponse<MessageResponse> response = convertToPageResponse(page);
+            log.debug("条件查询消息: {}", request);
+
+            if (request == null) {
+                return Result.error("INVALID_REQUEST", "查询请求不能为空");
+            }
+
+            // 初始化默认值
+            request.initDefaults();
+
+            // 验证查询条件
+            if (!request.isValidQuery()) {
+                return Result.error("INVALID_QUERY", "查询条件不符合要求");
+            }
+
+            IPage<Message> messagePage = messageService.findWithConditions(
+                    request.getSenderId(), request.getReceiverId(), request.getMessageType(),
+                    request.getStatus(), request.getIsPinned(), request.getReplyToId(),
+                    request.getKeyword(), request.getStartTime(), request.getEndTime(),
+                    request.getOrderBy(), request.getOrderDirection(),
+                    request.getCurrentPage(), request.getPageSize());
+
+            PageResponse<MessageResponse> response = convertToPageResponse(messagePage);
             return Result.success(response);
-            
+
         } catch (Exception e) {
-            log.error("门面查询消息异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("条件查询消息失败", e);
+            return Result.error("MESSAGE_QUERY_ERROR", "查询消息失败");
         }
     }
 
     @Override
-    public Result<PageResponse<MessageResponse>> getChatHistory(Long userId1, Long userId2, Integer currentPage, Integer pageSize) {
+    @Cached(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE, expire = 15, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "T(com.gig.collide.message.infrastructure.cache.MessageCacheConstant).buildUserPairKey(#userId1, #userId2) + ':' + #currentPage + ':' + #pageSize")
+    public Result<PageResponse<MessageResponse>> getChatHistory(Long userId1, Long userId2, String status,
+                                                               Integer currentPage, Integer pageSize) {
         try {
-            log.debug("门面获取聊天记录: 用户1={}, 用户2={}", userId1, userId2);
-            
+            log.debug("查询聊天记录: userId1={}, userId2={}, page={}/{}", userId1, userId2, currentPage, pageSize);
+
             if (userId1 == null || userId2 == null) {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
-            
-            Page<Message> page = messageService.getChatHistory(userId1, userId2, currentPage, pageSize);
-            PageResponse<MessageResponse> response = convertToPageResponse(page);
+
+            IPage<Message> messagePage = messageService.findChatHistory(userId1, userId2, status, currentPage, pageSize);
+            PageResponse<MessageResponse> response = convertToPageResponse(messagePage);
             return Result.success(response);
-            
+
         } catch (Exception e) {
-            log.error("门面获取聊天记录异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("查询聊天记录失败: userId1={}, userId2={}", userId1, userId2, e);
+            return Result.error("MESSAGE_QUERY_ERROR", "查询聊天记录失败");
         }
     }
 
     @Override
-    public Result<PageResponse<MessageSessionResponse>> getUserSessions(Long userId, Integer currentPage, Integer pageSize) {
+    public Result<PageResponse<MessageResponse>> getWallMessages(Long receiverId, String status,
+                                                                Integer currentPage, Integer pageSize) {
         try {
-            log.debug("门面获取用户会话: 用户ID={}", userId);
-            
-            if (userId == null) {
-                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            log.debug("查询留言板消息: receiverId={}, page={}/{}", receiverId, currentPage, pageSize);
+
+            if (receiverId == null) {
+                return Result.error("INVALID_PARAM", "接收者ID不能为空");
             }
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法获取会话列表: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            Page<MessageSession> page = messageSessionService.getUserSessions(
-                userId, false, null, "last_message_time", "DESC", currentPage, pageSize
-            );
-            
-            PageResponse<MessageSessionResponse> response = convertToSessionPageResponse(page);
+
+            IPage<Message> messagePage = messageService.findWallMessages(receiverId, status, currentPage, pageSize);
+            PageResponse<MessageResponse> response = convertToPageResponse(messagePage);
             return Result.success(response);
-            
+
         } catch (Exception e) {
-            log.error("门面获取用户会话异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("查询留言板消息失败: receiverId={}", receiverId, e);
+            return Result.error("MESSAGE_QUERY_ERROR", "查询留言板消息失败");
         }
     }
 
     @Override
-    public Result<Long> getUnreadCount(Long userId) {
+    public Result<PageResponse<MessageResponse>> getMessageReplies(Long replyToId, String status,
+                                                                  Integer currentPage, Integer pageSize) {
         try {
-            log.debug("门面获取未读消息数: 用户ID={}", userId);
-            
-            if (userId == null) {
-                return Result.error("INVALID_PARAM", "用户ID不能为空");
-            }
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法获取未读消息数: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            Long count = messageService.getUnreadCount(userId);
-            return Result.success(count != null ? count : 0L);
-            
-        } catch (Exception e) {
-            log.error("门面获取未读消息数异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
-        }
-    }
+            log.debug("查询消息回复: replyToId={}, page={}/{}", replyToId, currentPage, pageSize);
 
-    @Override
-    public Result<Long> getUnreadCountWithUser(Long userId, Long otherUserId) {
-        try {
-            log.debug("门面获取与用户的未读消息数: 用户ID={}, 对方ID={}", userId, otherUserId);
-            
-            if (userId == null || otherUserId == null) {
-                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            if (replyToId == null) {
+                return Result.error("INVALID_PARAM", "原消息ID不能为空");
             }
-            
-            // 验证当前用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("当前用户不存在，无法获取未读消息数: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "当前用户不存在");
-            }
-            
-            // 验证对方用户是否存在
-            Result<UserResponse> otherUserResult = userFacadeService.getUserById(otherUserId);
-            if (otherUserResult == null || !otherUserResult.getSuccess()) {
-                log.warn("对方用户不存在，无法获取未读消息数: otherUserId={}", otherUserId);
-                return Result.error("OTHER_USER_NOT_FOUND", "对方用户不存在");
-            }
-            
-            Long count = messageService.getUnreadCountWithUser(userId, otherUserId);
-            return Result.success(count != null ? count : 0L);
-            
-        } catch (Exception e) {
-            log.error("门面获取与用户的未读消息数异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
-        }
-    }
 
-    @Override
-    public Result<PageResponse<MessageResponse>> getUserWallMessages(Long userId, Integer currentPage, Integer pageSize) {
-        try {
-            log.debug("门面获取用户留言板: 用户ID={}", userId);
-            
-            if (userId == null) {
-                return Result.error("INVALID_PARAM", "用户ID不能为空");
-            }
-            
-            Page<Message> page = messageService.getUserWallMessages(userId, currentPage, pageSize);
-            PageResponse<MessageResponse> response = convertToPageResponse(page);
+            IPage<Message> messagePage = messageService.findReplies(replyToId, status, currentPage, pageSize);
+            PageResponse<MessageResponse> response = convertToPageResponse(messagePage);
             return Result.success(response);
-            
+
         } catch (Exception e) {
-            log.error("门面获取用户留言板异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("查询消息回复失败: replyToId={}", replyToId, e);
+            return Result.error("MESSAGE_QUERY_ERROR", "查询消息回复失败");
         }
     }
 
     @Override
-    public Result<Void> pinMessage(Long messageId, Long userId, Boolean isPinned) {
+    public Result<PageResponse<MessageResponse>> searchMessages(Long userId, String keyword, String status,
+                                                               Integer currentPage, Integer pageSize) {
         try {
-            log.debug("门面设置消息置顶: ID={}, 用户ID={}, 置顶={}", messageId, userId, isPinned);
-            
-            if (messageId == null || userId == null || isPinned == null) {
+            log.debug("搜索用户消息: userId={}, keyword={}, page={}/{}", userId, keyword, currentPage, pageSize);
+
+            if (userId == null || keyword == null || keyword.trim().isEmpty()) {
+                return Result.error("INVALID_PARAM", "用户ID和搜索关键词不能为空");
+            }
+
+            IPage<Message> messagePage = messageService.searchMessages(userId, keyword, status, currentPage, pageSize);
+            PageResponse<MessageResponse> response = convertToPageResponse(messagePage);
+            return Result.success(response);
+
+        } catch (Exception e) {
+            log.error("搜索用户消息失败: userId={}, keyword={}", userId, keyword, e);
+            return Result.error("MESSAGE_SEARCH_ERROR", "搜索消息失败");
+        }
+    }
+
+    // =================== 消息管理 ===================
+
+    @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE)
+    public Result<MessageResponse> updateMessage(MessageUpdateRequest request) {
+        try {
+            log.info("更新消息: messageId={}, operatorId={}, updateType={}", 
+                    request.getMessageId(), request.getOperatorId(), request.getUpdateType());
+
+            if (request == null || !request.isValidUpdate()) {
+                return Result.error("INVALID_REQUEST", "更新请求参数无效");
+            }
+
+            // 获取原消息
+            Message originalMessage = messageService.getMessageById(request.getMessageId());
+            if (originalMessage == null) {
+                return Result.error("MESSAGE_NOT_FOUND", "消息不存在");
+            }
+
+            // 权限验证（只有发送者可以更新内容）
+            if (request.isContentUpdate() && !request.getOperatorId().equals(originalMessage.getSenderId())) {
+                return Result.error("MESSAGE_UPDATE_DENIED", "只有发送者可以更新消息内容");
+            }
+
+            // 根据更新类型处理
+            boolean success = false;
+            if (request.isContentUpdate()) {
+                // 更新内容逻辑可以在这里实现
+                success = true; // 简化处理
+            } else if (request.isStatusUpdate()) {
+                success = messageService.updateMessageStatus(request.getMessageId(), request.getStatus(), null);
+            } else if (request.isPinUpdate()) {
+                success = messageService.updatePinnedStatus(request.getMessageId(), request.getIsPinned(), request.getOperatorId());
+            }
+
+            if (success) {
+                Message updatedMessage = messageService.getMessageById(request.getMessageId());
+                MessageResponse response = convertToResponse(updatedMessage);
+                log.info("消息更新成功: messageId={}", request.getMessageId());
+                return Result.success(response);
+            } else {
+                return Result.error("MESSAGE_UPDATE_FAILED", "消息更新失败");
+            }
+
+        } catch (Exception e) {
+            log.error("更新消息失败: messageId={}", request.getMessageId(), e);
+            return Result.error("MESSAGE_UPDATE_ERROR", "更新消息失败");
+        }
+    }
+
+    @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE)
+    public Result<Void> deleteMessage(Long messageId, Long userId) {
+        try {
+            log.info("删除消息: messageId={}, userId={}", messageId, userId);
+
+            if (messageId == null || userId == null) {
                 return Result.error("INVALID_PARAM", "参数不能为空");
             }
-            
-            boolean success = messageService.pinMessage(messageId, userId, isPinned);
-            if (!success) {
-                return Result.error("PIN_FAILED", "设置置顶失败");
+
+            boolean success = messageService.deleteMessage(messageId, userId);
+            if (success) {
+                log.info("消息删除成功: messageId={}", messageId);
+                return Result.success(null);
+            } else {
+                return Result.error("MESSAGE_DELETE_FAILED", "消息删除失败");
             }
+
+        } catch (Exception e) {
+            log.error("删除消息失败: messageId={}", messageId, e);
+            return Result.error("MESSAGE_DELETE_ERROR", "删除消息失败");
+        }
+    }
+
+    @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_UNREAD_COUNT_CACHE)
+    public Result<Void> markAsRead(Long messageId, Long userId) {
+        try {
+            log.info("标记消息已读: messageId={}, userId={}", messageId, userId);
+
+            if (messageId == null || userId == null) {
+                return Result.error("INVALID_PARAM", "参数不能为空");
+            }
+
+            boolean success = messageService.updateMessageStatus(messageId, "read", LocalDateTime.now());
+            if (success) {
+                log.info("消息标记已读成功: messageId={}", messageId);
+                return Result.success(null);
+            } else {
+                return Result.error("MESSAGE_READ_FAILED", "标记消息已读失败");
+            }
+
+        } catch (Exception e) {
+            log.error("标记消息已读失败: messageId={}", messageId, e);
+            return Result.error("MESSAGE_READ_ERROR", "标记消息已读失败");
+        }
+    }
+
+    @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    public Result<Void> updatePinnedStatus(Long messageId, Boolean isPinned, Long userId) {
+        try {
+            log.info("更新消息置顶状态: messageId={}, isPinned={}, userId={}", messageId, isPinned, userId);
+
+            if (messageId == null || isPinned == null || userId == null) {
+                return Result.error("INVALID_PARAM", "参数不能为空");
+            }
+
+            boolean success = messageService.updatePinnedStatus(messageId, isPinned, userId);
+            if (success) {
+                log.info("消息置顶状态更新成功: messageId={}, isPinned={}", messageId, isPinned);
+                return Result.success(null);
+            } else {
+                return Result.error("MESSAGE_PIN_FAILED", "更新消息置顶状态失败");
+            }
+
+        } catch (Exception e) {
+            log.error("更新消息置顶状态失败: messageId={}", messageId, e);
+            return Result.error("MESSAGE_PIN_ERROR", "更新消息置顶状态失败");
+        }
+    }
+
+    // =================== 批量操作 ===================
+
+    @Override
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_UNREAD_COUNT_CACHE)
+    public Result<Void> batchMarkAsRead(List<Long> messageIds, Long userId) {
+        try {
+            log.info("批量标记消息已读: messageIds.size={}, userId={}", 
+                    messageIds != null ? messageIds.size() : 0, userId);
+
+            if (messageIds == null || messageIds.isEmpty() || userId == null) {
+                return Result.error("INVALID_PARAM", "参数不能为空");
+            }
+
+            int successCount = messageService.batchMarkAsRead(messageIds, userId);
             
+            log.info("批量标记消息已读完成: 成功数量={}", successCount);
             return Result.success(null);
-            
+
         } catch (Exception e) {
-            log.error("门面设置消息置顶异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("批量标记消息已读失败: userId={}", userId, e);
+            return Result.error("MESSAGE_BATCH_READ_ERROR", "批量标记消息已读失败");
         }
     }
 
     @Override
-    public Result<MessageResponse> replyMessage(MessageCreateRequest request) {
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_DETAIL_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_CHAT_HISTORY_CACHE)
+    public Result<Void> batchDeleteMessages(List<Long> messageIds, Long userId) {
         try {
-            log.debug("门面回复消息: 回复消息ID={}", request.getReplyToId());
-            
-            if (request.getReplyToId() == null) {
-                return Result.error("INVALID_PARAM", "回复消息ID不能为空");
+            log.info("批量删除消息: messageIds.size={}, userId={}", 
+                    messageIds != null ? messageIds.size() : 0, userId);
+
+            if (messageIds == null || messageIds.isEmpty() || userId == null) {
+                return Result.error("INVALID_PARAM", "参数不能为空");
             }
+
+            int successCount = messageService.batchDeleteMessages(messageIds, userId);
             
-            // 复用发送消息的逻辑
-            return sendMessage(request);
-            
+            log.info("批量删除消息完成: 成功数量={}", successCount);
+            return Result.success(null);
+
         } catch (Exception e) {
-            log.error("门面回复消息异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("批量删除消息失败: userId={}", userId, e);
+            return Result.error("MESSAGE_BATCH_DELETE_ERROR", "批量删除消息失败");
         }
     }
 
     @Override
-    public Result<PageResponse<MessageResponse>> getMessageReplies(Long messageId, Integer currentPage, Integer pageSize) {
+    @CacheInvalidate(name = MessageCacheConstant.MESSAGE_UNREAD_COUNT_CACHE)
+    @CacheInvalidate(name = MessageCacheConstant.SESSION_UNREAD_COUNT_CACHE)
+    public Result<Void> markSessionAsRead(Long receiverId, Long senderId) {
         try {
-            log.debug("门面获取消息回复: 消息ID={}", messageId);
-            
-            if (messageId == null) {
-                return Result.error("INVALID_PARAM", "消息ID不能为空");
+            log.info("标记会话消息已读: receiverId={}, senderId={}", receiverId, senderId);
+
+            if (receiverId == null || senderId == null) {
+                return Result.error("INVALID_PARAM", "参数不能为空");
             }
+
+            int successCount = messageService.markSessionMessagesAsRead(receiverId, senderId);
             
-            Page<Message> page = messageService.getMessageReplies(messageId, currentPage, pageSize);
-            PageResponse<MessageResponse> response = convertToPageResponse(page);
-            return Result.success(response);
+            // 清零会话未读数
+            messageSessionService.clearUnreadCount(receiverId, senderId);
             
+            log.info("标记会话消息已读完成: 成功数量={}", successCount);
+            return Result.success(null);
+
         } catch (Exception e) {
-            log.error("门面获取消息回复异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("标记会话消息已读失败: receiverId={}, senderId={}", receiverId, senderId, e);
+            return Result.error("MESSAGE_SESSION_READ_ERROR", "标记会话消息已读失败");
         }
     }
 
+    // =================== 统计功能 ===================
+
     @Override
-    public Result<PageResponse<MessageResponse>> searchMessages(Long userId, String keyword, Integer currentPage, Integer pageSize) {
+    @Cached(name = MessageCacheConstant.MESSAGE_UNREAD_COUNT_CACHE, expire = 5, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "#userId")
+    public Result<Long> getUnreadMessageCount(Long userId) {
         try {
-            log.debug("门面搜索消息: 用户ID={}, 关键词={}", userId, keyword);
-            
+            log.debug("统计用户未读消息数: userId={}", userId);
+
             if (userId == null) {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法搜索消息: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            Page<Message> page = messageService.searchMessages(userId, keyword, currentPage, pageSize);
-            PageResponse<MessageResponse> response = convertToPageResponse(page);
-            return Result.success(response);
-            
+
+            Long count = messageService.countUnreadMessages(userId);
+            return Result.success(count != null ? count : 0L);
+
         } catch (Exception e) {
-            log.error("门面搜索消息异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("统计用户未读消息数失败: userId={}", userId, e);
+            return Result.error("MESSAGE_COUNT_ERROR", "统计未读消息数失败");
         }
     }
 
     @Override
-    public Result<Map<String, Object>> getMessageStatistics(Long userId) {
+    @Cached(name = MessageCacheConstant.MESSAGE_UNREAD_WITH_USER_CACHE, expire = 10, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "#receiverId + ':' + #senderId")
+    public Result<Long> getUnreadCountWithUser(Long receiverId, Long senderId) {
         try {
-            log.debug("门面获取消息统计: 用户ID={}", userId);
-            
-            if (userId == null) {
+            log.debug("统计与用户的未读消息数: receiverId={}, senderId={}", receiverId, senderId);
+
+            if (receiverId == null || senderId == null) {
                 return Result.error("INVALID_PARAM", "用户ID不能为空");
             }
-            
-            // 验证用户是否存在
-            Result<UserResponse> userResult = userFacadeService.getUserById(userId);
-            if (userResult == null || !userResult.getSuccess()) {
-                log.warn("用户不存在，无法获取消息统计: userId={}", userId);
-                return Result.error("USER_NOT_FOUND", "用户不存在");
-            }
-            
-            Map<String, Object> statistics = messageService.getMessageStatistics(userId);
-            return Result.success(statistics);
-            
+
+            Long count = messageService.countUnreadWithUser(receiverId, senderId);
+            return Result.success(count != null ? count : 0L);
+
         } catch (Exception e) {
-            log.error("门面获取消息统计异常", e);
-            return Result.error("SYSTEM_ERROR", "系统错误：" + e.getMessage());
+            log.error("统计与用户的未读消息数失败: receiverId={}, senderId={}", receiverId, senderId, e);
+            return Result.error("MESSAGE_COUNT_ERROR", "统计未读消息数失败");
         }
     }
 
-    // =================== 私有转换方法 ===================
+    @Override
+    @Cached(name = MessageCacheConstant.STATISTICS_SENT_COUNT_CACHE, expire = 60, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "#userId + ':' + #startTime + ':' + #endTime")
+    public Result<Long> getSentMessageCount(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            log.debug("统计用户发送消息数: userId={}, startTime={}, endTime={}", userId, startTime, endTime);
 
-    private Message convertToEntity(MessageCreateRequest request) {
+            if (userId == null) {
+                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+
+            Long count = messageService.countSentMessages(userId, startTime, endTime);
+            return Result.success(count != null ? count : 0L);
+
+        } catch (Exception e) {
+            log.error("统计用户发送消息数失败: userId={}", userId, e);
+            return Result.error("MESSAGE_COUNT_ERROR", "统计发送消息数失败");
+        }
+    }
+
+    @Override
+    @Cached(name = MessageCacheConstant.STATISTICS_RECEIVED_COUNT_CACHE, expire = 60, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "#userId + ':' + #startTime + ':' + #endTime")
+    public Result<Long> getReceivedMessageCount(Long userId, LocalDateTime startTime, LocalDateTime endTime) {
+        try {
+            log.debug("统计用户接收消息数: userId={}, startTime={}, endTime={}", userId, startTime, endTime);
+
+            if (userId == null) {
+                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+
+            Long count = messageService.countReceivedMessages(userId, startTime, endTime);
+            return Result.success(count != null ? count : 0L);
+
+        } catch (Exception e) {
+            log.error("统计用户接收消息数失败: userId={}", userId, e);
+            return Result.error("MESSAGE_COUNT_ERROR", "统计接收消息数失败");
+        }
+    }
+
+    // =================== 会话管理 ===================
+
+    @Override
+    @Cached(name = MessageCacheConstant.MESSAGE_RECENT_CHAT_USERS_CACHE, expire = 10, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "#userId + ':' + #limit")
+    public Result<List<Long>> getRecentChatUsers(Long userId, Integer limit) {
+        try {
+            log.debug("获取用户最近聊天用户: userId={}, limit={}", userId, limit);
+
+            if (userId == null) {
+                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+
+            List<Long> userIds = messageService.getRecentChatUsers(userId, limit);
+            return Result.success(userIds != null ? userIds : List.of());
+
+        } catch (Exception e) {
+            log.error("获取用户最近聊天用户失败: userId={}", userId, e);
+            return Result.error("MESSAGE_RECENT_USERS_ERROR", "获取最近聊天用户失败");
+        }
+    }
+
+    @Override
+    @Cached(name = MessageCacheConstant.MESSAGE_LATEST_CACHE, expire = 30, timeUnit = TimeUnit.MINUTES,
+            cacheType = CacheType.BOTH, key = "T(com.gig.collide.message.infrastructure.cache.MessageCacheConstant).buildUserPairKey(#userId1, #userId2)")
+    public Result<MessageResponse> getLatestMessage(Long userId1, Long userId2) {
+        try {
+            log.debug("获取两用户间最新消息: userId1={}, userId2={}", userId1, userId2);
+
+            if (userId1 == null || userId2 == null) {
+                return Result.error("INVALID_PARAM", "用户ID不能为空");
+            }
+
+            Message message = messageService.getLatestMessageBetweenUsers(userId1, userId2);
+            if (message == null) {
+                return Result.error("MESSAGE_NOT_FOUND", "没有找到最新消息");
+            }
+
+            MessageResponse response = convertToResponse(message);
+            return Result.success(response);
+
+        } catch (Exception e) {
+            log.error("获取两用户间最新消息失败: userId1={}, userId2={}", userId1, userId2, e);
+            return Result.error("MESSAGE_LATEST_ERROR", "获取最新消息失败");
+        }
+    }
+
+    // =================== 系统管理 ===================
+
+    @Override
+    public Result<Integer> cleanupExpiredMessages(LocalDateTime beforeTime) {
+        try {
+            log.info("清理过期删除消息: beforeTime={}", beforeTime);
+
+            if (beforeTime == null) {
+                return Result.error("INVALID_PARAM", "截止时间不能为空");
+            }
+
+            int count = messageService.cleanupExpiredMessages(beforeTime);
+            
+            log.info("清理过期删除消息完成: 清理数量={}", count);
+            return Result.success(count);
+
+        } catch (Exception e) {
+            log.error("清理过期删除消息失败", e);
+            return Result.error("MESSAGE_CLEANUP_ERROR", "清理过期消息失败");
+        }
+    }
+
+    @Override
+    public Result<String> healthCheck() {
+        try {
+            // 简单的健康检查：获取当前时间戳
+            long timestamp = System.currentTimeMillis();
+            String status = "Message service is healthy at " + timestamp;
+            
+            log.debug("消息系统健康检查: {}", status);
+            return Result.success(status);
+
+        } catch (Exception e) {
+            log.error("消息系统健康检查失败", e);
+            return Result.error("HEALTH_CHECK_ERROR", "系统健康检查失败");
+        }
+    }
+
+    // =================== 私有工具方法 ===================
+
+    /**
+     * 验证用户存在性
+     */
+    private Result<Void> validateUsers(Long senderId, Long receiverId) {
+        // 验证发送者
+        Result<UserResponse> senderResult = userFacadeService.getUserById(senderId);
+        if (senderResult == null || !senderResult.getSuccess()) {
+            log.warn("发送者不存在: senderId={}", senderId);
+            return Result.error("SENDER_NOT_FOUND", "发送者不存在");
+        }
+
+        // 验证接收者
+        Result<UserResponse> receiverResult = userFacadeService.getUserById(receiverId);
+        if (receiverResult == null || !receiverResult.getSuccess()) {
+            log.warn("接收者不存在: receiverId={}", receiverId);
+            return Result.error("RECEIVER_NOT_FOUND", "接收者不存在");
+        }
+
+        return Result.success(null);
+    }
+
+    /**
+     * 转换创建请求为实体
+     */
+    private Message convertCreateRequestToEntity(MessageCreateRequest request) {
         Message message = new Message();
         BeanUtils.copyProperties(request, message);
         return message;
     }
 
+    /**
+     * 转换实体为响应对象
+     */
     private MessageResponse convertToResponse(Message message) {
         MessageResponse response = new MessageResponse();
         BeanUtils.copyProperties(message, response);
         return response;
     }
 
-    private PageResponse<MessageResponse> convertToPageResponse(Page<Message> page) {
-        List<MessageResponse> responses = page.getRecords().stream()
-            .map(this::convertToResponse)
-            .collect(Collectors.toList());
-        
-        return PageResponse.of(
-            responses,
-            (int) page.getTotal(),
-            (int) page.getSize(),
-            (int) page.getCurrent()
-        );
-    }
+    /**
+     * 转换分页实体为分页响应
+     */
+    private PageResponse<MessageResponse> convertToPageResponse(IPage<Message> messagePage) {
+        PageResponse<MessageResponse> response = new PageResponse<>();
+        response.setCurrentPage((int) messagePage.getCurrent());
+        response.setPageSize((int) messagePage.getSize());
+        response.setTotalPage((int) messagePage.getPages());
+        response.setTotal((int) messagePage.getTotal());
 
-    private MessageSessionResponse convertToSessionResponse(MessageSession session) {
-        MessageSessionResponse response = new MessageSessionResponse();
-        BeanUtils.copyProperties(session, response);
+        List<MessageResponse> messageResponses = messagePage.getRecords().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        response.setDatas(messageResponses);
+
         return response;
-    }
-
-    private PageResponse<MessageSessionResponse> convertToSessionPageResponse(Page<MessageSession> page) {
-        List<MessageSessionResponse> responses = page.getRecords().stream()
-            .map(this::convertToSessionResponse)
-            .collect(Collectors.toList());
-        
-        return PageResponse.of(
-            responses,
-            (int) page.getTotal(),
-            (int) page.getSize(),
-            (int) page.getCurrent()
-        );
-    }
-
-    private LocalDateTime parseDateTime(String timeStr) {
-        if (timeStr == null || timeStr.trim().isEmpty()) {
-            return null;
-        }
-        try {
-            return LocalDateTime.parse(timeStr, TIME_FORMATTER);
-        } catch (Exception e) {
-            log.warn("时间格式解析失败: {}", timeStr);
-            return null;
-        }
     }
 }

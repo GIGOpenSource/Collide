@@ -181,7 +181,7 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             
             // 3. 获取实时点赞数
             try {
-                var likeCountResult = likeFacadeService.getLikeCount("CONTENT", contentId);
+                var likeCountResult = likeFacadeService.countTargetLikes(contentId,"CONTENT");
                 if (likeCountResult.getSuccess()) {
                     response.setLikeCount(likeCountResult.getData());
                     log.debug("点赞数获取成功: {}", likeCountResult.getData());
@@ -479,7 +479,7 @@ public class ContentFacadeServiceImpl implements ContentFacadeService {
             
             // 1. 获取实时点赞统计
             try {
-                var likeCountResult = likeFacadeService.getLikeCount("CONTENT", contentId);
+                var likeCountResult = likeFacadeService.countTargetLikes(contentId, "CONTENT");
                 if (likeCountResult.getSuccess()) {
                     statistics.put("realTimeLikeCount", likeCountResult.getData());
                     log.debug("实时点赞数: {}", likeCountResult.getData());

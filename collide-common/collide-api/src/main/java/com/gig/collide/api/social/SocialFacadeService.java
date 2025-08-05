@@ -7,150 +7,216 @@ import com.gig.collide.api.social.response.SocialDynamicResponse;
 import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.web.vo.Result;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 /**
- * 社交动态门面服务接口 - 缓存增强版
- * 基于简洁版SQL设计（t_social_dynamic），对齐content模块设计风格
- * 
- * 核心功能：
- * - 创建动态
- * - 查询最新动态列表
- * - 根据userId查询动态
- * - 点赞评论记录
- * - 删除动态
- * - 更新动态内容（仅内容字段）
+ * 社交动态门面服务接口 - 重新设计版
+ * 基于SocialDynamicService的25个核心方法，严格限制在Social模块内
+ * 使用Result<T>统一包装返回结果，不包含跨模块调用
  *
  * @author GIG Team
- * @version 2.0.0 (缓存增强版)
- * @since 2024-01-16
+ * @version 3.0.0 (重新设计版)
+ * @since 2024-01-30
  */
 public interface SocialFacadeService {
 
-    // =================== 动态管理 ===================
+    // =================== 业务CRUD操作（Controller层需要） ===================
 
     /**
      * 创建动态
-     * @param request 创建请求
-     * @return 创建结果（只返回成功状态，不返回数据）
+     * 包含用户验证、内容检查、冗余信息设置
+     * 对应Service: createDynamic
      */
-    Result<Void> createDynamic(SocialDynamicCreateRequest request);
+    Result<SocialDynamicResponse> createDynamic(SocialDynamicCreateRequest request);
+
+    /**
+     * 批量创建动态
+     * 用于批量导入或管理员批量操作
+     * 对应Service: batchCreateDynamics
+     */
+    Result<Integer> batchCreateDynamics(List<SocialDynamicCreateRequest> requests, Long operatorId);
+
+    /**
+     * 创建分享动态
+     * 专门用于分享其他动态的场景
+     * 对应Service: createShareDynamic
+     */
+    Result<SocialDynamicResponse> createShareDynamic(SocialDynamicCreateRequest request);
 
     /**
      * 更新动态内容
-     * 只允许更新动态内容，其他字段不允许修改
-     * @param request 更新请求
-     * @return 更新后的动态信息
+     * 只允许更新内容相关字段，包含权限验证
      */
     Result<SocialDynamicResponse> updateDynamic(SocialDynamicUpdateRequest request);
 
     /**
      * 删除动态
-     * 逻辑删除（设为deleted状态）
-     * @param dynamicId 动态ID
-     * @param operatorId 操作人ID
-     * @return 删除结果
+     * 逻辑删除，包含权限验证
      */
     Result<Void> deleteDynamic(Long dynamicId, Long operatorId);
 
     /**
      * 根据ID查询动态详情
-     * @param dynamicId 动态ID
-     * @param includeDeleted 是否包含已删除的动态
-     * @return 动态详情
      */
     Result<SocialDynamicResponse> getDynamicById(Long dynamicId, Boolean includeDeleted);
 
-    // =================== 动态查询 ===================
-
     /**
      * 分页查询动态列表
-     * @param request 查询请求
-     * @return 分页结果
+     * 支持多条件组合查询
      */
-    PageResponse<SocialDynamicResponse> queryDynamics(SocialDynamicQueryRequest request);
+    Result<PageResponse<SocialDynamicResponse>> queryDynamics(SocialDynamicQueryRequest request);
+
+    // =================== 核心查询方法（严格对应Service层7个） ===================
 
     /**
-     * 查询最新动态列表
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @param dynamicType 动态类型（可选）
-     * @return 分页结果
+     * 根据用户ID分页查询动态
+     * 对应Service: selectByUserId
      */
-    PageResponse<SocialDynamicResponse> getLatestDynamics(Integer currentPage, Integer pageSize, String dynamicType);
+    Result<PageResponse<SocialDynamicResponse>> selectByUserId(Integer currentPage, Integer pageSize, Long userId, String status, String dynamicType);
 
     /**
-     * 根据用户ID查询动态列表
-     * @param userId 用户ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @param dynamicType 动态类型（可选）
-     * @return 分页结果
+     * 根据动态类型分页查询
+     * 对应Service: selectByDynamicType
      */
-    PageResponse<SocialDynamicResponse> getUserDynamics(Long userId, Integer currentPage, Integer pageSize, String dynamicType);
-
-    // =================== 互动功能 ===================
+    Result<PageResponse<SocialDynamicResponse>> selectByDynamicType(Integer currentPage, Integer pageSize, String dynamicType, String status);
 
     /**
-     * 点赞动态
-     * @param dynamicId 动态ID
-     * @param userId 用户ID
-     * @return 操作结果
+     * 根据状态分页查询动态
+     * 对应Service: selectByStatus
      */
-    Result<Void> likeDynamic(Long dynamicId, Long userId);
+    Result<PageResponse<SocialDynamicResponse>> selectByStatus(Integer currentPage, Integer pageSize, String status);
 
     /**
-     * 取消点赞
-     * @param dynamicId 动态ID
-     * @param userId 用户ID
-     * @return 操作结果
+     * 获取关注用户的动态流
+     * 对应Service: selectFollowingDynamics
      */
-    Result<Void> unlikeDynamic(Long dynamicId, Long userId);
+    Result<PageResponse<SocialDynamicResponse>> selectFollowingDynamics(Integer currentPage, Integer pageSize, Long userId, String status);
 
     /**
-     * 评论动态
-     * @param dynamicId 动态ID
-     * @param userId 用户ID
-     * @param content 评论内容
-     * @return 操作结果
+     * 搜索动态（按内容搜索）
+     * 对应Service: searchByContent
      */
-    Result<Void> commentDynamic(Long dynamicId, Long userId, String content);
+    Result<PageResponse<SocialDynamicResponse>> searchByContent(Integer currentPage, Integer pageSize, String keyword, String status);
 
     /**
-     * 获取动态的点赞记录
-     * @param dynamicId 动态ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 点赞用户列表
+     * 获取热门动态（按互动数排序）
+     * 对应Service: selectHotDynamics
      */
-    PageResponse<Object> getDynamicLikes(Long dynamicId, Integer currentPage, Integer pageSize);
+    Result<PageResponse<SocialDynamicResponse>> selectHotDynamics(Integer currentPage, Integer pageSize, String status, String dynamicType);
 
     /**
-     * 获取动态的评论记录
-     * @param dynamicId 动态ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 评论列表
+     * 根据分享目标查询分享动态
+     * 对应Service: selectByShareTarget
      */
-    PageResponse<Object> getDynamicComments(Long dynamicId, Integer currentPage, Integer pageSize);
+    Result<PageResponse<SocialDynamicResponse>> selectByShareTarget(Integer currentPage, Integer pageSize, String shareTargetType, Long shareTargetId, String status);
 
-    // =================== 统计功能 ===================
+    // =================== 统计计数方法（严格对应Service层3个） ===================
 
     /**
-     * 获取动态统计信息
-     * @param dynamicId 动态ID
-     * @return 统计信息（点赞数、评论数、分享数等）
+     * 统计用户动态数量
+     * 对应Service: countByUserId
      */
-    Result<Object> getDynamicStatistics(Long dynamicId);
-
-    // =================== 聚合功能 ===================
+    Result<Long> countByUserId(Long userId, String status, String dynamicType);
 
     /**
-     * 获取用户互动记录聚合列表
-     * 包含：用户点赞别人、被别人点赞、用户评论别人、被别人评论的所有记录
-     * 按最新时间排序
-     * @param userId 用户ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 互动记录列表
+     * 统计动态类型数量
+     * 对应Service: countByDynamicType
      */
-    PageResponse<Object> getUserInteractions(Long userId, Integer currentPage, Integer pageSize);
+    Result<Long> countByDynamicType(String dynamicType, String status);
+
+    /**
+     * 统计指定时间范围内的动态数量
+     * 对应Service: countByTimeRange
+     */
+    Result<Long> countByTimeRange(LocalDateTime startTime, LocalDateTime endTime, String status);
+
+    // =================== 互动统计更新（严格对应Service层5个） ===================
+
+    /**
+     * 增加点赞数
+     * 对应Service: increaseLikeCount
+     */
+    Result<Integer> increaseLikeCount(Long dynamicId, Long operatorId);
+
+    /**
+     * 减少点赞数
+     * 对应Service: decreaseLikeCount
+     */
+    Result<Integer> decreaseLikeCount(Long dynamicId, Long operatorId);
+
+    /**
+     * 增加评论数
+     * 对应Service: increaseCommentCount
+     */
+    Result<Integer> increaseCommentCount(Long dynamicId, Long operatorId);
+
+    /**
+     * 增加分享数
+     * 对应Service: increaseShareCount
+     */
+    Result<Integer> increaseShareCount(Long dynamicId, Long operatorId);
+
+    /**
+     * 批量更新统计数据
+     * 对应Service: updateStatistics
+     */
+    Result<Integer> updateStatistics(Long dynamicId, Long likeCount, Long commentCount, Long shareCount, Long operatorId);
+
+    // =================== 状态管理（严格对应Service层2个） ===================
+
+    /**
+     * 更新动态状态
+     * 对应Service: updateStatus
+     */
+    Result<Integer> updateStatus(Long dynamicId, String status, Long operatorId);
+
+    /**
+     * 批量更新动态状态
+     * 对应Service: batchUpdateStatus
+     */
+    Result<Integer> batchUpdateStatus(List<Long> dynamicIds, String status, Long operatorId);
+
+    // =================== 用户信息同步（严格对应Service层1个） ===================
+
+    /**
+     * 批量更新用户冗余信息
+     * 对应Service: updateUserInfo
+     */
+    Result<Integer> updateUserInfo(Long userId, String userNickname, String userAvatar, Long operatorId);
+
+    // =================== 数据清理（严格对应Service层1个） ===================
+
+    /**
+     * 物理删除指定状态的历史动态
+     * 对应Service: deleteByStatusAndTime
+     */
+    Result<Integer> deleteByStatusAndTime(String status, LocalDateTime beforeTime, Integer limit, Long operatorId);
+
+    // =================== 特殊查询（严格对应Service层3个） ===================
+
+    /**
+     * 查询最新动态（全局）
+     * 对应Service: selectLatestDynamics
+     */
+    Result<List<SocialDynamicResponse>> selectLatestDynamics(Integer limit, String status);
+
+    /**
+     * 查询用户最新动态
+     * 对应Service: selectUserLatestDynamics
+     */
+    Result<List<SocialDynamicResponse>> selectUserLatestDynamics(Long userId, Integer limit, String status);
+
+    /**
+     * 查询分享动态列表
+     * 对应Service: selectShareDynamics
+     */
+    Result<List<SocialDynamicResponse>> selectShareDynamics(String shareTargetType, Integer limit, String status);
+
+    // =================== 系统健康检查 ===================
+
+    /**
+     * 社交动态系统健康检查
+     */
+    Result<String> healthCheck();
 } 

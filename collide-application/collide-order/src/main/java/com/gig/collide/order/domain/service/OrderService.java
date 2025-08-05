@@ -164,6 +164,18 @@ public interface OrderService {
     boolean updatePaymentStatus(Long orderId, String payStatus, String payMethod);
 
     /**
+     * 更新订单支付信息（完整版）
+     * 对应OrderMapper.updatePaymentInfo方法
+     *
+     * @param orderId   订单ID
+     * @param payStatus 支付状态
+     * @param payMethod 支付方式
+     * @param payTime   支付时间
+     * @return 是否成功
+     */
+    boolean updatePaymentInfo(Long orderId, String payStatus, String payMethod, LocalDateTime payTime);
+
+    /**
      * 处理支付回调
      *
      * @param orderNo    订单号
@@ -203,7 +215,7 @@ public interface OrderService {
      * @param newStatus 新状态
      * @return 是否成功
      */
-    boolean batchUpdateOrderStatus(List<Long> orderIds, String newStatus);
+    boolean batchUpdateStatus(List<Long> orderIds, String newStatus);
 
     /**
      * 发货
@@ -239,6 +251,14 @@ public interface OrderService {
      * @return 超时订单列表
      */
     List<Order> getTimeoutOrders(Integer timeoutMinutes);
+
+    /**
+     * 查询待支付超时订单（直接传入超时时间点）
+     *
+     * @param timeoutTime 超时时间点
+     * @return 超时订单列表
+     */
+    List<Order> getTimeoutOrdersByTime(LocalDateTime timeoutTime);
 
     /**
      * 自动取消超时订单
@@ -378,4 +398,24 @@ public interface OrderService {
      * @return 订单号
      */
     String generateOrderNo(Long userId);
+
+    // =================== 计数统计 ===================
+
+    /**
+     * 根据商品ID统计订单数
+     *
+     * @param goodsId 商品ID
+     * @param status  订单状态（可选）
+     * @return 订单数量
+     */
+    Long countOrdersByGoodsId(Long goodsId, String status);
+
+    /**
+     * 根据用户ID统计订单数
+     *
+     * @param userId 用户ID
+     * @param status 订单状态（可选）
+     * @return 订单数量
+     */
+    Long countOrdersByUserId(Long userId, String status);
 }

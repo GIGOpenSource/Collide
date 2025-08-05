@@ -2,182 +2,269 @@ package com.gig.collide.api.message;
 
 import com.gig.collide.api.message.request.MessageCreateRequest;
 import com.gig.collide.api.message.request.MessageQueryRequest;
-import com.gig.collide.api.message.request.MessageSessionQueryRequest;
+import com.gig.collide.api.message.request.MessageUpdateRequest;
 import com.gig.collide.api.message.response.MessageResponse;
-import com.gig.collide.api.message.response.MessageSessionResponse;
-import com.gig.collide.web.vo.Result;
 import com.gig.collide.base.response.PageResponse;
+import com.gig.collide.web.vo.Result;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * 私信消息门面服务接口 - 简洁版
- * 基于message-simple.sql的单表设计，实现核心私信功能
+ * 消息门面服务接口 - 简洁版
+ * 基于message-simple.sql的无连表设计，实现核心消息功能
+ * 支持私信、留言板、消息回复等功能
  * 
  * @author GIG Team
  * @version 2.0.0 (简洁版)
  * @since 2024-01-16
  */
 public interface MessageFacadeService {
-    
+
+    // =================== 消息发送 ===================
+
     /**
      * 发送消息
      * 支持文本、图片、文件等多种消息类型
+     * 包含用户验证、权限检查、消息过滤等业务逻辑
      * 
-     * @param request 发送消息请求
-     * @return 消息结果
+     * @param request 消息创建请求
+     * @return 发送的消息
      */
     Result<MessageResponse> sendMessage(MessageCreateRequest request);
-    
+
     /**
-     * 获取消息详情
-     * 根据消息ID获取详细信息
+     * 回复消息
+     * 回复指定的消息，建立回复关系
+     * 
+     * @param request 回复消息创建请求
+     * @return 回复的消息
+     */
+    Result<MessageResponse> replyMessage(MessageCreateRequest request);
+
+    /**
+     * 发送留言板消息
+     * 发送到用户留言板的公开消息
+     * 
+     * @param request 留言消息创建请求
+     * @return 发送的留言
+     */
+    Result<MessageResponse> sendWallMessage(MessageCreateRequest request);
+
+    // =================== 消息查询 ===================
+
+    /**
+     * 根据ID获取消息详情
      * 
      * @param messageId 消息ID
-     * @param userId 查看者用户ID（权限验证）
+     * @param userId 查看者用户ID（用于权限验证）
      * @return 消息详情
      */
     Result<MessageResponse> getMessageById(Long messageId, Long userId);
-    
+
+    /**
+     * 分页查询消息
+     * 支持多维度条件查询
+     * 
+     * @param request 查询请求
+     * @return 消息列表分页
+     */
+    Result<PageResponse<MessageResponse>> queryMessages(MessageQueryRequest request);
+
+    /**
+     * 查询两用户间的聊天记录
+     * 
+     * @param userId1 用户1ID
+     * @param userId2 用户2ID
+     * @param status 消息状态（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 聊天记录分页
+     */
+    Result<PageResponse<MessageResponse>> getChatHistory(Long userId1, Long userId2, String status,
+                                                        Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询用户留言板消息
+     * 
+     * @param receiverId 接收者ID
+     * @param status 消息状态（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 留言板消息分页
+     */
+    Result<PageResponse<MessageResponse>> getWallMessages(Long receiverId, String status,
+                                                         Integer currentPage, Integer pageSize);
+
+    /**
+     * 查询消息回复列表
+     * 
+     * @param replyToId 原消息ID
+     * @param status 消息状态（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 回复列表分页
+     */
+    Result<PageResponse<MessageResponse>> getMessageReplies(Long replyToId, String status,
+                                                           Integer currentPage, Integer pageSize);
+
+    /**
+     * 搜索用户消息
+     * 支持消息内容关键词搜索
+     * 
+     * @param userId 用户ID
+     * @param keyword 搜索关键词
+     * @param status 消息状态（可选）
+     * @param currentPage 当前页码
+     * @param pageSize 页面大小
+     * @return 搜索结果分页
+     */
+    Result<PageResponse<MessageResponse>> searchMessages(Long userId, String keyword, String status,
+                                                        Integer currentPage, Integer pageSize);
+
+    // =================== 消息管理 ===================
+
+    /**
+     * 更新消息
+     * 支持更新消息内容（仅限发送者）
+     * 
+     * @param request 更新请求
+     * @return 更新后的消息
+     */
+    Result<MessageResponse> updateMessage(MessageUpdateRequest request);
+
+    /**
+     * 删除消息
+     * 逻辑删除，支持发送者和接收者删除
+     * 
+     * @param messageId 消息ID
+     * @param userId 操作用户ID
+     * @return 删除结果
+     */
+    Result<Void> deleteMessage(Long messageId, Long userId);
+
     /**
      * 标记消息为已读
-     * 更新消息状态为已读，记录已读时间
      * 
      * @param messageId 消息ID
      * @param userId 用户ID
      * @return 操作结果
      */
-    Result<Void> markMessageAsRead(Long messageId, Long userId);
-    
+    Result<Void> markAsRead(Long messageId, Long userId);
+
+    /**
+     * 更新消息置顶状态
+     * 
+     * @param messageId 消息ID
+     * @param isPinned 是否置顶
+     * @param userId 操作用户ID
+     * @return 操作结果
+     */
+    Result<Void> updatePinnedStatus(Long messageId, Boolean isPinned, Long userId);
+
+    // =================== 批量操作 ===================
+
     /**
      * 批量标记消息为已读
-     * 批量更新多条消息的状态
      * 
      * @param messageIds 消息ID列表
      * @param userId 用户ID
      * @return 操作结果
      */
-    Result<Void> batchMarkAsRead(java.util.List<Long> messageIds, Long userId);
-    
+    Result<Void> batchMarkAsRead(List<Long> messageIds, Long userId);
+
     /**
-     * 删除消息
-     * 逻辑删除，更新状态为deleted
+     * 批量删除消息
      * 
-     * @param messageId 消息ID
-     * @param userId 用户ID
+     * @param messageIds 消息ID列表
+     * @param userId 操作用户ID
      * @return 操作结果
      */
-    Result<Void> deleteMessage(Long messageId, Long userId);
-    
+    Result<Void> batchDeleteMessages(List<Long> messageIds, Long userId);
+
     /**
-     * 分页查询消息
-     * 支持按发送者、接收者、状态等条件查询
+     * 标记会话中所有消息为已读
      * 
-     * @param request 查询请求
-     * @return 消息列表
+     * @param receiverId 接收者ID
+     * @param senderId 发送者ID
+     * @return 操作结果
      */
-    Result<PageResponse<MessageResponse>> queryMessages(MessageQueryRequest request);
-    
+    Result<Void> markSessionAsRead(Long receiverId, Long senderId);
+
+    // =================== 统计功能 ===================
+
     /**
-     * 获取两用户间的聊天记录
-     * 查询两个用户之间的所有消息
-     * 
-     * @param userId1 用户1 ID
-     * @param userId2 用户2 ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 聊天记录
-     */
-    Result<PageResponse<MessageResponse>> getChatHistory(Long userId1, Long userId2, Integer currentPage, Integer pageSize);
-    
-    /**
-     * 获取用户会话列表
-     * 获取用户的所有聊天会话（最近聊天的人）
-     * 
-     * @param userId 用户ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 会话列表
-     */
-    Result<PageResponse<MessageSessionResponse>> getUserSessions(Long userId, Integer currentPage, Integer pageSize);
-    
-    /**
-     * 获取用户未读消息数
-     * 统计用户的未读消息总数
+     * 统计用户未读消息数
      * 
      * @param userId 用户ID
      * @return 未读消息数
      */
-    Result<Long> getUnreadCount(Long userId);
-    
+    Result<Long> getUnreadMessageCount(Long userId);
+
     /**
-     * 获取与某用户的未读消息数
-     * 统计与特定用户的未读消息数
+     * 统计与某用户的未读消息数
      * 
-     * @param userId 用户ID
-     * @param otherUserId 对方用户ID
+     * @param receiverId 接收者ID
+     * @param senderId 发送者ID
      * @return 未读消息数
      */
-    Result<Long> getUnreadCountWithUser(Long userId, Long otherUserId);
-    
+    Result<Long> getUnreadCountWithUser(Long receiverId, Long senderId);
+
     /**
-     * 获取用户留言板消息
-     * 查询用户个人页面的留言（包含置顶消息）
+     * 统计用户发送的消息数
      * 
      * @param userId 用户ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 留言板消息
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 发送消息数
      */
-    Result<PageResponse<MessageResponse>> getUserWallMessages(Long userId, Integer currentPage, Integer pageSize);
-    
+    Result<Long> getSentMessageCount(Long userId, LocalDateTime startTime, LocalDateTime endTime);
+
     /**
-     * 置顶/取消置顶消息
-     * 用于留言板功能
-     * 
-     * @param messageId 消息ID
-     * @param userId 用户ID
-     * @param isPinned 是否置顶
-     * @return 操作结果
-     */
-    Result<Void> pinMessage(Long messageId, Long userId, Boolean isPinned);
-    
-    /**
-     * 回复消息
-     * 发送回复消息，设置reply_to_id
-     * 
-     * @param request 回复消息请求
-     * @return 回复结果
-     */
-    Result<MessageResponse> replyMessage(MessageCreateRequest request);
-    
-    /**
-     * 获取消息的回复列表
-     * 查询某条消息的所有回复
-     * 
-     * @param messageId 原消息ID
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 回复列表
-     */
-    Result<PageResponse<MessageResponse>> getMessageReplies(Long messageId, Integer currentPage, Integer pageSize);
-    
-    /**
-     * 搜索消息
-     * 在用户消息中搜索关键词
+     * 统计用户接收的消息数
      * 
      * @param userId 用户ID
-     * @param keyword 搜索关键词
-     * @param currentPage 当前页码
-     * @param pageSize 页面大小
-     * @return 搜索结果
+     * @param startTime 开始时间（可选）
+     * @param endTime 结束时间（可选）
+     * @return 接收消息数
      */
-    Result<PageResponse<MessageResponse>> searchMessages(Long userId, String keyword, Integer currentPage, Integer pageSize);
-    
+    Result<Long> getReceivedMessageCount(Long userId, LocalDateTime startTime, LocalDateTime endTime);
+
+    // =================== 会话管理 ===================
+
     /**
-     * 获取消息统计信息
-     * 包含发送数、接收数、未读数等
+     * 获取用户最近的聊天用户列表
      * 
      * @param userId 用户ID
-     * @return 统计信息
+     * @param limit 限制数量
+     * @return 最近聊天用户ID列表
      */
-    Result<java.util.Map<String, Object>> getMessageStatistics(Long userId);
+    Result<List<Long>> getRecentChatUsers(Long userId, Integer limit);
+
+    /**
+     * 获取两用户间的最新消息
+     * 
+     * @param userId1 用户1ID
+     * @param userId2 用户2ID
+     * @return 最新消息
+     */
+    Result<MessageResponse> getLatestMessage(Long userId1, Long userId2);
+
+    // =================== 系统管理 ===================
+
+    /**
+     * 清理过期删除消息
+     * 系统定时任务调用，物理删除过期的已删除消息
+     * 
+     * @param beforeTime 截止时间
+     * @return 清理的消息数量
+     */
+    Result<Integer> cleanupExpiredMessages(LocalDateTime beforeTime);
+
+    /**
+     * 消息系统健康检查
+     * 
+     * @return 系统状态
+     */
+    Result<String> healthCheck();
 }

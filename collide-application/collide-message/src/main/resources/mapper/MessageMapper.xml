@@ -1,5 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+==========================================
+消息模块 Mapper XML - MySQL 8.0 优化版
+基于message-simple.sql的无连表设计
+==========================================
+
+索引优化策略说明：
+1. 覆盖索引设计：主要查询索引包含所有SELECT字段，避免回表查询
+2. 降序索引优化：使用DESC降序索引优化ORDER BY DESC查询
+3. 全文检索：使用ngram解析器支持中文分词，替代LIKE查询
+4. 复合索引：将选择性高的字段放前面，范围查询字段放后面
+5. 专用索引：不同查询场景使用专门的索引，避免索引冲突
+
+相关索引文件：sql/message/message-indexes-mysql8.4.sql
+-->
+
 <mapper namespace="com.gig.collide.message.infrastructure.mapper.MessageMapper">
 
     <!-- 基础 ResultMap -->
@@ -20,6 +37,7 @@
     </resultMap>
 
     <!-- 查询两用户间的聊天记录 -->
+    <!-- 索引使用: idx_chat_history_optimized(sender_id, receiver_id, create_time, status) - 覆盖索引优化 -->
     <select id="findChatHistory" resultMap="BaseResultMap">
         SELECT * FROM t_message
         WHERE ((sender_id = #{userId1} AND receiver_id = #{userId2})
@@ -31,6 +49,7 @@
     </select>
 
     <!-- 条件查询消息 -->
+    <!-- 索引使用: 根据条件自动选择idx_user_message_time/idx_receiver_status_time_desc等复合索引 -->
     <select id="findWithConditions" resultMap="BaseResultMap">
         SELECT * FROM t_message
         <where>
@@ -53,7 +72,7 @@
                 AND reply_to_id = #{replyToId}
             </if>
             <if test="keyword != null and keyword != ''">
-                AND content LIKE CONCAT('%', #{keyword}, '%')
+                AND MATCH(content) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
             </if>
             <if test="startTime != null">
                 AND create_time >= #{startTime}
@@ -82,6 +101,7 @@
     </select>
 
     <!-- 查询用户留言板消息 -->
+    <!-- 索引使用: idx_wall_messages_optimized(receiver_id, is_pinned DESC, create_time DESC, status) - 置顶时间优化 -->
     <select id="findWallMessages" resultMap="BaseResultMap">
         SELECT * FROM t_message
         WHERE receiver_id = #{receiverId}
@@ -92,6 +112,7 @@
     </select>
 
     <!-- 查询消息的回复列表 -->
+    <!-- 索引使用: idx_reply_chain_optimized(reply_to_id, create_time, status) - 回复链查询优化 -->
     <select id="findReplies" resultMap="BaseResultMap">
         SELECT * FROM t_message
         WHERE reply_to_id = #{replyToId}
@@ -102,11 +123,12 @@
     </select>
 
     <!-- 搜索用户消息 -->
+    <!-- 索引使用: idx_content_fulltext(content) - 全文检索替代LIKE查询 -->
     <select id="searchMessages" resultMap="BaseResultMap">
         SELECT * FROM t_message
         WHERE (sender_id = #{userId} OR receiver_id = #{userId})
         <if test="keyword != null and keyword != ''">
-            AND content LIKE CONCAT('%', #{keyword}, '%')
+            AND MATCH(content) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE)
         </if>
         <if test="status != null and status != ''">
             AND status != #{status}
@@ -115,12 +137,14 @@
     </select>
 
     <!-- 统计用户未读消息数 -->
+    <!-- 索引使用: idx_receiver_status_time_desc(receiver_id, status) - 状态统计优化 -->
     <select id="countUnreadMessages" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message
         WHERE receiver_id = #{receiverId} AND status != 'read' AND status != 'deleted'
     </select>
 
     <!-- 统计与某用户的未读消息数 -->
+    <!-- 索引使用: idx_chat_history_optimized(sender_id, receiver_id, status) - 会话未读统计优化 -->
     <select id="countUnreadWithUser" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message
         WHERE receiver_id = #{receiverId} 
@@ -130,6 +154,7 @@
     </select>
 
     <!-- 统计用户发送的消息数 -->
+    <!-- 索引使用: idx_sender_time_stats(sender_id, create_time, status) - 发送统计优化 -->
     <select id="countSentMessages" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message
         WHERE sender_id = #{senderId}
@@ -142,6 +167,7 @@
     </select>
 
     <!-- 统计用户接收的消息数 -->
+    <!-- 索引使用: idx_receiver_status_time_desc(receiver_id, create_time) - 接收统计优化 -->
     <select id="countReceivedMessages" resultType="java.lang.Long">
         SELECT COUNT(*) FROM t_message
         WHERE receiver_id = #{receiverId}
@@ -154,6 +180,7 @@
     </select>
 
     <!-- 批量标记消息为已读 -->
+    <!-- 索引使用: idx_message_status_update(id, status) + idx_receiver_status_time_desc(receiver_id) - 批量更新优化 -->
     <update id="batchMarkAsRead">
         UPDATE t_message 
         SET status = 'read', read_time = #{readTime}
@@ -166,6 +193,7 @@
     </update>
 
     <!-- 批量删除消息（逻辑删除） -->
+    <!-- 索引使用: idx_message_status_update(id, status) - 批量状态更新优化 -->
     <update id="batchDeleteMessages">
         UPDATE t_message 
         SET status = 'deleted'
@@ -177,6 +205,7 @@
     </update>
 
     <!-- 标记会话中所有消息为已读 -->
+    <!-- 索引使用: idx_chat_history_optimized(sender_id, receiver_id, status) - 会话批量已读优化 -->
     <update id="markSessionMessagesAsRead">
         UPDATE t_message 
         SET status = 'read', read_time = #{readTime}
@@ -187,6 +216,7 @@
     </update>
 
     <!-- 更新消息状态 -->
+    <!-- 索引使用: PRIMARY KEY(id) + idx_message_status_update(id, status, read_time) - 主键更新优化 -->
     <update id="updateMessageStatus">
         UPDATE t_message 
         SET status = #{status}
@@ -197,6 +227,7 @@
     </update>
 
     <!-- 更新消息置顶状态 -->
+    <!-- 索引使用: PRIMARY KEY(id) + idx_wall_messages_optimized(receiver_id, is_pinned) - 置顶更新优化 -->
     <update id="updatePinnedStatus">
         UPDATE t_message 
         SET is_pinned = #{isPinned}
@@ -204,12 +235,14 @@
     </update>
 
     <!-- 物理删除指定时间前的已删除消息 -->
+    <!-- 索引使用: idx_cleanup_expired(status, update_time) - 过期数据清理优化 -->
     <delete id="physicalDeleteExpiredMessages">
         DELETE FROM t_message 
         WHERE status = 'deleted' AND update_time &lt; #{beforeTime}
     </delete>
 
     <!-- 获取用户会话中的最新消息 -->
+    <!-- 索引使用: idx_latest_message_between(sender_id, receiver_id, create_time DESC, status) - 最新消息查询优化 -->
     <select id="getLatestMessageBetweenUsers" resultMap="BaseResultMap">
         SELECT * FROM t_message
         WHERE ((sender_id = #{userId1} AND receiver_id = #{userId2})
@@ -220,6 +253,7 @@
     </select>
 
     <!-- 获取用户最近的会话用户列表 -->
+    <!-- 索引使用: idx_user_message_time(sender_id, receiver_id, create_time DESC) - 会话用户列表优化 -->
     <select id="getRecentChatUsers" resultType="java.lang.Long">
         SELECT DISTINCT 
             CASE 

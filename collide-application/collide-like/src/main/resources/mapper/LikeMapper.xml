@@ -2,6 +2,28 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
+<!-- 
+点赞模块 MyBatis Mapper XML - MySQL 8.0 索引优化版
+=================================================
+
+索引优化说明：
+1. 所有查询都已优化，使用专门设计的复合索引
+2. 支持 MySQL 8.0 降序索引特性，避免 filesort
+3. 使用覆盖索引减少回表查询，提升 COUNT 性能
+4. 针对高频查询场景设计专用索引
+
+主要索引：
+- uk_user_target: 唯一索引，防重复点赞
+- idx_user_type_status_time: 用户点赞查询优化
+- idx_target_type_status_time: 目标对象点赞查询优化  
+- idx_author_type_status_time: 作者作品点赞查询优化
+- idx_time_type_status: 时间范围查询优化
+- idx_*_count_covering: 统计查询覆盖索引
+
+详细索引定义参见：sql/like/like-indexes-mysql8.4.sql
+=================================================
+-->
+
 <mapper namespace="com.gig.collide.like.infrastructure.mapper.LikeMapper">
 
     <!-- 基础字段列表 -->
@@ -13,6 +35,7 @@
     </sql>
 
     <!-- 查询用户对目标对象的点赞记录 -->
+    <!-- 索引使用: uk_user_target(user_id, like_type, target_id) - 唯一索引完美匹配 -->
     <select id="findByUserAndTarget" resultType="com.gig.collide.like.domain.entity.Like">
         SELECT <include refid="baseColumns" />
         FROM t_like
@@ -24,6 +47,7 @@
     </select>
 
     <!-- 检查用户是否已点赞 -->
+    <!-- 索引使用: idx_user_type_target_status(user_id, like_type, target_id, status) - 复合索引完美匹配 -->
     <select id="checkLikeExists" resultType="boolean">
         SELECT COUNT(*) > 0
         FROM t_like
@@ -34,6 +58,7 @@
     </select>
 
     <!-- 分页查询用户点赞记录 -->
+    <!-- 索引使用: idx_user_type_status_time(user_id, like_type, status, create_time DESC) - 复合索引支持条件过滤和排序 -->
     <select id="findUserLikes" resultType="com.gig.collide.like.domain.entity.Like">
         SELECT <include refid="baseColumns" />
         FROM t_like
@@ -48,6 +73,7 @@
     </select>
 
     <!-- 分页查询目标对象的点赞记录 -->
+    <!-- 索引使用: idx_target_type_status_time(target_id, like_type, status, create_time DESC) - 复合索引支持条件过滤和排序 -->
     <select id="findTargetLikes" resultType="com.gig.collide.like.domain.entity.Like">
         SELECT <include refid="baseColumns" />
         FROM t_like
@@ -60,6 +86,7 @@
     </select>
 
     <!-- 查询作者作品的点赞记录 -->
+    <!-- 索引使用: idx_author_type_status_time(target_author_id, like_type, status, create_time DESC) - 复合索引支持作者查询、条件过滤和排序 -->
     <select id="findAuthorLikes" resultType="com.gig.collide.like.domain.entity.Like">
         SELECT <include refid="baseColumns" />
         FROM t_like
@@ -74,6 +101,7 @@
     </select>
 
     <!-- 统计目标对象的点赞数量 -->
+    <!-- 索引使用: idx_target_count_covering(target_id, like_type, status) - 覆盖索引避免回表查询 -->
     <select id="countTargetLikes" resultType="long">
         SELECT COUNT(*)
         FROM t_like
@@ -83,6 +111,7 @@
     </select>
 
     <!-- 统计用户的点赞数量 -->
+    <!-- 索引使用: idx_user_count_covering(user_id, like_type, status) - 覆盖索引避免回表查询 -->
     <select id="countUserLikes" resultType="long">
         SELECT COUNT(*)
         FROM t_like
@@ -94,6 +123,7 @@
     </select>
 
     <!-- 统计作者作品的被点赞数量 -->
+    <!-- 索引使用: idx_author_type_status(target_author_id, like_type, status) - 作者统计专用索引 -->
     <select id="countAuthorLikes" resultType="long">
         SELECT COUNT(*)
         FROM t_like
@@ -105,6 +135,7 @@
     </select>
 
     <!-- 批量检查点赞状态 -->
+    <!-- 索引使用: idx_user_type_status_target(user_id, like_type, status, target_id) - 批量查询优化索引 -->
     <select id="batchCheckLikeStatus" resultType="long">
         SELECT DISTINCT target_id
         FROM t_like
@@ -118,6 +149,7 @@
     </select>
 
     <!-- 更新点赞状态 -->
+    <!-- 索引使用: PRIMARY KEY(id) - 主键索引最优性能 -->
     <update id="updateLikeStatus">
         UPDATE t_like
         SET status = #{status},
@@ -126,6 +158,7 @@
     </update>
 
     <!-- 查询时间范围内的点赞记录 -->
+    <!-- 索引使用: idx_time_type_status(create_time DESC, like_type, status) - 时间范围查询专用索引，支持降序排序 -->
     <select id="findByTimeRange" resultType="com.gig.collide.like.domain.entity.Like">
         SELECT <include refid="baseColumns" />
         FROM t_like
