@@ -634,7 +634,7 @@ public Map<Long, Boolean> checkMultipleLikes(Long userId, List<Long> contentIds)
 
 ## 🔗 相关文档
 
-- [点赞REST API文档](./like-rest-api.md)
+- [点赞REST API文档](../news/like-rest-api.md)
 - [点赞数据库设计](../database/like-schema.md)
 - [缓存策略设计](../cache/like-cache.md)
 - [性能监控指南](../monitor/like-performance.md)

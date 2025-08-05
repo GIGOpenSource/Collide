@@ -516,7 +516,7 @@ GET /api/v1/like/time-range?startTime=2024-01-01T00:00:00&endTime=2024-01-31T23:
 
 ## 🔗 相关文档
 
-- [点赞Facade接口文档](./like-facade-api.md)
+- [点赞Facade接口文档](../facade/like-facade-api.md)
 - [数据库设计文档](../database/like-schema.md)
 - [缓存策略文档](../cache/like-cache.md)
 
