@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/content/payment")
+@RequestMapping("/api/v1/content/payment")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "内容付费管理", description = "内容付费配置的管理、查询和统计接口")

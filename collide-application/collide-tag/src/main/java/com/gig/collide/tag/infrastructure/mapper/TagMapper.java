@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 标签Mapper接口 - 简洁版
@@ -22,9 +23,14 @@ public interface TagMapper extends BaseMapper<Tag> {
     List<Tag> selectByTagType(@Param("tagType") String tagType);
 
     /**
-     * 按名称模糊搜索标签
+     * 按名称模糊搜索标签（全文搜索）
      */
     List<Tag> searchByName(@Param("keyword") String keyword, @Param("limit") Integer limit);
+
+    /**
+     * 按名称精确搜索标签（大小写不敏感）
+     */
+    List<Tag> searchByNameExact(@Param("keyword") String keyword, @Param("limit") Integer limit);
 
     /**
      * 获取热门标签（按使用次数排序）
@@ -40,4 +46,29 @@ public interface TagMapper extends BaseMapper<Tag> {
      * 检查标签名称是否存在
      */
     int countByNameAndType(@Param("name") String name, @Param("tagType") String tagType);
+
+    /**
+     * 批量更新标签状态
+     */
+    int batchUpdateStatus(@Param("tagIds") List<Long> tagIds, @Param("status") String status);
+
+    /**
+     * 减少标签使用次数
+     */
+    int decreaseUsageCount(@Param("tagId") Long tagId);
+
+    /**
+     * 根据分类查询标签
+     */
+    List<Tag> selectByCategoryId(@Param("categoryId") Long categoryId);
+
+    /**
+     * 获取标签使用统计（只返回计数，性能优化）
+     */
+    List<Map<String, Object>> getTagUsageStats(@Param("tagType") String tagType, @Param("limit") Integer limit);
+
+    /**
+     * 批量获取标签基本信息（覆盖索引优化）
+     */
+    List<Map<String, Object>> selectTagSummary(@Param("tagIds") List<Long> tagIds);
 } 

@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/content/chapters")
+@RequestMapping("/api/v1/content/chapters")
 @RequiredArgsConstructor
 @Validated
 @Tag(name = "内容章节管理", description = "内容章节的查询、统计和管理接口")

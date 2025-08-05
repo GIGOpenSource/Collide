@@ -24,4 +24,63 @@
         WHERE user_id = #{userId} AND tag_id = #{tagId}
     </select>
 
+    <!-- 根据标签ID获取关注用户列表 -->
+    <select id="selectByTagId" resultType="com.gig.collide.tag.domain.entity.UserInterestTag">
+        SELECT * FROM t_user_interest_tag 
+        WHERE tag_id = #{tagId} AND status = 'active'
+        ORDER BY interest_score DESC, create_time DESC
+    </select>
+
+    <!-- 获取用户高分兴趣标签（兴趣分数排序） -->
+    <select id="selectTopInterestsByUserId" resultType="com.gig.collide.tag.domain.entity.UserInterestTag">
+        SELECT * FROM t_user_interest_tag 
+        WHERE user_id = #{userId} AND status = 'active'
+        ORDER BY interest_score DESC, create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 批量更新用户标签状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_user_interest_tag 
+        SET status = #{status}
+        WHERE user_id = #{userId} 
+        AND tag_id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+
+    <!-- 获取用户兴趣标签统计 - 覆盖索引优化 -->
+    <select id="getUserInterestStats" resultType="map">
+        SELECT 
+            tag_id,
+            interest_score,
+            status,
+            create_time
+        FROM t_user_interest_tag 
+        WHERE user_id = #{userId} 
+        AND status = 'active'
+        <if test="minScore != null">
+            AND interest_score >= #{minScore}
+        </if>
+        ORDER BY interest_score DESC, create_time DESC
+    </select>
+
+    <!-- 获取标签的热门关注用户 - 覆盖索引优化 -->
+    <select id="getTagHotUsers" resultType="map">
+        SELECT 
+            user_id,
+            interest_score,
+            create_time
+        FROM t_user_interest_tag 
+        WHERE tag_id = #{tagId} 
+        AND status = 'active'
+        ORDER BY interest_score DESC, create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
 </mapper> 

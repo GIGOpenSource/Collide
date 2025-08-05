@@ -11,10 +11,21 @@
         ORDER BY usage_count DESC, create_time DESC
     </select>
 
-    <!-- 按名称模糊搜索标签 -->
+    <!-- 按名称模糊搜索标签 - MySQL 8.0+ 全文搜索优化 -->
     <select id="searchByName" resultType="com.gig.collide.tag.domain.entity.Tag">
         SELECT * FROM t_tag 
-        WHERE name LIKE CONCAT('%', #{keyword}, '%') 
+        WHERE MATCH(name) AGAINST(#{keyword} IN NATURAL LANGUAGE MODE) 
+        AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 按名称精确搜索标签 - 利用函数索引 -->
+    <select id="searchByNameExact" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT * FROM t_tag 
+        WHERE LOWER(name) = LOWER(#{keyword}) 
         AND status = 'active'
         ORDER BY usage_count DESC, create_time DESC
         <if test="limit != null">
@@ -43,6 +54,64 @@
     <select id="countByNameAndType" resultType="int">
         SELECT COUNT(*) FROM t_tag 
         WHERE name = #{name} AND tag_type = #{tagType}
+    </select>
+
+    <!-- 批量更新标签状态 -->
+    <update id="batchUpdateStatus">
+        UPDATE t_tag 
+        SET status = #{status}, update_time = NOW()
+        WHERE id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+    </update>
+
+    <!-- 减少标签使用次数 -->
+    <update id="decreaseUsageCount">
+        UPDATE t_tag 
+        SET usage_count = CASE 
+            WHEN usage_count > 0 THEN usage_count - 1 
+            ELSE 0 
+        END, update_time = NOW()
+        WHERE id = #{tagId}
+    </update>
+
+    <!-- 根据分类查询标签 -->
+    <select id="selectByCategoryId" resultType="com.gig.collide.tag.domain.entity.Tag">
+        SELECT * FROM t_tag 
+        WHERE category_id = #{categoryId} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+    </select>
+
+    <!-- 获取标签使用统计 - 覆盖索引优化 -->
+    <select id="getTagUsageStats" resultType="map">
+        SELECT 
+            id,
+            name,
+            usage_count,
+            tag_type
+        FROM t_tag 
+        WHERE tag_type = #{tagType} AND status = 'active'
+        ORDER BY usage_count DESC, create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <!-- 批量获取标签基本信息 - 覆盖索引优化 -->
+    <select id="selectTagSummary" resultType="map">
+        SELECT 
+            id,
+            name,
+            tag_type,
+            usage_count,
+            status
+        FROM t_tag 
+        WHERE id IN
+        <foreach collection="tagIds" item="tagId" open="(" separator="," close=")">
+            #{tagId}
+        </foreach>
+        ORDER BY usage_count DESC
     </select>
 
 </mapper> 

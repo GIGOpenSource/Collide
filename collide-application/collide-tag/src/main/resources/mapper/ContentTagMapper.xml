@@ -24,4 +24,55 @@
         WHERE content_id = #{contentId} AND tag_id = #{tagId}
     </select>
 
+    <!-- 批量删除内容的所有标签 -->
+    <delete id="deleteByContentId">
+        DELETE FROM t_content_tag 
+        WHERE content_id = #{contentId}
+    </delete>
+
+    <!-- 批量删除标签的所有关联 -->
+    <delete id="deleteByTagId">
+        DELETE FROM t_content_tag 
+        WHERE tag_id = #{tagId}
+    </delete>
+
+    <!-- 统计标签被使用的内容数量 -->
+    <select id="countContentsByTagId" resultType="int">
+        SELECT COUNT(DISTINCT content_id) FROM t_content_tag 
+        WHERE tag_id = #{tagId}
+    </select>
+
+    <!-- 统计内容的标签数量 -->
+    <select id="countTagsByContentId" resultType="int">
+        SELECT COUNT(*) FROM t_content_tag 
+        WHERE content_id = #{contentId}
+    </select>
+
+    <!-- 批量获取内容标签关联信息 - 覆盖索引优化 -->
+    <select id="getContentTagSummary" resultType="map">
+        SELECT 
+            content_id,
+            tag_id,
+            create_time
+        FROM t_content_tag 
+        WHERE content_id IN
+        <foreach collection="contentIds" item="contentId" open="(" separator="," close=")">
+            #{contentId}
+        </foreach>
+        ORDER BY content_id, create_time DESC
+    </select>
+
+    <!-- 获取最新的内容标签关联 - 覆盖索引优化 -->
+    <select id="getRecentContentTags" resultType="map">
+        SELECT 
+            content_id,
+            tag_id,
+            create_time
+        FROM t_content_tag 
+        ORDER BY create_time DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
 </mapper> 
