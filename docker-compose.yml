@@ -50,23 +50,23 @@ services:
 
   # =================== Business Application Services ===================
 
-  # Content 内容服务
-  collide-content:
-    build:
-      context: .
-      dockerfile: collide-application/collide-content/Dockerfile
-    image: collide/content:latest
-    container_name: collide-content
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.3.10
-    labels:
-      - "com.collide.service=content"
-      - "com.collide.category=business"
-      - "com.collide.type=dubbo-provider"
+#  # Content 内容服务
+#  collide-content:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-content/Dockerfile
+#    image: collide/content:latest
+#    container_name: collide-content
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.3.10
+#    labels:
+#      - "com.collide.service=content"
+#      - "com.collide.category=business"
+#      - "com.collide.type=dubbo-provider"
 
   # Users 用户服务  
   collide-users:
@@ -86,189 +86,189 @@ services:
       - "com.collide.category=business"
       - "com.collide.type=dubbo-provider"
 
-  # Category 分类服务
-  collide-category:
-    build:
-      context: .
-      dockerfile: collide-application/collide-category/Dockerfile
-    image: collide/category:latest
-    container_name: collide-category
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.3.12
-    labels:
-      - "com.collide.service=category"
-      - "com.collide.category=business"
-      - "com.collide.type=dubbo-provider"
-
-  # Comment 评论服务
-  collide-comment:
-    build:
-      context: .
-      dockerfile: collide-application/collide-comment/Dockerfile
-    image: collide/comment:latest
-    container_name: collide-comment
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.3.13
-    labels:
-      - "com.collide.service=comment"
-      - "com.collide.category=business"
-      - "com.collide.type=dubbo-provider"
-
-  # Social 社交服务
-  collide-social:
-    build:
-      context: .
-      dockerfile: collide-application/collide-social/Dockerfile
-    image: collide/social:latest
-    container_name: collide-social
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.3.14
-    labels:
-      - "com.collide.service=social"
-      - "com.collide.category=business"
-      - "com.collide.type=dubbo-provider"
-
-  # Tag 标签服务
-  collide-tag:
-    build:
-      context: .
-      dockerfile: collide-application/collide-tag/Dockerfile
-    image: collide/tag:latest
-    container_name: collide-tag
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.3.15
-    labels:
-      - "com.collide.service=tag"
-      - "com.collide.category=business"
-      - "com.collide.type=dubbo-provider"
-
-  # =================== Interactive Services ===================
-
-  # Like 点赞服务
-  collide-like:
-    build:
-      context: .
-      dockerfile: collide-application/collide-like/Dockerfile
-    image: collide/like:latest
-    container_name: collide-like
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.4.20
-    labels:
-      - "com.collide.service=like"
-      - "com.collide.category=interactive"
-      - "com.collide.type=dubbo-provider"
-
-  # Favorite 收藏服务
-  collide-favorite:
-    build:
-      context: .
-      dockerfile: collide-application/collide-favorite/Dockerfile
-    image: collide/favorite:latest
-    container_name: collide-favorite
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.4.21
-    labels:
-      - "com.collide.service=favorite"
-      - "com.collide.category=interactive"
-      - "com.collide.type=dubbo-provider"
-
-  # Follow 关注服务
-  collide-follow:
-    build:
-      context: .
-      dockerfile: collide-application/collide-follow/Dockerfile
-    image: collide/follow:latest
-    container_name: collide-follow
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.4.22
-    labels:
-      - "com.collide.service=follow"
-      - "com.collide.category=interactive"
-      - "com.collide.type=dubbo-provider"
-
-  # =================== E-commerce Services ===================
-
-  # Goods 商品服务
-  collide-goods:
-    build:
-      context: .
-      dockerfile: collide-application/collide-goods/Dockerfile
-    image: collide/goods:latest
-    container_name: collide-goods
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.30
-    labels:
-      - "com.collide.service=goods"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
-
-  # Order 订单服务
-  collide-order:
-    build:
-      context: .
-      dockerfile: collide-application/collide-order/Dockerfile
-    image: collide/order:latest
-    container_name: collide-order
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.31
-    labels:
-      - "com.collide.service=order"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
-
-  # Payment 支付服务
-  collide-payment:
-    build:
-      context: .
-      dockerfile: collide-application/collide-payment/Dockerfile
-    image: collide/payment:latest
-    container_name: collide-payment
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.32
-    labels:
-      - "com.collide.service=payment"
-      - "com.collide.category=ecommerce"
-      - "com.collide.type=dubbo-provider"
+#  # Category 分类服务
+#  collide-category:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-category/Dockerfile
+#    image: collide/category:latest
+#    container_name: collide-category
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.3.12
+#    labels:
+#      - "com.collide.service=category"
+#      - "com.collide.category=business"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Comment 评论服务
+#  collide-comment:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-comment/Dockerfile
+#    image: collide/comment:latest
+#    container_name: collide-comment
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.3.13
+#    labels:
+#      - "com.collide.service=comment"
+#      - "com.collide.category=business"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Social 社交服务
+#  collide-social:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-social/Dockerfile
+#    image: collide/social:latest
+#    container_name: collide-social
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.3.14
+#    labels:
+#      - "com.collide.service=social"
+#      - "com.collide.category=business"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Tag 标签服务
+#  collide-tag:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-tag/Dockerfile
+#    image: collide/tag:latest
+#    container_name: collide-tag
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.3.15
+#    labels:
+#      - "com.collide.service=tag"
+#      - "com.collide.category=business"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # =================== Interactive Services ===================
+#
+#  # Like 点赞服务
+#  collide-like:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-like/Dockerfile
+#    image: collide/like:latest
+#    container_name: collide-like
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.4.20
+#    labels:
+#      - "com.collide.service=like"
+#      - "com.collide.category=interactive"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Favorite 收藏服务
+#  collide-favorite:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-favorite/Dockerfile
+#    image: collide/favorite:latest
+#    container_name: collide-favorite
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.4.21
+#    labels:
+#      - "com.collide.service=favorite"
+#      - "com.collide.category=interactive"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Follow 关注服务
+#  collide-follow:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-follow/Dockerfile
+#    image: collide/follow:latest
+#    container_name: collide-follow
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.4.22
+#    labels:
+#      - "com.collide.service=follow"
+#      - "com.collide.category=interactive"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # =================== E-commerce Services ===================
+#
+#  # Goods 商品服务
+#  collide-goods:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-goods/Dockerfile
+#    image: collide/goods:latest
+#    container_name: collide-goods
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.30
+#    labels:
+#      - "com.collide.service=goods"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Order 订单服务
+#  collide-order:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-order/Dockerfile
+#    image: collide/order:latest
+#    container_name: collide-order
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.31
+#    labels:
+#      - "com.collide.service=order"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
+#
+#  # Payment 支付服务
+#  collide-payment:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-payment/Dockerfile
+#    image: collide/payment:latest
+#    container_name: collide-payment
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.32
+#    labels:
+#      - "com.collide.service=payment"
+#      - "com.collide.category=ecommerce"
+#      - "com.collide.type=dubbo-provider"
 #
 #  # =================== Utility Services ===================
 #
@@ -290,56 +290,56 @@ services:
 #      - "com.collide.category=utility"
 #      - "com.collide.type=dubbo-provider"
 
-  collide-message:
-    build:
-      context: .
-      dockerfile: collide-application/collide-message/Dockerfile
-    image: collide/message:latest
-    container_name: collide-message
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.33
-    labels:
-      - "com.collide.service=message"
-      - "com.collide.category=message"
-      - "com.collide.type=dubbo-provider"
-
-  collide-task:
-    build:
-      context: .
-      dockerfile: collide-application/collide-task/Dockerfile
-    image: collide/task:latest
-    container_name: collide-task
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.34
-    labels:
-      - "com.collide.service=message"
-      - "com.collide.category=message"
-      - "com.collide.type=dubbo-provider"
-
-  collide-ads:
-    build:
-      context: .
-      dockerfile: collide-application/collide-ads/Dockerfile
-    image: collide/ads:latest
-    container_name: collide-ads
-    environment:
-      - JAVA_OPTS=-Xms128m -Xmx256m -server
-    restart: unless-stopped
-    networks:
-      collide-network:
-        ipv4_address: 172.20.5.35
-    labels:
-      - "com.collide.service=message"
-      - "com.collide.category=message"
-      - "com.collide.type=dubbo-provider"
+#  collide-message:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-message/Dockerfile
+#    image: collide/message:latest
+#    container_name: collide-message
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.33
+#    labels:
+#      - "com.collide.service=message"
+#      - "com.collide.category=message"
+#      - "com.collide.type=dubbo-provider"
+#
+#  collide-task:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-task/Dockerfile
+#    image: collide/task:latest
+#    container_name: collide-task
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.34
+#    labels:
+#      - "com.collide.service=message"
+#      - "com.collide.category=message"
+#      - "com.collide.type=dubbo-provider"
+#
+#  collide-ads:
+#    build:
+#      context: .
+#      dockerfile: collide-application/collide-ads/Dockerfile
+#    image: collide/ads:latest
+#    container_name: collide-ads
+#    environment:
+#      - JAVA_OPTS=-Xms128m -Xmx256m -server
+#    restart: unless-stopped
+#    networks:
+#      collide-network:
+#        ipv4_address: 172.20.5.35
+#    labels:
+#      - "com.collide.service=message"
+#      - "com.collide.category=message"
+#      - "com.collide.type=dubbo-provider"
 
 networks:
   collide-network:
