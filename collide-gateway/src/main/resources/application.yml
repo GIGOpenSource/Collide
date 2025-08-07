@@ -32,17 +32,12 @@ spring:
           uri: lb://collide-api-service
           predicates:
             - Path=/api/v1/users/**
-          filters:
-            # 传递用户认证信息到下游服务
-            - AddRequestHeader=X-User-Id, ${satoken.user.id:}
-            - AddRequestHeader=X-Username, ${satoken.user.name:}
-            - AddRequestHeader=X-User-Role, ${satoken.user.role:user}
 
         # 用户服务内部API路由（供认证服务调用，无需认证）
         - id: collide-api-service-internal
           uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/users/internal/**
+            - Path=
 
         # 健康检查路由
         - id: collide-api-service-health
