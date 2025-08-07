@@ -31,6 +31,8 @@ spring:
           uri: lb://collide-api-service
           predicates:
             - Path=/api/v1/users/**
+          filters:
+            - name: SaTokenUserInfo
 
         # 健康检查路由
         - id: collide-api-service-health
