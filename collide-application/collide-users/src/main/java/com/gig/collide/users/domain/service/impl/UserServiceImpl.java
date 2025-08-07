@@ -51,6 +51,7 @@ public class UserServiceImpl implements UserService {
         user.setLikeCount(0L);
         user.setLoginCount(0L);
         user.setInvitedCount(0L);
+        user.setGender("unknown");
         
         // 插入用户
         userMapper.insert(user);

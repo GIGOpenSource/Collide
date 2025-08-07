@@ -54,6 +54,7 @@ public class AuthServiceImpl implements AuthService {
         userCreateRequest.setNickname(registerParam.getUsername());
         userCreateRequest.setRole("user");
         userCreateRequest.setInviteCode(registerParam.getInviteCode());
+        userCreateRequest.setGender("unknown");
 
         // 执行注册
         Result<Void> registerResult = userFacadeService.createUser(userCreateRequest);

@@ -52,4 +52,6 @@ public class UserCreateRequest implements Serializable {
      * 邀请码（可选）
      */
     private String inviteCode;
+
+    private String gender;
 } 
