@@ -25,11 +25,3 @@ CREATE TABLE `t_category` (
   KEY `idx_status` (`status`),
   KEY `idx_sort` (`sort`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='分类主表';
-
--- 初始化基础分类数据
-INSERT INTO `t_category` (`name`, `description`, `parent_id`, `sort`, `status`) VALUES
-('小说', '文学小说类内容', 0, 1, 'active'),
-('漫画', '漫画插画类内容', 0, 2, 'active'),
-('视频', '视频影像类内容', 0, 3, 'active'),
-('文章', '图文资讯类内容', 0, 4, 'active'),
-('音频', '音频播客类内容', 0, 5, 'active'); 

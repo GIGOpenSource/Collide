@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Sa-Token 网关统一鉴权配置 - 简洁版
- * 基于简洁版用户API和角色体系重构
- * 
+ * Sa-Token 网关统一鉴权配置 - 用户服务版
+ * 基于Collide用户微服务API设计的认证配置
+ *
  * @author GIG Team
  * @version 2.0.0
  */
@@ -27,16 +27,23 @@ public class SaTokenConfigure {
         return new SaReactorFilter()
                 // 拦截所有路径
                 .addInclude("/**")
-                
-                // 放行路径：无需登录的接口
+
+                // ========== 系统级放行路径 ==========
                 .addExclude("/favicon.ico")
                 .addExclude("/actuator/health")
+                .addExclude("/health")  // 健康检查
+                .addExclude("/")        // 根路径服务信息
+
+                // ========== 认证服务公开接口 ==========
                 .addExclude("/api/v1/auth/login")
-                .addExclude("/api/v1/auth/register") 
+                .addExclude("/api/v1/auth/register")
                 .addExclude("/api/v1/auth/login-or-register")
                 .addExclude("/api/v1/auth/validate-invite-code")
                 .addExclude("/api/v1/auth/test")
-                
+
+                // ========== 用户服务内部接口（服务间调用，网关不拦截） ==========
+                .addExclude("/api/v1/users/internal/**")
+
                 // 鉴权方法：每次访问进入
                 .setAuth(obj -> {
                     // ========== 认证服务：部分需要登录 ==========
@@ -44,92 +51,50 @@ public class SaTokenConfigure {
                     SaRouter.match("/api/v1/auth/me").check(r -> StpUtil.checkLogin());
                     SaRouter.match("/api/v1/auth/verify-token").check(r -> StpUtil.checkLogin());
                     SaRouter.match("/api/v1/auth/my-invite-info").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 公开API：无需登录校验 ==========
-                    SaRouter.match("/api/v1/content/list").stop();         // 内容列表
-                    SaRouter.match("/api/v1/content/detail/**").stop();    // 内容详情  
-                    SaRouter.match("/api/v1/content/search").stop();       // 内容搜索
-                    SaRouter.match("/api/v1/social/posts/hot").stop();     // 热门动态
-                    SaRouter.match("/api/v1/social/posts/search").stop();  // 搜索动态
-                    SaRouter.match("/api/v1/social/posts/{postId}").stop(); // 动态详情
-                    
-                    // ========== 用户服务：需要登录 ==========
-                    SaRouter.match("/api/v1/users/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 社交服务：需要登录 ==========
-                    SaRouter.match("/api/v1/social/posts").check(r -> StpUtil.checkLogin());          
-                    SaRouter.match("/api/v1/social/posts/{postId}/like").check(r -> StpUtil.checkLogin()); 
-                    SaRouter.match("/api/v1/social/posts/{postId}/share").check(r -> StpUtil.checkLogin()); 
-                    SaRouter.match("/api/v1/social/posts/timeline/**").check(r -> StpUtil.checkLogin()); 
-                    SaRouter.match("/api/v1/social/posts/feed/**").check(r -> StpUtil.checkLogin());   
-                    
-                    // ========== 收藏服务：需要登录 ==========
-                    SaRouter.match("/api/v1/favorite/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 点赞服务：需要登录 ==========
-                    SaRouter.match("/api/v1/like/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 关注服务：需要登录 ==========
-                    SaRouter.match("/api/v1/follow/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 评论服务：需要登录 ==========
-                    SaRouter.match("/api/v1/comment/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 内容服务：创建和管理需要登录 ==========
-                    SaRouter.match("/api/v1/content/create").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/content/update/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/content/delete/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/content/my").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 博主功能：需要blogger角色 ==========
-                    SaRouter.match("/api/v1/content/blogger/**").check(r -> {
+
+                    // ========== 用户服务：基础用户信息接口 ==========
+                    // 获取当前用户信息 - 需要登录
+                    SaRouter.match("/api/v1/users/me", "GET").check(r -> StpUtil.checkLogin());
+                    // 更新当前用户信息 - 需要登录
+                    SaRouter.match("/api/v1/users/me", "PUT").check(r -> StpUtil.checkLogin());
+                    // 修改密码 - 需要登录
+                    SaRouter.match("/api/v1/users/password", "PUT").check(r -> StpUtil.checkLogin());
+
+                    // ========== 用户钱包管理 ==========
+                    // 获取当前用户钱包信息 - 需要登录
+                    SaRouter.match("/api/v1/users/me/wallet", "GET").check(r -> StpUtil.checkLogin());
+                    // 金币操作 - 需要登录
+                    SaRouter.match("/api/v1/users/me/wallet/coin/**").check(r -> StpUtil.checkLogin());
+
+                    // ========== 用户拉黑管理 ==========
+                    // 拉黑用户 - 需要登录
+                    SaRouter.match("/api/v1/users/me/blocks", "POST").check(r -> StpUtil.checkLogin());
+                    // 取消拉黑 - 需要登录
+                    SaRouter.match("/api/v1/users/me/blocks/**", "DELETE").check(r -> StpUtil.checkLogin());
+                    // 获取拉黑列表 - 需要登录
+                    SaRouter.match("/api/v1/users/me/blocks", "GET").check(r -> StpUtil.checkLogin());
+
+                    // ========== 用户查看相关 ==========
+                    // 获取指定用户信息 - 可选登录（用于区分是否显示敏感信息）
+                    SaRouter.match("/api/v1/users/{userId}", "GET").stop();
+                    // 获取指定用户钱包信息 - 需要登录且有权限
+                    SaRouter.match("/api/v1/users/{userId}/wallet", "GET").check(r -> StpUtil.checkLogin());
+
+                    // ========== 用户列表管理 ==========
+                    // 获取用户列表 - 需要登录（管理员或特定权限用户）
+                    SaRouter.match("/api/v1/users", "GET").check(r -> {
                         StpUtil.checkLogin();
-                        StpUtil.checkRoleOr("blogger", "admin");
+                        // 可以根据需要添加额外的权限检查
+                        // StpUtil.checkRoleOr("admin", "blogger");
                     });
-                    
-                    // ========== VIP功能：需要vip权限 ==========
-                    SaRouter.match("/api/v1/content/vip/**").check(r -> {
-                        StpUtil.checkLogin();
-                        StpUtil.checkPermissionOr("vip", "admin");
-                    });
-                    
+
                     // ========== 管理功能：需要管理员权限 ==========
                     SaRouter.match("/admin/**").check(r -> {
                         StpUtil.checkLogin();
                         StpUtil.checkRole("admin");
                     });
-                    
-                    // ========== 文件服务：需要登录 ==========
-                    SaRouter.match("/api/v1/files/upload").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/files/batch-upload").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/files/config").stop(); // 配置接口可公开访问
-                    
-                    // ========== 订单支付：需要登录 ==========
-                    SaRouter.match("/api/v1/order/**").check(r -> StpUtil.checkLogin());
-                    SaRouter.match("/api/v1/payment/**").check(r -> StpUtil.checkLogin());
-                    
-                    // ========== 商品管理：需要blogger权限 ==========
-                    SaRouter.match("/api/v1/goods/create").check(r -> {
-                        StpUtil.checkLogin();
-                        StpUtil.checkRoleOr("blogger", "admin");
-                    });
-                    SaRouter.match("/api/v1/goods/update/**").check(r -> {
-                        StpUtil.checkLogin();
-                        StpUtil.checkRoleOr("blogger", "admin");
-                    });
-                    SaRouter.match("/api/v1/goods/delete/**").check(r -> {
-                        StpUtil.checkLogin();
-                        StpUtil.checkRoleOr("blogger", "admin");
-                    });
-                    
-                    // ========== 搜索服务：无需登录 ==========
-                    SaRouter.match("/api/v1/search/**").stop();
-                    
-                    // ========== 标签分类：无需登录 ==========
-                    SaRouter.match("/api/v1/tag/**").stop();
-                    SaRouter.match("/api/v1/category/**").stop();
                 })
-                
+
                 // 异常处理方法：每次setAuth函数出现异常时进入
                 .setError(this::handleAuthException);
     }
@@ -139,7 +104,7 @@ public class SaTokenConfigure {
      */
     private SaResult handleAuthException(Throwable e) {
         log.warn("Sa-Token 鉴权异常：{}", e.getMessage());
-        
+
         return switch (e) {
             case NotLoginException ex -> {
                 log.info("用户未登录，访问路径：{}", ex.getMessage());

@@ -25,105 +25,36 @@ spring:
           predicates:
             - Path=/api/v1/auth/**,/api/v1/token/**
 
-        # =================== 业务服务路由 ===================
-        
-        # 用户服务路由
-        - id: collide-users
-          uri: lb://collide-users
+        # =================== FastAPI业务服务路由 ===================
+
+        # 用户服务路由 (FastAPI)
+        - id: collide-api-service
+          uri: lb://collide-api-service
           predicates:
             - Path=/api/v1/users/**
-            
-        # 内容服务路由
-        - id: collide-content
-          uri: lb://collide-content
-          predicates:
-            - Path=/api/v1/content/**
-            
-        # 分类服务路由
-        - id: collide-category
-          uri: lb://collide-category
-          predicates:
-            - Path=/api/v1/categories/**
-            
-        # 评论服务路由
-        - id: collide-comment
-          uri: lb://collide-comment
-          predicates:
-            - Path=/api/v1/comments/**
-            
-        # 社交服务路由
-        - id: collide-social
-          uri: lb://collide-social
-          predicates:
-            - Path=/api/v1/social/**
-            
-        # 标签服务路由
-        - id: collide-tag
-          uri: lb://collide-tag
-          predicates:
-            - Path=/api/v1/tags/**
-            
-        # 标签服务兼容路由（支持文档中的/api/tags路径）
-        - id: collide-tag-compat
-          uri: lb://collide-tag
-          predicates:
-            - Path=/api/tags/**
           filters:
-            - RewritePath=/api/tags/(?<segment>.*), /api/v1/tags/$\{segment}
+            # 传递用户认证信息到下游服务
+            - AddRequestHeader=X-User-Id, ${satoken.user.id:}
+            - AddRequestHeader=X-Username, ${satoken.user.name:}
+            - AddRequestHeader=X-User-Role, ${satoken.user.role:user}
 
-        # =================== 交互服务路由 ===================
-        
-        # 点赞服务路由
-        - id: collide-like
-          uri: lb://collide-like
+        # 用户服务内部API路由（供认证服务调用，无需认证）
+        - id: collide-api-service-internal
+          uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/like/**
-            
-        # 收藏服务路由
-        - id: collide-favorite
-          uri: lb://collide-favorite
-          predicates:
-            - Path=/api/v1/favorite/**
-            
-        # 关注服务路由
-        - id: collide-follow
-          uri: lb://collide-follow
-          predicates:
-            - Path=/api/v1/follow/**
+            - Path=/api/v1/users/internal/**
 
-        # =================== 电商服务路由 ===================
-        
-        # 商品服务路由
-        - id: collide-goods
-          uri: lb://collide-goods
+        # 健康检查路由
+        - id: collide-api-service-health
+          uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/goods/**
-            
-        # 订单服务路由
-        - id: collide-order
-          uri: lb://collide-order
-          predicates:
-            - Path=/api/v1/orders/**
-            
-        # 支付服务路由
-        - id: collide-payment
-          uri: lb://collide-payment
-          predicates:
-            - Path=/api/v1/payments/**
+            - Path=/health,/actuator/health
 
-        # =================== 工具服务路由 ===================
-        
-        # 搜索服务路由
-        - id: collide-search
-          uri: lb://collide-search
+        # API文档路由
+        - id: collide-api-service-docs
+          uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/search/**
-            
-        # 文件服务路由 (如果有独立文件服务)
-        - id: collide-files
-          uri: lb://collide-files
-          predicates:
-            - Path=/api/v1/files/**
+            - Path=/docs,/docs/**,/redoc,/redoc/**,/openapi.json
 
 server:
   port: 9501
