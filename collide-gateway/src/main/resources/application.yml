@@ -27,17 +27,10 @@ spring:
 
         # =================== FastAPI业务服务路由 ===================
 
-        # 用户服务路由 (FastAPI)
         - id: collide-api-service
           uri: lb://collide-api-service
           predicates:
             - Path=/api/v1/users/**
-
-        # 用户服务内部API路由（供认证服务调用，无需认证）
-        - id: collide-api-service-internal
-          uri: lb://collide-api-service
-          predicates:
-            - Path=
 
         # 健康检查路由
         - id: collide-api-service-health
