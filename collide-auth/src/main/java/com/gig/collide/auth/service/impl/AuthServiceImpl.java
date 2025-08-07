@@ -369,8 +369,7 @@ public class AuthServiceImpl implements AuthService {
                 "user_id", userInfo.getId(),
                 "username", userInfo.getUsername(),
                 "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
-                "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active",
-                "vip_expire_time", userInfo.getVipExpireTime() !=null ?  userInfo.getStatus() : null
+                "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
         ));
 
         return StpUtil.getTokenValue();
