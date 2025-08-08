@@ -30,7 +30,7 @@ spring:
         - id: collide-api-service
           uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/users/**, /api/v1/content/**
+            - Path=/api/v1/users/**, /api/v1/content/**, /api/v1/categories/**, /api/v1/social/**, /api/v1/comment/**, /api/v1/like/**
           filters:
             - name: SaTokenUserInfo
 
