@@ -27,10 +27,94 @@ spring:
 
         # =================== FastAPI业务服务路由 ===================
 
-        - id: collide-api-service
+        - id: collide-users-service
           uri: lb://collide-api-service
           predicates:
-            - Path=/api/v1/users/**, /api/v1/content/**, /api/v1/categories/**, /api/v1/social/**, /api/v1/comment/**, /api/v1/like/**
+            - Path=/api/v1/users/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-content-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/content/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-categories-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/categories/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-social-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/social/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-comment-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/comment/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-like-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/like/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-ads-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/ads/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-favorite-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/favorite/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-follow-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/follow/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-message-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/message/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-search-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/search/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-tag-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/tag/**
+          filters:
+            - name: SaTokenUserInfo
+
+        - id: collide-task-service
+          uri: lb://collide-api-service
+          predicates:
+            - Path=/api/v1/task/**
           filters:
             - name: SaTokenUserInfo
 
