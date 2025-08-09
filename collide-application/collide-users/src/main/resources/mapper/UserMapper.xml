@@ -4,7 +4,7 @@
 
     <!-- 基础字段映射 -->
     <sql id="baseColumns">
-        id, username, nickname, avatar, email, phone, password_hash, role, status,
+        id, username, nickname, avatar, email, phone, password_hash, status,
         bio, birthday, gender, location, follower_count, following_count, content_count, like_count,
         vip_expire_time, last_login_time, login_count, invite_code, inviter_id, invited_count,
         create_time, update_time
@@ -19,7 +19,7 @@
     
     <!-- 根据ID查询用户（基础信息，性能优化版） -->
     <select id="findByIdBasic" parameterType="long" resultType="com.gig.collide.users.domain.entity.User">
-        SELECT id, username, nickname, avatar, role, status, invite_code, inviter_id, invited_count, create_time, update_time
+        SELECT id, username, nickname, avatar, status, invite_code, inviter_id, invited_count, create_time, update_time
         FROM t_user
         WHERE id = #{id} AND status != 'deleted'
     </select>
@@ -33,7 +33,7 @@
     
     <!-- 根据用户名查询用户（仅登录必要字段，性能优化版） -->
     <select id="findByUsernameForLogin" parameterType="string" resultType="com.gig.collide.users.domain.entity.User">
-        SELECT id, username, password_hash, role, status, last_login_time, login_count
+        SELECT id, username, password_hash, status, last_login_time, login_count
         FROM t_user
         WHERE username = #{username} AND status != 'deleted'
     </select>
@@ -70,9 +70,6 @@
             <if test="phone != null and phone != ''">
                 AND phone = #{phone}
             </if>
-            <if test="role != null and role != ''">
-                AND role = #{role}
-            </if>
             <if test="status != null and status != ''">
                 AND status = #{status}
             </if>
@@ -99,9 +96,6 @@
             <if test="phone != null and phone != ''">
                 AND phone = #{phone}
             </if>
-            <if test="role != null and role != ''">
-                AND role = #{role}
-            </if>
             <if test="status != null and status != ''">
                 AND status = #{status}
             </if>
@@ -111,10 +105,10 @@
     <!-- 插入用户 -->
     <insert id="insert" parameterType="com.gig.collide.users.domain.entity.User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_user (
-            username, nickname, avatar, email, phone, password_hash, role, status,
+            username, nickname, avatar, email, phone, password_hash, status,
             bio, birthday, gender, location, invite_code, inviter_id
         ) VALUES (
-            #{username}, #{nickname}, #{avatar}, #{email}, #{phone}, #{passwordHash}, #{role}, #{status},
+            #{username}, #{nickname}, #{avatar}, #{email}, #{phone}, #{passwordHash}, #{status},
             #{bio}, #{birthday}, #{gender}, #{location}, #{inviteCode}, #{inviterId}
         )
     </insert>
@@ -131,7 +125,6 @@
             <if test="birthday != null">birthday = #{birthday},</if>
             <if test="gender != null">gender = #{gender},</if>
             <if test="location != null">location = #{location},</if>
-            <if test="role != null">role = #{role},</if>
             <if test="status != null">status = #{status},</if>
             <if test="vipExpireTime != null">vip_expire_time = #{vipExpireTime},</if>
             update_time = NOW()
@@ -157,7 +150,7 @@
     
     <!-- 用户登录验证（性能优化版） -->
     <select id="loginAndUpdateTime" parameterType="map" resultType="com.gig.collide.users.domain.entity.User">
-        SELECT id, username, nickname, avatar, role, status, invite_code, inviter_id, invited_count,
+        SELECT id, username, nickname, avatar, status, invite_code, inviter_id, invited_count,
                last_login_time, login_count, create_time, update_time
         FROM t_user
         WHERE username = #{username} AND password_hash = #{passwordHash} AND status != 'deleted'
