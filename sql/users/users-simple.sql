@@ -15,7 +15,6 @@ CREATE TABLE `t_user` (
     `email`           VARCHAR(100)                         COMMENT '邮箱',
     `phone`           VARCHAR(20)                          COMMENT '手机号',
     `password_hash`   VARCHAR(255) NOT NULL                COMMENT '密码哈希',
-    `role`            VARCHAR(20)  NOT NULL DEFAULT 'user' COMMENT '用户角色：user、blogger、admin、vip',
     `status`          VARCHAR(20)  NOT NULL DEFAULT 'active' COMMENT '用户状态：active、inactive、suspended、banned',
     
     -- 扩展信息字段
@@ -50,7 +49,6 @@ CREATE TABLE `t_user` (
     UNIQUE KEY `uk_email` (`email`),
     UNIQUE KEY `uk_phone` (`phone`),
     UNIQUE KEY `uk_invite_code` (`invite_code`),
-    KEY `idx_role` (`role`),
     KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户统一信息表';
 
@@ -108,9 +106,7 @@ CREATE TABLE `t_user_block` (
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='用户拉黑关系表';
 
-INSERT INTO `t_user` (`username`, `nickname`, `email`, `password_hash`, `role`, `status`) VALUES
-('admin', '系统管理员', 'admin@collide.com', '$2a$10$encrypted_password_hash', 'admin', 'active'),
-('blogger', '博主示例', 'blogger@collide.com', '$2a$10$encrypted_password_hash', 'blogger', 'active');
+
 
 -- 初始化管理员钱包
 INSERT INTO `t_user_wallet` (`user_id`, `balance`, `coin_balance`, `coin_total_earned`) VALUES

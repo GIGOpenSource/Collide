@@ -7,8 +7,8 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
-
 import java.util.Map;
+import java.util.List;
 
 /**
  * Sa-Token用户信息传递Filter
@@ -28,6 +28,7 @@ public class SaTokenUserInfoGatewayFilterFactory extends AbstractGatewayFilterFa
                     Object userInfoObj = StpUtil.getSession().get("userInfo");
                     
                     if (userInfoObj instanceof Map) {
+                        @SuppressWarnings("unchecked")
                         Map<String, Object> userInfo = (Map<String, Object>) userInfoObj;
                         
                         // 构建新的请求，添加用户信息Headers
@@ -46,13 +47,17 @@ public class SaTokenUserInfoGatewayFilterFactory extends AbstractGatewayFilterFa
                         }
                         
                         // 添加用户角色
-                        Object role = userInfo.get("role");
-                        if (role != null) {
-                            builder.header("X-User-Role", role.toString());
+                        Object rolesObj = userInfo.get("roles");
+                        if (rolesObj instanceof List) {
+                            @SuppressWarnings("unchecked")
+                            List<String> roles = (List<String>) rolesObj;
+                            if (!roles.isEmpty()) {
+                                builder.header("X-User-Roles", String.join(",", roles));
+                            }
                         }
-                        
-                        log.debug("传递用户信息到下游服务 - 用户ID: {}, 用户名: {}, 角色: {}", 
-                                userId, username, role);
+
+                        log.debug("传递用户信息到下游服务 - 用户ID: {}, 用户名: {}, 角色: {}",
+                                userId, username, rolesObj);
                         
                         // 创建新的exchange
                         ServerWebExchange newExchange = exchange.mutate()

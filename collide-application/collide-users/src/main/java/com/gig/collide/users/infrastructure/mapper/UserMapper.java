@@ -53,7 +53,6 @@ public interface UserMapper {
                                    @Param("nickname") String nickname,
                                    @Param("email") String email,
                                    @Param("phone") String phone,
-                                   @Param("role") String role,
                                    @Param("status") String status,
                                    @Param("offset") Integer offset,
                                    @Param("size") Integer size);
@@ -65,7 +64,6 @@ public interface UserMapper {
                               @Param("nickname") String nickname,
                               @Param("email") String email,
                               @Param("phone") String phone,
-                              @Param("role") String role,
                               @Param("status") String status);
 
     /**

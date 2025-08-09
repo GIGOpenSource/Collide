@@ -11,6 +11,7 @@ import com.gig.collide.api.user.response.UserResponse;
 import com.gig.collide.api.user.response.WalletResponse;
 import com.gig.collide.api.user.response.UserBlockResponse;
 import com.gig.collide.base.response.PageResponse;
+import com.gig.collide.users.domain.entity.Role;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.entity.UserWallet;
 import com.gig.collide.users.domain.entity.UserBlock;
@@ -33,6 +34,7 @@ import com.gig.collide.users.infrastructure.cache.UserCacheConstant;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
 
 /**
  * 用户门面服务实现 - 简洁版
@@ -424,6 +426,13 @@ public class UserFacadeServiceImpl implements UserFacadeService {
     private UserResponse convertToResponse(User user) {
         UserResponse response = new UserResponse();
         BeanUtils.copyProperties(user, response);
+        if (user.getRoles() != null) {
+            List<String> roleNames = new ArrayList<>();
+            for (Role role : user.getRoles()) {
+                roleNames.add(role.getName());
+            }
+            response.setRoles(roleNames);
+        }
         return response;
     }
 

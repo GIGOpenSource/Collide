@@ -7,6 +7,9 @@ import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
+import com.baomidou.mybatisplus.annotation.TableField;
+
 
 /**
  * 用户实体 - 简洁版
@@ -34,9 +37,10 @@ public class User {
 
     private String passwordHash;
 
-    private String role;
-
     private String status;
+
+    @TableField(exist = false)
+    private List<Role> roles;
 
     private String bio;
 

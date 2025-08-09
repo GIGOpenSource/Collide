@@ -35,11 +35,6 @@ public class UserQueryRequest extends PageRequest {
     private String phone;
 
     /**
-     * 用户角色：user、blogger、admin、vip
-     */
-    private String role;
-
-    /**
      * 用户状态：active、inactive、suspended、banned
      */
     private String status;

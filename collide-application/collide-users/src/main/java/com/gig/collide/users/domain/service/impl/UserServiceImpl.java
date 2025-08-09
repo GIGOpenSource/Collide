@@ -5,6 +5,7 @@ import com.gig.collide.base.response.PageResponse;
 import com.gig.collide.users.domain.entity.User;
 import com.gig.collide.users.domain.service.UserService;
 import com.gig.collide.users.domain.service.WalletService;
+import com.gig.collide.users.infrastructure.mapper.RoleMapper;
 import com.gig.collide.users.infrastructure.mapper.UserMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +27,9 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private UserMapper userMapper;
+
+    @Autowired
+    private RoleMapper roleMapper;
 
     @Autowired
     private WalletService walletService;
@@ -77,12 +81,20 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User getUserById(Long userId) {
-        return userMapper.findById(userId);
+        User user = userMapper.findById(userId);
+        if (user != null) {
+            user.setRoles(roleMapper.findRolesByUserId(userId));
+        }
+        return user;
     }
 
     @Override
     public User getUserByUsername(String username) {
-        return userMapper.findByUsername(username);
+        User user = userMapper.findByUsername(username);
+        if (user != null) {
+            user.setRoles(roleMapper.findRolesByUserId(user.getId()));
+        }
+        return user;
     }
     
     /**
@@ -101,18 +113,20 @@ public class UserServiceImpl implements UserService {
                 request.getNickname(),
                 request.getEmail(),
                 request.getPhone(),
-                request.getRole(),
                 request.getStatus(),
                 offset,
                 request.getPageSize()
         );
+
+        if (users != null && !users.isEmpty()) {
+            users.forEach(user -> user.setRoles(roleMapper.findRolesByUserId(user.getId())));
+        }
         
         long total = userMapper.countUsersByCondition(
                 request.getUsername(),
                 request.getNickname(),
                 request.getEmail(),
                 request.getPhone(),
-                request.getRole(),
                 request.getStatus()
         );
         
@@ -129,8 +143,8 @@ public class UserServiceImpl implements UserService {
     public User login(String username, String password) {
         User user = userMapper.findByUsername(username);
         if (user != null && passwordEncoder.matches(password, user.getPasswordHash())) {
-            // 更新登录时间
             userMapper.updateLastLoginTime(user.getId());
+            user.setRoles(roleMapper.findRolesByUserId(user.getId()));
             return user;
         }
         return null;
@@ -140,13 +154,14 @@ public class UserServiceImpl implements UserService {
      * 高性能登录验证（仅查询必要字段）
      */
     public User loginOptimized(String username, String password) {
-        // 优化版：先只查询登录必要字段
         User loginUser = userMapper.findByUsernameForLogin(username);
         if (loginUser != null && passwordEncoder.matches(password, loginUser.getPasswordHash())) {
-            // 密码验证成功，更新登录时间并返回完整用户信息
             userMapper.updateLastLoginTime(loginUser.getId());
-            // 返回完整的用户信息用于缓存
-            return userMapper.findByIdBasic(loginUser.getId());
+            User user = userMapper.findByIdBasic(loginUser.getId());
+            if (user != null) {
+                user.setRoles(roleMapper.findRolesByUserId(user.getId()));
+            }
+            return user;
         }
         return null;
     }

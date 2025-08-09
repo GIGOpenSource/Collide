@@ -6,6 +6,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * 用户响应 - 简洁版
@@ -31,7 +32,7 @@ public class UserResponse implements Serializable {
 
     private String phone;
 
-    private String role;
+    private List<String> roles;
 
     private String status;
 

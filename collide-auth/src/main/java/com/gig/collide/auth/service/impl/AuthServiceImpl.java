@@ -14,9 +14,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Collections;
 
 /**
  * 认证服务实现类
@@ -52,7 +52,6 @@ public class AuthServiceImpl implements AuthService {
         userCreateRequest.setUsername(registerParam.getUsername());
         userCreateRequest.setPassword(registerParam.getPassword());
         userCreateRequest.setNickname(registerParam.getUsername());
-        userCreateRequest.setRole("user");
         userCreateRequest.setInviteCode(registerParam.getInviteCode());
         userCreateRequest.setGender("unknown");
 
@@ -158,7 +157,6 @@ public class AuthServiceImpl implements AuthService {
         userCreateRequest.setUsername(loginParam.getUsername());
         userCreateRequest.setPassword(loginParam.getPassword());
         userCreateRequest.setNickname(loginParam.getUsername());
-        userCreateRequest.setRole("user");
         userCreateRequest.setInviteCode(loginParam.getInviteCode());
 
         try {
@@ -369,7 +367,7 @@ public class AuthServiceImpl implements AuthService {
         StpUtil.getSession().set("userInfo", java.util.Map.of(
                 "user_id", userInfo.getId(),
                 "username", userInfo.getUsername(),
-                "role", userInfo.getRole() != null ? userInfo.getRole() : "user",
+                "roles", userInfo.getRoles() != null ? userInfo.getRoles() : Collections.emptyList(),
                 "status", userInfo.getStatus() != null ? userInfo.getStatus() : "active"
         ));
 
