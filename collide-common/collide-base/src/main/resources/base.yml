@@ -34,7 +34,7 @@ collide:
       url: 172.20.1.70:9876
     dubbo:
       nacos:
-        namespace: 192e6444-c51d-425d-adc4-ad1b7f8605b8
+        namespace: 721e01bf-30d1-4446-8944-23a2bbcdfc37
         group: dubbo
     seata:
       nacos:
